@@ -359,5 +359,76 @@ class NormalBandTest(unittest.TestCase):
         self.assertEqual(G.moved_above([], [], 1.0), 0.0)
 
 
+class BobScale(unittest.TestCase):
+    """B1c: leg_fit_bob scales a clip's Hips bob about its mean before the IK (alien_leg_fit.py, mode ik)."""
+    # the axolotl's Jog_Fwd_Loop Hips z (mm) with --leg-fit-mode ik (b1c/ik): its largest step 70.8 mm per frame
+    JOG = [699, 633, 587, 596, 656, 726, 780, 807, 807, 790, 758, 709, 645, 592, 589, 643, 714, 771, 803, 807, 795,
+           766, 721]
+
+    @staticmethod
+    def step(z):
+        return max(abs(b - a) for a, b in zip(z, z[1:]))
+
+    def test_the_step_scales_with_the_factor(self):
+        z = [v / 1000 for v in self.JOG]
+        out = [a + d for a, d in zip(z, G.bob_offsets(z, 0.85, wrap=True))]
+        self.assertAlmostEqual(self.step(out), 0.85 * self.step(z), places=9)
+
+    def test_the_toml_brings_the_jog_to_b1s_step(self):  # B1c's target: no worse than B1's 60.1 mm per frame
+        import alien_clip_edit as E
+        toml = Path(__file__).resolve().parents[1] / "blender" / "anim_sets" / "alien.toml"
+        f = E.settings(str(toml), "Jog_Fwd_Loop")["leg_fit_bob"]
+        z = [v / 1000 for v in self.JOG]
+        out = [a + d for a, d in zip(z, G.bob_offsets(z, f, wrap=True))]
+        self.assertLessEqual(self.step(out) * 1000, 60.1)
+        self.assertNotIn("leg_fit_bob", E.settings(str(toml), "Walk_Loop"))  # the Walk keeps the clip's own bob
+
+    def test_the_mean_and_the_seam_stay(self):
+        z = [0.70, 0.62, 0.66, 0.78, 0.70]
+        d = G.bob_offsets(z, 0.5, wrap=True)
+        self.assertAlmostEqual(d[0], d[-1], places=12)  # the loop's seam: the last frame is the first again
+        self.assertAlmostEqual(sum(d[:-1]), 0.0, places=12)  # the mean over one period
+
+    def test_one_moves_nothing_and_zero_is_refused(self):
+        self.assertEqual(G.bob_offsets([0.7, 0.8, 0.7], 1.0), [0.0, 0.0, 0.0])
+        with self.assertRaises(ValueError):
+            G.bob_offsets([0.7, 0.8], 0.0)
+
+
+class SoleDz(unittest.TestCase):
+    """B1d: after the IK each ankle moves so the foot's lowest point rises from rest as the donor's (scaled)."""
+
+    @staticmethod
+    def foot_points(length, ankle, angle):  # a rigid foot (heel, ball, tip; x forward, z up) turned by angle
+        import math
+        pts = [(-0.04, -0.06), (0.6 * length, -0.06), (length, -0.06)]  # its sole 6 cm under the ankle
+        c, s = math.cos(angle), math.sin(angle)
+        return [(ankle[0] + c * x - s * z, ankle[1] + s * x + c * z) for x, z in pts]
+
+    def test_a_shorter_foot_on_its_toe_comes_down(self):  # B1i: from the feet's geometry, not the formula restated
+        import math
+        a, s = math.radians(-40), 0.953  # the heel up, the foot on its tip
+        donor = self.foot_points(0.20, (0.0, 0.0), a)
+        tip = donor[2]
+        donor_ankle = -tip[1]  # the donor's tip on the floor: its ankle this high
+        donor = [(x, z - tip[1]) for x, z in donor]
+        rest = 0.06  # both ankles 6 cm up at rest, the soles on the floor
+        her = self.foot_points(0.164, (0.0, rest + s * (donor_ankle - rest)), a)  # her ankle on the donor's path
+        o_low, d_low = min(z for _, z in her), min(z for _, z in donor)
+        self.assertAlmostEqual(d_low, 0.0, places=12)
+        self.assertGreater(o_low, 0.01)  # her 3.6 cm shorter foot's tip floats over a cm
+        dz = G.sole_dz([o_low], 0.0, [d_low], 0.0, s)
+        moved = [(x, z + dz[0]) for x, z in her]  # the ankle moved, the foot's turn kept
+        self.assertAlmostEqual(min(z for _, z in moved), 0.0, places=12)  # her tip on the floor, as the donor's
+        self.assertEqual(min(range(3), key=lambda k: moved[k][1]), 2)  # the tip is still her lowest point
+
+    def test_a_flat_foot_and_the_rest_offsets(self):
+        dz = G.sole_dz([0.031, 0.08], 0.031, [0.05, 0.10], 0.05, 0.9)
+        self.assertAlmostEqual(dz[0], 0.0, places=12)  # flat on the floor: nothing moves, whatever the rest heights
+        self.assertAlmostEqual(dz[1], 0.9 * 0.05 - 0.049, places=12)  # in the swing: the donor's rise, scaled
+        with self.assertRaises(ValueError):
+            G.sole_dz([0.0], 0.0, [0.0, 0.0], 0.0, 1.0)
+
+
 if __name__ == "__main__":
     unittest.main()

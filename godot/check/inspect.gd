@@ -141,6 +141,7 @@ func _mesh(scene: Node, mesh: MeshInstance3D) -> Dictionary:
 		"binds": binds,
 		"unresolved_binds": bad_binds,
 		"surfaces": mesh.mesh.get_surface_count() if mesh.mesh != null else 0,
+		"blend_shapes": _blend_shape_names(mesh),
 		"vertices": vertices,
 		"materials": materials,
 		"rest_bounds": Character.bounds(rest),
@@ -270,6 +271,7 @@ func _player(scene: Node, player: AnimationPlayer, skeleton: Skeleton3D) -> Dict
 			if not _resolves(anim_root, path):
 				unresolved.append(str(path))
 		anims[str(name)] = {
+			"blend_shapes": _blend_tracks(player, anim_root, anim, str(name), skeleton),
 			"length": snappedf(anim.length, 0.00001),
 			"loop_mode": anim.loop_mode,
 			"tracks": anim.get_track_count(),
@@ -287,7 +289,45 @@ func _player(scene: Node, player: AnimationPlayer, skeleton: Skeleton3D) -> Dict
 	}
 
 
-## A track resolves when its node exists under the player's root and, for a bone track, the bone exists.
+## The mesh's blend shapes (glTF morph targets) by name.
+func _blend_shape_names(mesh: MeshInstance3D) -> Array:
+	var out: Array = []
+	if mesh.mesh is ArrayMesh:
+		for i: int in (mesh.mesh as ArrayMesh).get_blend_shape_count():
+			out.append(str((mesh.mesh as ArrayMesh).get_blend_shape_name(i)))
+	return out
+
+
+## Per blend-shape track (H1j, the run fist): its keys' least and largest weight and the weight the mesh plays at a
+## quarter and at half the clip (the player seeked, the MeshInstance3D's own blend shape value read back).
+func _blend_tracks(player: AnimationPlayer, anim_root: Node, anim: Animation, name: String,
+		skeleton: Skeleton3D) -> Dictionary:
+	var out: Dictionary = {}
+	for i: int in anim.get_track_count():
+		if anim.track_get_type(i) != Animation.TYPE_BLEND_SHAPE:
+			continue
+		var path: NodePath = anim.track_get_path(i)
+		var lo: float = INF
+		var hi: float = -INF
+		for k: int in anim.track_get_key_count(i):
+			var v: float = float(anim.track_get_key_value(i, k))
+			lo = minf(lo, v)
+			hi = maxf(hi, v)
+		var played: Array = []
+		var node: Node = anim_root.get_node_or_null(NodePath(path.get_concatenated_names())) if anim_root else null
+		if node is MeshInstance3D and skeleton != null:
+			var mi: MeshInstance3D = node as MeshInstance3D
+			var idx: int = mi.find_blend_shape_by_name(StringName(path.get_concatenated_subnames()))
+			for t: float in [anim.length * 0.25, anim.length * 0.5]:
+				Character.pose_at(player, skeleton, name, t)
+				played.append(snappedf(mi.get_blend_shape_value(idx), 0.0001) if idx >= 0 else -1.0)
+		out[str(path)] = {"keys": anim.track_get_key_count(i), "min": snappedf(lo, 0.0001),
+				"max": snappedf(hi, 0.0001), "played": played}
+	return out
+
+
+## A track resolves when its node exists under the player's root and, for a bone track, the bone exists (for a
+## blend-shape track, the blend shape).
 func _resolves(anim_root: Node, path: NodePath) -> bool:
 	if anim_root == null:
 		return false
@@ -299,6 +339,8 @@ func _resolves(anim_root: Node, path: NodePath) -> bool:
 		return true
 	if node is Skeleton3D:
 		return (node as Skeleton3D).find_bone(sub) >= 0
+	if node is MeshInstance3D:  # a blend-shape track (H1j, the run fist): the mesh's own blend shape
+		return (node as MeshInstance3D).find_blend_shape_by_name(StringName(sub)) >= 0
 	return sub in node
 
 

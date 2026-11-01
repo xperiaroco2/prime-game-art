@@ -148,6 +148,17 @@ decision of the engineer. For the alien this replaces "No extra bones" and the 1
   take a scale of about 1.27 before the body passed 1.80 m, long after the top and the eyes fail. The 1.80 m capsule is
   not, in practice, enforced on the alien's body. r5 measured the chameleon's top at 1.884 m and the axolotl's at
   1.759 m.
+- The run fist (art #196 H1j; the engineer's yes to option C, 2026-10-31): the alien body may carry one hand morph,
+  `[kinds.alien]` `hand_morph = "fist"`, a glTF morph target on the body mesh that closes the run grip's
+  (`runfist`) bone-curled fist into one rounded mass (the contact route: the gaps between touching digits closed;
+  the thumb laid across the index's curl by the grip itself). Every clip keys its
+  weight: 1 in the clips matching `hand_morph_on` (`Jog_*`, `Sprint_*`, `Strafe_*`, Godot names), 0 in every other
+  clip, so a blend between a walk and a run blends the morph with the grip. It is the body's only morph (faces are the
+  head's, above). `godot-check --profile alien` checks it (`hand_morph`, `hand_morph_keyed`): one mesh carries
+  morphs, exactly `["fist"]`; each clip has one `fist` blend-shape track whose keys and played weight (at a quarter and
+  half the clip, read back from the MeshInstance3D) are 1 in the run clips and 0 elsewhere. An alien GLB without the
+  morph (built before H1j) gets a warning, not a failure. The morph is made by `alien_hands.py --apply` from the hands
+  file's `[fist]` (`docs/animations.md`, "The run fist as a morph (H1j)").
 - The game side: prime-game's character import must accept these spring bones (keep them through its `BoneMap`
   retarget, which Godot 4.7.2 does) and a head above the 1.80 m capsule (no clamp or refusal on the top). This repo
   does not touch the game; the handoff names it.

@@ -1,0 +1,234 @@
+{
+ "format": 1,
+ "name": "lobby",
+ "version": 3,
+ "scene": "res://levels/lobby/lobby_hall.tscn",
+ "root": "LobbyHall",
+ "level_script": "res://levels/lobby/lobby_hall.gd",
+ "pieces": [
+  "arch",
+  "door",
+  "floor",
+  "vault",
+  "walls",
+  "window_frame",
+  "window_glass"
+ ],
+ "placements": 10,
+ "spawns": [
+  {
+   "name": "Spawn0",
+   "at": [
+    -9.0,
+    0.0,
+    2.5
+   ],
+   "yaw": 180.0
+  },
+  {
+   "name": "Spawn1",
+   "at": [
+    -7.0,
+    0.0,
+    2.5
+   ],
+   "yaw": 180.0
+  },
+  {
+   "name": "Spawn2",
+   "at": [
+    -5.0,
+    0.0,
+    2.5
+   ],
+   "yaw": 180.0
+  },
+  {
+   "name": "Spawn3",
+   "at": [
+    -3.0,
+    0.0,
+    2.5
+   ],
+   "yaw": 180.0
+  },
+  {
+   "name": "Spawn4",
+   "at": [
+    -1.0,
+    0.0,
+    2.5
+   ],
+   "yaw": 180.0
+  },
+  {
+   "name": "Spawn5",
+   "at": [
+    1.0,
+    0.0,
+    2.5
+   ],
+   "yaw": 180.0
+  },
+  {
+   "name": "Spawn6",
+   "at": [
+    3.0,
+    0.0,
+    2.5
+   ],
+   "yaw": 180.0
+  },
+  {
+   "name": "Spawn7",
+   "at": [
+    5.0,
+    0.0,
+    2.5
+   ],
+   "yaw": 180.0
+  },
+  {
+   "name": "Spawn8",
+   "at": [
+    7.0,
+    0.0,
+    2.5
+   ],
+   "yaw": 180.0
+  },
+  {
+   "name": "Spawn9",
+   "at": [
+    9.0,
+    0.0,
+    2.5
+   ],
+   "yaw": 180.0
+  }
+ ],
+ "ship": {
+  "node": "Ship",
+  "scene": "res://levels/ship/ship.tscn",
+  "package": "ship/v5/export/v8",
+  "package_version": 3,
+  "package_bytes": 13508641,
+  "origin": [
+   0.0,
+   0.0,
+   -14.5
+  ],
+  "switched_off": [
+   "Clearing",
+   "Environment",
+   "Lights:DirectionalLight3D"
+  ]
+ },
+ "earth": {
+  "node": "Earth/EarthObject",
+  "variant": "E2",
+  "distance": "H1",
+  "snow": "N2",
+  "credit": "Earth imagery: NASA",
+  "licence": "NASA-PD",
+  "source": "sources/nasa_earth_lobby.toml"
+ },
+ "light": {
+  "mood": "L3",
+  "ship": "K1"
+ },
+ "files": {
+  "assets/environment/lobby/arch.glb": {
+   "sha256": "32ac62d2cd8efc5d8df5def9cffe348b2192ad95f252378e08e4031940197749",
+   "bytes": 4383140
+  },
+  "assets/environment/lobby/door.glb": {
+   "sha256": "1f42b0e5eb4c482fd239089c9a4f02266db8c68daa885b569b7cd555ab238c50",
+   "bytes": 4260192
+  },
+  "assets/environment/lobby/floor.glb": {
+   "sha256": "0f094dba81ded1808458876679576be2e048988d7ac85abc49a7aa722ff87e18",
+   "bytes": 5237144
+  },
+  "assets/environment/lobby/vault.glb": {
+   "sha256": "5cba275ed7c1dd1d9437a95b270d4e4191a85906a1cc2cb39fb99328b2a22518",
+   "bytes": 5773152
+  },
+  "assets/environment/lobby/walls.glb": {
+   "sha256": "7cadd2b9bfc432c2368b2d1292a0b14d5029b0963fabba4a0c9e12113e973f35",
+   "bytes": 6423580
+  },
+  "assets/environment/lobby/window_frame.glb": {
+   "sha256": "2ee304267babc86f2c055e93b45f9fc37f1f1618fe97434d43e1a67cab6d59fc",
+   "bytes": 3708696
+  },
+  "assets/environment/lobby/window_glass.glb": {
+   "sha256": "c02adb50be159fb3ab4a1cc4482790ebde3313f9df690c230440fd17c7fdfcb1",
+   "bytes": 8372
+  },
+  "assets/environment/lobby/earth/earth_clouds.jpg": {
+   "sha256": "4c01aacba7c5cf766855ed981fbd6e8641f7e089c5ef67d9ba766c482d9b7977",
+   "bytes": 3015322
+  },
+  "assets/environment/lobby/earth/earth_clouds_cap.jpg": {
+   "sha256": "59e1bda8edd74143ab17382b3015f1305ada1ed137dec1b9cbca3807d73314a8",
+   "bytes": 1588350
+  },
+  "assets/environment/lobby/earth/earth_day.jpg": {
+   "sha256": "3d77f2fd6980792aa8b1c5c2e772425aae0d01ea762ce0a47349bb248f9a6191",
+   "bytes": 1596804
+  },
+  "assets/environment/lobby/earth/earth_night.jpg": {
+   "sha256": "8cfe686e4a6b6c60e469b00105ac79513444ad0d2134422a1cc4158f126c0e2f",
+   "bytes": 687220
+  },
+  "assets/environment/lobby/earth/earth_night_cap.jpg": {
+   "sha256": "c5df3f320cbda1aa8c36cd6852a70d4e42d0b328d6b1b91c0c8126ffdf7b9894",
+   "bytes": 1376179
+  },
+  "assets/environment/lobby/earth_sky.gdshader": {
+   "sha256": "d8136519928ec8029475c7a42be0d08fa8dc18c2406c588d791abde7d5118651",
+   "bytes": 7136
+  },
+  "assets/environment/lobby/earth_object.gdshader": {
+   "sha256": "89eea2553da5cfd933dd92975779099c87affa674f250d8d200be4a3e4d6b6f7",
+   "bytes": 11283
+  },
+  "assets/environment/lobby/window_glass.gdshader": {
+   "sha256": "e8a3c179e45551781d3f36b5de35fb43e1d2699a7c14361e46c77ae5967453fe",
+   "bytes": 622
+  },
+  "levels/lobby/lobby_hall.gd": {
+   "sha256": "4f162a8b7bca711a9eb9330dd610840c4ab6b1fbb76143baaf301f191e286f7a",
+   "bytes": 1981
+  },
+  "assets/environment/lobby/materials/earth_object.tres": {
+   "sha256": "39885ef57eaad25767054da89b4a913f9ebde378a073fb827b9aa951720d25c6",
+   "bytes": 2663
+  },
+  "assets/environment/lobby/materials/lobby_env.tres": {
+   "sha256": "904296784aca088d83bfd4fe3f6140131937b1f67852d3f8958be386127d6ff2",
+   "bytes": 2377
+  },
+  "assets/environment/lobby/materials/window_glass.tres": {
+   "sha256": "29176f2745ee62e20f2ca34d0f1b6d7ab74b9e00aa56e8ede74cc7d52bad90d6",
+   "bytes": 332
+  },
+  "levels/lobby/lobby_hall.tscn": {
+   "sha256": "9125d2220a1f59cb640489db54abe4fd1b523470b86a37060315cf33922b9bf6",
+   "bytes": 437438
+  }
+ },
+ "bytes": 38521983,
+ "questions": [
+  "L1: the ship is an instance of the ship package's res://levels/ship/ship.tscn (assets/environment/ship/HANDOFF.md), never a copy: the game needs the ship package at its paths. What the hall must not have is saved switched off (a packed scene cannot remove a node of an instance: Ship/Clearing hidden and disabled, Ship/Environment's WorldEnvironment on the hall's environment, the suns under Ship/Lights hidden), and the root's level script res://levels/lobby/lobby_hall.gd frees them on _ready (its ship_free paths) and has the reflection probes capture again a frame later, as the art's assembly does. Keep the script on LobbyHall; a game script for the lobby extends it and calls super._ready().",
+  "L2: the jaw nose is saved shut (jaw_lower and jaw_upper at 0 deg) by overrides; Ship/Nose/AnimationPlayer still holds open/close: the lobby never plays them. Its pose is the scene's, so nothing needs to run at load.",
+  "L3: behind the shut nose and the closed doors the package's whole interior is still drawn when in view (about 3200 draw calls in the views that see the ship, HANDOFF 'Cost'); an occluder or hiding Ship's interior pieces in the lobby is the game's call.",
+  "L4: the ten spawn markers (Markers/Spawn0..9) stand at z 2.5, 0.76 m outside the floor ring (r 15 round the closed ship's middle, z -13.26); the ring is the floor's inlay only, no rule of the game.",
+  "L5: the Earth is the object Earth/EarthObject (earth_object.gdshader in far mode: every ray from far_eye, the shell follows the camera), so it stays at infinity: never parent it to anything that moves, never scale it; the camera's far plane must reach LobbyHall's metadata camera_far_m. The sky (lobby_env.tres) draws the stars and, in its cubemap pass, the Earth for the probes and reflections.",
+  "L6: the glow surfaces (the hall's lamps, strips, ring and the ship's glow times ship_emit 0.3) are material overrides inside the pieces' instances; the ship's meshes draw on render layer 11 (ship light K1: the hall's pendants and Earth light skip it, its own key, rim, back and bounce suns light only it): a player model must stay off layer 11.",
+  "L7: the positional shadow atlas: the art's shots use 4096 with every quadrant subdivided 4 (the pendants' shadowed spots); the game's project settings decide (HANDOFF 'Light').",
+  "L8: the credit line \"Earth imagery: NASA\" goes in the game's credits (NASA-PD, sources/nasa_earth_lobby.toml).",
+  "Imports: each file's .import holds only the package's options; the game's editor regenerates the .import files (and the uids) on its first import: commit the regenerated ones."
+ ]
+}

@@ -257,6 +257,11 @@ def main() -> int:
                          "on with --shell (the dungarees)")
     ap.add_argument("--toes-cap", default="alien_loco",
                     help="with the sneakers, the anim set whose [toes_cap] caps every clip's Toes bend ('': none)")
+    ap.add_argument("--sole-floor", default="alien",
+                    help="with the sneakers, the clip edits (anim_sets/<name>.toml) whose ground clips (their floor "
+                         "true, and every clip they do not list) are put on the floor again with the soles counted, "
+                         "at the foot: each foot by its own need, its leg solved again, the Hips untouched; a no-flight "
+                         "clip's lower foot planted; the crossing shoes moved apart (B1-B1i; '': none)")
     ap.add_argument("--shell", action="store_true",
                     help="the hybrid route (clothes_top): a shell top of the body, the Meshy garment cut to the "
                          "trousers, bib and back panel, new straps")
@@ -1186,6 +1191,15 @@ def main() -> int:
         "through the walls ),", n_under,
         "under the cloth for certain,", sum(gone),
         "faces removed; tris", rep["tris"])
+    shoes_now = next((o for o in cloth if o.name == "shoes"), None)
+    if args.sole_floor and shoes_now is not None and "sneakers" in rep:
+        # B1, B1b: the soles reach under the floor at heel strike (raised at the foot); last, so every step above sees the
+        # clips and the frame as the character brought them
+        import alien_clip_edit as CE
+        rep["sole_floor"] = CE.sole_floor(arm, [char, shoes_now], args.sole_floor)
+        say("sole floor", {k: (v["lowest_before_cm"], v["lowest_after_cm"], v["max_raise_cm"],
+                               v["hips_fallback_cm"], v["floated_frames"], v.get("max_lower_cm", 0.0),
+                               v.get("floated_after", 0)) for k, v in rep["sole_floor"].items()})
     rep["maps"] = maps(cloth, not args.no_fill, tuple(float(v) for v in args.denim_gain.split(",")))
     blend = out / f"{args.name}_char.blend"
     bpy.ops.wm.save_as_mainfile(filepath=str(blend), compress=True)

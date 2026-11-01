@@ -1,0 +1,787 @@
+# The lobby hall (art #356, docs/lobby.md): the numbers of the approved drawing
+# (D:/prime-game-design/ideas/lobby-station/hall/drawing/drawing.js, its `H` object and rows table; concepts
+# a_entrance.jpg and c_back.jpg) and the engineer's ship placement (art#356 comment 6522500716).
+# The frame is the game's levels/lobby/lobby.tscn: x east, z south, y up, the floor at y 0; every position below is in
+# it, in metres (Godot's own frame, no conversion). tools/runner/lobby_layout.py loads and checks this file; the
+# `lobby` command builds and shoots it.
+
+version = 3
+raw_dir = "lobby/hall/v19"         # under the raw folder: pieces/, plan/, logs/, shots/
+# The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
+# their walls by the `lobby` command from [door] doors)
+place = [
+  ["floor", [0.0, 0.0, 0.0], 0.0],
+  ["walls", [0.0, 0.0, 0.0], 0.0],
+  ["vault", [0.0, 0.0, 0.0], 0.0],
+  ["window_frame", [0.0, 0.0, 0.0], 0.0],
+  ["window_glass", [0.0, 0.0, 0.0], 0.0],
+  ["arch", [0.0, 0.0, 0.0], 0.0],
+]
+
+[hall]
+x0 = -20.0                         # H.x0, H.x1, H.zN, H.zS: the straight walls' inner faces, 40 x 40 m
+x1 = 20.0
+zN = -30.0
+zS = 10.0
+bulge = 6.0                        # H.bulge: the window arc through (+-20, 10) and (0, 16)
+wall = 12.0                        # H.wall: the walls' and the window's height
+apex = 15.0                        # H.apex: the ribbed vault's top (rows: "склепіння з ребрами до 15 м посередині")
+ribs = [-24.0, -18.0, -12.0, -6.0, 0.0, 6.0]   # H.ribs: the ribs across the hall (z), over the side walls' pilasters
+north_pilasters = [-18.0, -6.0, 6.0, 18.0]     # drawing.js northWall(): the north wall's pilasters (x)
+tile = 2.0                         # H.tile: the floor plates
+# Not in H: the drawing's pilaster glyph is 1.2 x 0.6 m (12 x 6 svg units at 10 per metre), but 1.2 m puts the
+# pilaster at z 0 0.1 m into D1 and D2 (z 0.5..3.5); 0.8 m leaves 0.1 m. The wall's thickness and the trims are ours.
+pilaster_w = 0.8
+pilaster_d = 0.6
+wall_t = 0.5
+rib_d = 0.5                        # how far a rib hangs below the vault
+door_clear_m = 0.1                 # the least gap between a door's opening and a pilaster or the arch
+corner_clear_m = 1.0               # the least gap between a door's opening and a corner
+
+[window]
+sill = 0.5                         # H.sill
+transom = 3.0                      # H.transom: one cross bar
+panes = 6                          # H.panes: even along the arc's angle (drawing.js plan(): mullions at i = 0..6)
+mullion_w = 0.5                    # not in H: the mullions' width (step 2c: 0.5 m, a stepped cap, shoes, collars)
+bar_h = 0.3
+
+[arch]
+w = 6.0                            # H.arch: the entrance in the north wall's middle
+h = 6.0
+depth = 8.0                        # the short corridor, closed at its end (rows: "у кінці зачинені двері")
+frame = 0.6                        # not in H: the portal's frame on the hall side
+
+[door]
+w = 3.0                            # H.door
+h = 4.5
+lamp = 5.1                         # the red lamp's centre above the door
+# H.doors: D1 and D2 on the side walls at z +2 (concept A), D3 and D4 by the arch at x -+11 (concept C)
+doors = [["D1", "W", 2.0], ["D2", "E", 2.0], ["D3", "N", -11.0], ["D4", "N", 11.0]]
+
+[floor]
+ring_r = 15.0                      # H.ring: the floor ring round the ship
+spawns_z = 2.5                     # H.spawns: ten markers, x -9..9 step 2; step 5a (the engineer, art#356 comment
+                                   # 6536044954): at z 2.5 (was the greybox's 0), 2 m from the engine pods, facing the window
+spawns_x = [-9.0, -7.0, -5.0, -3.0, -1.0, 1.0, 3.0, 5.0, 7.0, 9.0]
+spawn_ship_m = 2.0                 # the least gap between a spawn and the ship's footprint
+ship_wall_m = 3.0                  # the least gap between the ship's footprint and every wall and door
+
+[ship]
+# The engineer's decisions (art#356): the ship nearer the entrance than drawn, nose north (comment 6522500716, origin
+# z -17), then 2.5 m back toward the window (step 5a, 2026-10-30, comment 6536044954) so the closed jaw nose stands 3 m
+# from the north wall: its plan origin at lobby (0, 0, -14.5); plan x = lobby x, lobby z = plan y - 14.5, plan h = lobby
+# y. The closed nose at z -26.99, the engine pods' ends at z 0.46; the ring centred on the closed ship's middle
+# (z -13.26, computed by the check; `lobby --check` prints the numbers).
+origin = [0.0, 0.0, -14.5]
+pieces_dir = "ship/v5/nose/b4/pieces"   # art #263's built pieces (under the raw folder), never rebuilt from here;
+                                   # step 4c: the jaw nose b4 the package was built from (the jaws built closed)
+hull = "P"                         # ship_hull_shape.outline("P"): the hull's footprint
+pods = ["nozzle_pod_outer", "nozzle_pod_mid"]   # their placed bounds join the footprint (the build report)
+tail = "skin_top"                  # its bounds' aft end beyond the outline joins the footprint, as wide as the pods
+lanes = ["exterior"]               # the interior is only seen through the canopies' glass: left out in step 1
+stand_in = []                      # step 4c: the ramp is gone (the jaw nose, shut)
+# Step 4c: art #263's closed ship, its package (prime-game-art#358/#359, assets/environment/ship/HANDOFF.md S7, S8):
+# levels/ship/ship.tscn with its Clearing freed and the jaw nose shut. `lobby --check` measures its footprint with the
+# nose's pieces (built closed, each at its hinge) against the same rules. The pointed jaw reaches plan y -12.49, lobby
+# z -26.99: 3.01 m from the north wall (step 5a's place). use = true (step 5a): the shots, videos and walk instance the
+# package's ship.tscn (copied into godot/import/ship_pkg, its res:// paths rewritten; never edited or rebuilt) instead
+# of pieces_dir's pieces, and the check holds the closed footprint to the rules. `free`: the package's nodes freed in
+# the lobby ("path" a node, "path:Class" the node's children of that class): the clearing (its ground collider too),
+# the night clearing's WorldEnvironment (it fights the hall's AgX, glow and exposure) and the moon and cool key (two
+# shadowed suns that would light the hall's walls and cast two more ship shadows against the Earth's light). The
+# ship's 105 own lamps and its 7 interior probes stay.
+package = { dir = "ship/v5/export/v8", nose = ["jaw_lower", "jaw_upper", "jaw_root"], use = true, free = ["Clearing", "Environment", "Lights:DirectionalLight3D"], keep = ["Lights", "Probes", "Pieces", "Nose", "Stations", "Markers"] }
+# The forest clearing (layouts/ship/exterior.toml), not in the lobby
+drop = ["ground", "pine_a", "pine_b", "pine_c", "pine_d", "pine_e", "pine_f", "pine_g", "pine_s", "rock_a", "rock_b",
+        "rock_c", "rock_pile_a", "rock_pile_b", "ground_lamp", "dirt_patch", "dirt_path", "tuft_a", "tuft_b",
+        "tuft_dry", "bush_s", "bush_m", "bush_l", "log_a", "log_b", "log_c", "stump", "party_post", "party_lights",
+        "fern_a", "fern_b", "moss_a", "moss_b", "litter"]
+
+# The hall's pieces (tools/blender/lobby_build.py builds each by its id): collide = trimesh colliders (`-col`)
+[[pieces]]
+id = "floor"                       # the slab, the 2 m plates, the ring
+collide = true
+
+[[pieces]]
+id = "walls"                       # the west, east and north walls with their openings and pilasters
+collide = true
+
+[[pieces]]
+id = "vault"                       # the vault with its ribs and the lunettes over the north wall and the window
+collide = false
+
+[[pieces]]
+id = "window_frame"                # the sill, the 7 mullions, the transom and the head along the arc
+collide = true
+
+[[pieces]]
+id = "window_glass"
+collide = true
+
+[[pieces]]
+id = "arch"                        # the portal's frame and the corridor: walls, ceiling, floor, closed end
+collide = true
+
+[[pieces]]
+id = "door"                        # a sealed door: slab, frame, red lamp; built facing +z, placed four times
+collide = true
+
+[look]
+# Step 2b's look (docs/lobby.md, "Step 2b"): a SCHEME, not one metal. `scheme` picks one of [look.schemes] (the
+# engineer picks from the grid, `lobby --grid`). A scheme gives five sRGB colours by role: panel (the main wall and
+# vault panels), frame (pilasters, ribs, the wall behind), trim (bands, cornices, door and arch frames), floor and
+# accent (the light strips and the ring), and the metallic of the metals and of the trim. Each material below is
+# [role, lightness, roughness, emission]: its colour is the role's times the lightness. The builder writes the chosen
+# scheme into the GLBs and the shots apply it in Godot (the grid each in turn). The hazard stripes (yellow-black), the
+# door lamps (red), the seams and the glass are fixed in every scheme.
+scheme = "S4"                      # the engineer's pick (2026-10-30, step 2c)
+mats = { lobby_panel = ["panel", 1.0, 0.46, 0.0], lobby_panel2 = ["panel", 0.9, 0.62, 0.0], lobby_panel3 = ["panel", 1.1, 0.54, 0.0], lobby_inset = ["panel", 0.72, 0.58, 0.0], lobby_vault = ["panel", 1.24, 0.5, 0.0], lobby_pilaster = ["frame", 1.0, 0.5, 0.0], lobby_rib = ["frame", 1.22, 0.48, 0.0], lobby_wall = ["frame", 0.6, 0.62, 0.0], lobby_trim = ["trim", 1.0, 0.42, 0.0], lobby_metal = ["frame", 0.78, 0.4, 0.0], lobby_floor_worn = ["floor", 0.94, 0.3, 0.0], lobby_floor = ["floor", 1.0, 0.15, 0.0], lobby_floor2 = ["floor", 0.96, 0.19, 0.0], lobby_floor3 = ["floor", 1.035, 0.12, 0.0], lobby_strip = ["accent", 1.0, 0.4, 1.8], lobby_ring = ["accent", 0.9, 0.35, 0.5] }
+
+[look.schemes.S1]
+title = "cool blue-grey, graphite frames, warm orange strips"
+panel = [0.33, 0.38, 0.45]
+frame = [0.13, 0.14, 0.16]
+trim = [0.2, 0.215, 0.24]
+floor = [0.27, 0.3, 0.35]
+accent = [1.0, 0.42, 0.08]
+metallic = 0.5
+trim_metallic = 0.6
+
+[look.schemes.S2]
+title = "clean light station: off-white panels, dark frames, cyan accents"
+panel = [0.78, 0.79, 0.8]
+frame = [0.15, 0.16, 0.18]
+trim = [0.36, 0.38, 0.41]
+floor = [0.52, 0.54, 0.57]
+accent = [0.15, 0.85, 1.0]
+metallic = 0.25
+trim_metallic = 0.5
+
+[look.schemes.S3]
+title = "deep navy, brushed brass trim, warm white strips"
+panel = [0.15, 0.2, 0.33]
+frame = [0.08, 0.1, 0.16]
+trim = [0.8, 0.62, 0.34]
+floor = [0.16, 0.19, 0.27]
+accent = [1.0, 0.8, 0.5]
+metallic = 0.45
+trim_metallic = 0.9
+
+[look.schemes.S4]
+# step 2c: the teal kept on the grey side (it may turn green under the Earth's blue light), the frame a mid
+# graphite-teal clearly lighter than black (the frames, pilasters and ribs read as steps, not one slab)
+title = "two-tone teal-grey, copper accents"
+panel = [0.35, 0.42, 0.42]
+frame = [0.25, 0.3, 0.31]
+trim = [0.68, 0.45, 0.35]           # step 3: desaturated (was 0.74, 0.43, 0.28)
+floor = [0.27, 0.31, 0.315]
+accent = [1.0, 0.52, 0.26]
+metallic = 0.45
+trim_metallic = 0.85
+
+[look.schemes.S5]
+title = "graphite, signal-red bands, orange strips"
+panel = [0.24, 0.24, 0.25]
+frame = [0.1, 0.1, 0.11]
+trim = [0.66, 0.09, 0.06]
+floor = [0.21, 0.21, 0.22]
+accent = [1.0, 0.3, 0.06]
+metallic = 0.5
+trim_metallic = 0.3
+
+[look.schemes.S6]
+title = "warm bronze-grey, cool white strips"
+panel = [0.44, 0.39, 0.33]
+frame = [0.2, 0.17, 0.14]
+trim = [0.52, 0.42, 0.3]
+floor = [0.34, 0.31, 0.27]
+accent = [0.75, 0.9, 1.0]
+metallic = 0.5
+trim_metallic = 0.7
+
+[review]
+background = [0.02, 0.035, 0.11]   # the placeholder behind the window before step 3b ([earth] draws the sky since)
+# [name, title, eye [x, y, z], look [x, y, z], vertical fov, the concept to compare with ("" for none)]. Cameras
+# estimated from the pictures (docs/lobby.md): A at eye height, about 80 deg across (52 deg high at 16:9); its doors
+# D1 and D2 at the frame's edges put A's camera at about z -23, where the moved ship's nose now stands, so A stands at
+# the north wall's foot west of the nose, 6 m further back. C from the window's bulge at about 5 m, about 60 deg
+# across. The concepts drew the ship 4.5 m further south (step 5a).
+views = [
+  ["a_entrance", "A: from the entrance, as concept A", [-5.0, 1.7, -29.3], [0.0, 3.0, -12.0], 52.0, "D:/prime-game-design/ideas/lobby-station/hall/drawing/a_entrance.jpg"],
+  ["c_back", "C: from the window, as concept C", [0.0, 5.0, 14.0], [0.0, 2.6, -24.0], 37.0, "D:/prime-game-design/ideas/lobby-station/hall/drawing/c_back.jpg"],
+  ["corner_nw", "the whole hall from the north-west corner, eye height", [-18.5, 1.7, -28.5], [4.0, 3.5, 2.0], 75.0, ""],
+  ["spawn_eye", "a spawn's eye (x 0, z 2.5) toward the window, as the spawns face", [0.0, 1.65, 2.5], [0.0, 4.0, 18.5], 75.0, ""],
+  ["spawn_ship", "a spawn's eye (x -1, z 2.5) toward the ship", [-1.0, 1.65, 2.5], [0.0, 2.6, -10.5], 75.0, ""],
+  ["door_d3", "door D3 close up", [-11.0, 1.7, -24.5], [-11.0, 3.2, -30.0], 60.0, ""],
+  ["door_d1", "door D1 and the pilaster stepped back beside it", [-13.5, 1.7, 7.0], [-20.0, 3.2, 0.5], 60.0, ""],
+  ["arch", "the arch and the corridor from 6 m", [-4.0, 1.9, -24.4], [0.0, 3.2, -36.0], 60.0, ""],
+  ["rib", "a vault rib on its pilaster, close up", [-12.0, 3.0, -9.0], [-19.0, 11.0, -12.5], 60.0, ""],
+  ["floor_ring", "the floor plates and the ring, close up", [8.0, 1.7, 2.5], [10.6, 0.0, -2.5], 60.0, ""],
+]
+# step 2c's close-ups of each fix (`lobby --shoot` writes them into closeups.png): [name, title, eye, look, fov]
+closeups = [
+  ["c_arch", "1: the arch's three bevelled steps", [-3.6, 2.2, -25.6], [-2.2, 5.6, -30.0], 55.0],
+  ["c_bays_a", "1: greeble bays: service hatch, cable tray (west wall)", [-14.0, 2.4, -17.5], [-20.0, 3.4, -17.5], 70.0],
+  ["c_bays_b", "1: greeble bays: pipe junction, fire point (west wall)", [-14.5, 2.0, -5.5], [-20.0, 2.2, -5.5], 65.0],
+  ["c_floor", "2: the floor's polish and the metal's micro-surface", [6.0, 1.7, 4.0], [11.0, 0.3, -1.5], 50.0],
+  ["c_lunette", "3: the panelled lunette over the window", [0.0, 6.0, -2.0], [6.0, 13.0, 12.0], 60.0],
+  ["c_pendant", "3: a pendant's shade and bulb recess", [-7.0, 6.2, -6.2], [-10.0, 9.7, -9.0], 45.0],
+  ["c_rib", "4: a rib's I-section, collar and corbel on its pilaster", [-15.0, 7.0, -9.5], [-20.0, 11.6, -12.0], 55.0],
+  ["c_door", "5: a door's leaves, lip, lamp housing and lintel", [-11.0, 2.8, -25.8], [-11.0, 3.9, -30.0], 55.0],
+  ["c_pilaster", "6: a pilaster's chamfered base and band, the mullions", [13.5, 1.7, 1.5], [20.0, 3.2, 8.0], 65.0],
+  ["c_mullion", "6: the window's mullions: cap, nose, shoe, collar", [7.0, 1.7, 8.0], [12.5, 2.4, 13.6], 60.0],
+  ["c_door_floor", "step 3: D3 scuffed, its keep-clear box, worn plates, bolts", [-11.0, 1.9, -24.0], [-11.0, 0.9, -30.0], 60.0],
+  ["c_ring", "step 3: the wider ring with its copper inlays, the bolts, a service plate", [11.0, 1.7, -8.0], [15.0, 0.0, -12.5], 55.0],
+]
+# the taste grid (`lobby --grid DIR`): these views once per scheme, one row each, labelled S1..S6
+grid = ["corner_nw", "door_d3"]
+top = { name = "top", title = "top: plan view, north up (the vault hidden)", size_m = 58.0, centre = [0.0, -11.0], hide = ["vault"] }
+
+[walk]
+r = 0.68                           # the 1.36 m wide capsule of the house walk (docs/house.md)
+h = 1.8
+# The capsule's waypoints [x, z] on the floor: the spawns, round the ship's east side, past the closed nose (step 5a: 3 m
+# from the north wall) into the corridor's end, back out, up to D4 and D3, round the west side to D1, across the spawns to D2.
+points = [
+  [-9.0, 2.5], [9.0, 2.5], [15.5, -6.0], [16.5, -13.0], [14.5, -22.0], [5.0, -28.6], [0.0, -31.0], [0.0, -37.0],
+  [0.0, -31.0], [5.0, -28.6], [11.0, -28.4], [5.0, -28.6], [0.0, -31.0], [-5.0, -28.6], [-11.0, -28.4], [-15.5, -22.0], [-16.5, -13.0], [-17.0, 2.0], [-18.4, 2.0], [-15.0, 4.0],
+  [15.0, 4.0], [18.4, 2.0],
+]
+# Walks that must not pass: [name, from [x, z], to [x, z], axis, the wall's inner face, the hall's side (+1 / -1)];
+# the capsule must end on the hall's side of that face.
+blocks = [
+  ["D1", [-17.5, 2.0], [-23.0, 2.0], "x", -20.0, 1],
+  ["D2", [17.5, 2.0], [23.0, 2.0], "x", 20.0, -1],
+  ["D3", [-11.0, -27.5], [-11.0, -33.0], "z", -30.0, 1],
+  ["D4", [11.0, -27.5], [11.0, -33.0], "z", -30.0, 1],
+  ["corridor_end", [0.0, -35.5], [0.0, -41.0], "z", -38.0, 1],
+  # step 5a: into the shut jaw nose from 2 m before its tip (z -26.99): the capsule must stop short of the mouth (the
+  # lower jaw's hinge on the deck, plan y -8.1, lobby z -22.6); open, the ramp would carry it aboard to z -20
+  ["nose_shut", [0.0, -29.0], [0.0, -20.0], "z", -22.6, -1],
+]
+
+[earth]
+# Step 3b (the engineer, art #356, 2026-10-30): the night Earth from low orbit behind the window, from NASA's imagery
+# (licence NASA-PD, credit "Earth imagery: NASA"; sources/nasa_earth_lobby.toml). `lobby --earth-tex` scales the raw
+# sources (src_dir, never written) to game textures in tex_dir; godot/lobby/earth_sky.gdshader draws them as the sky
+# (at infinity: no parallax as the player walks). Directions: azimuth in degrees from south (+z, the window) toward
+# east (+x), elevation above the horizontal.
+variant = "E2"                      # the one switch (the engineer, 2026-10-30: E2, the dawn glow on the limb)
+src_dir = "lobby/hall/earth-src"
+tex_dir = "lobby/hall/v11/earth"   # step 5a4: the maps and the caps (v5: the maps alone)
+size = [4096, 2048]                 # the textures' pixels (at most 4096 x 2048)
+quality = 92                        # JPEG
+maps = { night = "BlackMarble_2016_3km.jpg", day = "world.topo.bathy.200412.3x5400x2700.jpg", clouds = "cloud_combined_8192.tif" }
+grid = ["spawn_eye", "corner_nw"]   # `lobby --earth-grid DIR`: these views once per variant
+credit = "Earth imagery: NASA"
+# Step 4c (the engineer, 2026-10-30: "a picture glued to the eye"): the Earth as an object, a sphere at a finite
+# distance (godot/lobby/earth_object.gdshader), so it shows parallax against the mullions and shrinks with the window
+# as the player backs away; the stars stay at infinity in the sky. Each distance's radius gives the variant's angular
+# radius from `eye` (a spawn looking at the window: what E2 filled). The sky's cubemap pass keeps the Earth at
+# infinity for the probes and reflections.
+# Step 5a7 (the engineer, 2026-10-31: at D2 the planet changed scale with the viewpoint): the far mode, the F
+# distances (`far = true`): the ray traced from `eye` whatever the camera's place, so the planet sits at infinity: the
+# same planet, angular size, horizon height and direction from every point of the hall; the window frames a part of it.
+distance = "H1"                     # the one switch (step 5c: H1, F36 lowered; the engineer, 2026-10-31: F36) (D1 near, D2 middle, D3 far; F48, F36, H1..H3 at infinity)
+eye = [0.0, 1.65, 0.0]
+far_eye = [0.0, 1.65, 2.5]          # step 5a7: the far mode's fixed ray origin, the spawn's eye (spawn_eye): there F48 is D2
+shell = 1.35                        # the traced shell's radius over the planet's (room for the rim's halo and the dawn)
+# `lobby --distance-grid DIR`: the distances from the same three positions [name, title, eye, look, fov]
+distance_views = [
+  ["glass", "1.5 m from the glass", [0.0, 1.65, 14.5], [0.0, 3.95, 30.5], 75.0],
+  ["back", "backed off to z -2", [0.0, 1.65, -2.0], [0.0, 3.95, 14.0], 75.0],
+  ["side", "to the side, x -10 z 2", [-10.0, 1.65, 2.0], [-10.0, 3.95, 18.0], 75.0],
+]
+# `lobby --earth-video DIR`: per distance, [eye, look, seconds from the previous key] (the [video] size, fps, fov):
+# 1.5 m from the glass, backing off to z -2, then sideways along x -10..10 at z 2, looking at the window
+video_keys = [
+  [[0.0, 1.65, 14.5], [0.0, 3.95, 30.5], 0.0],
+  [[0.0, 1.65, 14.0], [0.0, 3.95, 30.0], 0.6],
+  [[0.0, 1.65, 6.0], [0.0, 3.95, 22.0], 2.6],
+  [[0.0, 1.65, -2.0], [0.0, 3.95, 14.0], 2.6],
+  [[-10.0, 1.65, 2.0], [-10.0, 3.95, 18.0], 3.0],
+  [[0.0, 1.65, 2.0], [0.0, 3.95, 18.0], 3.0],
+  [[10.0, 1.65, 2.0], [10.0, 3.95, 18.0], 3.0],
+  [[10.0, 1.65, 2.0], [10.0, 3.95, 18.0], 0.4],
+]
+video_max_mb = 6
+
+# Step 5a4 (art #356): from the hall's far side the window shows the globe's high north up close and at a slant, where the
+# 4096 x 2048 maps (11.4 px a degree) are magnified: clouds read as snowy speckle, cities as orange blobs. The cap is
+# that part ([lat0, lat1] x [lon0, lon1] degrees round E2's subpoint [36, 12]: the cap seen from 250 m, 42 deg round it,
+# and a margin) cut from the NASA sources at full resolution: night 34 px a degree (Black Marble's 37.5), clouds 22.75
+# (the cloud map's own); earth_object.gdshader reads it inside the box and the global maps outside, faded over fade_deg.
+[earth.cap]
+lat = [-8.0, 82.0]
+lon = [-48.0, 72.0]
+maps = { night = [4096, 3072], clouds = [2730, 2048] }
+fade_deg = 3.0
+
+[earth.look]                        # shared by every variant (linear colours, HDR energies)
+lights_rgb = [1.0, 0.52, 0.2]       # the city lights' warm orange
+lights_energy = 8.0
+base_energy = 3.0                   # the night map's own dark land and sea (x 0.05)
+moon_rgb = [0.35, 0.45, 0.7]        # the moonlit land, sea and clouds
+moon_energy = 0.2
+cloud_energy = 0.05                 # step 5a5: 0.16 -> 0.05, the night side's clouds dark (faint moonlight)
+# Step 5a5 (corner_nw read as a noisy photo: the cap covers it, the glow is not the cause): the white streaks were the
+# December day map's snow under the moon and the moonlit clouds, the orange dots each city's own halo in Black Marble.
+moon_knee = 6.0                     # the moonlit day map's bright land (snow, desert) compressed, the sea kept
+city_gamma = 2.6                    # 1.8 -> 2.6: a city's halo below city_ref dimmed harder, its core stays (points)
+light_cap = 2.0                     # each city pixel's brightest channel at most 2 (the screen glow's threshold is 1)
+halo_energy = 0.08                  # a soft small halo of the cities' own (the night map halo_bias mips softer)
+cloud_city = 0.3                    # the clouds lit faintly from the cities below
+cloud_shade = 0.6                   # how much a cloud hides what is under it (0.5 before)
+haze_energy = 0.05                  # a little atmosphere over the surface at grazing angles, (1 - mu)^haze_pow
+haze_pow = 4.0
+rim_rgb = [0.25, 0.55, 1.0]         # the atmosphere's blue rim
+rim_energy = 2.4
+rim_width_deg = 0.22
+dawn_rgb = [1.0, 0.55, 0.25]        # E2's sun behind the limb
+stars_energy = 0.9
+glass_rgb = [0.55, 0.7, 0.75]       # the window's tint
+glass_alpha = 0.05
+
+# Step 5a6 (the engineer, 2026-10-31, from corner_nw: tone the snow down further): three snow strengths, each a few
+# [earth.look] keys over it (earth_object.gdshader: snow_cut takes the day map's snow toward a dark winter land before the
+# moon lights it, moon_land dims the moonlight on land, the sea kept). `lobby --snow-grid DIR` shoots them in grid's views
+[earth.snow]
+set = "N2"                          # the one switch: N1, N2 or N3
+grid = ["corner_nw", "a_entrance", "spawn_eye"]
+
+[earth.snow.sets.N1]
+title = "a bit less snow than step 5a5"
+look = { snow_cut = 0.5 }
+
+[earth.snow.sets.N2]
+title = "clearly less snow, barely visible"
+look = { snow_cut = 0.85 }
+
+[earth.snow.sets.N3]
+title = "no visible snow, the land's moonlight almost off"
+look = { snow_cut = 1.0, moon_land = 0.85 }
+
+# [title, centre [azimuth, elevation], angular radius, subpoint [lat, lon] (the surface point nearest the eye), roll,
+#  sun [azimuth, elevation], sun energy, star density]
+[earth.variants.E1]
+title = "a huge Earth close below, its horizon arcing across the upper window"
+centre = [0.0, -22.0]
+radius_deg = 48.0
+subpoint = [36.0, 12.0]
+roll_deg = 0.0
+sun = [0.0, -22.0]
+sun_energy = 0.0
+stars = 1.0
+
+[earth.variants.E2]
+title = "E1 with the sun just below the limb: a thin dawn glow on one side of the rim"
+centre = [0.0, -22.0]
+radius_deg = 48.0
+subpoint = [36.0, 12.0]
+roll_deg = 0.0
+sun = [30.0, 14.0]
+sun_energy = 1.0
+stars = 1.0
+
+[earth.variants.E3]
+title = "a smaller full disc in the window's middle, more star field"
+centre = [0.0, 13.0]
+radius_deg = 13.0
+subpoint = [42.0, 10.0]
+roll_deg = 0.0
+sun = [0.0, 13.0]
+sun_energy = 0.0
+stars = 1.6
+
+# step 4c's distances: [title, distance_m from the eye to the planet's centre]
+[earth.distances.D1]
+title = "near: a big globe just outside, strong parallax"
+distance_m = 70.0
+
+[earth.distances.D2]
+title = "middle"
+distance_m = 250.0
+
+[earth.distances.D3]
+title = "far: subtle parallax"
+distance_m = 900.0
+
+# Step 5a7's far mode: the shell drawn round `eye` moved with the camera (distance_m only sizes the shell and the far
+# plane); radius_deg (default the variant's) is the angular radius from everywhere; the sun keeps its angle behind the limb
+[earth.distances.F48]
+title = "far: at infinity, E2's 48 deg (the spawn's view as approved)"
+distance_m = 250.0
+far = true
+
+[earth.distances.F36]
+title = "far: at infinity, smaller (36 deg), inside the window from most of the hall"
+distance_m = 250.0
+far = true
+radius_deg = 36.0
+
+# Step 5c (the engineer, 2026-10-31: backing away from the window there was no sky, only the Earth; on a station the
+# horizon is below eye level): F36 turned down about the eye so the limb's highest point sits at limb_deg above the
+# eye's horizontal (the sky's cubemap Earth and the sun with it, the dawn glow kept 1.5 deg behind the limb)
+[earth.distances.H1]
+title = "F36 lowered: the limb's top at +4 deg"
+distance_m = 250.0
+far = true
+radius_deg = 36.0
+limb_deg = 4.0
+
+[earth.distances.H2]
+title = "F36 lowered: the limb's top at -2 deg"
+distance_m = 250.0
+far = true
+radius_deg = 36.0
+limb_deg = -2.0
+
+[earth.distances.H3]
+title = "F36 lowered: the limb's top at -8 deg"
+distance_m = 250.0
+far = true
+radius_deg = 36.0
+limb_deg = -8.0
+
+# `lobby --earth-route DIR [--distance ID]`: one walk at eye height (1.6 m) looking at the window, per distance one MP4
+# (the [video] size, fps, fov), then the stills from `points` [name, title, eye, look, fov] in a sheet (rows the points,
+# columns the distances). Round the ship's west side to the north-west corner, back to the glass at x 6, along it to
+# x 16, round the ship's east side to the arch's mouth. keys: [eye, look, seconds from the previous key]
+[earth.route]
+distances = ["F36", "H1", "H2", "H3"]   # step 5c: F36 and its three heights (step 5a7: D2, F48, F36)
+video_max_mb = 15
+keys = [
+  [[0.0, 1.6, 2.5], [0.0, 4.0, 18.5], 0.0],
+  [[-10.0, 1.6, 3.0], [-5.0, 4.0, 18.0], 2.0],
+  [[-16.5, 1.6, -8.0], [-7.0, 4.0, 14.0], 2.5],
+  [[-17.0, 1.6, -27.0], [-4.0, 4.0, 14.0], 4.0],
+  [[-17.0, 1.6, -27.0], [-4.0, 4.0, 14.0], 0.8],
+  [[-16.5, 1.6, -6.0], [-6.0, 4.0, 14.0], 4.0],
+  [[-8.0, 1.6, 8.0], [0.0, 4.0, 22.0], 2.5],
+  [[6.0, 1.6, 13.0], [6.0, 4.0, 30.0], 2.5],
+  [[16.0, 1.6, 10.0], [12.0, 4.0, 30.0], 2.0],
+  [[16.5, 1.6, -6.0], [6.0, 4.0, 14.0], 3.5],
+  [[14.0, 1.6, -26.0], [2.0, 4.0, 14.0], 3.5],
+  [[0.0, 1.6, -28.3], [0.0, 4.0, 14.0], 2.0],
+  [[0.0, 1.6, -28.3], [0.0, 4.0, 14.0], 0.8],
+]
+# the stills; par_*: one direction (due south, 15 deg up) from two places, so the sky's shift between them is the
+# parallax across the hall (`--earth-route` measures the limb's row in each)
+points = [
+  ["spawn", "the spawn (x 0, z 2.5)", [0.0, 1.6, 2.5], [0.0, 4.0, 18.5], 70.0],
+  ["corner_nw", "the north-west corner", [-17.0, 1.6, -27.0], [-4.0, 4.0, 14.0], 70.0],
+  ["glass", "near the glass (x 6, z 13)", [6.0, 1.6, 13.0], [6.0, 4.0, 30.0], 70.0],
+  ["arch", "the arch's mouth (x 0, z -28.3)", [0.0, 1.6, -28.3], [0.0, 4.0, 14.0], 70.0],
+  ["par_spawn", "due south from the spawn", [0.0, 1.6, 2.5], [0.0, 5.888, 18.5], 70.0],
+  ["par_glass", "due south from the glass's east end", [16.0, 1.6, 10.0], [16.0, 5.888, 26.0], 70.0],
+  ["far_back", "deep in the hall (x -12, z -20), beside the ship", [-12.0, 1.6, -20.0], [-3.0, 4.0, 14.0], 70.0],
+]
+
+[light]
+# Step 4 (art #356, docs/lobby.md "Step 4"): the hall's real light, the drawing's words: "warm hanging lamps under the
+# vault, orange strips on the pilasters, the Earth's cold light from the window; darker in game than on the concept".
+# `mood` is the one switch (the shots, the video and the game use it); `lobby --light-grid DIR` shoots every mood in
+# `grid`'s views. Every mood holds the same keys (linear colours; Godot light energies under AgX):
+#   exposure; ambient_rgb, ambient_energy (a flat fill, never the sky); probe_intensity (the reflection probes);
+#   pendant_*: a shadowed SpotLight3D under each pendant's bulb pointing down (angle: the half angle, degrees), the
+#     bulb's own emission (bulb_emit); strip_*: an unshadowed OmniLight3D before each pilaster's light strip, the
+#     strips' glTF emission times strip_emit; door_*: a red OmniLight3D before each door lamp, its emission times
+#     door_emit; corridor_*: unshadowed omnis along the corridor; earth_*: the Earth's cold light, a shadowed
+#     DirectionalLight3D from earth_dir [azimuth from south toward east, elevation]; dawn_*: E2's warmer hint, an
+#     unshadowed DirectionalLight3D from dawn_dir; glow_intensity, glow_bloom, glow_threshold; ssao_intensity.
+mood = "L3"                         # the engineer's pick (2026-10-30)
+grid = ["corner_nw", "spawn_eye", "c_back"]
+pendants_x = [-10.0, 0.0, 10.0]     # the builder's PENDANTS (lobby_build.py): the spots sit under each lens
+pendants_z = [-21.0, -9.0, 3.0]
+strip_y = 3.2                       # the pilaster strips' middle (the builder's STRIP, v 2.0..4.4)
+strip_off = 0.35                    # the omnis in front of a pilaster's face (m)
+door_off = 0.4                      # the red omnis in front of the door lamp's wall
+corridor = [[0.0, 5.0, -32.5], [0.0, 5.0, -36.0]]
+window = [[-10.0, 4.0, 12.5], [0.0, 4.0, 14.0], [10.0, 4.0, 12.5]]   # step 4b: the Earth's cold spill, inside the glass
+window_tilt = 50.0                  # their spots (35 deg half angle) look north, this many degrees down: the
+                                    # cone's top edge 15 deg down passes under the ship's aft panel
+# Step 5a3: the Earth's light (2 deg up) laid the nine hanging lamps' shadows on the north wall's upper panels, each
+# column of three stacked into a soft "tree" (c_back); the vault's meshes below fixtures_below m (shades, lenses, cords,
+# rims) cast no shadow (their spots hang under the lenses; a shadow_caster_mask on the Earth's light did not take).
+fixtures_below = 11.0
+earth_specular = 0.15               # step 5a3: the Earth's and the window spill's glare on the floor's seams (Godot 0.5)
+window_specular = 0.1
+# step 5a3: a negative, unshadowed spot (not on the ship) takes a little cool light off the north wall behind the ship
+wash = { at = [0.0, 5.0, -12.0], rgb = [0.55, 0.68, 1.0], energy = 0.22, range = 26.0, angle = 38.0 }
+probes = [["hall", [0.0, 8.0, -8.0], [42.0, 16.5, 48.0], false], ["corridor", [0.0, 3.2, -34.0], [6.4, 6.6, 8.4], true]]
+
+[light.moods.L1]
+title = "balanced, as the drawing"
+exposure = 1.1
+ambient_rgb = [0.42, 0.5, 0.7]
+ambient_energy = 0.16
+probe_intensity = 0.8
+pendant_rgb = [1.0, 0.68, 0.42]
+pendant_energy = 14.0
+pendant_range = 18.0
+pendant_angle = 48.0
+bulb_emit = 10.0
+strip_rgb = [1.0, 0.55, 0.26]
+strip_energy = 1.5
+strip_range = 6.0
+strip_emit = 1.0
+door_rgb = [1.0, 0.08, 0.04]
+door_energy = 0.8
+door_range = 4.5
+door_emit = 1.0
+corridor_rgb = [1.0, 0.7, 0.45]
+corridor_energy = 2.0
+corridor_range = 7.0
+earth_rgb = [0.6, 0.72, 1.0]
+earth_energy = 0.8
+earth_dir = [0.0, 2.0]
+dawn_rgb = [1.0, 0.62, 0.35]
+dawn_energy = 0.2
+dawn_dir = [30.0, 4.0]
+glow_intensity = 0.6
+glow_bloom = 0.05
+glow_threshold = 1.0
+pendant_specular = 0.5
+ssao_intensity = 1.6
+glow_hdr_scale = 2.0
+glow_cap = 12.0
+ship_emit = 1.0
+fill_rgb = [1.0, 0.7, 0.45]
+fill_energy = 0.0
+fill_range = 8.0
+fill_angle = 70.0
+strip_specular = 0.5
+strip_size = 0.0
+earth_soft = 1.0
+earth_shadow = 1.0
+window_rgb = [0.55, 0.7, 1.0]
+window_energy = 0.0
+window_range = 12.0
+ship_lights = 1.0
+
+[light.moods.L2]
+title = "darker and moodier: pools of warm light, deep shadows, the Earth the brightest thing"
+exposure = 1.0
+ambient_rgb = [0.38, 0.46, 0.68]
+ambient_energy = 0.07
+probe_intensity = 0.5
+pendant_rgb = [1.0, 0.64, 0.36]
+pendant_energy = 11.0
+pendant_range = 16.0
+pendant_angle = 36.0
+bulb_emit = 8.0
+strip_rgb = [1.0, 0.5, 0.22]
+strip_energy = 0.7
+strip_range = 4.0
+strip_emit = 0.7
+door_rgb = [1.0, 0.08, 0.04]
+door_energy = 0.6
+door_range = 4.0
+door_emit = 0.9
+corridor_rgb = [1.0, 0.66, 0.4]
+corridor_energy = 1.4
+corridor_range = 6.0
+earth_rgb = [0.55, 0.7, 1.0]
+earth_energy = 0.6
+earth_dir = [0.0, 2.0]
+dawn_rgb = [1.0, 0.6, 0.32]
+dawn_energy = 0.14
+dawn_dir = [30.0, 4.0]
+glow_intensity = 0.7
+glow_bloom = 0.04
+glow_threshold = 1.0
+pendant_specular = 0.5
+ssao_intensity = 2.2
+glow_hdr_scale = 2.0
+glow_cap = 12.0
+ship_emit = 1.0
+fill_rgb = [1.0, 0.7, 0.45]
+fill_energy = 0.0
+fill_range = 8.0
+fill_angle = 70.0
+strip_specular = 0.5
+strip_size = 0.0
+earth_soft = 1.0
+earth_shadow = 1.0
+window_rgb = [0.55, 0.7, 1.0]
+window_energy = 0.0
+window_range = 12.0
+ship_lights = 1.0
+
+[light.moods.L3]
+title = "brighter and warmer, closer to the concept's glow"
+exposure = 1.15
+ambient_rgb = [0.66, 0.58, 0.5]
+ambient_energy = 0.3
+probe_intensity = 1.0
+pendant_rgb = [1.0, 0.7, 0.45]
+pendant_energy = 18.0
+pendant_range = 20.0
+pendant_angle = 55.0
+bulb_emit = 12.0
+strip_rgb = [1.0, 0.56, 0.28]
+strip_energy = 2.4
+strip_range = 7.0
+strip_emit = 1.4
+door_rgb = [1.0, 0.08, 0.04]
+door_energy = 1.4
+door_range = 7.0
+door_emit = 1.1
+corridor_rgb = [1.0, 0.72, 0.48]
+corridor_energy = 2.6
+corridor_range = 8.0
+earth_rgb = [0.62, 0.74, 1.0]
+earth_energy = 0.7
+earth_dir = [0.0, 2.0]
+dawn_rgb = [1.0, 0.64, 0.38]
+dawn_energy = 0.24
+dawn_dir = [30.0, 4.0]
+glow_intensity = 0.5
+glow_bloom = 0.0
+glow_threshold = 1.2
+pendant_specular = 0.3
+ssao_intensity = 1.4
+glow_hdr_scale = 1.5
+glow_cap = 6.0
+ship_emit = 0.3
+fill_rgb = [1.0, 0.7, 0.45]
+fill_energy = 3.0
+fill_range = 12.0
+fill_angle = 75.0
+strip_specular = 0.9                # step 5a3: was 1.5; its warm glare streaks on the floor (a_entrance)
+strip_size = 0.0
+earth_soft = 3.0
+earth_shadow = 0.55
+window_rgb = [0.55, 0.7, 1.0]
+window_energy = 3.0
+window_range = 16.0
+ship_lights = 0.0                   # step 5a's grid (T3): the package's lamps off; the nozzles dark as in 4c, -0.45 ms
+
+# Step 5a's grid (`lobby --light-grid DIR` shoots these over the mood when present, else every mood): the package's
+# own lamps (ship_lights: every Light3D left in its ship.tscn times this; 105 after the freed suns) against the hull's
+# near-white sides and aft panel, the pendants' specular on the silver top, the window's cold spill on the aft panel
+[light.trials.T1]
+title = "the package's lamps as built (x1.0)"
+ship_lights = 1.0
+[light.trials.T2]
+title = "the package's lamps x0.35"
+ship_lights = 0.35
+[light.trials.T3]
+title = "the package's lamps off"
+ship_lights = 0.0
+[light.trials.T4]
+title = "lamps x0.35, pendant specular 0.1, window spill 1.5"
+ship_lights = 0.35
+pendant_specular = 0.1
+window_energy = 1.5
+
+[light.ship]
+# Step 5a2 (art #356, docs/lobby.md "Step 5a2"): the package's ship under its own light, set by hall.gd per instance
+# (never in the ship's files or materials): its meshes on render layer 11; `set` is the one switch. Per set:
+#   pendant_k: 1 = the hall's pendants (and their upward fill) light the ship as the hall; below 1 they skip it (they
+#     still cast its shadow) and an unshadowed copy of each at this share lights it, its specular pendant_specular;
+#   earth_k: the same for the Earth's light (its copy unshadowed, the hall's light still casts the ship's shadow);
+#   own_probe: the hall's probes skip the ship and a probe of its own (box `probe`, the hall without the ship
+#     captured) reflects on it at probe_intensity with its ambient (ambient_rgb, ambient_energy);
+#   key_*, rim_*: unshadowed directionals on the ship only ([azimuth from south toward east, elevation]);
+#   back_* (step 5a3): one from the north, the hull's outline against the north wall in c_back; bounce_*: a
+#   warm one from below, the pendants' and the copper ring's bounce on the flanks and undersides.
+# `lobby --ship-grid DIR` shoots every set in `grid`'s views (the review views and `views` below).
+set = "K1"                         # the default (step 5a3: neutral silver); K2 warmer, K3 cooler
+grid = ["a_entrance", "c_back", "corner_nw", "spawn_ship", "ship_top"]
+views = [["ship_top", "the ship's silver top, close up", [9.0, 9.0, -3.0], [0.0, 3.0, -14.0], 50.0]]
+probe = [[0.0, 4.0, -13.3], [32.0, 12.0, 36.0]]
+
+# Step 5a2's diagnosis (<raw>/lobby/hall/v9/sdiag): the hall's warm pendants make the cream (the ship's top 0.50 ->
+# 0.27 without them, warm -> neutral), the hall's ambient carries the sides, the Earth's light the aft panel; the
+# probes' reflections change nothing. The sets keep the hall's lamps off the ship but for a share, and light it as
+# its own night scene does: the ship scene's cool key (-140, 38) and its moon (35, 30, the Earth's side) as the rim.
+[light.ship.sets.K1]
+title = "neutral silver (step 5a3): a lower neutral key, a dim grey ambient, a warm bounce, a back light"
+pendant_k = 0.04   # #366: x0.16 (was 0.25): the copies hang under the pendants now, as in the export
+pendant_specular = 0.12
+earth_k = 0.35
+own_probe = true
+probe_intensity = 0.9
+ambient_rgb = [0.52, 0.5, 0.5]
+ambient_energy = 0.08
+key_rgb = [0.92, 0.92, 0.94]
+key_energy = 0.4
+key_dir = [-140.0, 38.0]
+rim_rgb = [0.74, 0.8, 0.92]
+rim_energy = 0.35
+rim_dir = [35.0, 30.0]
+back_rgb = [0.9, 0.9, 0.92]
+back_energy = 0.25                 # step 5a4: 0.5 -> 0.25 (the deck's hot spot in c_back)
+back_dir = [180.0, 30.0]
+bounce_rgb = [1.0, 0.62, 0.38]
+bounce_energy = 0.1                # step 5a4: 0.22 -> 0.1 (the copper-orange undersides in a_entrance)
+bounce_dir = [0.0, -40.0]
+
+[light.ship.sets.K2]
+title = "warmer: more of the pendants, a warm grey ambient and key, a stronger bounce"
+pendant_k = 0.064   # #366: x0.16 (was 0.4): the copies hang under the pendants now, as in the export
+pendant_specular = 0.15
+earth_k = 0.35
+own_probe = true
+probe_intensity = 0.9
+ambient_rgb = [0.6, 0.54, 0.48]
+ambient_energy = 0.1
+key_rgb = [0.96, 0.92, 0.86]
+key_energy = 0.36
+key_dir = [-140.0, 38.0]
+rim_rgb = [0.74, 0.8, 0.92]
+rim_energy = 0.3
+rim_dir = [35.0, 30.0]
+back_rgb = [0.92, 0.88, 0.84]
+back_energy = 0.5
+back_dir = [180.0, 30.0]
+bounce_rgb = [1.0, 0.6, 0.34]
+bounce_energy = 0.32
+bounce_dir = [0.0, -40.0]
+
+[light.ship.sets.K3]
+title = "cooler: fewer pendants, a cool key and ambient, a faint bounce"
+pendant_k = 0.024   # #366: x0.16 (was 0.15): the copies hang under the pendants now, as in the export
+pendant_specular = 0.1
+earth_k = 0.4
+own_probe = true
+probe_intensity = 0.9
+ambient_rgb = [0.46, 0.5, 0.58]
+ambient_energy = 0.08
+key_rgb = [0.84, 0.88, 0.98]
+key_energy = 0.42
+key_dir = [-140.0, 38.0]
+rim_rgb = [0.7, 0.78, 0.95]
+rim_energy = 0.4
+rim_dir = [35.0, 30.0]
+back_rgb = [0.84, 0.88, 0.96]
+back_energy = 0.5
+back_dir = [180.0, 30.0]
+bounce_rgb = [1.0, 0.64, 0.42]
+bounce_energy = 0.06
+bounce_dir = [0.0, -40.0]
+
+[video]
+# Step 4's walk-through (`lobby --video DIR`, docs/lobby.md): eye height, the mood above; keys [eye, look, seconds
+# from the previous key] through a Catmull-Rom path: from the corridor's shut end through the arch, round the ship's
+# east side, to the spawn line, then a turn to the window and the Earth. Frames rendered off-screen, encoded in
+# headless Blender by the ship's tools/blender/ship_video.py (read, never changed) under max_mb.
+size = [1280, 720]
+fps = 24
+fov = 70.0
+max_mb = 15
+keys = [
+  [[0.0, 1.7, -37.2], [0.0, 2.2, -28.0], 0.0],
+  [[1.6, 1.7, -32.0], [5.0, 2.2, -26.0], 3.0],
+  [[6.0, 1.7, -27.8], [10.0, 2.6, -20.0], 3.2],
+  [[16.0, 1.7, -23.0], [0.0, 3.0, -14.0], 5.0],
+  [[17.5, 1.7, -12.0], [0.0, 3.5, -13.0], 4.5],
+  [[16.0, 1.7, -0.5], [0.0, 3.0, -11.0], 4.5],
+  [[8.0, 1.7, 4.0], [-1.0, 2.6, -7.0], 4.5],
+  [[0.0, 1.65, 3.0], [-3.0, 2.6, -7.0], 3.5],
+  [[0.0, 1.65, 3.0], [7.0, 3.5, 14.0], 3.0],
+  [[0.0, 1.65, 3.5], [0.0, 4.5, 16.0], 3.0],
+  [[0.0, 1.65, 5.0], [0.0, 5.0, 16.0], 6.0],
+  [[0.0, 1.65, 5.0], [0.0, 5.0, 16.0], 4.0],
+]

@@ -67,9 +67,16 @@ func _export() -> void:
 		n.reparent(groups[into])
 	var overrides: int = _materials(ship)
 	var clearing: Node3D = _clearing(level, ship, groups["Lights"], ground)
+	var jaw_lights: Array = []  # polish n2: [light, its jaw piece], so the game's Nose clips carry the light too
 	for l: Node in groups["Lights"].get_children() + clearing.get_node("Lights").get_children():
+		if l.has_meta("jaw_piece"):
+			jaw_lights.append([l, l.get_meta("jaw_piece")])
 		l.remove_meta("pieces")  # ship.gd's glow cells' bookkeeping (the pieces each omni lights), not the game's
+		l.remove_meta("jaw_piece")  # polish n2: ship.gd's jaw binding (_jaw_bind)
+		l.remove_meta("jaw_local")
 	var nose: Node3D = _nose(level, ship)
+	for pair: Array in jaw_lights:
+		(pair[0] as Node).reparent(pair[1])  # under its jaw piece (now under Nose), its saved place kept
 	_spots(level)
 	level.set_meta("size_m", Vector2(float(_req["size_m"][0]), float(_req["size_m"][1])))
 	level.set_meta("deck_h", float(_req["deck_h"]))

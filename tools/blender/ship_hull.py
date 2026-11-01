@@ -388,12 +388,62 @@ def leg(args: dict, layout: dict) -> list:
     ribs = [_obox((ank[0] + 0.44 * math.cos(a), 0.44 * math.sin(a), 0.135),
                   (0.13 * math.cos(a), 0.13 * math.sin(a), 0), (-0.035 * math.sin(a), 0.035 * math.cos(a), 0),
                   (0, 0, 0.025)) for a in (math.pi / 4 + k * math.pi / 2 for k in range(4))]
+    if args.get("heavy"):
+        return _leg_heavy(top, reach, rise, piv, ank, at, fair, lip_ring, cheeks)
     return [L.part("leg_fairing", *fair, "hull_silver"), L.part("leg_lip", *lip_ring, "ext_frame"),
             L.part("leg_mount", *L.merge(*cheeks), "hull_dark"),
             L.part("leg_strut", *L.merge(sleeve, *braces), "leg_metal"),
             L.part("leg_joint", *L.merge(pin, collar, fork, knuckle, *ears, *ribs), "ext_frame"),
             L.part("leg_piston", *piston, "ext_chrome"),
             L.part("leg_pad", *L.merge(sh(pad), sh(hub)), "leg_metal"),
+            L.part("leg_sole", *sh(sole), "hull_dark")]
+
+
+def _leg_heavy(top, reach, rise, piv, ank, at, fair, lip_ring, cheeks) -> list:
+    """polish n1 (art #263): the stern legs under the big bells, sturdier in the same footprint (pad r 0.6): a
+    thicker 16-sided oleo (sleeve r 0.25, chrome piston r 0.14), two side dampers (a sleeve and a chrome rod each),
+    a torque link (scissor) on the inner face, a hydraulic line, a 16-sided pad with a hub, eight ribs and eight
+    bolt heads, a dark sole."""
+    n = 16
+    pin = _rod((piv[0], -0.36, piv[2]), (piv[0], 0.36, piv[2]), 0.12, n)
+    caps = [_rod((piv[0], s * 0.36, piv[2]), (piv[0], s * 0.4, piv[2]), 0.075, n) for s in (-1, 1)]
+    sleeve = _rod(at(-0.06), at(0.55), 0.25, n)
+    bands = [_rod(at(t), at(t + 0.03), 0.265, n) for t in (0.08, 0.3)]
+    collar = _rod(at(0.52), at(0.6), 0.29, n)
+    piston = _rod(at(0.5), at(0.86), 0.14, n)
+    fork = _rod(at(0.84), at(0.97), 0.17, n)
+    braces = [_rod((piv[0] - 0.05, s * 0.3, top - 0.22), at(0.42, s * 0.2), 0.075, 10) for s in (-1, 1)]
+    dsl = [_rod(at(0.02, s * 0.36), at(0.5, s * 0.36), 0.075, 12) for s in (-1, 1)]       # the dampers' sleeves
+    drod = [_rod(at(0.48, s * 0.36), at(0.9, s * 0.36), 0.04, 12) for s in (-1, 1)]       # their chrome rods
+    deyes = [_rod(at(t, s * 0.36 - 0.05), at(t, s * 0.36 + 0.05), 0.07, 12) for s in (-1, 1) for t in (0.0, 0.92)]
+    # the torque link: two arms from the sleeve's collar and the fork meeting at a knee on the inner face (-x)
+    c0, c1 = at(0.6), at(0.9)
+    knee = ((c0[0] + c1[0]) / 2 - 0.26, 0.0, (c0[2] + c1[2]) / 2)
+    link = [_rod((c0[0] - 0.2, 0.0, c0[2]), knee, 0.045, 8), _rod(knee, (c1[0] - 0.15, 0.0, c1[2]), 0.045, 8),
+            _rod((knee[0], -0.06, knee[2]), (knee[0], 0.06, knee[2]), 0.05, 10)]
+    hose = [_rod((piv[0] + 0.12, 0.2, top - 0.25), at(0.3, 0.27), 0.022, 8)]
+    knuckle = _rod((ank[0], -0.2, ank[2]), (ank[0], 0.2, ank[2]), 0.12, n)
+    ears = [_obox((ank[0], s * 0.16, 0.27), (0.11, 0, 0), (0, 0.035, 0), (0, 0, 0.12)) for s in (-1, 1)]
+    pad = L.disc(0.6, n, 0.03, 0.1)
+    bevel = ([(x * (0.56 / 0.6) if h > 0.11 else x, y * (0.56 / 0.6) if h > 0.11 else y, h)
+              for x, y, h in L.disc(0.6, n, 0.1, 0.13)[0]], L.disc(0.6, n, 0.1, 0.13)[1])
+    hub = L.disc(0.32, n, 0.13, 0.24)
+    sole = L.disc(0.62, n, 0.0, 0.03)
+    sh = lambda d: ([(x + ank[0], y, h) for x, y, h in d[0]], d[1])  # noqa: E731
+    ribs = [_obox((ank[0] + 0.44 * math.cos(a), 0.44 * math.sin(a), 0.16),
+                  (0.12 * math.cos(a), 0.12 * math.sin(a), 0), (-0.03 * math.sin(a), 0.03 * math.cos(a), 0),
+                  (0, 0, 0.035)) for a in (math.pi / 8 + k * math.pi / 4 for k in range(8))]
+    bolts = [_rod((ank[0] + 0.5 * math.cos(a), 0.5 * math.sin(a), 0.125),
+                  (ank[0] + 0.5 * math.cos(a), 0.5 * math.sin(a), 0.155), 0.026, 8)
+             for a in (k * math.pi / 4 for k in range(8))]
+    return [L.part("leg_fairing", *fair, "hull_silver"), L.part("leg_lip", *lip_ring, "ext_frame"),
+            L.part("leg_mount", *L.merge(*cheeks), "hull_dark"),
+            L.part("leg_strut", *L.merge(sleeve, *braces, *dsl), "leg_metal"),
+            L.part("leg_joint", *L.merge(pin, *caps, *bands, collar, fork, knuckle, *ears, *ribs, *deyes, *link),
+                   "ext_frame"),
+            L.part("leg_piston", *L.merge(piston, *drod, *bolts), "ext_chrome"),
+            L.part("leg_hose", *L.merge(*hose), "hull_dark"),
+            L.part("leg_pad", *L.merge(sh(pad), sh(bevel), sh(hub)), "leg_metal"),
             L.part("leg_sole", *sh(sole), "hull_dark")]
 
 

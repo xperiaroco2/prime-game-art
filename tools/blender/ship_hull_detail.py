@@ -8,7 +8,7 @@ moves; pieces in the plan frame are placed at the origin. Numbers (plan metres):
 - canopies: J's, a glass ellipse 0.95 (x) by 1.35 (y) at (+-2.25, -3.6), 0.85 m high (details 1), its base on the hull (+ 0.02);
   a low collar round it; a dark rim lip; a lit floor, seat and desk under the glass.
 - pods: the outer two r 1.05 at (+-2.75, h 2.15), the middle r 1.2 at h 2.45, their rear ends at J's (y 11.0 and
-  11.8: exterior.toml places each at J's y less hull.pod_tail_m); smooth 32-sided shells with a round nose, one dark
+  11.8: exterior.toml places each at J's y less hull.pod_tail_m); smooth POD_SEGS-sided shells (polish n1: 64) with a round nose, one dark
   collar, the bell."""
 
 from __future__ import annotations
@@ -218,65 +218,205 @@ def cockpit(side: float) -> list:
 
 
 # --- the nozzle pods -----------------------------------------------------------------------------------------------
-POD_SEGS = 32
+# polish n1 (art #263): the stern seen up close from the lobby's spawn. 64 segments shaded smooth (16-facet corners on
+# every rim before); the bell a solid ring with bevelled lips. nb: inside it the old look again (n1-n4's stepped
+# throat, stator blades and spinner read as a jet engine): the dark throat, one light ring on its wall, a small dot on
+# its floor, ten light segments with gaps in the lip. Their glow lives in the emissive materials (glow_pod,
+# ext_glow_cyan_dim), so the package's bells glow wherever it is instanced, its run-time lights off (the lobby) or on.
+POD_SEGS = 64
 THROAT_SMOOTH_DEG = 30.0   # fix 2: the throat smooth across its radial facets, sharp at its wall/floor crease
-NOZZLE = (0.8, 0.45)   # lens step 2: the nozzle's radius at the bell's lip and 1.0 m in (x r), its floor 1.15 m in
+NOZZLE = (0.8, 0.45)   # lens step 2: the throat's radius at the bell's inner wall and 0.9 m deeper (x r)
+LIP = 0.45            # n1: the bell's lip plane past the args length (nb: its segments 1.6 cm into it: pod_tail_m)
+POD_RIBS = (45.0, 90.0, 135.0, 225.0, 270.0, 315.0)   # n1: the stringers' angles, clear of the pods' contact (~ +-10)
+
+
+def _ring(profile, inner, segs=POD_SEGS):
+    """An open surface of revolution (no caps) oriented away from inner(face centre)."""
+    v, f = H._lathe_y(profile, segs, caps=False)
+    return v, L.orient(v, f, inner)
+
+
+def _loop(profile, segs=POD_SEGS):
+    """A closed ring solid: the profile's loop (its last point joins its first) turned round the y axis."""
+    return H._lathe_y(list(profile) + [profile[0]], segs, caps=False)
+
+
+def _radial(q):
+    """A wall seen from the axis: oriented away from a point radially outside it."""
+    return (2.0 * q[0], q[1], 2.0 * q[2])
+
+
+def _back(q):
+    """A face seen from behind (+y): oriented away from a point in front of it."""
+    return (q[0], q[1] - 1.0, q[2])
+
+
+def _box8(corners):
+    """A solid from 8 corners in _obox's order (bit 0 the first axis, bit 1 the second, bit 2 the third)."""
+    return list(corners), [(0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)]
+
+
+def _stringer(r, a, y0, y1, w=0.07, top=1.028):
+    """A rib along the shell at angle a (deg) from y0 to y1: its foot inside the shell, its top at top * r."""
+    u = (math.cos(math.radians(a)), 0.0, math.sin(math.radians(a)))
+    t = (-u[2], 0.0, u[0])
+    rm, hr = (0.955 + top) / 2 * r, (top - 0.955) / 2 * r
+    return H._obox((u[0] * rm, (y0 + y1) / 2, u[2] * rm), (u[0] * hr, 0, u[2] * hr), (0, (y1 - y0) / 2, 0),
+                   (t[0] * w / 2, 0, t[2] * w / 2))
+
+
+# nb (art #263): the old nozzle look back. The engineer, 2026-11-01: n3/n4's stator blades, spinner and stepped
+# throat read as a jet engine ("aliens on propellers?"); the pre-polish insides looked like a spaceship, "a bit like
+# Daft Punk". Inside the bell again the dark throat (lens step 2's NOZZLE cone) with one cyan ring on its wall, a small
+# glowing dot on its floor, and the bell's lip carrying ten light segments with gaps; n1's smooth 64-sided shells,
+# bevelled lips, fairings, stringers, collar and beams kept.
+SEG_N, SEG_GAP = 10, 0.06   # the lip's light segments and the gap on each side of a joint (rad): lens step 2's rhythm
+
+
+def _arc(r0, r1, a0, a1, y0, y1, segs=POD_SEGS):
+    """A closed curved block of a ring round the y axis (radii r0..r1, angles a0..a1, y0..y1), its arc in about
+    segs-per-turn steps (no straight chord: the old segments were single blocks, a decagon)."""
+    n = max(2, round((a1 - a0) / (2 * math.pi / segs)))
+    v = []
+    for i in range(n + 1):
+        a = a0 + (a1 - a0) * i / n
+        c, s = math.cos(a), math.sin(a)
+        v += [(r0 * c, y0, r0 * s), (r1 * c, y0, r1 * s), (r1 * c, y1, r1 * s), (r0 * c, y1, r0 * s)]
+    f = [(4 * i + j, 4 * i + (j + 1) % 4, 4 * (i + 1) + (j + 1) % 4, 4 * (i + 1) + j) for i in range(n) for j in range(4)]
+    f += [(0, 1, 2, 3), (4 * n, 4 * n + 1, 4 * n + 2, 4 * n + 3)]
+    rc, yc, am = (r0 + r1) / 2, (y0 + y1) / 2, (a0 + a1) / 2
+
+    def inner(q):   # the cross-section's middle at the face's angle (at an end cap: the arc's middle)
+        a = math.atan2(q[2], q[0])
+        if abs(math.remainder(a - a0, 2 * math.pi)) < 1e-6 or abs(math.remainder(a - a1, 2 * math.pi)) < 1e-6:
+            a = am
+        return (rc * math.cos(a), yc, rc * math.sin(a))
+    return v, L.orient(v, f, inner)
+
+
+def _bridge(r, mate, y0, y1, hd=0.22, hw=0.46, ch=0.06):
+    """n1: the shared housing between this pod and a neighbour (mate [dx, dh, r] of its axis): a chamfered beam
+    along y over their contact line, hiding where their collars and fairings would cross; its end bevelled, a bolt
+    row on each flat side."""
+    dx, dh, rb = (float(c) for c in mate)
+    dist = math.hypot(dx, dh)
+    d = (dx / dist, dh / dist)
+    n = (-d[1], d[0])
+    cd = r + (dist - r - rb) / 2
+    sec = [(hd, hw - ch), (hd - ch, hw), (-hd + ch, hw), (-hd, hw - ch), (-hd, -hw + ch), (-hd + ch, -hw),
+           (hd - ch, -hw), (hd, -hw + ch)]
+
+    def ring(y, k):
+        return [(d[0] * (cd + a * k) + n[0] * b * k, y, d[1] * (cd + a * k) + n[1] * b * k) for a, b in sec]
+    rings = [ring(y0, 1.0), ring(y1, 1.0), ring(y1 + 0.14, 0.62)]
+    v = [p for rg in rings for p in rg]
+    m = len(sec)
+    f = [tuple(range(m - 1, -1, -1)), tuple(range(2 * m, 3 * m))]
+    for j in range(2):
+        f += [(j * m + i, j * m + (i + 1) % m, (j + 1) * m + (i + 1) % m, (j + 1) * m + i) for i in range(m)]
+    bolts = []
+    for side in (-1, 1):
+        for k in range(6):
+            y = y0 + 0.55 + k * (y1 - y0 - 0.75) / 5
+            c = (d[0] * cd + n[0] * side * hw, y, d[1] * cd + n[1] * side * hw)
+            bolts.append(H._rod(c, (c[0] + n[0] * side * 0.022, y, c[2] + n[1] * side * 0.022), 0.028, 10))
+    return (v, f), bolts
 
 
 def nozzle_pod(args: dict, layout: dict) -> list:
-    """A long engine pod along +y (local origin: its nose on the axis; args r, length): a smooth shell with a round
-    nose (shaded smooth, no plates), one dark collar, the bell (an open ring: lens step 2) and the dark nozzle, 1.15 m
-    deep from the bell's lip (NOZZLE), behind it the shell's cone (the lights: pod_ring)."""
+    """A long engine pod along +y (local origin: its nose on the axis; args r, length, mount, bridges, bridge_y): a
+    smooth shell with a round nose, n1's fairing where it leaves the hull (args mount, local y), six stringers, one
+    dark collar, the housing round the bell (its light band: pod_ring), the bell (a solid ring, bevelled, a groove in
+    its lip for the light segments) and inside it the dark throat (nb: lens step 2's cone, its ring and dot in
+    pod_ring); args bridges [[dx, dh, r]] the shared housings to the neighbours' axes, from bridge_y [y0, y1]."""
     r, ln = float(args.get("r", 1.05)), float(args.get("length", 3.6))
+    ym = float(args.get("mount", ln - 2.2))
     nose = [(0.97 * r * math.sin(math.pi / 2 * k / 7) ** 0.85, 1.5 * (1 - math.cos(math.pi / 2 * k / 7)))
             for k in range(1, 8)]
     shell = H._lathe_y([(0.0, 0.0)] + nose + [(r, ln - 0.7), (0.97 * r, ln - 0.35), (0.0, ln - 0.9)], POD_SEGS)
-    collar = H._lathe_y([(0.0, ln - 1.5), (1.03 * r, ln - 1.5), (1.03 * r, ln - 1.3), (0.0, ln - 1.3)], POD_SEGS)
-    # fix 2 (art #263, item 5): the bell and the throat open (caps=False). The lathe capped their rings off the axis:
-    # the bell's lip ring and the throat's mouth were two flat discs in one plane (ln + 0.4) over the whole nozzle,
-    # ext_frame and ext_nozzle_inner z-fighting, so the "dish" changed as the camera turned (wedges of the two discs'
-    # triangles, the brushed frame's moving highlight), and the nozzle behind them was never seen
-    bv, bf = H._lathe_y([(0.95 * r, ln - 0.4), (0.92 * r, ln + 0.35), (0.84 * r, ln + 0.4), (NOZZLE[0] * r, ln + 0.4)],
-                        POD_SEGS, caps=False)
-    bell = (bv, L.orient(bv, bf, lambda q: (0.0, q[1] - 2.0, 0.0)))
-    tv, tf = H._lathe_y([(NOZZLE[0] * r, ln + 0.4), (NOZZLE[1] * r, ln - 0.6), (0.0, ln - 0.75)], POD_SEGS, caps=False)
-    throat = (tv, L.orient(tv, tf, lambda q: (2.0 * q[0], q[1], 2.0 * q[2])))
-    # fix 2 (art #263, item 5): the throat (the dark dish behind the cyan ring) shaded smooth round its POD_SEGS
-    # radial facets (11.25 deg apart), its crease between the wall and the floor (about 50 deg) kept: flat, each facet
-    # mirrored another strip of the sky, streaks that moved as the camera turned
-    pt = L.part("pod_throat", *throat, "ext_nozzle_inner", solid=False)
-    pt["smooth_deg"] = THROAT_SMOOTH_DEG
-    return [_smooth(L.part("pod_shell", *shell, "hull_silver")), L.part("pod_collar", *collar, "hull_dark"),
-            L.part("pod_bell", *bell, "ext_frame", solid=False), pt]
+    mount = _loop([(0.96 * r, ym - 0.75), (r, ym - 0.75), (1.03 * r, ym - 0.45), (1.06 * r, ym - 0.18),
+                   (1.072 * r, ym - 0.06), (1.072 * r, ym + 0.04), (1.06 * r, ym + 0.09), (1.0 * r, ym + 0.12),
+                   (0.96 * r, ym + 0.12)])
+    collar = _loop([(0.97 * r, ln - 1.55), (1.0 * r, ln - 1.55), (1.03 * r, ln - 1.51), (1.04 * r, ln - 1.44),
+                    (1.04 * r, ln - 1.37), (1.03 * r, ln - 1.31), (1.0 * r, ln - 1.28), (0.97 * r, ln - 1.28)])
+    ribs = [_stringer(r, a, ym + 0.1, ln - 0.42) for a in POD_RIBS]
+    # the housing round the bell's base: bevelled, its light groove (pod_band's strip, 1 cm proud of its floor); nb:
+    # the groove near the old look's band round the bell (22 cm): 19 cm of light, n1's 8 cm read thin; its rear face
+    # flat for pod_ring's rim (the old look's bright outer circle seen from behind)
+    housing = _loop([(0.93 * r, ln - 0.43), (0.975 * r, ln - 0.43), (0.993 * r, ln - 0.41), (0.995 * r, ln + 0.01),
+                     (0.985 * r, ln + 0.03), (0.962 * r, ln + 0.03), (0.962 * r, ln + 0.22), (0.985 * r, ln + 0.22),
+                     (0.995 * r, ln + 0.24), (0.995 * r, ln + 0.255), (0.99 * r, ln + 0.262), (0.932 * r, ln + 0.262)])
+    lp = ln + LIP
+    bell = _loop([(0.95 * r, ln - 0.4), (0.935 * r, ln + 0.1), (0.921 * r, ln + 0.33), (0.913 * r, lp - 0.055),
+                  (0.902 * r, lp - 0.02), (0.89 * r, lp), (0.873 * r, lp), (0.866 * r, lp - 0.018),
+                  (0.834 * r, lp - 0.018), (0.827 * r, lp), (0.814 * r, lp), (0.805 * r, lp - 0.012),
+                  (0.8 * r, lp - 0.035), (0.8 * r, ln + 0.3)])
+    # nb: the old throat, a dark cone from the bell's inner wall to NOZZLE[1] 0.9 m in and its floor 1.2 m in from
+    # the lip (lens step 2's 1.15 m from its lip 5 cm lower), open, shaded smooth round its 64 facets
+    throat = _ring([(NOZZLE[0] * r, ln + 0.3), (NOZZLE[1] * r, ln - 0.6), (0.0, ln - 0.75)], _radial)
+    smooth = {"pod_mount": 40.0, "pod_collar": 40.0, "pod_housing": 40.0, "pod_bell": 40.0,
+              "pod_throat": THROAT_SMOOTH_DEG}
+    parts = [_smooth(L.part("pod_shell", *shell, "hull_silver")), L.part("pod_mount", *mount, "hull_silver"),
+             L.part("pod_collar", *collar, "hull_dark"), L.part("pod_ribs", *L.merge(*ribs), "ext_silver_c"),
+             L.part("pod_housing", *housing, "ext_silver_c"), L.part("pod_bell", *bell, "ext_frame"),
+             L.part("pod_throat", *throat, "ext_nozzle_inner", solid=False)]
+    for p in parts:
+        if p["name"] in smooth:
+            p["smooth_deg"] = smooth[p["name"]]
+    bridges = args.get("bridges", [])
+    if bridges:
+        b0, b1 = (float(c) for c in args.get("bridge_y", [ym - 1.0, ln - 0.9]))
+        beams, bolts = [], []
+        for mate in bridges:
+            b, bs = _bridge(r, mate, b0, b1)
+            beams.append(b)
+            bolts += bs
+        parts += [L.part("pod_bridge", *L.merge(*beams), "ext_frame"),
+                  L.part("pod_bolts", *L.merge(*bolts), "ext_chrome")]
+    return parts
 
 
 def pod_ring(args: dict, layout: dict) -> list:
-    """A pod's cyan lights (local frame as nozzle_pod; glow_pod, dimmer than the strips: a ring you see, not a lamp):
-    the band round the bell, a band on the barrel ahead of it, the segmented ring on the bell's lip and (lens step 2)
-    the glowing inner ring 0.3 m down the nozzle, a dim core on its floor."""
+    """A pod's lights (local frame as nozzle_pod; glow_pod: a ring you see, not a lamp): the band in the bell
+    housing's groove, the strip between two trim lips on the barrel (n1), and nb's old nozzle look: the rim (a light
+    annulus on the housing's rear face), ten light segments with gaps in the bell's lip groove, one ring on the
+    throat's wall 0.3 m below the shell's end, and the small glowing dot on its floor (ext_glow_cyan_dim). All
+    emissive in their materials, so they glow with the ship's run-time lights off (the lobby); glow_pod's light (l 0.15) washes the throat teal in the ship's own night."""
     r, ln = float(args.get("r", 1.05)), float(args.get("length", 3.6))
-    # fix 2: the band round the bell a ring outside the nozzle's wall (it was a solid disc across the nozzle 16 cm in)
-    rin = NOZZLE[0] * r
-    band = H._lathe_y([(rin, ln + 0.02), (0.99 * r, ln + 0.02), (0.99 * r, ln + 0.24), (rin, ln + 0.24), (rin, ln + 0.02)],
-                      POD_SEGS, caps=False)
-    band2 = H._lathe_y([(0.0, ln - 0.95), (1.015 * r, ln - 0.95), (1.015 * r, ln - 0.8), (0.0, ln - 0.8)], POD_SEGS)
-    segs = []
-    for k in range(10):
-        a0, a1 = 2 * math.pi * k / 10 + 0.06, 2 * math.pi * (k + 1) / 10 - 0.06
-        v, f = L.sector(0.805 * r, 0.835 * r, a0, a1, ln + 0.405, ln + 0.435)
-        v = [(x, h, y) for x, y, h in v]  # the swap mirrors the winding: orient the faces rearward (polish 4)
-        segs.append((v, L.orient(v, f, lambda q: (0.0, q[1] - 1.0, 0.0))))
-    core = H._lathe_y([(0.0, ln - 0.73), (0.3 * r, ln - 0.73), (0.0, ln - 0.7)], 12)
+    lp = ln + LIP
 
-    def wall(y):   # the nozzle's radius at y, 6 mm inside it
+    def out(q):
+        return (0.0, q[1], 0.0)
+    band = L.merge(_ring([(0.972 * r, ln + 0.031), (0.972 * r, ln + 0.219)], out),
+                   _ring([(1.006 * r, ln - 0.925), (1.006 * r, ln - 0.825)], out))
+    trim = L.merge(_loop([(0.99 * r, ln - 0.96), (1.017 * r, ln - 0.955), (1.017 * r, ln - 0.93),
+                          (0.99 * r, ln - 0.925)]),
+                   _loop([(0.99 * r, ln - 0.825), (1.017 * r, ln - 0.82), (1.017 * r, ln - 0.795),
+                          (0.99 * r, ln - 0.79)]))
+    # the rim: a light annulus on the housing's rear face, the bright outer circle round the bell seen from behind
+    # (the old band's rear face, 0.92-0.99 r past the bell, made it; n1's metal bevel there read as a plain ring)
+    rim = _ring([(0.934 * r, ln + 0.264), (0.988 * r, ln + 0.264)], _back)
+    # the lip's segments: lens step 2's ten (0.805..0.835 r, 6 cm deep chords) as arcs in the groove (0.836..0.864 r)
+    segs = L.merge(*[_arc(0.836 * r, 0.864 * r, 2 * math.pi * k / SEG_N + SEG_GAP,
+                          2 * math.pi * (k + 1) / SEG_N - SEG_GAP, lp - 0.0185, lp - 0.016) for k in range(SEG_N)])
+
+    def wall(y):   # the throat's radius at y (its wall from 0.8 r at ln + 0.3 to 0.45 r at ln - 0.6), 6 mm inside it
         a, b = NOZZLE
-        return (b + (a - b) * (y - (ln - 0.6)) / 1.0) * r - 0.006
-    iv, i_f = H._lathe_y([(wall(ln - 0.27), ln - 0.27), (wall(ln - 0.33), ln - 0.33)], POD_SEGS, caps=False)
-    inner = (iv, L.orient(iv, i_f, lambda q: (2.0 * q[0], q[1], 2.0 * q[2])))
-    return [L.part("pod_band", *L.merge(band, band2), "glow_pod"),
-            L.part("pod_segments", *L.merge(*segs), "glow_pod"),
-            L.part("pod_inner_ring", *inner, "glow_pod", solid=False),
-            L.part("pod_core", *core, "ext_glow_cyan_dim")]
+        return (b + (a - b) * (y - (ln - 0.6)) / 0.9) * r - 0.006
+    inner = _ring([(wall(ln - 0.27), ln - 0.27), (wall(ln - 0.33), ln - 0.33)], _radial)
+
+    def floor(q):   # the throat's floor at radius q (x r), 6 mm above it
+        return ln - 0.75 + 0.15 * q / NOZZLE[1] + 0.006
+    dot = _ring([(0.12 * r, floor(0.12) - 0.004), (0.112 * r, floor(0.112)), (0.06 * r, floor(0.06) + 0.002),
+                 (0.0, floor(0.0) + 0.003)], _back)
+    parts = [L.part("pod_band", *band, "glow_pod", solid=False), L.part("pod_trim", *trim, "ext_frame"),
+             L.part("pod_rim", *rim, "glow_pod", solid=False), L.part("pod_segments", *segs, "glow_pod"),
+             L.part("pod_inner_ring", *inner, "glow_pod", solid=False),
+             L.part("pod_dot", *dot, "ext_glow_cyan_dim", solid=False)]
+    for p in parts:
+        if p["name"] in ("pod_segments", "pod_inner_ring", "pod_dot"):
+            p["smooth_deg"] = 40.0
+    return parts
 
 
 def ground_lamp(args: dict, layout: dict) -> list:
@@ -315,6 +455,143 @@ def landing_lamp(args: dict, layout: dict) -> list:
     return [L.part("landing_housing", *L.disc(0.16, 12, -0.07, 0.08), "hull_silver"),
             L.part("landing_bezel", *L.disc(0.125, 12, -0.08, -0.07), "ext_frame"),
             L.part("landing_lens", *L.disc(0.105, 12, -0.09, -0.08), "glow_landing")]
+
+
+# polish n2 (art #263): the underbody's light lines, so the belly's and the wings' undersides read at night (they were
+# dead black from below, out_lens_under_e, out_fair_lead_e_below): thin cyan strips in a dark channel under the
+# hull's bottom, along the belly either side of the keel, spanwise under each corridor and a ring under each lens.
+L.MATERIALS["glow_cyan__belly"] = {**L.MATERIALS["glow_cyan"], "strength": 3.0}
+BELLY_LINES = [  # plan polylines (x, y), east side (mirrored)
+    [(2.2, -2.6), (2.2, 4.4)],
+    [(4.6, 1.2), (9.0, 1.2)],
+]
+BELLY_RING = (10.5, 1.2, 1.35, 48)   # the lens's centre, radius, segments
+
+
+def _belly_strip(path, w, t, drop):
+    """Boxes along a plan polyline under the hull's bottom (S.heights), w wide, t deep, its top `drop` under the skin;
+    a step is left out where the bottom is missing or rises over 1.5 cm (no strip floats or cuts a chine)."""
+    out = []
+    for a, b in zip(path, path[1:]):
+        ln = math.dist(a, b)
+        n = max(1, int(ln / 0.2))
+        d = ((b[0] - a[0]) / ln, (b[1] - a[1]) / ln)
+        sx, sy = -d[1] * w / 2, d[0] * w / 2
+        for i in range(n):
+            p0 = (a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n)
+            p1 = (a[0] + (b[0] - a[0]) * (i + 1) / n, a[1] + (b[1] - a[1]) * (i + 1) / n)
+            h0, h1 = S.heights(*p0), S.heights(*p1)
+            if not h0 or not h1 or abs(h0[1] - h1[1]) > 0.015:
+                continue
+            z0, z1 = h0[1] - drop, h1[1] - drop
+            v = [(p0[0] + sx * k, p0[1] + sy * k, z0 - t * m) for m in (0, 1) for k in (-1, 1)]
+            v += [(p1[0] + sx * k, p1[1] + sy * k, z1 - t * m) for m in (0, 1) for k in (-1, 1)]
+            out.append((v, [(0, 1, 5, 4), (2, 6, 7, 3), (0, 2, 3, 1), (4, 5, 7, 6), (0, 4, 6, 2), (1, 3, 7, 5)]))
+    return out
+
+
+# polish n3: n2's lines lie flat under a bottom 0.17 m over the ground, so from standing height they showed only as thin
+# lines at a grazing angle. The chine lines run along the lower chines instead: the bottom's contour CHINE[0] m over
+# the plan's zero (east side, mirrored), laid on the slanted face itself (glow facing out and down along its normal),
+# only where the face slants at least CHINE[1] (rise per metre: an eye at 1.6 m, 4-8 m out, sees it) and clear of
+# the nose's jaw (|x| < CHINE[2] for y < CHINE[3]). Glow only (glow_cyan__belly, l 0): no light pools on the ground.
+CHINE = (0.45, 0.12, 2.0, -3.6)
+CHINE_GRID = 0.12   # the marching squares' cell (m) over the bottom's heights
+
+
+def _bottom(x, y):
+    h = S.heights(x, y)
+    return None if h is None else h[1]
+
+
+def _chine_segments(level=CHINE[0], step=CHINE_GRID):
+    """The bottom's contour at `level` (marching squares over S.heights' bottom), east side: [(a, b)] plan segments."""
+    xs = [i * step for i in range(int(15.0 / step) + 1)]
+    ys = [-9.0 + j * step for j in range(int(19.0 / step) + 1)]
+    grid = [[_bottom(x, y) for y in ys] for x in xs]
+    segs = []
+    for i in range(len(xs) - 1):
+        for j in range(len(ys) - 1):
+            c = [(xs[i], ys[j], grid[i][j]), (xs[i + 1], ys[j], grid[i + 1][j]),
+                 (xs[i + 1], ys[j + 1], grid[i + 1][j + 1]), (xs[i], ys[j + 1], grid[i][j + 1])]
+            if any(q[2] is None for q in c):
+                continue
+            pts = []
+            for (x0, y0, h0), (x1, y1, h1) in zip(c, c[1:] + c[:1]):
+                if (h0 - level) * (h1 - level) < 0:
+                    f = (level - h0) / (h1 - h0)
+                    pts.append((x0 + (x1 - x0) * f, y0 + (y1 - y0) * f))
+            if len(pts) == 2:
+                segs.append(tuple(pts))
+    return segs
+
+
+def _chine_strip(a, b, w, o0, o1, level):
+    """A box on the slanted bottom along plan segment a-b at height `level`: across the line up the slope (w wide),
+    from o0 to o1 along the face's outward normal. None where the face slants under CHINE[1] or near the jaw."""
+    mx, my = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+    if abs(mx) < CHINE[2] and my < CHINE[3]:
+        return None
+    e = 0.04
+    hx0, hx1, hy0, hy1 = _bottom(mx - e, my), _bottom(mx + e, my), _bottom(mx, my - e), _bottom(mx, my + e)
+    if None in (hx0, hx1, hy0, hy1):
+        return None
+    gx, gy = (hx1 - hx0) / (2 * e), (hy1 - hy0) / (2 * e)
+    g = math.hypot(gx, gy)
+    if g < CHINE[1]:
+        return None
+    nl = math.sqrt(gx * gx + gy * gy + 1.0)
+    n = (gx / nl, gy / nl, -1.0 / nl)                       # out of the bottom: down and outward
+    sl = math.sqrt(1.0 + g * g)
+    up = (gx / g / sl, gy / g / sl, g / sl)                 # across the line, up the slope, in the face
+    v = []
+    for o in (o0, o1):
+        for q in (a, b):
+            for k in (-1, 1):
+                v.append(tuple((q[0], q[1], level)[j] + up[j] * k * w / 2 + n[j] * o for j in range(3)))
+    # corners: bit 0 the side (down/up the slope), bit 1 the end (a/b), bit 2 the layer (under/over the skin)
+    return v, [(0, 2, 3, 1), (4, 5, 7, 6), (0, 1, 5, 4), (2, 6, 7, 3), (0, 4, 6, 2), (1, 3, 7, 5)]
+
+
+def chine_lines() -> tuple:
+    """polish n3: the chine lines' channels and glows, both sides: ((verts, faces), (verts, faces))."""
+    chan, glow = [], []
+    for a, b in _chine_segments():
+        for sx in (1, -1):
+            pa, pb = (sx * a[0], a[1]), (sx * b[0], b[1])
+            c = _chine_strip(pa, pb, 0.10, -0.006, 0.010, CHINE[0])
+            gl = _chine_strip(pa, pb, 0.05, 0.008, 0.013, CHINE[0])
+            if c and gl:
+                chan.append(c)
+                glow.append(gl)
+    for lst in (chan, glow):   # each box wound outward from its own centre
+        for i, (v, f) in enumerate(lst):
+            mid = [sum(q[j] for q in v) / 8 for j in range(3)]
+            lst[i] = (v, L.orient(v, f, lambda q, m=mid: m))
+    return L.merge(*chan), L.merge(*glow)
+
+
+def belly_lights(args: dict, layout: dict) -> list:
+    """polish n2: the underbody's light lines (BELLY_LINES, BELLY_RING), both sides; origin the plan's (0, 0, 0). The
+    channel hangs from 4 mm inside the skin to 8 mm under it, the glow 2 mm proud of the channel."""
+    cx, cy, r, n = BELLY_RING
+    ring = [(cx + r * math.cos(2 * math.pi * k / n), cy + r * math.sin(2 * math.pi * k / n)) for k in range(n + 1)]
+    paths = BELLY_LINES + [ring]
+    paths += [[(-x, y) for x, y in p] for p in paths]
+    glow, chan = [], []
+    for p in paths:
+        chan += _belly_strip(p, 0.09, 0.012, -0.004)
+        glow += _belly_strip(p, 0.04, 0.004, 0.006)
+    g = L.part("belly_glow", *L.merge(*glow), "glow_cyan__belly")
+    g["nocol"] = True
+    c = L.part("belly_channel", *L.merge(*chan), "ext_frame")
+    c["nocol"] = True
+    cc, cg = chine_lines()
+    ch = L.part("chine_channel", *cc, "ext_frame")
+    ch["nocol"] = True
+    cgp = L.part("chine_glow", *cg, "glow_cyan__belly")
+    cgp["nocol"] = True
+    return [c, g, ch, cgp]
 
 
 for _name in ("canopy", "nozzle_pod", "pod_ring", "ground_lamp"):
@@ -452,7 +729,7 @@ def lens_frames(args: dict, layout: dict) -> list:
     # 1 cm over the cut's edge and 4 cm down into it, 20 cm out over the plates (their cut slivers), a chamfered crown
     # 8.5 cm proud
     sec = [(-0.012, -0.04), (0.2, -0.02), (0.2, 0.03), (0.14, 0.085), (0.02, 0.085), (-0.012, 0.05)]
-    n = S.P_OCULUS_N * 2
+    n = S.P_OCULUS_N * 4   # polish n3: 128 sides shaded smooth (64 flat ones read low-poly in out_oculus_e)
     ring_v, ring_f = [], []
     for sx in (1, -1):
         cx, cy = sx * S.P_TIP[0], S.P_TIP[1]
@@ -482,7 +759,9 @@ def lens_frames(args: dict, layout: dict) -> list:
                 gv.append((cx + sx * GLOW_PANE_R * math.cos(g), cy + GLOW_PANE_R * math.sin(g), h))
             gf.append((k, k + 1, k + 2, k + 3))
     gf = L.orient(gv, gf, lambda q: (math.copysign(S.P_TIP[0], q[0]), S.P_TIP[1], q[2]))
-    return [L.part("band_frame", *L.merge(*bars), "ext_frame"), L.part("oculus_frame", ring_v, ring_f, "ext_silver_b"),
+    oc = L.part("oculus_frame", ring_v, ring_f, "ext_silver_b")
+    oc["smooth_deg"] = 40.0
+    return [L.part("band_frame", *L.merge(*bars), "ext_frame"), oc,
             L.part("band_glow", gv, gf, "ext_window_glow", solid=False)]
 
 

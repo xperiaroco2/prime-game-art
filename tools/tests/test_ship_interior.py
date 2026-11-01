@@ -111,6 +111,20 @@ class ShipInteriorTest(unittest.TestCase):
             self.assertGreater(min(wins), S.BAND["from_deg"] - 1.5)
             self.assertLess(max(wins), S.BAND["to_deg"] + 1.5)
 
+    def test_the_vault_door_is_framed_and_centred(self) -> None:
+        """polish n2: the vault door's light runs round its frame and down the leaf's centre (no off-centre strip),
+        the reader is a bezel with a screen; the hall's flats and the door wall's sides are framed relief bays."""
+        door = {p["name"]: p for p in S.hall_door({"half": 1.5, "apo": 4.0}, {})}
+        for name in ("door_light", "screen", "reader", "relief_frame", "relief_panels", "relief_bolts"):
+            self.assertIn(name, door)
+        ys = [y for _x, y, _h in door["door_light"]["verts"]]
+        self.assertAlmostEqual(min(ys) + max(ys), 0.0, 6)    # symmetric about the door's centre line
+        flat = {p["name"]: p for p in S.flat_panel({"half": 1.5}, {})}
+        self.assertNotIn("plain", flat)
+        self.assertTrue({"relief_frame", "relief_panels", "relief_back"} <= set(flat))
+        tip = {p["name"]: p for p in S.floor_disc({"radius": 1.0, "mat": "int_plate__tip"}, {})}
+        self.assertEqual(tip["disc"]["mat"], "int_plate__tip")
+
     def test_the_lens_ceiling_slants_round_its_oculus(self) -> None:
         """lens step 1: the ceiling from 2.4455 at the corridor's side to 2.3545 at the outer wall (P's), the walls
         H_TIP high under it; details 1: the slab round the oculus (none over its clear disc, every room point outside

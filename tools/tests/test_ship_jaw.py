@@ -93,6 +93,23 @@ class ShipJawBuildTest(unittest.TestCase):
             self.assertTrue(names <= set(self.parts[pid]), (pid, names - set(self.parts[pid])))
             self.assertTrue(any(n.endswith("_seam") for n in self.parts[pid]), pid)       # plated: the under-skin
 
+    def test_the_deck_has_hazard_bands_inside_its_edges(self) -> None:
+        """polish n2: yellow bars on a dark band along both deck edges, flat on the deck (7 mm), the ribs short of
+        them (at least 0.3 m from an edge on each side)."""
+        lo = self.parts["jaw_lower"]
+        self.assertIn("deck_hazard", lo)
+        self.assertIn("deck_hazard_dark", lo)
+        _p0, _u, w = J.deck_frame(J.jaw(LAYOUT))
+        for name in ("deck_hazard", "deck_hazard_dark", "deck_ribs"):   # the jaw's parts sit in its hinge's frame
+            hs = [sum(v[k] * w[k] for k in range(3)) for v in lo[name]["verts"]]
+            self.assertGreater(min(hs), -1e-6, name)
+            self.assertLess(max(hs), 0.0151, name)
+        xs = [v[0] for v in lo["deck_hazard"]["verts"]]
+        self.assertLess(min(xs), -0.5)
+        self.assertGreater(max(xs), 0.5)
+        rib_x = max(abs(v[0]) for v in lo["deck_ribs"]["verts"])
+        self.assertLess(rib_x, max(abs(x) for x in xs) - 0.1)
+
     def test_closed_it_is_sealed(self) -> None:
         """No ray from a ring of outside points (and from under and over the nose) reaches the throat or the closed
         mouth: the shells, the tunnel's slab and the hull block every one."""

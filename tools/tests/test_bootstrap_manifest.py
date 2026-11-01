@@ -97,6 +97,26 @@ class ManifestRulesTest(unittest.TestCase):
         data["credit"] = "Model by Someone, CC BY 4.0"
         self.assertEqual(_manifest.validate(data), [])
 
+    def test_nasa_public_domain_needs_credit(self) -> None:
+        data = good()
+        data["licence"] = "NASA-PD"
+        data["licence_url"] = "https://www.nasa.gov/nasa-brand-center/images-and-media/"
+        data["public_repo_ok"] = True
+        self.assertIn("a NASA-PD asset needs credit", "\n".join(_manifest.validate(data)))
+        data["credit"] = "Earth imagery: NASA"
+        self.assertEqual(_manifest.validate(data), [])
+
+    def test_nasa_public_domain_source_needs_credit(self) -> None:
+        record = {
+            "id": "nasa_earth", "title": "Earth", "author": "NASA", "url": "https://science.nasa.gov/earth/",
+            "licence": "NASA-PD", "licence_url": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+            "public_repo_ok": True, "ai_generated": False, "downloaded_at": "2026-10-30",
+            "raw": [{"file": "lobby/hall/earth-src/earth.jpg", "sha256": "0" * 64}],
+        }
+        self.assertIn("needs credit", "\n".join(_manifest.validate_source(record, "nasa_earth")))
+        record["credit"] = "Earth imagery: NASA"
+        self.assertNotIn("credit", "\n".join(_manifest.validate_source(record, "nasa_earth")))
+
     def test_face_slots_are_eyes_and_mouth(self) -> None:
         data = good()
         data["kind"] = "face"

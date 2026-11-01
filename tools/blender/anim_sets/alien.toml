@@ -9,6 +9,20 @@
 finger_cap_deg = 22.0  # a relaxed hand: each finger joint at most 22 degrees from straight (a fist is 70-90)
 thumb_cap_deg = 18.0
 floor = true
+# B1 (the Walk hop): each frame lifted by exactly its own need. The default reach 2 (a running max over +-2 frames,
+# then averaged) carried the leg fit's 3 cm heel-strike sink into the frames where the planted foot was already
+# down: her Walk floated up to 21 mm, both feet off the floor on 18 of 32 frames (a 1 cm hop at each step)
+floor_reach = 0
+# B1b: at the foot, not the Hips: a foot under the floor raised by its own need, its leg solved again
+# (alien_clip_edit.feet_floor); the Hips lift at reach 0 jerked the chameleon's Walk at heel strike
+# (780, 795, 809, 804, 793 mm)
+floor_feet = true
+# B1f, B1g: the dress's crossing shoes (alien_clip_edit.feet_cross, in sole_floor after the floor): where the shoes'
+# convex hulls overlap, the higher foot (or both, half each, when both stand) moves outward by the overlap plus this
+# clearance (cm), eased over 2 frames each side, its leg solved again; a clip with no overlap is not touched; for every
+# ground clip, listed or not. Measured on B1e: Walk, Jog_Fwd, Sprint and the crouches never overlap; his Jog_Bwd clips
+# 8 to 14 mm on one frame; Strafe_Left__s4b's X (11 to 14 cm, a crossed-over hop) is left as it is
+cross_out_cm = 0.5
 
 # A3: the idle's life: UAL's 2.5 s cycle played three times (7.5 s), the hips over one foot then the other (3 cm, the
 # legs solved per frame, the feet kept), the spine and head countering it; the chest breathes in the lively controller
@@ -32,11 +46,13 @@ finger_cap_deg = 30.0  # a looser hand than the idle's, so walking differs from 
 thumb_cap_deg = 22.0
 
 [clips.Jog_Fwd_Loop]
+leg_fit_bob = 0.84  # B1c: with --leg-fit (ik) her bob scaled about its mean: step 70.8 -> about 59.5 mm/frame (B1's 60.1)
 abduct_deg = 6.0
 finger_cap_deg = 50.0  # loose fists, not flat paddles
 thumb_cap_deg = 30.0
 
 [clips.Sprint_Fwd_Loop]
+leg_fit_bob = 0.88  # B1c: 64.3 -> about 56.6 mm/frame (B1's 57.4)
 abduct_deg = 6.0
 finger_cap_deg = 50.0
 thumb_cap_deg = 30.0

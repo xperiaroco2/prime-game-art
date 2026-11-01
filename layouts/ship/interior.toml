@@ -859,7 +859,7 @@ collide = true
 id = "tip_floor_disc"
 builder = "floor_disc"
 collide = true
-args = { radius = 0.55 }
+args = { radius = 0.55, mat = "int_plate__tip" }
 
 [[pieces]]
 id = "tip_grate"

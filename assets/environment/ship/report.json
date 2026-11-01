@@ -2,25 +2,25 @@
  "package": {
   "version": 3,
   "scene": "res://levels/ship/ship.tscn",
-  "pieces": 188,
-  "placements": 1055,
-  "bytes": 11944553
+  "pieces": 189,
+  "placements": 1056,
+  "bytes": 13508641
  },
- "files": 204,
+ "files": 205,
  "stations": 11,
  "load": {
-  "pieces": 518,
-  "bodies": 705,
+  "pieces": 519,
+  "bodies": 728,
   "lights": 148,
   "size_worst_m": 1.0000076144935435e-05,
   "walk": {
    "arrived": true,
    "end": [
-    0.000132281958940439,
-    0.000778785906732082,
-    -13.7056436538696
+    0.000132027344079688,
+    0.000349108129739761,
+    -13.7054119110107
    ],
-   "min_y": 0.000778785906732082,
+   "min_y": 0.000349108129739761,
    "of": 18,
    "passed": [
     [
@@ -96,9 +96,9 @@
    "reached": 18,
    "seconds": 23.9,
    "stuck": [
-    0.000132281958940439,
-    0.000778785906732082,
-    -13.7056436538696
+    0.000132027344079688,
+    0.000349108129739761,
+    -13.7054119110107
    ]
   }
  },
@@ -139,33 +139,33 @@
  },
  "views": {
   "in_hall": {
-   "draw_calls": 4365,
-   "gpu_ms": 4.63,
+   "draw_calls": 4612,
+   "gpu_ms": 5.38,
    "mean_abs": 0.003,
    "off_share": 0.0,
-   "primitives": 2108751,
+   "primitives": 2323441,
    "size": [
     1920,
     1080
    ]
   },
   "in_tip_e": {
-   "draw_calls": 1228,
-   "gpu_ms": 4.33,
-   "mean_abs": 0.002,
-   "off_share": 0.0,
-   "primitives": 1194499,
+   "draw_calls": 1251,
+   "gpu_ms": 5.09,
+   "mean_abs": 0.006,
+   "off_share": 0.0001,
+   "primitives": 1266363,
    "size": [
     1920,
     1080
    ]
   },
   "out_hero": {
-   "draw_calls": 5046,
-   "gpu_ms": 3.5,
+   "draw_calls": 5243,
+   "gpu_ms": 4.01,
    "mean_abs": 0.003,
    "off_share": 0.0,
-   "primitives": 2404360,
+   "primitives": 2571782,
    "size": [
     1920,
     1080

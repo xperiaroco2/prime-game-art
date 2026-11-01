@@ -1,0 +1,95 @@
+# The alien's hand shapes in the loco clips (art #196, Hands H1; tools/blender/alien_hands_math.py, alien_hands.py).
+# The mocap finger motion of every clip is replaced, not capped: each clip's finger bones take one grip per hand, or a
+# short set of keyed grips ([share 0..1 of the clip, grip] or [share, left grip, right grip]); the arms and wrists keep
+# the clip's motion. The grips: the photo poses' library (alien_poses.toml [grips]: fist, point, flat, heart, behind;
+# reused, never redefined here) and this file's own. A grip: per finger [base, middle, tip] curl in degrees (the
+# thumb: metacarpal, proximal, distal), `all` for the rest, `ThumbTurn` [roll, swing] the thumb's base turned about its
+# length and toward the palm, `spread` + `mirror` the fingers drawn together on both hands (alien_pose_math.grip_quats).
+# A clip takes the first [clips] pattern matching its Godot name (no prefix, no _Loop; fnmatch, file order), else the
+# default grip.
+
+[set]
+poses = "alien_poses.toml"
+default = "relaxed"
+skip = ["PoseArms_*", "PoseLegs_*"]  # the photo poses keep their own grips
+
+[grips.relaxed]  # Idle, Walk, Talk, Crouch (H1b): the curl grows from the index to the outer finger, the thumb lies
+                 # alongside the index, never facing the fingers (the old even 30/30/30 C read as holding a cup)
+Index = [12, 10, 2]     # H1f r2: the curl led by the knuckles, the tips nearly straight and the fingers closer (spread 6):
+Middle = [20, 16, 4]    # 8/14/8 .. 26/34/18 with spread 12 read as a claw in side view (separated, hooked tips).
+Ring = [28, 22, 6]      # H1h: restored; H1g's solved relaxed (side turns instead of the spread, the spec's thumb
+Little = [30, 22, 6]    # beside the index's knuckle) splayed the fingers straight and laid the thumb into the palm
+mirror = true
+spread = 6
+Thumb = [2, 8, 6]
+ThumbTurn = [4, -6]
+
+[grips.loose]  # the solver's reference grip (alien_grip_solve.py to body_dims/hand_grips.toml [grips.loose]); no
+                 # clip uses it, the run's fist is `runfist` below: the fingers folded onto the palm, every tip
+                 # touching it, the thumb's pad over the index's and middle's middle segments
+Index = [83.3, 87.5, 12.6, -1.4]    # H1g: solved (tools/blender/alien_grip_solve.py) to body_dims/hand_grips.toml on
+Middle = [67.3, 90.4, 15, 12]  # both characters' hands at once; [base, middle, tip, side turn]
+Ring = [67.5, 90.9, 14.2, 1.1]
+Little = [67.5, 90.9, 14.2]
+mirror = true
+Thumb = [30.4, 66.4, 14.8]
+ThumbTurn = [62.1, 74.5]
+
+[grips.runfist]  # the run (Jog, Sprint, Strafe) and the fist morph's pose: the solved loose grip with the middle and
+                 # tip joints curled further (H1q; solved 87.5-90.9 / 12.6-15), the tips into the palm, so the bones
+                 # alone make the fist (H1q's grid: fuller base curls and a thumb along the index's side left a thumb
+                 # nub and a wider index coil). Its own grip so the solved `loose` stays the solve's (H1r). H1t (the
+                 # cartoon fist): the index curled tighter and the thumb laid across the index curl's side mouth, its
+                 # tip onto the fingers' front, so it covers the open loop (H1t's grid g2, row J). H1u: the thumb's
+                 # middle joint bent 15 -> 25 and its tip 60 -> 75, so its tip stays inside the fist's first-person
+                 # outline (1.7-2.0 mm past it, J 6.1-6.3); the loop's cover drops on the axolotl (H1u's grids g1, g2)
+Index = [88, 102, 34, -1.4]
+Middle = [67.3, 98, 30, 12]
+Ring = [67.5, 98, 30, 1.1]
+Little = [67.5, 98, 30]
+mirror = true
+Thumb = [70, 25, 75]
+ThumbTurn = [90, 45]
+
+[clips."Jog_*"]
+grip = "runfist"
+
+[clips."Sprint_*"]
+grip = "runfist"
+
+[clips."Strafe_*"]
+grip = "runfist"
+
+[clips."Jump_Start"]  # the crouch relaxed, the hands opening flat into the air
+keys = [[0.0, "relaxed"], [0.6, "relaxed"], [1.0, "flat"]]
+
+[clips."Jump_Air"]
+grip = "flat"
+
+[clips."Jump_Land"]
+keys = [[0.0, "flat"], [0.5, "relaxed"]]
+
+[fist]  # the run fist as a morph (the engineer's option C, art #196, H1j-H1u; tools/blender/alien_fist_shape.py): the
+        # body's shape key `morph`, made in the `grip` pose (`runfist`), its weight 1 wherever a clip's grip is `grip`
+        # (Jog, Sprint, Strafe), 0 elsewhere, eased between keyed grips. The bones curl the fist; the morph is the
+        # contact route's (H1q, alien_fist_envelope.contact): it only lays the skin onto the digits' smooth union
+        # (c_k_mm, the thumb's c_k_thumb_mm) where it is inside it (the gaps between touching fingers, the knuckles'
+        # valleys), the moves capped at c_cap_mm and smoothed c_smooth rounds as a field; skin inside a neighbouring
+        # digit or 3 mm inside the union sinks (H1q's grid c1-c4, t0)
+grip = "runfist"
+morph = "fist"
+route = "contact"
+c_k_mm = 12.0
+c_k_thumb_mm = 10.0
+c_cap_mm = 10.0
+c_smooth = 6
+# lead, curl and thumb act only where a clip ramps between two grips inside it (keyed grips, e.g. the review drivers'
+# ReviewBlend clip); the shipped Jog, Sprint and Strafe hold `runfist` whole, so their weight is 1 throughout.
+# H1m: the morph leads the grip inside a ramp, full at half of each ramp into the fist (it alone does not remove the
+# mid-blend ring: H1m's grid)
+lead = 0.5
+# H1n: the grip's path into the fist inside a ramp: the fingers' tips curl first (at the fist by 0.6 of the ramp), the
+# knuckles follow from 0.4, the thumb folds across from 0.6, so the half-curled index and the thumb never close into a
+# ring (H1n's grids: knuckles first, or the thumb in step, still ring at 0.5-0.65); out of it backwards
+curl = [0.6, 0.4]
+thumb = [0.6, 1.0]

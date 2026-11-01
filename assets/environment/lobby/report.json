@@ -1,0 +1,466 @@
+{
+ "package": {
+  "name": "lobby",
+  "version": 3,
+  "scene": "res://levels/lobby/lobby_hall.tscn",
+  "root": "LobbyHall",
+  "bytes": 38521983
+ },
+ "files": 20,
+ "load": {
+  "bounds": {
+   "arch": {
+    "max": [
+     4.25,
+     7.77999973297119,
+     -29.5149993896484
+    ],
+    "min": [
+     -4.25,
+     -0.300000011920929,
+     -38.2999992370605
+    ]
+   },
+   "door": {
+    "max": [
+     1.91999995708466,
+     7.09999990463257,
+     0.569999933242798
+    ],
+    "min": [
+     -1.91999995708466,
+     0.0,
+     -0.519999980926514
+    ]
+   },
+   "floor": {
+    "max": [
+     20.5,
+     0.0270000100135803,
+     16.0
+    ],
+    "min": [
+     -20.5,
+     -0.300000011920929,
+     -30.5
+    ]
+   },
+   "vault": {
+    "max": [
+     20.0,
+     15.0799999237061,
+     16.0009613037109
+    ],
+    "min": [
+     -20.0,
+     8.85499954223633,
+     -30.5
+    ]
+   },
+   "walls": {
+    "max": [
+     20.5,
+     12.0,
+     10.0
+    ],
+    "min": [
+     -20.5,
+     0.0,
+     -30.5
+    ]
+   },
+   "window_frame": {
+    "max": [
+     20.442081451416,
+     12.0,
+     16.5
+    ],
+    "min": [
+     -20.442081451416,
+     0.0,
+     9.38547420501709
+    ]
+   },
+   "window_glass": {
+    "max": [
+     20.0275230407715,
+     11.6999998092651,
+     16.0499992370605
+    ],
+    "min": [
+     -20.0275230407715,
+     0.5,
+     10.0417432785034
+    ]
+   }
+  },
+  "colliders": {
+   "arch": 6,
+   "door": 4,
+   "floor": 1,
+   "vault": 0,
+   "walls": 3,
+   "window_frame": 1,
+   "window_glass": 1
+  },
+  "earth": {
+   "at": [
+    0.0,
+    -130.829818725586,
+    214.512023925781
+   ],
+   "far_mode": 1.0,
+   "shell_m": 198.377517700195,
+   "textures": [
+    "res://assets/environment/lobby/earth/earth_night.jpg 4096x2048",
+    "res://assets/environment/lobby/earth/earth_day.jpg 4096x2048",
+    "res://assets/environment/lobby/earth/earth_clouds.jpg 4096x2048",
+    "res://assets/environment/lobby/earth/earth_night_cap.jpg 4096x3072",
+    "res://assets/environment/lobby/earth/earth_clouds_cap.jpg 2730x2048"
+   ]
+  },
+  "groups": [
+   "Hall",
+   "Ship",
+   "Earth",
+   "Environment",
+   "Lights",
+   "Probes",
+   "Markers"
+  ],
+  "level_script": {
+   "path": "res://levels/lobby/lobby_hall.gd",
+   "probes_recaptured": 10,
+   "probes_total": 10,
+   "ship_free": [
+    "Ship/Environment",
+    "Ship/Lights/@DirectionalLight3D@3",
+    "Ship/Lights/@DirectionalLight3D@4",
+    "Ship/Clearing"
+   ],
+   "ship_freed": 4
+  },
+  "lights": 60,
+  "meta": {
+   "art_issue": "\"prime-game-art#356\"",
+   "camera_far_m": "548.3775226487097",
+   "credit": "\"Earth imagery: NASA\"",
+   "probes_recaptured": "10",
+   "ship_freed": "4",
+   "ship_scene": "\"res://levels/ship/ship.tscn\"",
+   "size_m": "Vector2(40, 40)"
+  },
+  "probes": 3,
+  "root": "LobbyHall",
+  "scripts": [
+   "LobbyHall res://levels/lobby/lobby_hall.gd"
+  ],
+  "ship": {
+   "at": [
+    0.0,
+    0.0,
+    -14.5
+   ],
+   "clearing_present": false,
+   "clearing_processing": false,
+   "clearing_visible": false,
+   "colliders_off": 0,
+   "colliders_on": 727,
+   "environment_present": false,
+   "environments": 0,
+   "jaws": {
+    "jaw_lower": 0.0,
+    "jaw_upper": 0.0
+   },
+   "lights_visible": 0,
+   "meshes": 1729,
+   "off_layer": 0,
+   "scene": "res://levels/ship/ship.tscn",
+   "suns": 0,
+   "suns_visible": 0
+  },
+  "spawns": [
+   {
+    "at": [
+     -9.0,
+     0.0,
+     2.5
+    ],
+    "forward": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "name": "Spawn0",
+    "yaw": -180.0
+   },
+   {
+    "at": [
+     -7.0,
+     0.0,
+     2.5
+    ],
+    "forward": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "name": "Spawn1",
+    "yaw": -180.0
+   },
+   {
+    "at": [
+     -5.0,
+     0.0,
+     2.5
+    ],
+    "forward": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "name": "Spawn2",
+    "yaw": -180.0
+   },
+   {
+    "at": [
+     -3.0,
+     0.0,
+     2.5
+    ],
+    "forward": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "name": "Spawn3",
+    "yaw": -180.0
+   },
+   {
+    "at": [
+     -1.0,
+     0.0,
+     2.5
+    ],
+    "forward": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "name": "Spawn4",
+    "yaw": -180.0
+   },
+   {
+    "at": [
+     1.0,
+     0.0,
+     2.5
+    ],
+    "forward": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "name": "Spawn5",
+    "yaw": -180.0
+   },
+   {
+    "at": [
+     3.0,
+     0.0,
+     2.5
+    ],
+    "forward": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "name": "Spawn6",
+    "yaw": -180.0
+   },
+   {
+    "at": [
+     5.0,
+     0.0,
+     2.5
+    ],
+    "forward": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "name": "Spawn7",
+    "yaw": -180.0
+   },
+   {
+    "at": [
+     7.0,
+     0.0,
+     2.5
+    ],
+    "forward": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "name": "Spawn8",
+    "yaw": -180.0
+   },
+   {
+    "at": [
+     9.0,
+     0.0,
+     2.5
+    ],
+    "forward": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "name": "Spawn9",
+    "yaw": -180.0
+   }
+  ],
+  "walk": {
+   "arrived": true,
+   "end": [
+    18.1402072906494,
+    0.000201464747078717,
+    2.14074349403381
+   ],
+   "min_y": 0.000201464747078717,
+   "of": 22,
+   "passed": [
+    [
+     8.7,
+     2.5
+    ],
+    [
+     15.32,
+     -5.78
+    ],
+    [
+     16.46,
+     -12.74
+    ],
+    [
+     14.56,
+     -21.74
+    ],
+    [
+     5.22,
+     -28.45
+    ],
+    [
+     0.23,
+     -30.83
+    ],
+    [
+     0.01,
+     -36.72
+    ],
+    [
+     0.0,
+     -31.27
+    ],
+    [
+     4.71,
+     -28.64
+    ],
+    [
+     10.71,
+     -28.41
+    ],
+    [
+     5.26,
+     -28.59
+    ],
+    [
+     0.22,
+     -30.84
+    ],
+    [
+     -4.73,
+     -28.64
+    ],
+    [
+     -10.73,
+     -28.41
+    ],
+    [
+     -15.33,
+     -22.23
+    ],
+    [
+     -16.47,
+     -13.26
+    ],
+    [
+     -16.99,
+     1.74
+    ],
+    [
+     -18.12,
+     1.95
+    ],
+    [
+     -15.24,
+     3.84
+    ],
+    [
+     14.71,
+     4.0
+    ],
+    [
+     18.14,
+     2.14
+    ]
+   ],
+   "radius_m": 0.68,
+   "reached": 22,
+   "seconds": 60.75,
+   "stuck": [
+    18.1402072906494,
+    0.000201464747078717,
+    2.14074349403381
+   ]
+  },
+  "size_worst_m": 1.9073486718923505e-06
+ },
+ "shots": {
+  "c_back": {
+   "draw_calls": 2806,
+   "gpu_ms": 3.65,
+   "mean_abs": 1.912,
+   "off_share": 0.0152,
+   "primitives": 1149737,
+   "size": [
+    1920,
+    1080
+   ]
+  },
+  "corner_nw": {
+   "draw_calls": 3335,
+   "gpu_ms": 3.56,
+   "mean_abs": 0.002,
+   "off_share": 0.0,
+   "primitives": 1117012,
+   "size": [
+    1920,
+    1080
+   ]
+  },
+  "spawn_eye": {
+   "draw_calls": 74,
+   "gpu_ms": 2.64,
+   "mean_abs": 0.003,
+   "off_share": 0.0,
+   "primitives": 177096,
+   "size": [
+    1920,
+    1080
+   ]
+  }
+ },
+ "problems": []
+}

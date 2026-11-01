@@ -346,6 +346,108 @@ class ShipHullDetailTest(unittest.TestCase):
         for _faces, q in ell + two:
             self.assertTrue(convex(q), q)
 
+    def test_the_belly_lights_hang_just_under_the_bottom(self) -> None:
+        """polish n2: the underbody's light lines follow the hull's bottom (S.heights) a few mm under it, never in
+        the air or deep in the skin, on both sides, the glow under its dark channel."""
+        parts = {p["name"]: p for p in D.belly_lights({}, LAYOUT)}
+        self.assertEqual(set(parts), {"belly_channel", "belly_glow", "chine_channel", "chine_glow"})
+        for k in ("chine_channel", "chine_glow"):   # n3: on the chines' slant (their own test)
+            parts.pop(k)
+        for p in parts.values():
+            xs = [x for x, _y, _h in p["verts"]]
+            self.assertLess(min(xs), -10.0)
+            self.assertGreater(max(xs), 10.0)
+            for x, y, h in p["verts"]:
+                hb = S.heights(x, y)
+                self.assertIsNotNone(hb, (p["name"], x, y))
+                self.assertTrue(hb[1] - 0.05 < h < hb[1] + 0.005, (p["name"], x, y, h, hb[1]))
+        low = min(h for _x, _y, h in parts["belly_glow"]["verts"])
+        self.assertLess(low, min(h for _x, _y, h in parts["belly_channel"]["verts"]))
+
+
+    def test_the_chine_lines_lie_on_the_slanted_bottom(self) -> None:
+        """polish n3: the chine lines run round the lower chines at the bottom's contour D.CHINE[0], on the face
+        (the glow 8-13 mm out along its normal, the channel from 6 mm in), on both sides, clear of the jaw, and face
+        out and down so an eye at 1.6 m, 6 m out from a line, sees most of them."""
+        cc, cg = D.chine_lines()
+        self.assertGreater(len(cg[0]), 8 * 300)
+        for v, _f in (cc, cg):
+            xs = [x for x, _y, _h in v]
+            self.assertLess(min(xs), -12.0)
+            self.assertGreater(max(xs), 12.0)
+            for x, y, h in v:
+                self.assertLess(abs(h - D.CHINE[0]), 0.08, (x, y, h))
+                self.assertFalse(abs(x) < D.CHINE[2] - 0.2 and y < D.CHINE[3] - 0.2, (x, y))
+            # mirrored: as many vertices ahead of the jaw's line on the west as on the east (a signed x once dropped
+            # every west segment there)
+            east = sum(1 for x, y, _h in v if x > 0 and y < D.CHINE[3])
+            west = sum(1 for x, y, _h in v if x < 0 and y < D.CHINE[3])
+            self.assertGreater(east, 0)
+            self.assertEqual(east, west)
+        seen = total = 0
+        v, f = cg
+        for face in f:
+            q = [v[i] for i in face]
+            c = [sum(p[k] for p in q) / len(q) for k in range(3)]
+            e1 = [q[1][k] - q[0][k] for k in range(3)]
+            e2 = [q[2][k] - q[0][k] for k in range(3)]
+            n = (e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0])
+            nl = math.sqrt(sum(a * a for a in n)) or 1.0
+            if n[2] / nl > -0.5:   # only the glow's outer face (its sides and inner face skipped)
+                continue
+            total += 1
+            out = (n[0], n[1])
+            ol = math.hypot(*out) or 1.0
+            eye = (c[0] + 6.0 * out[0] / ol, c[1] + 6.0 * out[1] / ol, 1.6)
+            if sum(n[k] * (eye[k] - c[k]) for k in range(3)) > 0:
+                seen += 1
+        self.assertGreater(total, 300)
+        self.assertGreater(seen / total, 0.8, (seen, total))
+
+    def test_the_nozzles_have_the_old_look_inside(self) -> None:
+        """nb (the engineer, 2026-11-01): no fan inside the bells (n3/n4's stator blades, spinner and stepped throat
+        read as a jet engine): only the dark throat, its light ring and the small dot stand inside the bell's inner
+        wall; the lip's light band is ten segments with gaps (lens step 2's rhythm), each a smooth arc."""
+        for name in ("FOIL", "FOIL_EDGE", "_blade", "_spinner"):
+            self.assertFalse(hasattr(D, name), name)
+        for args in ({"r": 1.42, "length": 4.665}, {"r": 1.62, "length": 4.965}):
+            r, ln = args["r"], args["length"]
+            parts = {p["name"]: p for p in D.nozzle_pod(args, LAYOUT) + D.pod_ring(args, LAYOUT)}
+            for gone in ("pod_vanes", "pod_vane_edges", "pod_spinner", "pod_spinner_band", "pod_hub", "pod_steps",
+                         "pod_rings", "pod_glow_hot", "pod_glow_deep"):
+                self.assertNotIn(gone, parts)
+            # the barrel's dark collar keeps its own ring (1.04 r)
+            self.assertGreater(max(math.hypot(x, z) for x, _y, z in parts["pod_collar"]["verts"]), r)
+            self.assertFalse([p for p in parts.values() if p["mat"].startswith(("ext_blade", "glow_pod_"))])
+            inside = ("pod_throat", "pod_inner_ring", "pod_dot")
+            for name, p in parts.items():
+                if name in inside:
+                    continue
+                for x, y, z in p["verts"]:   # nothing stands in the nozzle (inside 0.79 r, behind the bell's wall)
+                    self.assertFalse(math.hypot(x, z) < 0.79 * r and ln - 0.75 < y < ln + 0.3, (name, x, y, z))
+            # the dot: small, on the throat's floor, glowing
+            dot = parts["pod_dot"]
+            self.assertEqual(dot["mat"], "ext_glow_cyan_dim")
+            self.assertLess(max(math.hypot(x, z) for x, _y, z in dot["verts"]), 0.13 * r)
+            self.assertLess(max(y for _x, y, _z in dot["verts"]), ln - 0.69)   # the funnel floor, 1-6 mm proud
+            self.assertEqual(parts["pod_inner_ring"]["mat"], "glow_pod")
+            # the segments: ten arcs, every vertex clear of the joints by the gap, each arc in several steps
+            segs = parts["pod_segments"]
+            self.assertEqual(segs["mat"], "glow_pod")
+            step = 2 * math.pi / D.SEG_N
+            self.assertEqual(D.SEG_N, 10)
+            hit = set()
+            for x, _y, z in segs["verts"]:
+                a = math.atan2(z, x) % (2 * math.pi)
+                off = a % step
+                self.assertGreater(min(off, step - off), D.SEG_GAP - 1e-6, a)
+                hit.add(int(a // step))
+            self.assertEqual(hit, set(range(10)))
+            self.assertGreaterEqual(len(segs["verts"]), 10 * 4 * 5)
+            # they lie in the lip's groove (pod_tail_m from its floor)
+            self.assertAlmostEqual(max(y for _x, y, _z in segs["verts"]) - ln, LAYOUT["hull"]["pod_tail_m"], delta=0.01)
+
+
 
 if __name__ == "__main__":
     unittest.main()
