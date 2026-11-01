@@ -17,6 +17,10 @@ the spec's [gate2] section, resolved on the build's measures) and reads the resu
   vs_skin judges the stretch beyond her skin's at the same place in the same frame (garment_gate2_geom.skin_excess):
   each vertex of the part tied at the reference to its nearest point of her skin (cfg skin: the body and its hidden
   body_removed, the skin under the cloth), followed by its face and barycentric weights (G3e).
+- Laps (G3f, the manager's option (a)): a plate's lower strip lies over a band and may slide on it, hidden. Per frame
+  the strip is moved back into the band's reference frame (the band's rigid fit) and measured: the least overlap of
+  its lowest row under the band's top (garment_gate2_geom.lap_overlap), the deepest any strip vertex goes inside the
+  band's outer face (a ray from outside toward the band's axis) and the edge's largest gap off it, mm.
 
 blender -b --python garment_motion.py -- --config CONFIG.json --out OUT.json
 """
@@ -142,6 +146,25 @@ def main() -> int:
                     pairs.append((int(i), ids, list(poly_3d_calc([ref[k] for k in ids], loc))))
         ties[j["name"]] = pairs
         rep["parts"]["join: " + j["name"]] = {"tied": len(pairs)}
+    # the laps (G3f): the band's top row and outer face at the reference, the strip's lowest row and its vertices
+    # level with the band
+    laps = {}
+    for lp in cfg.get("laps", []):
+        band, strip = parts[lp["on"]], parts[lp["plate"]]
+        if len(band) < 3 or not len(strip):
+            laps[lp["name"]] = None
+            continue
+        bz = co0[band, 2]
+        top = band[bz >= bz.max() - 1e-4]
+        sz = co0[strip, 2]
+        edge = strip[sz <= sz.min() + 0.002]
+        level = strip[(sz <= bz.max() + 1e-3) & (sz >= bz.min() - 1e-3)]
+        on = set(band.tolist())
+        tris = [t for t in tri_all if all(k in on for k in t)]
+        laps[lp["name"]] = {"top": top, "edge": edge, "level": level, "band": band,
+                            "tree": BVHTree.FromPolygons([tuple(c) for c in ref], tris),
+                            "centre": ref[band].mean(0)}
+        rep["parts"]["lap: " + lp["name"]] = {"band_top": len(top), "edge": len(edge), "level": len(level)}
     # her skin under the parts judged against it (vs_skin): each vertex's nearest skin point at the reference
     skin_parts = [st["part"] for st in cfg["stretch"] if st.get("vs_skin")]
     skin_objs = [bpy.data.objects[n] for n in cfg.get("skin", []) if n in bpy.data.objects] if skin_parts else []
@@ -184,7 +207,7 @@ def main() -> int:
         arm.animation_data.action = act
         f0, f1 = (int(round(x)) for x in act.frame_range)
         res = {"frames": 0, "slip_mm": {}, "flat_mm": {}, "stretch_pct": {}, "stretch_p95_pct": {},
-               "skin_excess_pct": {}, "skin_excess_p95_pct": {}}
+               "skin_excess_pct": {}, "skin_excess_p95_pct": {}, "lap_mm": {}, "lap_through_mm": {}, "lap_gap_mm": {}}
         sc.frame_set(f0)
         sref0 = None
         for f in range(f0, max(f0 + 1, f1 + 1), max(1, cfg.get("every", 1))):
@@ -201,6 +224,30 @@ def main() -> int:
                 v = 1000 * B.slip(ref, co, pairs, fit[0]) if pairs and fit else None
                 old = res["slip_mm"].get(j["name"])
                 res["slip_mm"][j["name"]] = v if old is None else max(old, v)
+            for name, L in laps.items():
+                if L is None:
+                    continue
+                r_, t_, _res = B.rigid_fit(ref[L["band"]], co[L["band"]])
+                ov = G.lap_overlap(ref[L["top"]], G.to_frame(r_, t_, co[L["edge"]]))
+                deep, gap = 0.0, None
+                c = L["centre"]
+                edge = set(L["edge"].tolist())
+                for i, p in zip(L["level"].tolist(), G.to_frame(r_, t_, co[L["level"]])):
+                    d = np.array([p[0] - c[0], p[1] - c[1], 0.0])
+                    if np.linalg.norm(d) < 1e-6:
+                        continue
+                    d /= np.linalg.norm(d)
+                    hit = L["tree"].ray_cast(tuple(p + 0.3 * d), tuple(-d), 0.6)[0]
+                    if hit is None:
+                        continue
+                    g = float(np.dot(p - np.array(hit), d))
+                    deep = max(deep, -g)
+                    if i in edge:
+                        gap = g if gap is None else max(gap, g)
+                for key, v, worst in (("lap_mm", ov, min), ("lap_through_mm", deep, max), ("lap_gap_mm", gap, max)):
+                    v = None if v is None else 1000 * v
+                    old = res[key].get(name)
+                    res[key][name] = v if old is None else (old if v is None else worst(old, v))
             for fl in cfg["flat"]:
                 fit = fits.get(fl["part"])
                 v = 1000 * float(fit[2].max()) if fit else None
@@ -223,7 +270,8 @@ def main() -> int:
                 for key, v in (("stretch_pct", mx), ("stretch_p95_pct", p95)):
                     old = res[key].get(st["part"])
                     res[key][st["part"]] = v if old is None else (old if v is None else max(old, v))
-        for k in ("slip_mm", "flat_mm", "stretch_pct", "stretch_p95_pct", "skin_excess_pct", "skin_excess_p95_pct"):
+        for k in ("slip_mm", "flat_mm", "stretch_pct", "stretch_p95_pct", "skin_excess_pct", "skin_excess_p95_pct",
+                  "lap_mm", "lap_through_mm", "lap_gap_mm"):
             res[k] = {n: (None if v is None else round(v, 2)) for n, v in res[k].items()}
         rep["clips"][clip] = res
         say("clip", clip, json.dumps(res))

@@ -312,3 +312,29 @@ def verdict(value, tol, smaller_is_better: bool = True):
     if value is None:
         return None
     return value <= tol if smaller_is_better else value >= tol
+
+
+
+def to_frame(r, t, pts) -> list:
+    """Points now moved back into a part's reference frame: the inverse of the rigid fit ref -> now (r ref + t);
+    plain Python (numpy arrays or lists)."""
+    out = []
+    for p in pts:
+        d = [float(p[k]) - float(t[k]) for k in range(3)]
+        out.append([sum(d[i] * float(r[i][j]) for i in range(3)) for j in range(3)])
+    return out
+
+
+def lap_overlap(top_ref, edge) -> float | None:
+    """The least overlap of a plate's lower edge over a band (art #196, G3f; the manager's option (a)): per edge point
+    (in the band's reference frame) the band's top there (its nearest top-row point across, in x and y) less the
+    point's height; the least of them (m). Under 0: the band's top shows under the edge. None without points."""
+    top = [tuple(float(c) for c in q) for q in top_ref]
+    best = None
+    for e in edge:
+        q = min(top, key=lambda q: (q[0] - float(e[0])) ** 2 + (q[1] - float(e[1])) ** 2, default=None)
+        if q is None:
+            return None
+        v = q[2] - float(e[2])
+        best = v if best is None else min(best, v)
+    return best

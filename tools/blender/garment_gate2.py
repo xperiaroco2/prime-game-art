@@ -166,6 +166,10 @@ def check_gate2(spec) -> list[str]:
         for key in ("moving", "on"):
             if j[key] not in g2["parts"]:
                 bad.append(f"joins '{j['name']}': {key} {j[key]!r} is no part")
+    for lp in g2.get("laps", []):
+        for key in ("plate", "on"):
+            if lp[key] not in g2["parts"]:
+                bad.append(f"laps '{lp['name']}': {key} {lp[key]!r} is no part")
     for key in ("flat", "stretch"):
         for f in g2.get(key, []):
             if f["part"] not in g2["parts"]:
@@ -314,7 +318,7 @@ def motion_config(spec, meas, blend: str) -> dict:
     return {"blend": blend, "clips": g2["clips"], "parts": parts, "reference_clip": g2.get("reference_clip"),
             "classify": {"over_z": r(g2["classify"]["over_z"]), "hardware_max_verts": g2["classify"]["hardware_max_verts"]},
             "joins": [{**j, "reach_m": j["reach_mm"] / 1000} for j in g2["joins"]],
-            "flat": g2["flat"], "stretch": g2["stretch"],
+            "flat": g2["flat"], "stretch": g2["stretch"], "laps": g2.get("laps", []),
             "skin": g2.get("skin_meshes", [spec["body"]["mesh"], "body_removed"])}
 
 
@@ -332,6 +336,15 @@ def motion_rows(spec, motion: dict, poke: dict | None) -> list[dict]:
             v = None if m is None else m["slip_mm"].get(j["name"])
             rows.append({"clip": clip, "check": f"slip: {j['name']}", "value": v, "unit": "mm", "tol": j["tol_mm"],
                          "pass": G.verdict(v, j["tol_mm"])})
+        for lp in g2.get("laps", []):   # G3f: a plate over the band may slide on it, hidden: the overlap kept
+            n = lp["name"]
+            v = None if m is None else (m.get("lap_mm") or {}).get(n)
+            gap = None if m is None else (m.get("lap_gap_mm") or {}).get(n)
+            rows.append({"clip": clip, "check": f"lap over the band: {n} (least overlap; edge's largest gap {gap} mm)",
+                         "value": v, "unit": "mm", "tol": lp["min_mm"], "pass": G.verdict(v, lp["min_mm"], False)})
+            v = None if m is None else (m.get("lap_through_mm") or {}).get(n)
+            rows.append({"clip": clip, "check": f"through the band: {n} (deepest)", "value": v, "unit": "mm",
+                         "tol": lp["through_mm"], "pass": G.verdict(v, lp["through_mm"])})
         for f in g2["flat"]:
             v = None if m is None else m["flat_mm"].get(f["part"])
             rows.append({"clip": clip, "check": f"flatness: {f['part']}", "value": v, "unit": "mm", "tol": f["tol_mm"],
