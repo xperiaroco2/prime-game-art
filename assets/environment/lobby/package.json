@@ -199,11 +199,11 @@
    "bytes": 622
   },
   "levels/lobby/lobby_hall.gd": {
-   "sha256": "fc7049a6877c9d2138802e9c89020b38749d54652f0b0efdb19dbca163fe15cc",
-   "bytes": 1862
+   "sha256": "4f162a8b7bca711a9eb9330dd610840c4ab6b1fbb76143baaf301f191e286f7a",
+   "bytes": 1981
   },
   "assets/environment/lobby/materials/earth_object.tres": {
-   "sha256": "e5ea378908c207e47593e256446750899d00daccf7006895ea223ffc8ad2ee0e",
+   "sha256": "39885ef57eaad25767054da89b4a913f9ebde378a073fb827b9aa951720d25c6",
    "bytes": 2663
   },
   "assets/environment/lobby/materials/lobby_env.tres": {
@@ -215,11 +215,11 @@
    "bytes": 332
   },
   "levels/lobby/lobby_hall.tscn": {
-   "sha256": "776d2b1737bf5efd2a6f24293562deb13a031d47326239482f262db4ab6c86cd",
-   "bytes": 429651
+   "sha256": "a3033bd93a6164e339c35e3be06b614afcaed3d80f05c85bc5c523fad965c709",
+   "bytes": 429639
   }
  },
- "bytes": 38514077,
+ "bytes": 38514184,
  "questions": [
   "L1: the ship is an instance of the ship package's res://levels/ship/ship.tscn (assets/environment/ship/HANDOFF.md), never a copy: the game needs the ship package at its paths. What the hall must not have is saved switched off (a packed scene cannot remove a node of an instance: Ship/Clearing hidden and disabled, Ship/Environment's WorldEnvironment on the hall's environment, the suns under Ship/Lights hidden), and the root's level script res://levels/lobby/lobby_hall.gd frees them on _ready (its ship_free paths) and has the reflection probes capture again a frame later, as the art's assembly does. Keep the script on LobbyHall; a game script for the lobby extends it and calls super._ready().",
   "L2: the jaw nose is saved shut (jaw_lower and jaw_upper at 0 deg) by overrides; Ship/Nose/AnimationPlayer still holds open/close: the lobby never plays them. Its pose is the scene's, so nothing needs to run at load.",
@@ -229,7 +229,6 @@
   "L6: the glow surfaces (the hall's lamps, strips, ring and the ship's glow times ship_emit 0.3) are material overrides inside the pieces' instances; the ship's meshes draw on render layer 11 (ship light K1: the hall's pendants and Earth light skip it, its own key, rim, back and bounce suns light only it): a player model must stay off layer 11.",
   "L7: the positional shadow atlas: the art's shots use 4096 with every quadrant subdivided 4 (the pendants' shadowed spots); the game's project settings decide (HANDOFF 'Light').",
   "L8: the credit line \"Earth imagery: NASA\" goes in the game's credits (NASA-PD, sources/nasa_earth_lobby.toml).",
-  "L9: this package was exported with --no-compare (no window could open on the art PC, 2026-11-01): its three views have not been compared with lobby --shoot's. Step 5b's comparison found c_back a mean of 3.16 (of 255) off against the 2.0 rule; the level script's frees are the fix under test (art#356). Until that comparison passes, treat the look of the views that see the ship as unconfirmed.",
   "Imports: each file's .import holds only the package's options; the game's editor regenerates the .import files (and the uids) on its first import: commit the regenerated ones."
  ]
 }

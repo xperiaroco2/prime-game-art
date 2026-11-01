@@ -2,8 +2,8 @@
 
 The lobby's hall of art#356 (a 40 x 40 m hall with a bowed window to the night Earth, a ribbed vault, the entrance
 arch, four sealed doors, art#263's ship docked on a floor ring) as the game's package. Written by
-`tools/run.sh lobby --export <raw>/lobby/hall/v16/export3 --no-compare` (2026-11-01, branch feat/lobby-hall-356, steps
-5b-5c2;
+`tools/run.sh lobby --export <raw>/lobby/hall/v18/export` (2026-11-01, branch fix/lobby-cback-366, steps 5b-5c2 and
+follow-up #366;
 `docs/lobby.md` "The export"); the files and their hashes are in `manifest.toml` and `package.json`, the check's
 numbers in `report.json`. The binaries are not committed here: the package lives in the raw folder until approved (as
 the ship's).
@@ -54,7 +54,7 @@ script.
 - `Environment/WorldEnvironment`: `lobby_env.tres`.
 - `Lights`: the L3 rig: six shadowed pendant spots and their up-fills, the pilaster strips', doors' and corridor's
   omnis, the Earth sun (shadowed) and the dawn sun, the window's cold spill spots, the north wall's negative wash, and
-  K1's ship-only lights (pendant and Earth copies, key, rim, back and bounce suns on layer 11 only). 60 lights.
+  K1's ship-only lights (pendant copies at 0.04 and Earth copies at 0.35 of their lamps, key, rim, back and bounce suns on layer 11 only). 60 lights.
 - `Probes`: the hall's reflection probes and the ship's own (`probe_ship`, reflecting only layer 11); the ship package
   keeps its 7 interior probes.
 - `Markers/Spawn0` .. `Spawn9`: `Marker3D` at x -9 .. 9 step 2, y 0, z 2.5, yaw 180: each marker's forward (-Z)
@@ -87,9 +87,10 @@ ship's own light set) unless they should take the ship's light.
   inside pieces in the lobby is the game's call.
 - The spawns stand 0.76 m outside the floor ring (r 15 round the closed ship's middle, z -13.26); the ring is an inlay
   only.
-- Step 5b's check found the `c_back` view a mean of 3.16 (of 255) off `lobby --shoot`'s (the 2.0 rule; `spawn_eye`
-  0.07 and `corner_nw` 0.74 held). The level script above is the fix under test; this package was exported with
-  `--no-compare` while no window could open on the art PC, so the views' comparison is still to run (art#356).
+- The views' comparison with `lobby --shoot` (the 2.0 rule, mean difference of 255): `c_back` 1.907 (1.52% of the
+  pixels off by more than 16), `corner_nw` 0.002, `spawn_eye` 0.003. Step 5b's 3.16 on `c_back` was the shots' fault
+  (follow-up #366, `docs/lobby.md`): their ship-only pendant and Earth copies sat at the floor's centre; placed as
+  here, K1's pendant share went 0.25 -> 0.04 to keep the approved look.
 - The ship package names its two suns `@DirectionalLight3D@3` and `@4`; if art#263 renames them, `ship_free` must
   follow (the check fails on a sun left over).
 - The Earth's textures are compressed (BC7); the art's shots load them uncompressed.
