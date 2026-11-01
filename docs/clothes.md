@@ -974,7 +974,12 @@ tools/run.sh gate2 --spec specs/dungarees_dims.toml --body <undressed probe.json
   rest shape moved rigidly onto it (change from rest: lean B's drawn bend is the rest shape, only a new bend counts),
   stretch the edges' |length / rest - 1|, judged on the 95th percentile (the largest beside it: one torn edge;
   plain Python, none for a part with no edges). Each part's vertex count is a check of its own: a part with none
-  fails (its numbers would pass empty). Pokes come from `clothes_proof.py`'s
+  fails (its numbers would pass empty). A part may keep only pieces of `piece_verts` [lo, hi] vertices (the band's
+  ring apart from the yoke inside it, the bib's foot apart from the band under its edge). **A part on one bone has
+  flatness and stretch 0 by construction**, and a join between two parts on the same bone slip 0: there only the
+  joins between parts on different bones measure anything. So the dungarees' spec joins the bib's and the back's
+  lowest centimetre (`bib_foot`, `back_foot`) and the yoke's top to the band (Chest against Spine; the fresh review
+  of G3c), and stretches the plates' seam blend (`bib_seam`, `back_seam`) beside the band and the straps. Pokes come from `clothes_proof.py`'s
   `poke.json` (`--poke`; run clothes_proof first).
 - **The page** (`index.html` in OUT, with `gate2.json`, `numbers.png`): per view concept | the spec drawn over the
   concept | the build with the spec's lines at 5 px/cm (`garment_drawing.view_sheet` on the build's probe), the
@@ -1005,11 +1010,25 @@ blender.run_script("dungarees_build.py", ["--spec", "specs/dungarees_dims.toml",
   rest the panel bone's (no arm bones); the default 0 (G3c's c01) puts the whole strap on Chest: the clavicle moved the
   15 cm between the bib top and the shoulder against Chest, 16-57 % stretch in the run clips at 1.0 (b04), 0 % and 0
   pokes in every clip at 0. The turn-ups ride the lower leg alone.
+- **The seams on the band (G3d):** on Chest alone the plates' lower edges left the band when her trunk bent: the
+  new joins measured c01's bib foot 6.9 mm off the band in Walk, 43 in Jog, 58 in Strafe, 76 in Jump_Start (the back
+  the same), with every other check passing, and the close-ups show a strip of her back between the panel and the
+  band in every Jog frame. The build eases the plates' lowest `[build] seam_blend_cm` from the band's weights to
+  Chest's (`dungarees_build.seam_w`), so the bottom row rides the band; the flatness is judged over the plate above
+  the blend (`seam_blend_cm` 10, d10). The blend has to take the whole bend between Spine and Chest: over 5 cm (d05)
+  the feet still slid 3.2-6.2 mm in Jog, Strafe and Jump_Start; over 10 cm (d10) they hold (at most 1.7 mm), but the
+  seam zone's edges change length by 7-9 % in Walk, 37 in Jog, 59 in Strafe and 69-80 in Jump_Start (p95; d05 the
+  same or worse): linear blend skinning squeezes the zone as her trunk folds, where cloth would bow out. Open (the
+  manager): a tucked overlap over the band, a corrective bone, or the seam judged against her own skin's stretch.
+- **The build's own numbers** (`[build]` in the spec, not sizes a gate measures): the seam blend, the band's ease
+  off the shirt, her front's and back's half widths the plates are laid on (11 and 12 cm; `garment_drawing`'s gaps
+  read the same), the straps' ray origin, the turn-up's wall, the buckle ring's sizes. A vertex the build leaves
+  without weights (an arm-only weight `no_arms` empties, a yoke vertex with no column) stops the build.
 - **Shapes:** the bib the forward convex envelope of her front over |x| < 11 cm + the shirt + 0.3 cm, its top edge
   0.8 cm off (lean B: straight across, one bend over the bust); the back the same behind, its top the centre at
   118.67 and the corners 3 cm higher at the straps' inner edges, the approved drawing's shallow V (straight from
   the centre to the corners; the manager, G3c: G3b's U option is gone); the straps laid by rays over the plates and the shirt, flush
   with the bib's corners on the bib and at 9.5 cm from her collarbone up; the bare ankle's skin (removed by d79
-  under its trousers) rejoined from `body_removed` between 12.5 and 20 cm.
+  under its trousers) rejoined from `body_removed` between 12.5 and 21.5 cm (`--leg-cut`: up into the turn-up, G3d).
 - **b02** (`D:/prime-art-raw/2026-10-31-gate2/g3a/b02/`): 9,629 vertices, 18,910 triangles; every one of the
   spec's 28 sizes within its tolerance at rest (`spec/spec_vs_b02.md`).

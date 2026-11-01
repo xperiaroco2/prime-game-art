@@ -7,15 +7,17 @@ the approved drawing's shapes, garment_drawing.lines), measured against her undr
 - the trousers: the Meshy garment's largest piece kept between the cuff (cut inside it, --leg-cut) and --rise-cut;
   over the cut a yoke extruded from the cut's loop up inside the waistband (her body + --yoke-ease), the trousers'
   own ease eased into it; weights from the trousers' to the band's;
-- the waistband: a closed ring, the spec's top and height, her trunk + the shirt + 0.3 cm, one constant weight blend
-  (her Hips/Spine/Chest under it): a stiff ring that cannot stretch;
+- the waistband: a closed ring, the spec's top and height, her trunk + the shirt + [build] band_ease_cm, on one bone
+  (--band-bone, Spine): a stiff ring that cannot stretch;
 - the bib: a 2 mm plate, the spec's top, widths and lean B (the forward envelope of her front + the shirt + the
-  bust gap, the top edge at its own gap): straight across, one bend over the bust; one constant weight blend
-  (her Spine/Chest/UpperChest under it), so it moves as one piece;
+  bust gap, the top edge at its own gap): straight across, one bend over the bust; on one bone (--panel-bone, Chest),
+  so it moves as one piece, but for its seam on the band: its lowest [build] seam_blend_cm ease from the band's
+  weights to Chest's, so a Spine-against-Chest twist neither opens its lower corners nor slides it inside the band;
 - the back panel: the same at the back, its top the drawing's shallow V (the centre at back_top_z, the corners 3 cm
   higher at back_top_w);
 - the straps: 3.8 cm ribbons at x = +-strap_x laid by rays over the bib, her shirt and the back panel; their ends
-  carry the bib's and the back panel's weights exactly, the middle eases to her shoulder's (no arm bones);
+  carry the bib's and the back panel's weights exactly, the middle --strap-sh-share of her shoulder's (default 0: the
+  whole strap rides Chest; no arm bones);
 - the pocket (a `pocket` material plate on the bib), the buckle buttons and rings, the side buttons on the band,
   the turn-ups (rigid rings on the lower leg, the spec's hem, height and width).
 
@@ -206,7 +208,8 @@ def main() -> None:
     ap.add_argument("--yoke-ease", type=float, default=0.0045, help="the yoke's top off her body (inside the band)")
     ap.add_argument("--yoke-rows", type=int, default=9)
     ap.add_argument("--yoke-into-band", type=float, default=0.005, help="the yoke's top over the band's bottom (m)")
-    ap.add_argument("--ankle-restore", default="0.125,0.20", help="body_removed faces between these heights rejoin")
+    ap.add_argument("--ankle-restore", default="0.125,0.215",
+                    help="body_removed faces between these heights rejoin (to --leg-cut: her skin inside the turn-up)")
     ap.add_argument("--plate", type=float, default=0.002, help="the bib's and back panel's thickness (m)")
     ap.add_argument("--panel-bone", default="Chest",
                     help="the bib, pocket, back panel and the straps' ends on this bone alone (rigid); '' = her blend")
@@ -217,6 +220,7 @@ def main() -> None:
     a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     spec = S.load_spec(a.spec)
     d = {k: v["cm"] / 100 for k, v in spec["dims"].items()}
+    bk = {k: (v / 100 if isinstance(v, (int, float)) else v) for k, v in spec["build"].items() if k.endswith("_cm")}
     lm = {k: v / 100 for k, v in spec["body"]["landmarks_cm"].items()}
     ref = Ref(json.loads(Path(a.ref).read_text(encoding="utf-8")), a.ref_mesh)
     out = Path(a.out)
@@ -320,7 +324,7 @@ def main() -> None:
         row = []
         for th in ths:
             r0 = ref.radius(z, th, cy)
-            p = Vector((math.cos(th), math.sin(th), 0)) * (r0 + SHIRT + 0.003) + Vector((0, cy, z))
+            p = Vector((math.cos(th), math.sin(th), 0)) * (r0 + SHIRT + bk["band_ease_cm"]) + Vector((0, cy, z))
             q = Vector((math.cos(th), math.sin(th), 0)) * (r0 + SHIRT) + Vector((0, cy, z))
             row.append((p, q))
             band_samples.append(q)
@@ -346,7 +350,7 @@ def main() -> None:
         rb = ref.radius(a.rise_cut, th, cut_cy) or r_cut
         base[v] = (th, r_cut - rb, B.W[v])
     cur = edges
-    yoke_n = 0
+    yoke_n = yoke_lost = 0
     for k in range(1, a.yoke_rows + 1):
         t = k / a.yoke_rows
         s = smooth01(t)
@@ -359,6 +363,7 @@ def main() -> None:
             src = min((e.other_vert(nv) for e in nv.link_edges if e.other_vert(nv) in col),
                       key=lambda o: (o.co - nv.co).length, default=None)
             if src is None:
+                yoke_lost += 1
                 continue
             col[nv] = col[src]
             th, ease, w0 = base[col[nv]]
@@ -371,14 +376,17 @@ def main() -> None:
             yoke_n += 1
     rep["yoke"] = {"loop_verts": len(loop), "loop_edges": len(edges), "verts": yoke_n, "top_m": ztop,
                    "from_m": a.rise_cut}
+    if yoke_lost:
+        raise SystemExit(f"the yoke: {yoke_lost} new vertices with no column under them (no weights, no place)")
 
     # --- the bib: lean B -----------------------------------------------------------------------------------------
     zs = [bbz + i * (bt - bbz) / 48 for i in range(49)]
+    hwf = bk["body_half_w_cm"]["front"] / 100      # her front over |x| < this (garment_drawing measures the same)
     pts = []
     for z in zs:
         # the drawing's lean B (garment_drawing.lines): her front over |x| < 11 cm + the shirt + the bust gap
-        pts.append((z, ref.front(z, 0.11) - SHIRT - d["bib_standoff_bust"]))
-    pts[-1] = (bt, min(pts[-1][1], ref.front(bt, 0.11) - SHIRT - d["bib_standoff_top"]))
+        pts.append((z, ref.front(z, hwf) - SHIRT - d["bib_standoff_bust"]))
+    pts[-1] = (bt, min(pts[-1][1], ref.front(bt, hwf) - SHIRT - d["bib_standoff_top"]))
     hull = envelope(pts, front=True)
     bib_y = lambda z: chain_y(hull, z)
     nb = 17
@@ -398,7 +406,13 @@ def main() -> None:
     w_bib = shirt_w.mean(bib_samples, keep=TRUNK)
     if a.panel_bone:  # G3b: rigid, so flat in every clip (b02's blend bent 9-13 mm in Jog and Strafe)
         w_bib = {a.panel_bone: 1.0}
-    B.slab(rows, lambda p: w_bib, 0)
+    seam = bk["seam_blend_cm"]
+
+    def seam_w(w_top):
+        """The plate's weights: the band's at the band's top, eased to w_top over the seam blend (G3d: on one bone
+        a Spine-against-Chest twist opened the plates' lower corners off the band)."""
+        return lambda p: w_top if seam <= 0 or p.z >= bbz + seam else mix(w_band, w_top, smooth01((p.z - bbz) / seam))
+    B.slab(rows, seam_w(w_bib), 0)
     rep["bib"] = {"weights": w_bib, "hull": [[round(z * 100, 2), round(y * 100, 2)] for z, y in hull],
                   "top_y_cm": round(bib_y(bt) * 100, 2), "band_y_cm": round(bib_y(bbz) * 100, 2)}
 
@@ -421,7 +435,7 @@ def main() -> None:
     corner = kt + 0.03                                   # garment_drawing.lines: the corners 3 cm over the V
     xs_in = d["strap_x"] - d["strap_w"] / 2
     zb_ = [bbz + i * (corner - bbz) / 48 for i in range(49)]
-    pts = [(z, ref.front(z, 0.12, back=True) + SHIRT + d["back_standoff"]) for z in zb_]
+    pts = [(z, ref.front(z, bk["body_half_w_cm"]["back"] / 100, back=True) + SHIRT + d["back_standoff"]) for z in zb_]
     bhull = envelope(pts, front=False)
     back_y = lambda z: chain_y(bhull, z)
     nk = 25
@@ -446,7 +460,7 @@ def main() -> None:
     w_back = shirt_w.mean(back_samples, keep=TRUNK)
     if a.panel_bone:
         w_back = {a.panel_bone: 1.0}
-    B.slab(rows, lambda p: w_back, 0)
+    B.slab(rows, seam_w(w_back), 0)
     rep["back_panel"] = {"weights": w_back, "hull": [[round(z * 100, 2), round(y * 100, 2)] for z, y in bhull],
                          "corner_m": corner}
 
@@ -457,7 +471,8 @@ def main() -> None:
     tm = top.evaluated_get(bpy.context.evaluated_depsgraph_get()).to_mesh()
     tops = BVHTree.FromPolygons([top.matrix_world @ v.co for v in tm.vertices], [tuple(p.vertices) for p in tm.polygons])
     rep["straps"] = {}
-    z0, y0, far = 1.17, 0.01, 0.4
+    z0, y0 = bk["strap_ray_origin_cm"]["z"] / 100, bk["strap_ray_origin_cm"]["y"] / 100
+    far = 0.4
     phis = [math.radians(-4 + i * (178 + 4) / 72) for i in range(73)]
     for sd in (1, -1):
         xc = sd * d["strap_x"]
@@ -537,7 +552,8 @@ def main() -> None:
         yb = bib_y(d["buckle_z"]) - 0.0022 - 0.0005
         B.disc((x_bib, yb, d["buckle_z"]), (0, 1, 0), d["buckle_d"], 0.003, w_bib, 2)
         yr = bib_y(bt - 0.006) - 0.0025
-        hw, hh, bar = d["strap_w"] / 2 + 0.004, 0.006, 0.003
+        ring = bk["buckle_ring_cm"]
+        hw, hh, bar = d["strap_w"] / 2 + ring["pad"] / 100, ring["half_h"] / 100, ring["bar"] / 100
         quad = lambda x0, x1, z0_, z1_: [(x0, z0_), (x1, z0_), (x1, z1_), (x0, z1_)]
         outer = quad(x_bib - hw, x_bib + hw, bt - 0.006 - hh, bt - 0.006 + hh)
         inner = quad(x_bib - hw + bar, x_bib + hw - bar, bt - 0.006 - hh + bar, bt - 0.006 + hh - bar)
@@ -570,7 +586,7 @@ def main() -> None:
         ax = (max(p.x for p in sl) - min(p.x for p in sl)) / 2
         ay = (max(p.y for p in sl) - min(p.y for p in sl)) / 2
         ox = d["leg_hem_w"] / 2
-        oy = max(ay + 0.004, ay + (ox - ax))
+        oy = max(ay + bk["turnup_wall_cm"], ay + (ox - ax))
         w_cuff = {f"{side}LowerLeg": 1.0}
         rows = []
         n = 32
@@ -579,7 +595,8 @@ def main() -> None:
             for i in range(n):
                 t = 2 * math.pi * i / n
                 c, s = math.cos(t), math.sin(t)
-                row.append((Vector((cx + ox * c, cyl + oy * s, z)), Vector((cx + (ox - 0.004) * c, cyl + (oy - 0.004) * s, z))))
+                wall = bk["turnup_wall_cm"]
+                row.append((Vector((cx + ox * c, cyl + oy * s, z)), Vector((cx + (ox - wall) * c, cyl + (oy - wall) * s, z))))
             rows.append(row)
         B.slab(rows, lambda p: w_cuff, 0, closed_u=True)
         rep["turnups"][side] = {"centre_cm": [round(cx * 100, 2), round(cyl * 100, 2)], "leg_half_cm": [round(ax * 100, 2), round(ay * 100, 2)],
@@ -615,6 +632,8 @@ def main() -> None:
     missing = [i for i, v in enumerate(vlist) if not B.W.get(v)]
     rep["garment"] = {"verts": len(me.vertices), "tris": sum(len(p.vertices) - 2 for p in me.polygons),
                       "groups": sorted(groups), "verts_without_weights": len(missing)}
+    if missing:   # no_arms() of an arm-only weight is {}: a vertex no bone moves
+        raise SystemExit(f"the garment: {len(missing)} vertices without weights (first {missing[:5]})")
     arm.data.pose_position = "POSE"
     bpy.context.view_layer.update()
     blend = out / "axolotl_char.blend"
