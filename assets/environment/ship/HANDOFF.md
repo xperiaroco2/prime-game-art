@@ -2,7 +2,7 @@
 
 The empty ship of art#263 (a wide metal manta at night: the hall, the throat and its ramp, two corridors, two lens tip
 rooms, the vault; the throat walls with the gill set) as the game's package, for prime-game#1225 (the engine) and #1285 (boot into it). Written by
-`tools/run.sh ship --out <raw>/ship/v5/polish/n3/pieces --export <raw>/ship/v5/export/v6` (2026-11-01, branch feat/ship-polish-263, polish n1/n2/n3: the smooth nozzles glowing from their own materials with twisted aerofoil stator blades, the hall's relief bays, the vault door, the ramp's hazard stripes, the underbody and chine light lines, the smooth oculus trim, one plate seam family over the jaws) (art#335, `docs/ship.md` "The export"); the files and their
+`tools/run.sh ship --out <raw>/ship/v5/polish/n4/pieces --export <raw>/ship/v5/export/v7` (2026-11-01, branch feat/ship-polish-263, polish n1/n2/n3: the smooth nozzles glowing from their own materials with twisted aerofoil stator blades, the hall's relief bays, the vault door, the ramp's hazard stripes, the underbody and chine light lines, the smooth oculus trim, one plate seam family over the jaws) (art#335, `docs/ship.md` "The export"); the files and their
 hashes are in `manifest.toml` and the package's `package.json`. The GLBs are not committed here: the package lives in
 the raw folder until approved.
 
