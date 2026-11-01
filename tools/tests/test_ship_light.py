@@ -125,7 +125,7 @@ class ShipLightTest(unittest.TestCase):
         mats = LAYOUT["light"]["mats"]
         family = [m for m in L.MATERIALS if "__" in m]
         self.assertTrue(any(m.startswith("ext_porthole__g") for m in family), family)
-        lit = {"int_cyan__door", "glow_cyan__jaw_ceil"}  # polish n2: their own rows light on purpose, short (rr)
+        lit = {"glow_cyan__jaw_ceil"}  # polish n2: its own row lights on purpose, short (rr); n3: int_cyan__door l 0
         for m in family:
             row = mats.get(m, mats.get(m.split("__", 1)[0]))
             self.assertIsNotNone(row, f"{m}: no [light.mats] row of its own or of its family")

@@ -478,7 +478,7 @@ int_amber_throat = {c = [1.0, 0.42, 0.06], e = 0.14, l = 0.0}   # gill set step 
 int_amber_ring = {c = [1.0, 0.42, 0.06], e = 0.14, l = 0.0}  # the hall's floor ring glows, lights nothing (polish n3: its cell lights at 0.12 m over the floor, ~0.6 m from the wall, painted fixtureless orange blobs on the walls by the vault door; was l 0.8, rr 0.3)
 int_lamp = {c = [1.0, 0.6, 0.26], e = 0.08, l = 0.0}
 int_plate__tip = {v = 1.0, l = 0.0}                                        # polish n2: the lens rooms' centre disc, matte (int_plate's v 1 blew it white)
-int_cyan__door = {c = [0.05, 0.8, 1.0], e = 0.35, l = 0.25, rr = 0.5}  # polish n2: the vault door's frame light and centre line; a short light on the leaf
+int_cyan__door = {c = [0.05, 0.8, 1.0], e = 0.35, l = 0.0}  # polish n2: the vault door's frame light and centre line glow; n3: they light nothing (l 0.25 burnt a round white-cyan hot spot in the middle of the leaf, n2 godot in_vault_door)
 glow_cyan__jaw_ceil = {l = 0.3, rr = 0.6}                           # polish n2: the mouth ceiling's bars: their light 0.3 (the clamp's 2.4 clipped the throat's ceiling white)
 glow_cyan__belly = {e = 0.5, l = 0.0}                              # polish n2: the underbody's light lines: glow, light nothing
 # the west workshop: acid green glows (strips under the tops, the drawers' pulls, the cradles' rims, the lamp's lens,
