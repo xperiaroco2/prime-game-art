@@ -51,7 +51,7 @@ def plans(cfg) -> dict:
     for act in bpy.data.actions:
         entry = H.clip_plan(cfg, act.name)
         if entry is not None:
-            out[act.name] = [list(k) for k in F.weight_plan(entry[1], fist["grip"])]
+            out[act.name] = [list(k) for k in F.weight_plan(entry[1], fist["grip"], fist["lead"])]
     return out
 
 

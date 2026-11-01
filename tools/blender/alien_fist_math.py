@@ -200,14 +200,28 @@ def smoothstep(t: float) -> float:
     return t * t * (3 - 2 * t)
 
 
-def weight_plan(plan: dict, fist_grip: str) -> list[tuple[float, float]]:
+def weight_plan(plan: dict, fist_grip: str, lead: float = 1.0) -> list[tuple[float, float]]:
     """A clip's fist weight keys [(share, weight)] from its grip plan ({side: [(share, grip), ...]}): 1 where the grip
-    is the fist grip, else 0. Both hands share the one morph, so their keys must agree."""
+    is the fist grip, else 0. Both hands share the one morph, so their keys must agree. lead (0 < lead <= 1, H1m): the
+    morph runs ahead of the grip, reaching 1 at that share of each ramp into the fist grip and leaving 1 only at
+    (1 - lead) of each ramp out of it, so the half-curled fingers already carry the fist's shape (no mid-blend ring)."""
+    if not 0.0 < lead <= 1.0:
+        raise ValueError(f"fist lead {lead} not in (0, 1]")
     sides = list(plan.values())
     rows = [[(s, 1.0 if g == fist_grip else 0.0) for s, g in r] for r in sides]
     if any(r != rows[0] for r in rows[1:]):
         raise ValueError(f"the hands' fist keys differ: {rows}")
-    return rows[0]
+    keys = rows[0]
+    if lead >= 1.0:
+        return keys
+    out = [keys[0]]
+    for (s0, w0), (s1, w1) in zip(keys, keys[1:]):
+        if w1 > w0:
+            out.append((round(s0 + lead * (s1 - s0), 6), w1))
+        elif w1 < w0:
+            out.append((round(s1 - lead * (s1 - s0), 6), w0))
+        out.append((s1, w1))
+    return out
 
 
 def weight_at(keys: list[tuple[float, float]], share: float) -> float:

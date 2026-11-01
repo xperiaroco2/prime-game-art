@@ -42,7 +42,9 @@ FIST_DEFAULTS = {"morph": "fist", "k_mm": 14.0, "k_thumb_mm": 10.0, "pull_mm": 2
                  "env_palm": 0.95, "thumb_shift_mm": [0.0, 0.0, 0.0], "wrap_rounds": 300, "wrap_lambda": 0.5,
                  # H1l: env_mode "merge" (one smooth solid) or "press" (each digit inflated, pressed against the others
                  # with a slit of env_gap_mm, its lip rounded over env_lip_mm)
-                 "env_mode": "merge", "env_inflate": 1.0, "env_gap_mm": 0.4, "env_lip_mm": 3.0}
+                 "env_mode": "merge", "env_inflate": 1.0, "env_gap_mm": 0.4, "env_lip_mm": 3.0,
+                 # H1m: the morph's lead over the grip (alien_fist_math.weight_plan), 1 = in step
+                 "lead": 1.0}
 
 
 class HandsError(ValueError):

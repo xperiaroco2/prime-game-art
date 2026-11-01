@@ -98,6 +98,18 @@ class WeightsTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             F.weight_plan({"Left": [(0.0, "loose")], "Right": [(0.0, "relaxed")]}, "loose")
 
+    def test_weight_plan_lead(self):
+        """H1m: the morph reaches 1 at the lead's share of a ramp into the fist, and leaves 1 as late out of it."""
+        plan = {s: [(0.0, "relaxed"), (0.5, "loose"), (0.75, "loose"), (1.0, "relaxed")] for s in ("Left", "Right")}
+        keys = F.weight_plan(plan, "loose", 0.5)
+        self.assertEqual(keys, [(0.0, 0.0), (0.25, 1.0), (0.5, 1.0), (0.75, 1.0), (0.875, 1.0), (1.0, 0.0)])
+        self.assertEqual(F.weight_at(keys, 0.125), 0.5)
+        self.assertEqual(F.weight_at(keys, 0.3), 1.0)
+        self.assertGreater(F.weight_at(keys, 0.9), F.weight_at(F.weight_plan(plan, "loose"), 0.9))
+        self.assertEqual(F.weight_plan(plan, "loose", 1.0), F.weight_plan(plan, "loose"))
+        with self.assertRaises(ValueError):
+            F.weight_plan(plan, "loose", 0.0)
+
     def test_key_weights_into_glb(self):
         times = [0.0, 0.5, 1.0]
         bin_ = bytearray(struct.pack("<3f", *times) + struct.pack("<12f", *([0, 0, 0, 1] * 3)))

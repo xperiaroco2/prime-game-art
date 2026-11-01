@@ -1636,6 +1636,16 @@ cartoon fist in Blender (three pressed fingers, the thumb across the front), 33-
 (from 84-86 bare; the posed mesh's own shortest edge is 0.09 of the median, so the brief's 30 % bound fails before any
 move); the index's curl still shows a small dark notch from the thumb's side.
 
+**The morph's lead (H1m).** Blending the grip relaxed -> loose with the morph in step showed a ring at 0.35-0.65: the
+half-curled index met the thumb with a hole between them. `[fist] lead` (0..1, default 1 = in step) makes the morph
+run ahead inside a clip: `weight_plan` keys it full at `lead` of each ramp into the fist grip and leaves 1 only at
+`1 - lead` of each ramp out (`lead = 0.5`). It acts on grip ramps keyed inside a clip (the review's ReviewBlend); a
+crossfade between two clips in the game lerps the morph and the bones by one weight, so there the ring can only be
+avoided by the game driving the morph ahead of its blend weight. H1m's fold grid (`D:/prime-art-raw/2026-10-31-hands/h1m/g1/`):
+`env_core` 1.0 / 1.1, `env_k_core_mm` 18 and a thumb shift of 2-3 mm all add folds (41-47 per hand against p2's
+33-36); the folds sit inside single fingers (index, middle, ring), not on the webs; a local umbrella on them removed
+none. p2 stays.
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]

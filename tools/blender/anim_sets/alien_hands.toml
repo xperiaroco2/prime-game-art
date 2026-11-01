@@ -72,3 +72,5 @@ env_inflate = 1.4
 env_lip_mm = 4.0
 env_palm = 0.85
 wrap_rounds = 150
+# H1m (art #196): the morph leads the grip, full at half of each ramp into the fist (no mid-blend ring)
+lead = 0.5
