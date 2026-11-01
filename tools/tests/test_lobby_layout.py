@@ -248,7 +248,7 @@ class LobbyLayoutTest(unittest.TestCase):
 
     def test_less_copper_and_a_lighter_ceiling(self) -> None:
         """Step 3: the engineer's notes on 2c: a dark metal for the frames, the copper desaturated, the vault lighter."""
-        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v16")   # step 5c
+        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v17")   # #366 (step 5c: v16)
         mats = lobby_layout.look_materials(self.layout, "S4")
         metal, pil = mats["lobby_metal"]["rgb"], mats["lobby_pilaster"]["rgb"]
         self.assertLess(max(metal), max(pil))   # the frames' metal darker than the pilasters' shaft, same hue
@@ -424,7 +424,8 @@ class LobbyLayoutTest(unittest.TestCase):
         v = e["variants"][e["variant"]]
         for did in e["distances"]:
             o = lobby_layout.earth_object(self.layout, e["variant"], did)
-            seen = math.degrees(math.asin(o["radius_m"] / math.dist(o["centre"], e["eye"])))
+            origin = e["far_eye"] if o["far"] else e["eye"]   # #366: a far distance placed from far_eye
+            seen = math.degrees(math.asin(o["radius_m"] / math.dist(o["centre"], origin)))
             self.assertAlmostEqual(seen, e["distances"][did].get("radius_deg", v["radius_deg"]), places=6)
             self.assertGreater(o["far_m"], o["distance_m"] + o["radius_m"] * e["shell"])
         self.assertEqual(lobby_layout.earth_problems(self.layout, {v[0] for v in self.layout["review"]["views"]}), [])
@@ -434,18 +435,23 @@ class LobbyLayoutTest(unittest.TestCase):
 
     def test_the_far_earth(self) -> None:
         """Step 5a7: F48 is D2's sphere traced from the spawn's eye (far_eye, spawn_eye's place) whatever the camera's
-        place; F36 a smaller radius at the same centre, its sun kept E2's angle behind the limb; the shader moves the
-        shell with the camera and starts the ray at far_eye; the route's distances, keys and stills."""
+        place (#366: placed from far_eye, so D2's centre moved 2.5 m south with it); F36 a smaller radius at the same
+        centre, its sun kept E2's angle behind the limb; the shader moves the shell with the camera and starts the ray
+        at far_eye; the route's distances, keys and stills. The shader's source lines are pinned as strings (a guard
+        that the far mode's two lines stay); test_the_far_earth_traced checks the numbers."""
         from runner.commands import lobby as cmd
         e = self.layout["earth"]
         d2, f48, f36 = (lobby_layout.earth_object(self.layout, "E2", d) for d in ("D2", "F48", "F36"))
         self.assertFalse(d2["far"])
         self.assertTrue(f48["far"] and f36["far"])
-        self.assertEqual({k: f48[k] for k in ("centre", "radius_m", "frame_dir", "far_m")},
-                         {k: d2[k] for k in ("centre", "radius_m", "frame_dir", "far_m")})
+        self.assertEqual({k: f48[k] for k in ("radius_m", "frame_dir", "far_m")},
+                         {k: d2[k] for k in ("radius_m", "frame_dir", "far_m")})
+        shift = [b - a for a, b in zip(e["eye"], e["far_eye"])]
+        for a, b, s in zip(f48["centre"], d2["centre"], shift):
+            self.assertAlmostEqual(a, b + s, places=9)
         spawn = next(v for v in self.layout["review"]["views"] if v[0] == "spawn_eye")
         self.assertEqual(f48["far_eye"], spawn[2])
-        self.assertEqual(f36["centre"], d2["centre"])
+        self.assertEqual(f36["centre"], f48["centre"])
         self.assertAlmostEqual(f36["radius_deg"], 36.0)
         self.assertNotIn("sun_dir", f48)
         v = e["variants"]["E2"]
@@ -483,15 +489,15 @@ class LobbyLayoutTest(unittest.TestCase):
         f36 = lobby_layout.earth_object(self.layout, "E2", "F36")
         ang = lambda a, b: math.degrees(math.acos(max(-1.0, min(1.0, sum(x * y for x, y in zip(a, b)) / math.sqrt(
             sum(x * x for x in a) * sum(y * y for y in b))))))
-        rel = lambda o: [c - a for c, a in zip(o["centre"], e["eye"])]
-        self.assertAlmostEqual(f36["limb_deg"], 14.17, places=1)
+        rel = lambda o: [c - a for c, a in zip(o["centre"], e["far_eye"])]   # #366: from where the shader traces
+        self.assertAlmostEqual(f36["limb_deg"], e["variants"]["E2"]["centre"][1] + 36.0, places=9)   # 14.0 (was 14.17)
         for did, limb in (("H1", 4.0), ("H2", -2.0), ("H3", -8.0)):
             o = lobby_layout.earth_object(self.layout, "E2", did)
             self.assertTrue(o["far"])
             self.assertEqual(e["distances"][did]["limb_deg"], limb)
-            self.assertAlmostEqual(o["limb_deg"], limb, delta=0.15)
+            self.assertAlmostEqual(o["limb_deg"], limb, places=9)   # #366: exact (placed from eye: 4.05, -2.03, -8.10)
             self.assertAlmostEqual(o["radius_m"], f36["radius_m"], places=9)
-            self.assertAlmostEqual(math.dist(o["centre"], e["eye"]), f36["distance_m"], places=6)
+            self.assertAlmostEqual(math.dist(o["centre"], e["far_eye"]), f36["distance_m"], places=6)
             self.assertAlmostEqual(ang(rel(o), o["sun_dir"]), ang(rel(f36), f36["sun_dir"]), places=6)
             self.assertAlmostEqual(o["centre"][0], 0.0, places=9)   # straight down, the azimuth kept
             drop = lobby_layout.earth_drop(self.layout, "E2", did)
@@ -505,6 +511,48 @@ class LobbyLayoutTest(unittest.TestCase):
             self.assertAlmostEqual(ang(req["earth"]["sun"], sky_sun), 0.0, places=4)   # the sky's E2 sun, turned down
         self.assertEqual(lobby_layout.earth_drop(self.layout, "E2", "F36"), 0.0)
         self.assertEqual(lobby_layout.pitch_down([0.0, 0.0, 1.0], 90.0)[1], -1.0)
+
+    def test_refuses_a_limb_off_its_limb_deg(self) -> None:
+        """#366: earth_problems compares each limb_deg with the limb as traced (lobby_layout.LIMB_TOL, 0.2 deg): a centre
+        off south (azimuth 40) turned down about the east-west axis drops less than asked; a near distance is placed and
+        traced from eye, exact."""
+        views = {v[0] for v in self.layout["review"]["views"]}
+        self.assertEqual(lobby_layout.LIMB_TOL, 0.2)
+        bad = copy.deepcopy(self.layout)
+        bad["earth"]["variants"]["E2"]["centre"][0] = 40.0
+        q = lobby_layout.earth_problems(bad, views)
+        self.assertTrue(any(x.startswith("earth H3: the limb's top traces at") for x in q), q)
+        o = lobby_layout.earth_object(bad, "E2", "H3")
+        self.assertGreater(abs(o["limb_deg"] + 8.0), 0.2)
+        near = copy.deepcopy(self.layout)
+        near["earth"]["distances"]["H1"]["far"] = False
+        self.assertEqual([x for x in lobby_layout.earth_problems(near, views) if "limb" in x], [])
+
+    def test_the_far_earth_traced(self) -> None:
+        """#366 (the string pins above are only a guard): earth_object.gdshader's far mode in numbers. The fragment's
+        ray starts at far_eye along the view ray v and hits the disc when the angle between v and (centre - far_eye) is
+        below asin(radius / dist) (its `edge` < 0), so from any camera place the same v gives the same answer: H1's limb
+        hit just under 4 deg, missed just over it, straight up the centre's azimuth."""
+        e = self.layout["earth"]
+        o = lobby_layout.earth_object(self.layout, "E2", "H1")
+        sh = e["far_eye"]
+
+        def edge(v: list[float]) -> float:   # the shader's `edge` (radians), its eye at far_eye in the far mode
+            oc = [c - a for c, a in zip(o["centre"], sh)]
+            dist = math.sqrt(sum(x * x for x in oc))
+            alpha = math.asin(min(1.0, o["radius_m"] / dist))
+            cos = sum(a * b / dist for a, b in zip(v, oc))
+            return math.acos(max(-1.0, min(1.0, cos))) - alpha
+
+        for el, hit in ((3.95, True), (4.05, False), (-30.0, True), (-50.0, True), (10.0, False)):
+            v = lobby_layout.direction(0.0, el)
+            self.assertEqual(edge(v) < 0.0, hit, el)
+        for cam in ([0.0, 1.65, 2.5], [-12.0, 1.6, -20.0], [16.0, 1.6, 10.0]):   # the camera's place changes no ray
+            v = lobby_layout.direction(0.0, 3.95)
+            wpos = [c + 10.0 * x for c, x in zip(cam, v)]   # a shell fragment straight ahead of that camera
+            vv = [w - c for w, c in zip(wpos, cam)]
+            n = math.sqrt(sum(x * x for x in vv))
+            self.assertLess(edge([x / n for x in vv]), 0.0)
 
     def test_refuses_an_earth_inside_the_hall(self) -> None:
         bad = copy.deepcopy(self.layout)
@@ -538,6 +586,54 @@ class LobbyLayoutTest(unittest.TestCase):
         moved["ship"]["origin"] = [0.0, 0.0, -17.0]
         cf = lobby_layout.closed_footprint(moved, lobby_layout.footprint(moved, self.outline, report, place), place)
         self.assertTrue(any(q.startswith("ship:") and "from N" in q for q in lobby_layout.check(moved, cf)))
+
+    def test_glb_points_refuses_what_it_cannot_read(self) -> None:
+        """#366: glb_points reads one level of TRS nodes with float positions; children, a matrix, a geometry extension
+        or quantized positions are refused, a material extension is read past."""
+        import json as js
+        import struct
+        import tempfile
+
+        def glb(folder: Path, name: str, node: dict, ext: list | None = None, ctype: int = 5126) -> Path:
+            gl = {"asset": {"version": "2.0"}, "nodes": [node], "meshes": [{"primitives": [{"attributes": {"POSITION": 0}}]}],
+                  "accessors": [{"bufferView": 0, "componentType": ctype, "count": 1, "type": "VEC3"}],
+                  "bufferViews": [{"buffer": 0, "byteLength": 12}], "buffers": [{"byteLength": 12}]}
+            if ext:
+                gl["extensionsUsed"] = ext
+            j = js.dumps(gl).encode()
+            j += b" " * (-len(j) % 4)
+            b = struct.pack("<3f", 1.0, 2.0, 3.0)
+            data = struct.pack("<III", 0x46546C67, 2, 12 + 8 + len(j) + 8 + len(b)) + struct.pack("<II", len(j), 0x4E4F534A) + j \
+                + struct.pack("<II", len(b), 0x004E4942) + b
+            (folder / name).write_bytes(data)
+            return folder / name
+
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp)
+            ok = glb(d, "ok.glb", {"mesh": 0, "translation": [1.0, 0.0, 0.0]}, ["KHR_materials_emissive_strength"])
+            self.assertEqual(lobby_layout.glb_points(ok), [(2.0, 2.0, 3.0)])
+            for name, node, ext, ctype, want in (
+                    ("kids.glb", {"mesh": 0, "children": [0]}, None, 5126, "children"),
+                    ("matrix.glb", {"mesh": 0, "matrix": [1.0] * 16}, None, 5126, "matrix"),
+                    ("draco.glb", {"mesh": 0}, ["KHR_draco_mesh_compression"], 5126, "extensions"),
+                    ("quant.glb", {"mesh": 0}, None, 5123, "plain float")):
+                with self.assertRaises(ValueError) as cm:
+                    lobby_layout.glb_points(glb(d, name, node, ext, ctype))
+                self.assertIn(want, str(cm.exception))
+
+    def test_hull_outline_leaves_sys_path(self) -> None:
+        """#366: the Blender folder is on sys.path only for the import."""
+        folder = str(common.ROOT / "tools" / "blender")
+        before = list(sys.path)
+        lobby_layout.hull_outline(self.layout["ship"]["hull"])
+        self.assertEqual(sys.path, before)   # another test module may have put the folder there itself: kept, not added
+        if folder in before:
+            sys.path.remove(folder)
+            try:
+                lobby_layout.hull_outline(self.layout["ship"]["hull"])
+                self.assertNotIn(folder, sys.path)
+            finally:
+                sys.path.insert(before.index(folder), folder)
 
     def test_plan_draws_the_hall(self) -> None:
         plan = lobby_layout.ascii_plan(self.layout, self.fp(self.layout))

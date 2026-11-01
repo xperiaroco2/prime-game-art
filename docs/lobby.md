@@ -912,6 +912,26 @@ The check (`export_check.gd check`) reads the tree after the script's `_ready` a
 (`lobby --export DIR` without `--no-compare`) run the script too: whether it closes `c_back`'s 3.15 is for that window
 run to show (not run in step 5c2: no window while the engineer plays).
 
+## Follow-up #366: the review's minors
+
+The review of #364 (comment 6550662374), raw `lobby/hall/v17` (the pieces copied unchanged from v16):
+
+- A far distance's centre is placed, and turned down, from `far_eye` (the spawn's eye, z 2.5), the point
+  `earth_object.gdshader` traces every ray from, no longer from `eye` (z 0): H1's limb is 4.00 deg above the spawn's
+  eye (was 4.05: the same picture, 0.05 deg), H2 -2.00, H3 -8.00, F36 14.00 (was 14.17); F48 and F36 sit 2.5 m south of
+  D2's centre. The sky's cubemap Earth (a direction) now agrees with the object exactly from the spawn.
+- `earth_problems` refuses a `limb_deg` more than `LIMB_TOL` (0.2 deg) off the limb as traced (`limb_top`), e.g. a
+  centre off south turned down about the east-west axis.
+- `glb_points` refuses a node with children or a matrix, positions that are not plain float VEC3, and any extension in
+  `extensionsUsed` but the material and light ones (`GLB_LOOK_EXT`: the ship's jaw pieces use
+  `KHR_materials_emissive_strength`, which leaves the vertices alone).
+- `hull_outline` puts `tools/blender` on `sys.path` only for its import; `_lobby_export.ship_copy` refreshes the check's
+  copy of the ship package by SHA-256 (a `.import` only when missing: Godot's import rewrites it).
+- `lobby_hall.gd` returns after its frame's await when the level has left the tree.
+- `test_the_far_earth` keeps its shader source pins as a guard; `test_the_far_earth_traced` checks the far mode's trace
+  in numbers (H1's limb hit at 3.95 deg, missed at 4.05, from any camera place).
+- `lobby --check`'s and `--shoot`'s request files make `tools/out/lobby` (a fresh worktree has none).
+
 ## Open problems
 
 - Step 5b/5c: `c_back` from the package is 3.15 of 255 off `--shoot`'s (step 5c: not the pack; step 5c2: the level

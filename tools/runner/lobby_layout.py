@@ -102,8 +102,17 @@ def ship_layout_data() -> dict[str, Any]:
 
 
 def hull_outline(name: str) -> list[tuple[float, float]]:
-    sys.path.insert(0, str(common.ROOT / "tools" / "blender"))
-    import ship_hull_shape  # plain Python (math, tomllib)
+    """The ship hull's outline (x, y) from tools/blender's ship_hull_shape (plain Python: math, tomllib); the Blender
+    folder is on sys.path only for the import (#366: no lasting change to the path, no second entry)."""
+    folder = str(common.ROOT / "tools" / "blender")
+    added = folder not in sys.path
+    if added:
+        sys.path.insert(0, folder)
+    try:
+        import ship_hull_shape
+    finally:
+        if added:
+            sys.path.remove(folder)
     return [(float(x), float(y)) for x, y in ship_hull_shape.outline(name)]
 
 
@@ -152,19 +161,36 @@ def footprint(layout: dict[str, Any], outline: list[tuple[float, float]], report
     return [(x + ox, y + oz) for x, y in _hull2d(pts)]
 
 
+GLB_LOOK_EXT = ("KHR_materials_", "KHR_texture_transform", "KHR_lights_punctual")   # glb_points reads past these
+
+
 def glb_points(path: Path) -> list[tuple[float, float, float]]:
     """Every vertex of a GLB's meshes in the file's frame (each mesh node's translation, rotation and scale applied,
-    one level: the ship's pieces hold their meshes at the root), plain Python."""
+    one level: the ship's pieces hold their meshes at the root), plain Python. Refuses (ValueError) what that reading
+    would get wrong (#366): a node with children (their transforms would be dropped), a node with a matrix, any
+    extension in `extensionsUsed` but the material and light ones (GLB_LOOK_EXT: they leave the vertices alone; the
+    others may compress, quantize or instance them) and positions that are not plain floats."""
     import struct
     data = path.read_bytes()
     jlen = struct.unpack_from("<I", data, 12)[0]
     gl = json.loads(data[20:20 + jlen])
+    other = [x for x in gl.get("extensionsUsed", []) if not x.startswith(GLB_LOOK_EXT)]
+    if other:
+        raise ValueError(f"{path.name}: extensions {other} are not read")
     blen = struct.unpack_from("<I", data, 20 + jlen)[0]
     binary = data[28 + jlen:28 + jlen + blen]
     out = []
     for node in gl.get("nodes", []):
+        if node.get("children"):
+            raise ValueError(f"{path.name}: node {node.get('name', '?')} has children (one level only)")
+        if "matrix" in node:
+            raise ValueError(f"{path.name}: node {node.get('name', '?')} has a matrix (TRS only)")
         if "mesh" not in node:
             continue
+        for prim in gl["meshes"][node["mesh"]]["primitives"]:
+            acc = gl["accessors"][prim["attributes"]["POSITION"]]
+            if acc.get("componentType") != 5126 or acc.get("type") != "VEC3" or "sparse" in acc:
+                raise ValueError(f"{path.name}: node {node.get('name', '?')}'s positions are not plain float VEC3")
         t = node.get("translation", [0, 0, 0])
         qx, qy, qz, qw = node.get("rotation", [0, 0, 0, 1])
         s = node.get("scale", [1, 1, 1])
@@ -498,6 +524,9 @@ def earth_problems(layout: dict[str, Any], views: set[str]) -> list[str]:
                 p.append(f"earth {did}: radius_deg {dd['radius_deg']} is not within 5..60")
             if not 1.05 <= e["shell"] <= 2.0:
                 p.append(f"earth: shell {e['shell']} is not within 1.05..2")
+            if "limb_deg" in dd and abs(o["limb_deg"] - dd["limb_deg"]) > LIMB_TOL:   # #366: as traced, not as asked
+                p.append(f"earth {did}: the limb's top traces at {o['limb_deg']:.2f} deg, not limb_deg "
+                         f"{dd['limb_deg']} (within {LIMB_TOL})")
         rt = e.get("route")
         if rt:   # step 5a7: the route's distances, keys and stills
             p += [f"earth route: distance {d} is not in [earth.distances]" for d in rt["distances"] if d not in e["distances"]]
@@ -512,6 +541,9 @@ def earth_problems(layout: dict[str, Any], views: set[str]) -> list[str]:
     return p
 
 
+LIMB_TOL = 0.2   # #366: degrees between a distance's limb_deg and its limb as the shader traces it
+
+
 def direction(azimuth: float, elevation: float) -> list[float]:
     """A direction from [azimuth from south (+z) toward east (+x), elevation] in degrees."""
     a, el = math.radians(azimuth), math.radians(elevation)
@@ -521,19 +553,24 @@ def direction(azimuth: float, elevation: float) -> list[float]:
 def earth_object(layout: dict[str, Any], vid: str, did: str) -> dict[str, Any]:
     """Step 4c: the Earth as a sphere at [earth.distances] did's distance from [earth] eye along variant vid's centre,
     its radius the one that gives it the variant's angular radius from there (what the sky's Earth filled).
-    Step 5a7's far distances (`far = true`): the shader traces every ray from `eye`, the shell moved with the camera, so
-    the planet sits at infinity; `radius_deg` (default the variant's) its angular radius, the sun turned toward the
-    centre so it keeps its angle behind the limb (E2's dawn glow); `sun_dir` then the object's own."""
+    Step 5a7's far distances (`far = true`): the shader traces every ray from `far_eye`, the shell moved with the
+    camera, so the planet sits at infinity; `radius_deg` (default the variant's) its angular radius, the sun turned
+    toward the centre so it keeps its angle behind the limb (E2's dawn glow); `sun_dir` then the object's own. #366: a
+    far distance's centre is placed (and turned down) from `far_eye`, the point the shader traces from, so its angles
+    are exact there (placed from `eye`, 2.5 m north, H1's limb came out 4.05 deg, not 4.0)."""
     e = layout["earth"]
     d = e["distances"][did]
     v, dist = e["variants"][vid], d["distance_m"]
     u = direction(*v["centre"])
     deg = d.get("radius_deg", v["radius_deg"])
     r = dist * math.sin(math.radians(deg))
-    centre = [a + dist * b for a, b in zip(e["eye"], u)]
+    far = bool(d.get("far", False))
+    far_eye = list(e.get("far_eye", e["eye"]))
+    origin = far_eye if far else e["eye"]
+    centre = [a + dist * b for a, b in zip(origin, u)]
     out = {"id": did, "distance_m": dist, "radius_m": r, "radius_deg": deg, "centre": centre,
            "frame_dir": [-c for c in u], "shell": e["shell"], "far_m": dist + r * e["shell"] + 100.0,
-           "far": bool(d.get("far", False)), "far_eye": list(e.get("far_eye", e["eye"]))}
+           "far": far, "far_eye": far_eye}
     if deg != v["radius_deg"]:
         s = direction(*v["sun"])
         cos = max(-1.0, min(1.0, sum(a * b for a, b in zip(s, u))))
@@ -544,7 +581,7 @@ def earth_object(layout: dict[str, Any], vid: str, did: str) -> dict[str, Any]:
         out["sun_dir"] = [math.cos(new) * b + math.sin(new) * a / n for a, b in zip(perp, u)]
     drop = earth_drop(layout, vid, did)
     if drop:   # step 5c: the planet turned down about the eye, its sun with it (the dawn glow kept behind the limb)
-        out["centre"] = [a + b for a, b in zip(e["eye"], pitch_down([c - a for c, a in zip(centre, e["eye"])], drop))]
+        out["centre"] = [a + b for a, b in zip(origin, pitch_down([c - a for c, a in zip(centre, origin)], drop))]
         out["frame_dir"] = pitch_down(out["frame_dir"], drop)
         out["sun_dir"] = pitch_down(out.get("sun_dir", direction(*v["sun"])), drop)
     out["limb_deg"] = limb_top(out)

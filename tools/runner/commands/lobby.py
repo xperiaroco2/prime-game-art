@@ -537,6 +537,7 @@ def godot_check(layout: dict, out: Path, place: list, ship_report: dict, folder:
     errors = _stage(staged)
     folder.mkdir(parents=True, exist_ok=True)
     path = common.OUT / "lobby" / "check_request.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
     (folder / "check.json").unlink(missing_ok=True)
     code, output = _godot.godot(["--headless", "--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s",
@@ -630,6 +631,7 @@ def shoot(layout: dict, out: Path, place: list, folder: Path, grid: bool | str =
     errors = _stage(staged)
     folder.mkdir(parents=True, exist_ok=True)
     path = common.OUT / "lobby" / "shoot_request.json"
+    path.parent.mkdir(parents=True, exist_ok=True)   # #366: a fresh worktree has no tools/out/lobby
     path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
     (folder / "shots.json").unlink(missing_ok=True)
     code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", GODOT_SCRIPT, "--",
