@@ -1132,6 +1132,23 @@ blender.run_script("dungarees_build.py", ["--spec", "specs/dungarees_dims.toml",
   `--panel-bone`, `--strap-sh-share`, `--strap-top-cm`, `--back-band-share` and `[build]` `seam_blend_cm`,
   `back_band_share`, `strap_back_on_chest`, `shirt_follow_straps`, `strap_top_cm`, `strap_top_back_cm`,
   `strap_skin_*`, `strap_back_join_cm`, `back_corner_*`; the sections above keep their history.
+- **G3n (2026-11-01, the manager's decisions):** her Neck stays in her skin's weights (`skin_drop` Head, Jaw, Eye,
+  Gill: without it the straps' back runs lifted 13 mm off her back, with it 1.7) and `skin_smooth` is 10. The shirt
+  under the cloth copies the cloth's weights at the face over it (the `shirt_follow` source of G3e-G3l) instead of her
+  skin's at its own vertex. Each buckle and ring rides the cloth's weights averaged over its footprint (its radius +
+  `hardware_reach_cm` round its centre), not one vertex's. The weight probe compares a cloth vertex with the shirt
+  surface's nearest point within 1.5 cm (barycentric on its face), not the nearest shirt vertex within 2.5 cm: on the
+  coarse shirt that was often a vertex beside the strap, outside the cloth. Two Gate 2 measures changed with the route,
+  because the bib is no longer rigid (the engineer's "flat" means no folds, not rigid):
+  - **Folds:** a `[[gate2.flat]]` entry with `fit = "smooth"` (and `deg`, default 3) measures each frame's largest
+    distance of the part from a polynomial fit of its own motion in its rest coordinates
+    (`garment_gate2_geom.smooth_residual`): a rigid move and a smooth bend with her trunk leave nothing, a crease or
+    a bulge narrower than the part does. The rigid value stays in the row's name. On skin weights the rigid row read
+    the bib's bend with her trunk as a 61 mm fold. The bib keeps 3 mm.
+  - **Slip on a bending part:** a `[[gate2.joins]]` entry with `frame = "local"` turns each tied offset back by its
+    face's own triangle frame (`clothes_bibmove_geom.slip_local`), not the part's one best fit; the one-fit value
+    stays in the row's name.
+  - Each `vs_skin` stretch row names its worst edge: its rest midpoint (cm), the frame and its % (`stretch_at`).
 - **The build's own numbers** (`[build]` in the spec, not sizes a gate measures): the seam blend, the band's ease
   off the shirt, her front's and back's half widths the plates are laid on (11 and 12 cm; `garment_drawing`'s gaps
   read the same), the straps' ray origin, the turn-up's wall, the buckle ring's sizes. A vertex the build leaves
