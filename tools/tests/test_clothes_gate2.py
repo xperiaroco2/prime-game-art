@@ -534,6 +534,27 @@ class G3eSkinShirtTest(unittest.TestCase):
     def setUpClass(cls):
         cls.spec = S.load_spec(SPEC)
 
+    def test_skin_lift_reads_a_strap_off_her_moving_skin(self):
+        """G3j: the lift off her skin along the tied face's normal, less the reference's; moving with her reads 0."""
+        skin0 = [(0, 0, 0), (0.1, 0, 0), (0, 0.1, 0)]                    # a skin face, normal +z
+        tie = {0: ((0, 1, 2), (1 / 3, 1 / 3, 1 / 3)), 1: ((0, 2, 1), (0.5, 0.25, 0.25))}   # the second face flipped
+        g0 = [(0.033, 0.033, 0.004), (0.025, 0.025, 0.004)]               # 4 mm off her (the shirt between)
+        moved = lambda pts, dz: [(x, y, z + dz) for x, y, z in pts]
+        self.assertAlmostEqual(G.skin_lift(g0, moved(g0, 0.05), skin0, moved(skin0, 0.05), tie), 0.0)
+        self.assertAlmostEqual(G.skin_lift(g0, moved(g0, 0.03), skin0, skin0, tie), 0.03)     # off her: + both ways
+        self.assertAlmostEqual(G.skin_lift(g0, moved(g0, -0.002), skin0, skin0, tie), -0.002)  # pressed in: negative
+        flat = [(0, 0, 0), (0.1, 0, 0), (0.2, 0, 0)]
+        self.assertIsNone(G.skin_lift(g0, g0, flat, flat, tie))
+        g2 = self.spec["gate2"]
+        self.assertEqual({lf["part"] for lf in g2["lifts"]}, {"strap_backs", "strap_tops"})
+        self.assertNotIn("strap backs on the back panel", [j["name"] for j in g2["joins"]])
+        c0 = g2["clips"][0]
+        rows = GG.motion_rows(self.spec, {"parts": {}, "clips": {c0: {"slip_mm": {}, "flat_mm": {}, "stretch_pct": {},
+                                          "stretch_p95_pct": {}, "lift_mm": {"strap_backs": 27.0}}}}, None)
+        lift = next(r for r in rows if r["clip"] == c0 and r["check"].startswith("lift off her skin: strap_backs"))
+        self.assertEqual((lift["value"], lift["pass"]), (27.0, False))
+        self.assertIn("lifts", GG.motion_config(self.spec, {}, "x.blend"))
+
     def test_skin_excess_follows_her_skin(self):
         rest = [(0, 0, 0), (0.01, 0, 0), (0.02, 0, 0)]
         edges = [(0, 1), (1, 2)]
@@ -660,6 +681,16 @@ class G3fLapTest(unittest.TestCase):
         src = (Path(__file__).resolve().parents[1] / "blender" / "dungarees_build.py").read_text(encoding="utf-8")
         self.assertIn("any((mw @ v.co).z < z_cut", src)   # a shirt face reaching under the cut goes
 
+    def test_the_straps_take_her_skin_over_the_shoulder_without_her_neck(self):
+        """G3j: the strap's rows from her collarbone up take her skin's weights, eased back to Chest down both runs, never
+        her Neck or Head (G3i: on Chest her shoulder skin came through the shirt and the back-top rows flapped)."""
+        b, lm = self.spec["build"], self.spec["body"]["landmarks_cm"]
+        self.assertTrue(lm["collarbone"] - 6.0 <= b["strap_skin_z_cm"] <= lm["shoulder_top"] - 2.0)
+        self.assertTrue(0.0 < b["strap_skin_blend_cm"] <= 8.0)
+        self.assertTrue({"Neck", "Head"} <= set(b["strap_skin_drop"]))
+        src = (Path(__file__).resolve().parents[1] / "blender" / "dungarees_build.py").read_text(encoding="utf-8")
+        self.assertIn("if not any(x in k for x in drop)", src)
+
     def test_the_shirt_follows_a_strap_only_under_it_and_her_skin_stays_in(self):
         """G3i: a strap gives its weights only to the shirt directly under it, over a short fade, never to the collar's
         band (G3h's collar sank 16-49 mm and her neck showed); her skin through the shirt is a Gate 2 row, 0 allowed."""
@@ -667,7 +698,7 @@ class G3fLapTest(unittest.TestCase):
         self.assertTrue(0.0 < b["strap_follow_reach_cm"] <= 1.5)
         self.assertTrue(0.0 < b["strap_follow_fade_cm"] < b["shirt_follow_fade_cm"])
         self.assertGreater(b["collar_keep_cm"], 0.0)
-        self.assertGreater(b["strap_top_back_cm"], 0.0)
+        self.assertEqual(b["strap_top_back_cm"], 0.0)                   # G3j: off (with her Neck's share, 7-64 %)
         self.assertEqual(sh["skin_max_count"], 0)
         g2 = self.spec["gate2"]
         c0 = g2["clips"][0]

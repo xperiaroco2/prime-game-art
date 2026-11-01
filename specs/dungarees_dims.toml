@@ -299,8 +299,14 @@ strap_follow_reach_cm = 1.0  # G3i: a strap gives its weights only to the shirt 
                              # 3 cm took a strap's whole, the collar sank 16-49 mm into her and her neck showed in a V
 strap_follow_fade_cm = 1.5   # eased back to the shirt's own over 1.5 cm round the strap's footprint
 collar_keep_cm = 1.0         # and the collar's band (1 cm from its edge) keeps its own, body-matched weights
-strap_top_back_cm = 6.0      # G3i: behind its top the strap follows her skin under each row, eased out over 6 cm of
-                             # arc (on Chest it stood 30-50 mm off her upper back by the neck in the runs: a flap)
+strap_top_back_cm = 0.0      # G3i tried 6: behind its top the strap followed her skin under each row with her Neck's
+                             # share; it stretched 7-64 % beyond her skin (p95). Off: strap_skin_z_cm does it instead
+strap_skin_z_cm = 121.5      # G3j: the strap's rows at or over this (front top to back top) take her skin's weights
+                             # under each vertex (on Chest her shoulder skin came 20-40 mm through the shirt under the
+                             # front-top rows and the back-top rows stood 27-51 mm off her back: a flap). Grid (stretch
+                             # p95 beyond her skin, 9 clips): 125.4/4 cm 5.3-59 %, 123.5/2 cm 1.3-34 %, 121.5/2 cm 0.6-6.9 %
+strap_skin_blend_cm = 2.0    # eased back to Chest over 2 cm of arc down the front run to the bib and down the back run
+strap_skin_drop = ["Neck", "Head", "Jaw", "Eye", "Gill"]   # her skin's weights there lose these bones' shares
 shirt_trim_z_cm = 93.5       # G3g: the shirt ends here, inside the yoke under the band (its hem came out at the hip crease)
 shirt_hem_in_cm = 0.25       # G3f: the shirt's hem drawn in 2.5 mm, eased out over its lowest 1.5 cm, inside the yoke
 shirt_hem_h_cm = 1.5
@@ -377,11 +383,18 @@ x_abs = [0, 13]
 y = [0, 40]
 z = ["waistband_top_z-waistband_h-2", "waistband_top_z+0.3"]
 piece_verts = [1001, 3600]
+# G3j: the straps behind her shoulders' crest (their back runs, which end over the back panel's corners on Chest)
+# and in front of it over the bib (their front tops): each judged by its lift off her skin under it ([[gate2.lifts]])
 [gate2.parts.strap_backs]
-classes = ["strap", "hardware"]
-x_abs = [0, 15]
+classes = ["strap"]
+x_abs = [0, 40]
 y = [0, 40]
-z = ["waistband_top_z+1", "back_top_z+0.5"]
+z = [0, 200]
+[gate2.parts.strap_tops]
+classes = ["strap"]
+x_abs = [0, 40]
+y = [-40, 0]
+z = ["bib_top_z+0.5", 200]
 [gate2.parts.straps]
 classes = ["strap"]
 x_abs = [0, 40]
@@ -408,12 +421,19 @@ moving = "strap_fronts"
 on = "bib"
 reach_mm = 25
 tol_mm = 3.0                 # [behaviour] bib: the buckles ride on it, slip under 3 mm
-[[gate2.joins]]
-name = "strap backs on the back panel"
-moving = "strap_backs"
-on = "back_panel"
-reach_mm = 25
-tol_mm = 3.0
+# G3j: no "strap backs on the back panel" join: since G3h the straps' back rows ride Chest whole and end over the
+# panel's corners without lying on it (G3h/G3i: 80 strap-back vertices at z 117.4-119.1 cm, none within 25 mm of the
+# panel's faces, the row unmeasured); what they ride is her back, so they are judged by their lift off it below
+
+# The straps on her (G3j): per vertex its distance off her skin along the skin face it was tied to at the reference
+# (garment_gate2_geom.skin_lift), less that distance at the reference, the largest over the clip, mm. On Chest the
+# straps' back tops stood 27-51 mm off her upper back by the neck as she leaned in the runs (G3i): a flap
+[[gate2.lifts]]
+part = "strap_backs"
+tol_mm = 5.0
+[[gate2.lifts]]
+part = "strap_tops"
+tol_mm = 5.0
 
 # The yoke rides inside the band (the fresh review's major, G3d)
 [[gate2.joins]]

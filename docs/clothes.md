@@ -997,6 +997,15 @@ tools/run.sh gate2 --spec specs/dungarees_dims.toml --body <undressed probe.json
   3 %. A rigid part keeps its own stretch rule (the band, the plates: 2 %). The plates' seam blend failed it (G3e's
   grid: 20-63 % beyond her skin in Jog, Strafe and the jumps, where her own belly stretches far less than the eased
   strip): G3f replaced the blend by the lap, and the strip's stretch rule went with it.
+- **Off her skin (G3j):** a `[[gate2.lifts]]` entry (`part`, `tol_mm`) ties each of the part's vertices to her skin
+  the same way and judges its largest lift off it (`garment_gate2_geom.skin_lift`): its distance along the tied skin
+  face's normal less that at the reference, away from her positive, mm. The dungarees judge the straps' back runs and
+  their front tops above the bib, 5 mm: on Chest their back tops stood 27-51 mm off her upper back by the neck (G3i,
+  a flap seen from the front). It replaced the "strap backs on the back panel" join: since G3h the straps' back rows
+  ride Chest and end over the panel's corners without lying on it, so no strap vertex was within the join's reach.
+  Over her shoulder the straps take her skin's weights per vertex (`[build] strap_skin_z_cm`, without her Neck and
+  Head, `strap_skin_drop`), eased back to Chest down both runs (`strap_skin_blend_cm`), so strap, the shirt under it
+  and her skin move together there.
 - **The shirt (G3e):** `[gate2.shirt] max_count` judges `poke.json`'s `top_under_panels` per clip: the shirt is a
   layer the garment must cover, like her body (d10: up to 9 shirt vertices out through the band and the bib in
   Idle, 42 in Jump_Start, 35 mm deep: the band's pale stripes). The row's name carries the tracked count beside it.

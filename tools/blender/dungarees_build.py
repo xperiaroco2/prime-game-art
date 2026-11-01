@@ -452,6 +452,14 @@ def main() -> None:
                     help="the strap's inner face off the shirt (default the spec's [build] strap_inner_mm, else 0.5)")
     ap.add_argument("--shirt-follow-straps", type=int, default=None,
                     help="1: the shirt under the straps takes their weights (default the spec's [build] shirt_follow_straps)")
+    ap.add_argument("--strap-skin-z-cm", type=float, default=None,
+                    help="the strap's rows at or over this height take her skin's weights (default the spec's [build] "
+                         "strap_skin_z_cm, 0: off)")
+    ap.add_argument("--strap-skin-blend-cm", type=float, default=None,
+                    help="eased back to the row's own over this arc (default the spec's strap_skin_blend_cm)")
+    ap.add_argument("--strap-skin-drop", default=None,
+                    help="bones (name parts, comma-separated) her skin's weights lose there (default the spec's "
+                         "strap_skin_drop)")
     ap.add_argument("--strap-sh-share", type=float, default=0.0,
                     help="the straps' middle: this share of her shoulder's weights, the rest the panel bone's (0: the "
                          "whole strap rides the panel bone, G3c c01: stretch 0, pokes 0 in every clip; 1.0: 16-57 %%)")
@@ -920,11 +928,42 @@ def main() -> None:
                 if t > 0:
                     row_w[i] = norm(mix(row_w[i], w_top, a.strap_top_share * smooth01(t)))
                     n_top += 1
+        # G3j: over her shoulder (the rows at or over skin_z, front top to back top) every strap vertex takes her skin's
+        # weights under it, eased back to the row's own (Chest) over blend_cm of arc on the front run to the bib and on
+        # the back run (on Chest the front-top rows let her shoulder skin 20-40 mm through the shirt, the back-top
+        # rows stood 27-51 mm off her back by the neck: a flap); her Neck and Head never (G3i's strap_top_back_cm
+        # took them: 7-64 % beyond her skin)
+        skin_z = a.strap_skin_z_cm if a.strap_skin_z_cm is not None else spec["build"].get("strap_skin_z_cm", 0.0)
+        skin_bl = a.strap_skin_blend_cm if a.strap_skin_blend_cm is not None else spec["build"].get("strap_skin_blend_cm", 4.0)
+        drop = a.strap_skin_drop.split(",") if a.strap_skin_drop is not None else             spec["build"].get("strap_skin_drop", ["Neck", "Head", "Jaw", "Eye", "Gill"])
+        drop = [w for w in drop if w]
+        share = [0.0] * len(rows)
+        core = [i for i in range(i_front + 1, i_back) if skin_z > 0 and pz[i].z >= skin_z / 100]
+        if core:
+            i0, i1 = min(core), max(core)
+            for i in range(i_front + 1, i_back):
+                gap = arc[i0] - arc[i] if i < i0 else (arc[i] - arc[i1] if i > i1 else 0.0)
+                share[i] = smooth01(1 - gap / (skin_bl / 100)) if skin_bl > 0 else float(gap == 0.0)
+
+        def skin_at(q):
+            acc = {}
+            for co, idx, dist in body_w.kd.find_n(q, 6):
+                for k, v in body_w.w[idx].items():
+                    if not any(x in k for x in drop):
+                        acc[k] = acc.get(k, 0.0) + v / max(dist, 1e-4)
+            return norm(acc)
         lookup = {}
+        top_skin = None
         for i, row in enumerate(rows):
             for p, q in row:
-                lookup[(round(p.x, 6), round(p.y, 6), round(p.z, 6))] = row_w[i]
-                lookup[(round(q.x, 6), round(q.y, 6), round(q.z, 6))] = row_w[i]
+                w = row_w[i]
+                if share[i] > 0:
+                    ws = skin_at(q)
+                    w = norm(mix(w, ws, share[i])) if ws else w
+                    if i == i_top and top_skin is None:
+                        top_skin = ws
+                lookup[(round(p.x, 6), round(p.y, 6), round(p.z, 6))] = w
+                lookup[(round(q.x, 6), round(q.y, 6), round(q.z, 6))] = w
         tr = [[(r[k][0], r[k][1]) for k in range(5)] for r in rows]
         so, si = B.slab(tr, lambda p: lookup[(round(p.x, 6), round(p.y, 6), round(p.z, 6))], 0)
         strap_vs.update(v for r_ in so + si for v in r_)
@@ -933,6 +972,10 @@ def main() -> None:
             "bib_rows": i_front + 1, "back_rows": len(rows) - i_back, "back_on_chest": bool(sboc),
             "inner_mm": round(inner * 1000, 2),
             "top_back": {"cm": back_cm, "rows": n_back, "rows_to_back": i_back - i_top},
+            "skin": {"z_cm": skin_z, "blend_cm": skin_bl, "drop": drop, "core_rows": len(core),
+                     "blend_rows": sum(1 for x in share if 0 < x < 1),
+                     "core_z_cm": [round(pz[min(core)].z * 100, 2), round(pz[max(core)].z * 100, 2)] if core else None,
+                     "top_weights": {k: round(v, 3) for k, v in (top_skin or {}).items()}},
             "top": {"cm": top_cm, "share": a.strap_top_share, "rows": n_top, "weights": w_top,
                     "at_cm": [round(c * 100, 2) for c in top_pt]}}
         # the buckle: a ring round the strap at the bib's top edge and its button on the strap
