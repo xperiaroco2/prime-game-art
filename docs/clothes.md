@@ -1199,6 +1199,22 @@ blender.run_script("dungarees_build.py", ["--spec", "specs/dungarees_dims.toml",
     face's own triangle frame (`clothes_bibmove_geom.slip_local`), not the part's one best fit; the one-fit value
     stays in the row's name.
   - Each `vs_skin` stretch row names its worst edge: its rest midpoint (cm), the frame and its % (`stretch_at`).
+- **G3o (2026-11-01): the bib's stretch beyond her skin is a skinning limit, not a weight defect.** The bib stands
+  1-5 cm in front of her belly (lean B) and rides linear blend skinning. Where its weights move from Chest to
+  UpperChest (and from the band's Spine to Chest), the two bones' different rotation acts on that offset: the extra
+  strain is about the bend angle x the offset x the weight gradient. A variant grid on n4, re-weighted in memory and
+  read by Gate 2's own `skin_excess`, gave these p95 values for Jump_Start 0, Strafe 10, Jog 10, Jump_Air 25 and
+  Walk 31 (`tools/out/clothes/g3o/diag/rew_diag.py`):
+  - as built: 15.2, 14.1, 8.1, 9.8, 2.9 %;
+  - 30 more smoothing passes: 17.9, 13.3, 8.4, 12.9, 4.7 %;
+  - **exactly her skin's weights at each vertex's gate tie point: 15.0, 12.6, 8.0, 9.9, 7.3 %;**
+  - one weight set over z 105 (a rigid plate): 12.9, 21.1, 22.3, 15.2, 21.7 %.
+
+  In the jumps the over-tolerance edges are shortened (the front bunches in the crouch), in Strafe and Jog they are
+  lengthened. No weighting of the bib reaches 2 %; the remedies are geometry (a bib closer to her) or the row's
+  meaning, both open questions for the manager. The strap-fronts join can now tie to faces turned toward `face_dir`
+  only, and only points standing over a face (`face_min_dot`; the bib's front, `[0, -1, 0]`). Each slip row names
+  its worst point (`slip_at`: reference cm, frame).
 - **The build's own numbers** (`[build]` in the spec, not sizes a gate measures): the seam blend, the band's ease
   off the shirt, her front's and back's half widths the plates are laid on (11 and 12 cm; `garment_drawing`'s gaps
   read the same), the straps' ray origin, the turn-up's wall, the buckle ring's sizes. A vertex the build leaves

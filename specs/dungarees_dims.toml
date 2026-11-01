@@ -536,9 +536,13 @@ tol_pct = 5.0
 [[gate2.stretch]]
 part = "straps"
 vs_skin = true
-tol_pct = 5.0                # G3h, the manager's standing decision (3 %, or 5 % for the straps if needed): with their
-                             # back rows on Chest they pass 3 % in every clip but Strafe_Left, 4.1 % (G3g: 5.8-95 %);
-                             # they bend along their length; over the shoulder they may stretch as her skin there
+tol_pct = 7.0                # G3o (2026-11-01, the manager's decision, reversible; listed for the engineer): 7 %. On
+                             # skin weights only Crouch_Fwd 5.05 and Jump_Start 5.07 % went over 5 %, the worst edge
+                             # the right strap's back run at the back panel's corner (G3n n4: (-6.5, 16.1, 121.0) cm,
+                             # Crouch frame 18; (-6.5, 16.3, 120.4), Jump_Start frame 23); Godot close-ups of both
+                             # frames (front, three-quarters, behind; g3o/stills) show no artefact there.
+                             # Before: 5 % (G3h, the manager's standing decision, 3 % or 5 % for the straps): they bend
+                             # along their length; over the shoulder they may stretch as her skin there
 
 [gate2.pokes]
 max_count = 0                # clothes_proof.py's poke-through, every clip
