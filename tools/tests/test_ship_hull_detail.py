@@ -321,7 +321,7 @@ class ShipHullDetailTest(unittest.TestCase):
             # POD_SEGS corners); the bell's and the throat's caps z-fought in one plane over the whole nozzle
             parts = D.nozzle_pod(args, LAYOUT) + D.pod_ring(args, LAYOUT)
             for p in parts:
-                if p["name"] in ("pod_bell", "pod_throat", "pod_band", "pod_rings"):
+                if p["name"] in ("pod_bell", "pod_throat", "pod_band", "pod_inner_ring"):
                     self.assertFalse([f for f in p["faces"] if len(f) >= D.POD_SEGS], p["name"])
 
     def test_merged_plate_pieces_stay_convex(self) -> None:
@@ -404,37 +404,48 @@ class ShipHullDetailTest(unittest.TestCase):
         self.assertGreater(total, 300)
         self.assertGreater(seen / total, 0.8, (seen, total))
 
-    def test_the_stator_blades_are_twisted_aerofoils(self) -> None:
-        """polish n3: twelve blades with thickness and a twist (the pitch 46 deg at the hub, 30 at the wall), a
-        rim-lit leading edge in ext_blade_edge, the spinner in three parts; all inside the throat's wall."""
-        args = {"r": 1.05, "length": 3.6}
-        parts = {p["name"]: p for p in D.nozzle_pod(args, LAYOUT)}
-        # the barrel's dark collar keeps its own ring (1.04 r), not the spinner's small collar (pod_hub)
-        def reach(name):
-            return max(math.hypot(x, z) for x, _y, z in parts[name]["verts"])
-        self.assertGreater(reach("pod_collar"), args["r"])
-        self.assertLess(reach("pod_hub"), 0.5 * args["r"])
-        for name, mat in (("pod_vanes", "ext_blade"), ("pod_vane_edges", "ext_blade_edge"),
-                          ("pod_spinner", "ext_blade"), ("pod_spinner_band", "ext_chrome"), ("pod_hub", "ext_frame")):
-            self.assertEqual(parts[name]["mat"], mat)
-        b = D._blade(15.0, 0.2, 0.6, 0.0, (0.2, 0.3), (46.0, 30.0), (0.05, 0.03))
-        v = b["body"][0]
-        m = len(D.FOIL)
-        root, tip = v[:m], v[-m:]
-
-        def pitch(sec):
-            le, te = sec[0], [(sec[5][k] + sec[6][k]) / 2 for k in range(3)]   # the trailing edge's middle
-            dy = te[1] - le[1]
-            dt = math.hypot(te[0] - le[0], te[2] - le[2])
-            return math.degrees(math.atan2(dt, dy))
-        self.assertAlmostEqual(pitch(root), 46.0, delta=0.5)
-        self.assertAlmostEqual(pitch(tip), 30.0, delta=0.5)
-        thick = max(math.dist(root[2], root[9]), math.dist(root[3], root[8]))
-        self.assertGreater(thick, 0.04)
-        self.assertEqual(len(b["edge"][1]), 2 * (6 - 1))
-        r = args["r"]
-        for x, _y, z in parts["pod_vanes"]["verts"]:
-            self.assertLess(math.hypot(x, z), 0.6 * r)
+    def test_the_nozzles_have_the_old_look_inside(self) -> None:
+        """nb (the engineer, 2026-11-01): no fan inside the bells (n3/n4's stator blades, spinner and stepped throat
+        read as a jet engine): only the dark throat, its light ring and the small dot stand inside the bell's inner
+        wall; the lip's light band is ten segments with gaps (lens step 2's rhythm), each a smooth arc."""
+        for name in ("FOIL", "FOIL_EDGE", "_blade", "_spinner"):
+            self.assertFalse(hasattr(D, name), name)
+        for args in ({"r": 1.42, "length": 4.665}, {"r": 1.62, "length": 4.965}):
+            r, ln = args["r"], args["length"]
+            parts = {p["name"]: p for p in D.nozzle_pod(args, LAYOUT) + D.pod_ring(args, LAYOUT)}
+            for gone in ("pod_vanes", "pod_vane_edges", "pod_spinner", "pod_spinner_band", "pod_hub", "pod_steps",
+                         "pod_rings", "pod_glow_hot", "pod_glow_deep"):
+                self.assertNotIn(gone, parts)
+            # the barrel's dark collar keeps its own ring (1.04 r)
+            self.assertGreater(max(math.hypot(x, z) for x, _y, z in parts["pod_collar"]["verts"]), r)
+            self.assertFalse([p for p in parts.values() if p["mat"].startswith(("ext_blade", "glow_pod_"))])
+            inside = ("pod_throat", "pod_inner_ring", "pod_dot")
+            for name, p in parts.items():
+                if name in inside:
+                    continue
+                for x, y, z in p["verts"]:   # nothing stands in the nozzle (inside 0.79 r, behind the bell's wall)
+                    self.assertFalse(math.hypot(x, z) < 0.79 * r and ln - 0.75 < y < ln + 0.3, (name, x, y, z))
+            # the dot: small, on the throat's floor, glowing
+            dot = parts["pod_dot"]
+            self.assertEqual(dot["mat"], "ext_glow_cyan_dim")
+            self.assertLess(max(math.hypot(x, z) for x, _y, z in dot["verts"]), 0.13 * r)
+            self.assertLess(max(y for _x, y, _z in dot["verts"]), ln - 0.69)   # the funnel floor, 1-6 mm proud
+            self.assertEqual(parts["pod_inner_ring"]["mat"], "glow_pod")
+            # the segments: ten arcs, every vertex clear of the joints by the gap, each arc in several steps
+            segs = parts["pod_segments"]
+            self.assertEqual(segs["mat"], "glow_pod")
+            step = 2 * math.pi / D.SEG_N
+            self.assertEqual(D.SEG_N, 10)
+            hit = set()
+            for x, _y, z in segs["verts"]:
+                a = math.atan2(z, x) % (2 * math.pi)
+                off = a % step
+                self.assertGreater(min(off, step - off), D.SEG_GAP - 1e-6, a)
+                hit.add(int(a // step))
+            self.assertEqual(hit, set(range(10)))
+            self.assertGreaterEqual(len(segs["verts"]), 10 * 4 * 5)
+            # they lie in the lip's groove (pod_tail_m from its floor)
+            self.assertAlmostEqual(max(y for _x, y, _z in segs["verts"]) - ln, LAYOUT["hull"]["pod_tail_m"], delta=0.01)
 
 
 
