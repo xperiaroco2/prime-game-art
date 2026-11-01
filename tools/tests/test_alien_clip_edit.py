@@ -276,6 +276,73 @@ class B1ePlant(unittest.TestCase):
             self.assertTrue(E.can_fly(clip), clip)
 
 
+class B1jPatch(unittest.TestCase):
+    """B1j (art #196, the crouch float back): a foot rolling up onto its toe stands; its patch's centre slid."""
+
+    V = 0.01  # the ground's travel a frame (an in-place clip)
+
+    def rolling(self, n=12, start=4, dtheta=0.08, slip=0.0):
+        """A flat sole of 121 points (1 mm apart, behind its tip) whose tip travels with the ground (plus slip a
+        frame), flat on frames before start, then rolling up about its tip by dtheta a frame: (frames_xy, patches,
+        lows), the patch as _foot_lows makes it (the points within PLANT_PATCH_M over the lowest)."""
+        frames, patches, lows = [], [], []
+        for i in range(n):
+            th = max(0, i - start + 1) * dtheta
+            tip = self.V * i + slip * max(0, i - start)
+            pts = [(0.08, tip - d * math.cos(th), d * math.sin(th)) for d in (k / 1000 for k in range(121))]
+            low = min(z for _, _, z in pts)
+            frames.append([(x, y) for x, y, _ in pts])
+            patches.append([j for j, (_, _, z) in enumerate(pts) if z <= low + E.PLANT_PATCH_M])
+            lows.append(low)
+        return frames, patches, lows
+
+    def test_a_rolling_toe_moves_with_the_ground(self):
+        frames, patches, lows = self.rolling()
+        vel = E.patch_velocity(frames, patches)
+        for i, v in enumerate(vel):
+            self.assertLess(math.hypot(v[0], v[1] - self.V), 0.0005, i)
+        centre = [(sum(frames[i][j][0] for j in p) / len(p), sum(frames[i][j][1] for j in p) / len(p))
+                  for i, p in enumerate(patches)]
+        old = E.foot_velocity(centre)  # B1i's centre: the patch shrinks toward the tip, a slide of centimetres
+        self.assertGreater(max(math.hypot(v[0], v[1] - self.V) for v in old), 0.01)
+
+    def test_the_rolling_toe_stands_and_a_slipping_one_does_not(self):
+        frames, patches, lows = self.rolling()
+        still = [0.0] * len(lows)
+        for slip, want in ((0.0, True), (0.004, False)):
+            fr, pa, lo = self.rolling(slip=slip)
+            vel = {"Left": E.patch_velocity(fr, pa), "Right": E.patch_velocity(frames, patches)}
+            st, off = E.plant_standing({"Left": lo, "Right": still}, vel=vel)
+            self.assertEqual(all(st["Left"][5:11]), want, slip)
+            if not want:
+                self.assertFalse(any(st["Left"][5:11]))
+                self.assertGreater(min(off["Left"][5:11]), E.PLANT_SLIDE_M)
+
+    def test_the_guard_is_off_and_the_slide_reported(self):
+        """B1j: the crouch's lower foot hovers through its stance and lifts off fast with the other foot up, so the
+        guard kept it floating; feet_floor lowers without it and reports the lowered foot's slide."""
+        self.assertFalse(E.PLANT_GUARD)
+        fr, pa, lo = self.rolling(slip=0.004)
+        up = [z + 0.012 for z in lo]  # the rolling foot 12 mm over the floor, the other foot higher
+        g = self.rolling()  # the ground's travel: a rolling foot without slip, standing for the stance motion
+        vel = {"Left": E.patch_velocity(fr, pa), "Right": E.patch_velocity(g[0], g[1])}
+        lows = {"Left": up, "Right": [0.05] * len(up)}
+        st, off = E.plant_standing({"Left": [1.0] * len(up), "Right": g[2]}, vel=vel)
+        r = E.foot_plant(lows["Left"], lows["Right"], True, st if E.PLANT_GUARD else None)
+        self.assertTrue(all(r["Left"][i] < 0.0 for i in range(len(up))))
+        self.assertAlmostEqual(E.plant_slide_mm(lows, r, off), 4.0, delta=0.6)
+
+    def test_no_patch_and_the_seam(self):
+        frames = [[(0.0, 0.0)], [(0.0, 0.01)], [(0.0, 0.03)], [(0.0, 0.0)]]
+        v = E.patch_velocity(frames, [[0], [], [0], [0]], wrap=True)
+        self.assertAlmostEqual(v[0][1], (0.01 - 0.03) / 2)  # frame 0 from frames 2 and 1
+        self.assertEqual(v[-1], v[0])
+        self.assertIsNone(v[1])
+        st, off = E.plant_standing({"Left": [0.0, 0.0, 0.0, 0.0]}, vel={"Left": v})
+        self.assertFalse(st["Left"][1])
+        self.assertEqual(off["Left"][1], math.inf)
+
+
 class B1iStanding(unittest.TestCase):
     """B1i (art #196, the review's major 1): the no-flight lowering lands only a foot that moves as a planted one."""
 
@@ -335,7 +402,6 @@ class B1iStanding(unittest.TestCase):
         st, _ = E.plant_standing({"Left": [0.05, 0.05], "Right": [0.05, 0.05]},
                                  {"Left": [(0, 0), (0, 0)], "Right": [(0, 0), (0, 0)]})
         self.assertFalse(any(st["Left"] + st["Right"]))  # no stance motion: nothing stands
-        self.assertEqual(E._fill_track([None, (1.0, 2.0), None]), [(1.0, 2.0)] * 3)
 
 
 class B1fCross(unittest.TestCase):

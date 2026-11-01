@@ -346,7 +346,9 @@ before.
     clip still under -0.5 cm (B1i). B1 lifted the Hips by
     the sole's need instead: the heel dips up to 19 mm at heel strike, so the Hips jerked up to 18.6 mm in a frame.
     `dress.json`'s `sole_floor` holds each clip's report (`max_raise_cm` per foot, `ankle_miss_max_cm`,
-    `under_2mm_frames`, `floated_frames`, `lowest_before_mm`, `lowest_after_mm`).
+    `under_2mm_frames`, `floated_frames`, `lowest_before_mm`, `lowest_after_mm`; in a no-flight clip `max_lower_cm`,
+    `floated_after`, and B1j's `plant_slide_mm` and `plant_moving_frames`: how far the lowered foot slides off the
+    ground's travel, measured on its contact patch's own points, `docs/animations.md`, the floor row).
     The crossing shoes (B1f, B1g, art #196): after each clip's floor pass, `alien_clip_edit.feet_cross` measures the
     shoes against each other per frame: each shoe's points (the shoes mesh's vertices by their Left*/Right* weights,
     `_shoe_sides`; the nearer Foot-Toes segment gave 29 of the right heel's points to the left foot in a crouch) and
