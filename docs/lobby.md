@@ -958,11 +958,24 @@ Raw `lobby/hall/v18` (the pieces copied unchanged from v17). The export's `c_bac
 - The ship-grid's later variants do not reproduce a fresh `--shoot` everywhere: in `a_entrance` the hull's nose side
   and underside read 14 to 16 darker than the first variant, whatever the share. Judge a set's numbers by `--shoot`.
 
+## The ship package v8 (2026-11-01)
+
+Art #263's ship package v8 (art PR #370, raw `ship/v5/export/v8`; v7's emissive nozzles with the old ring look) in
+place of v4: `[ship.package] dir` and `raw_dir` (`lobby/hall/v19`, the pieces copied unchanged from v18). Node names
+are unchanged, so nothing on the hall's side moved.
+- `lobby --check`: the closed footprint as in v4 (nose z -26.99, aft z 0.46, N 3.01, spawns 2.04 m).
+- `lobby --godot`: the package's colliders 727 (v4 704), 105 lamps, jaws 0/0, the same nodes freed; the walk and the
+  6 blocks hold.
+- `lobby --shoot` (raw `v19/shots`): the nozzles glow from their own materials (rings, a glowing dot, the gapped LED
+  band) in `spawn_ship`; the views that see the ship draw about 150 more calls (`a_entrance` 2964, was 2818).
+- `lobby --export` (raw `v19/export`): 20 files, 38.5 MB; `c_back` 1.912, `corner_nw` 0.002, `spawn_eye` 0.003 of 255
+  off `--shoot`'s; the ship 727 colliders, 1729 meshes drawn (v4 1677). Only `lobby_hall.tscn` changed in the package.
+
 ## Open problems
 
-- Follow-up #366: `c_back` from the package now 1.907 of `--shoot`'s (the cause: the shots' misplaced ship-only
-  copies, fixed). `spawn_ship`'s aft underside lost the copies' accidental warm glow (above); a look call if it is
-  missed. The hall's GLBs each embed the metal texture set (about 4 MB each): one shared set would save
+- Follow-up #366: `c_back` from the package now 1.912 of `--shoot`'s (1.907 before the ship package v8; the cause:
+  the shots' misplaced ship-only copies, fixed). `spawn_ship`'s aft underside lost the copies' accidental warm glow
+  (above); a look call if it is missed. The hall's GLBs each embed the metal texture set (about 4 MB each): one shared set would save
   about 24 MB.
 
 - Step 5a7: F36 picked (2026-10-31). From the arch's mouth the ship hides the window.
