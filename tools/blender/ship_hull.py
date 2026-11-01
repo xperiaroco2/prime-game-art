@@ -23,12 +23,6 @@ L.MATERIALS.update({
     "ext_seam": {"base": (0.035, 0.037, 0.04, 1.0), "metallic": 0.6, "roughness": 0.6},
     "ext_frame": {"base": (0.16, 0.17, 0.18, 1.0), "metallic": 0.85, "roughness": 0.35},
     "ext_chrome": {"base": (0.8, 0.8, 0.82, 1.0), "metallic": 1.0, "roughness": 0.12},
-    # polish n3: the nozzles' stator blades and spinner, dark gunmetal with a faint teal cast (the throat's glow on
-    # them), their leading edges' bevel a rim lit by the glow behind (so they shade, not silhouette as black cut-outs)
-    "ext_blade": {"base": (0.07, 0.085, 0.095, 1.0), "metallic": 0.7, "roughness": 0.3,
-                  "emission": (0.03, 0.3, 0.33), "strength": 0.35},
-    "ext_blade_edge": {"base": (0.2, 0.6, 0.62, 1.0), "metallic": 0.3, "roughness": 0.3,
-                       "emission": (0.25, 0.9, 0.92), "strength": 1.6},
     "ext_nozzle_inner": {"base": (0.03, 0.03, 0.035, 1.0), "metallic": 0.7, "roughness": 0.5},
     "ext_glow_warm": {"base": (1.0, 0.55, 0.22, 1.0), "metallic": 0.0, "roughness": 0.5, "emission": (1.0, 0.5, 0.18),
                       "strength": 1.6},
