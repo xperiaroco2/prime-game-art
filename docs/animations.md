@@ -1710,6 +1710,20 @@ unchanged: rays through the loop from the thumb side hit thumb skin 21/45 (axolo
 thenar mound and its thumb is too short to reach the middle finger. The thumb sinks 6-7 mm into the index's side at
 the grip (clay pressed together; no poke-through in the close-ups).
 
+**The thumb tucked in (H1u).** H1t's thumb stuck out past the first-person outline as a ball (the critic, 2026-11-01).
+The review driver now measures each thumb segment's skin projected outside the outline of H1q's whole hand together
+with the row's own fingers and palm (first person in Jog_Fwd, back and front views, orthographic). The pick bends the
+thumb's middle joint 15 -> 25 and its tip 60 -> 75 (`Thumb` 70/25/75, `ThumbTurn` [90, 45]): the tip sits 1.7
+(axolotl) and 2.0 mm (chameleon) past the first-person outline, J 6.1 and 6.3. The cost: rays through the index loop
+from the thumb side hit thumb skin 7/45 on the axolotl (5 deep; J 21/45, 2 deep) and 25/45 on the chameleon (none
+deep). No pose of this thumb meets both at once (grids g1, g2: 58 rows): covering the loop's side mouth puts the
+thumb beside the index, and wherever the axolotl's loop is covered (20/45 or more) its tip is 6-8 mm past the
+first-person outline. In the back view any thumb laid across the mouth stands 13-15 mm past H1q's outline (a
+thumb's thickness). The swing (45 -> 55-60) and the metacarpal (70 -> 60) alone made both worse; the two act on the
+same axis here (equal rows). The field, envelope-wrap and local routes were deleted; `contact` is the only route
+(`[fist] route`, the default). `[grips.runfist]` has its own spec entry (`body_dims/hand_grips.toml`: limits and the
+thumb's sink, 7.5 mm at most) and `test_alien_grip_solve.py` pins it and its use by Jog, Sprint and Strafe.
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
