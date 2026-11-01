@@ -2,8 +2,8 @@
 
 The lobby's hall of art#356 (a 40 x 40 m hall with a bowed window to the night Earth, a ribbed vault, the entrance
 arch, four sealed doors, art#263's ship docked on a floor ring) as the game's package. Written by
-`tools/run.sh lobby --export <raw>/lobby/hall/v18/export` (2026-11-01, branch fix/lobby-cback-366, steps 5b-5c2 and
-follow-up #366;
+`tools/run.sh lobby --export <raw>/lobby/hall/v19/export` (2026-11-01, branch feat/lobby-ship-v8-356, steps 5b-5c2,
+follow-up #366 and the ship package v8 (art PR #370, raw `ship/v5/export/v8`);
 `docs/lobby.md` "The export"); the files and their hashes are in `manifest.toml` and `package.json`, the check's
 numbers in `report.json`. The binaries are not committed here: the package lives in the raw folder until approved (as
 the ship's).
@@ -46,7 +46,7 @@ script.
   root script `lobby_hall.gd` frees the nodes in its `ship_free` list (`Ship/Clearing`, `Ship/Environment` and the two
   suns, which the ship package names `Lights/@DirectionalLight3D@3` and `@4`), then takes every reflection probe out of
   the tree and back one frame later so each captures without them (the check: 4 nodes freed, 10 of 10 probes
-  recaptured). The 704 ship colliders stay on.
+  recaptured). The 727 ship colliders stay on.
 - `Earth/EarthObject`: the planet, a back-faced sphere shell (`earth_object.tres`, far mode): every ray starts at the
   spawn's eye (0, 1.65, 2.5) and the shader moves the shell with the camera, so the planet is **at infinity**: the
   same size, horizon and direction from everywhere in the hall. Never parent it to anything that moves or scale it;
@@ -72,10 +72,10 @@ ship's own light set) unless they should take the ship's light.
 
 - The art's shots use a positional shadow atlas of 4096 with all four quadrants subdivided 4 (the pendants' shadowed
   spots); set it in the game's project settings or the viewport.
-- GPU ms at 1920 x 1080 from the package (median of 16 frames; `lobby --shoot`'s in brackets): `spawn_eye` 2.65
-  (2.79), 74 draw calls; `corner_nw` 3.54 (3.67), 3199 draw calls; `c_back` 3.51 (3.50), 2684 draw calls. The views
-  that see the ship draw its whole interior behind the shut nose and the closed doors (most of the 2700-3200 draw
-  calls).
+- GPU ms at 1920 x 1080 from the package (median of 16 frames; `lobby --shoot`'s in brackets): `spawn_eye` 2.64
+  (2.47), 74 draw calls; `corner_nw` 3.56 (3.90), 3335 draw calls; `c_back` 3.65 (3.48), 2806 draw calls (the ship
+  package v8). The views that see the ship draw its whole interior behind the shut nose and the closed doors (most of
+  the 2800-3300 draw calls).
 
 ## Credit
 
@@ -87,7 +87,7 @@ ship's own light set) unless they should take the ship's light.
   inside pieces in the lobby is the game's call.
 - The spawns stand 0.76 m outside the floor ring (r 15 round the closed ship's middle, z -13.26); the ring is an inlay
   only.
-- The views' comparison with `lobby --shoot` (the 2.0 rule, mean difference of 255): `c_back` 1.907 (1.52% of the
+- The views' comparison with `lobby --shoot` (the 2.0 rule, mean difference of 255): `c_back` 1.912 (1.52% of the
   pixels off by more than 16), `corner_nw` 0.002, `spawn_eye` 0.003. Step 5b's 3.16 on `c_back` was the shots' fault
   (follow-up #366, `docs/lobby.md`): their ship-only pendant and Earth copies sat at the floor's centre; placed as
   here, K1's pendant share went 0.25 -> 0.04 to keep the approved look.

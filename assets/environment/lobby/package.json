@@ -110,9 +110,9 @@
  "ship": {
   "node": "Ship",
   "scene": "res://levels/ship/ship.tscn",
-  "package": "ship/v5/export/v4",
+  "package": "ship/v5/export/v8",
   "package_version": 3,
-  "package_bytes": 11944553,
+  "package_bytes": 13508641,
   "origin": [
    0.0,
    0.0,
@@ -215,11 +215,11 @@
    "bytes": 332
   },
   "levels/lobby/lobby_hall.tscn": {
-   "sha256": "a3033bd93a6164e339c35e3be06b614afcaed3d80f05c85bc5c523fad965c709",
-   "bytes": 429639
+   "sha256": "9125d2220a1f59cb640489db54abe4fd1b523470b86a37060315cf33922b9bf6",
+   "bytes": 437438
   }
  },
- "bytes": 38514184,
+ "bytes": 38521983,
  "questions": [
   "L1: the ship is an instance of the ship package's res://levels/ship/ship.tscn (assets/environment/ship/HANDOFF.md), never a copy: the game needs the ship package at its paths. What the hall must not have is saved switched off (a packed scene cannot remove a node of an instance: Ship/Clearing hidden and disabled, Ship/Environment's WorldEnvironment on the hall's environment, the suns under Ship/Lights hidden), and the root's level script res://levels/lobby/lobby_hall.gd frees them on _ready (its ship_free paths) and has the reflection probes capture again a frame later, as the art's assembly does. Keep the script on LobbyHall; a game script for the lobby extends it and calls super._ready().",
   "L2: the jaw nose is saved shut (jaw_lower and jaw_upper at 0 deg) by overrides; Ship/Nose/AnimationPlayer still holds open/close: the lobby never plays them. Its pose is the scene's, so nothing needs to run at load.",
