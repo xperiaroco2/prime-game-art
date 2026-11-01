@@ -267,12 +267,13 @@ def stretch(rest, now, edges_ij, min_len: float = 0.003) -> tuple[float | None, 
 
 
 def skin_excess(rest, now, skin_rest, skin_now, edges_ij, min_len: float = 0.003,
-                skin_min: float = 0.0015) -> tuple[float | None, float | None]:
+                skin_min: float = 0.0015, where: bool = False):
     """The stretch beyond her skin's (art #196, G3e; the manager's option (c)): per edge (i, j) longer than min_len at
     rest, |length / rest - 1| less the same of her skin points tied to i and j (skin_rest / skin_now, one point per
     garment vertex), never under 0, in %; the largest and the 95th percentile (as stretch()). A garment sewn to the
     band follows her twist: it may stretch as much as her skin there. Where her two skin points lie closer than
-    skin_min at rest the skin's stretch is unknown and the edge's own stretch counts. (None, None) with no edge."""
+    skin_min at rest the skin's stretch is unknown and the edge's own stretch counts. (None, None) with no edge.
+    where (G3n): a third value, the largest edge (i, j), or None."""
     cv = lambda a: a.tolist() if hasattr(a, "tolist") else a
     rest, now, skin_rest, skin_now, edges_ij = map(cv, (rest, now, skin_rest, skin_now, edges_ij))
     r = []
@@ -283,13 +284,36 @@ def skin_excess(rest, now, skin_rest, skin_now, edges_ij, min_len: float = 0.003
         g = abs(math.dist(now[i], now[j]) / l0 - 1.0)
         s0 = math.dist(skin_rest[i], skin_rest[j])
         s = abs(math.dist(skin_now[i], skin_now[j]) / s0 - 1.0) if s0 > skin_min else 0.0
-        r.append(max(0.0, g - s) * 100)
+        r.append((max(0.0, g - s) * 100, (i, j)))
     if not r:
-        return None, None
-    r.sort()
+        return (None, None, None) if where else (None, None)
+    r.sort(key=lambda x: x[0])
     k = 0.95 * (len(r) - 1)
     f = int(k)
-    return r[-1], r[f] + (r[min(f + 1, len(r) - 1)] - r[f]) * (k - f)
+    p95 = r[f][0] + (r[min(f + 1, len(r) - 1)][0] - r[f][0]) * (k - f)
+    return (r[-1][0], p95, r[-1][1]) if where else (r[-1][0], p95)
+
+
+def smooth_residual(rest, now, deg: int = 3) -> list:
+    """The fold measure (G3n, the engineer's "flat": no folds, not rigid): each point's distance (m) from a smooth fit
+    of the part's own motion. The motion now - rest is fitted, per coordinate by least squares, with a polynomial of
+    degree deg in the rest coordinates (centred and scaled to the part's size): a rigid move and a smooth bend with her
+    trunk are such polynomials and leave nothing, a fold (a crease or a bulge narrower than the part) does not. Lists
+    or arrays in; numpy is imported here."""
+    import numpy as np
+    a, b = np.asarray(rest, float), np.asarray(now, float)
+    c = a.mean(0)
+    sc = max(float(np.abs(a - c).max()), 1e-9)
+    u = (a - c) / sc
+    cols = []
+    for p in range(deg + 1):
+        for q in range(deg + 1 - p):
+            for r_ in range(deg + 1 - p - q):
+                cols.append(u[:, 0] ** p * u[:, 1] ** q * u[:, 2] ** r_)
+    m = np.stack(cols, 1)
+    d = b - a
+    coef, *_ = np.linalg.lstsq(m, d, rcond=None)
+    return np.linalg.norm(m @ coef - d, axis=1).tolist()
 
 
 def classify(sizes: list[int], spans: list[tuple[float, float, float, float]], over_z: float, hw_max: int) -> list[str]:

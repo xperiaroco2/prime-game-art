@@ -350,14 +350,20 @@ def motion_rows(spec, motion: dict, poke: dict | None) -> list[dict]:
                          "tol": lp["through_mm"], "pass": G.verdict(v, lp["through_mm"])})
         for f in g2["flat"]:
             v = None if m is None else m["flat_mm"].get(f["part"])
-            rows.append({"clip": clip, "check": f"flatness: {f['part']}", "value": v, "unit": "mm", "tol": f["tol_mm"],
+            what = f"flatness: {f['part']}"
+            if f.get("fit") == "smooth":   # G3n: folds off a smooth fit of its own motion; the rigid value beside it
+                rg = None if m is None else (m.get("flat_rigid_mm") or {}).get(f["part"])
+                what += f" (folds: off a smooth fit of degree {f.get('deg', 3)}; off a rigid fit {rg})"
+            rows.append({"clip": clip, "check": what, "value": v, "unit": "mm", "tol": f["tol_mm"],
                          "pass": G.verdict(v, f["tol_mm"])})
         for s in g2["stretch"]:
             if s.get("vs_skin"):   # G3e: the stretch beyond her skin's at the same place (a seam follows her twist)
                 mx = None if m is None else (m.get("skin_excess_pct") or {}).get(s["part"])
                 v = None if m is None else (m.get("skin_excess_p95_pct") or {}).get(s["part"])
                 raw = None if m is None else m["stretch_p95_pct"].get(s["part"])
-                rows.append({"clip": clip, "check": f"stretch p95 beyond her skin's: {s['part']} (max {mx}; own {raw})",
+                at = None if m is None else (m.get("stretch_at") or {}).get(s["part"])
+                rows.append({"clip": clip, "check": f"stretch p95 beyond her skin's: {s['part']} (max {mx}; own {raw}; "
+                                                    f"worst edge at {at} cm, frame, %)",
                              "value": v, "unit": "%", "tol": s["tol_pct"], "pass": G.verdict(v, s["tol_pct"])})
                 continue
             mx = None if m is None else m["stretch_pct"].get(s["part"])

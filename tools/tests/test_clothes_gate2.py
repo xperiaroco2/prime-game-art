@@ -589,6 +589,33 @@ class G3eSkinShirtTest(unittest.TestCase):
         self.assertAlmostEqual(G.skin_excess(rest, stretched, same, same, edges)[0], 25.0)
         self.assertEqual(G.skin_excess(rest, stretched, rest, rest, []), (None, None))
 
+    def test_skin_excess_names_its_worst_edge(self):
+        rest = [(0, 0, 0), (0.01, 0, 0), (0.02, 0, 0)]
+        now = [(0, 0, 0), (0.0101, 0, 0), (0.0251, 0, 0)]
+        mx, _p95, at = G.skin_excess(rest, now, rest, rest, [(0, 1), (1, 2)], where=True)
+        self.assertEqual(at, (1, 2))
+        self.assertAlmostEqual(mx, 50.0)
+        self.assertEqual(G.skin_excess(rest, now, rest, rest, [], where=True), (None, None, None))
+
+    @unittest.skipUnless(HAVE_NUMPY, "numpy (Blender's Python has it)")
+    def test_folds_are_off_a_smooth_fit_not_a_rigid_one(self):
+        """G3n: a bib bending with her trunk (a smooth bend, here a parabola of 4 cm over its height) is no fold; a
+        local bump 5 mm high and 3 cm wide is, and reads near its height."""
+        grid = [(x / 100, y / 1000, z / 100) for x in range(-10, 11, 2) for z in range(0, 25, 2) for y in (0, 2)]
+        bent = [(x, y + 0.04 * (z / 0.24) ** 2, z) for x, y, z in grid]
+        self.assertLess(max(G.smooth_residual(grid, bent)), 1e-6)
+        import math as _m
+        bump = [(x, y + 0.005 * _m.exp(-((x - 0.04) ** 2 + (z - 0.12) ** 2) / (2 * 0.01 ** 2)), z) for x, y, z in bent]
+        self.assertGreater(max(G.smooth_residual(grid, bump)), 0.003)
+        spec = S.load_spec(SPEC)
+        fl = next(f for f in spec["gate2"]["flat"] if f["part"] == "bib")
+        self.assertEqual((fl["fit"], fl["tol_mm"]), ("smooth", 3.0))
+        rows = GG.motion_rows(spec, {"parts": {}, "clips": {"Idle": {"slip_mm": {}, "flat_mm": {"bib": 1.2},
+                              "flat_rigid_mm": {"bib": 60.0}, "stretch_pct": {}, "stretch_p95_pct": {}}}}, None)
+        row = next(r for r in rows if r["clip"] == "Idle" and r["check"].startswith("flatness: bib"))
+        self.assertEqual((row["value"], row["pass"]), (1.2, True))
+        self.assertIn("rigid fit 60.0", row["check"])
+
     def test_the_seams_and_straps_are_judged_against_her_skin(self):
         g2 = self.spec["gate2"]
         st = {s["part"]: s for s in g2["stretch"]}
@@ -697,7 +724,13 @@ class G3fLapTest(unittest.TestCase):
                      "strap_back_join_cm", "strap_skin_whole", "back_corner_chest", "back_corner_fade_cm",
                      "back_band_share", "strap_top_cm", "strap_top_back_cm", "strap_skin_drop"):
             self.assertNotIn(gone, b)
-        self.assertTrue({"Neck", "Head"} <= set(b["skin_drop"]))
+        self.assertIn("Head", b["skin_drop"])
+        self.assertNotIn("Neck", b["skin_drop"])                 # G3n: her Neck kept (G3m m1: the back runs 13 -> 1.7 mm)
+        self.assertGreaterEqual(b["skin_smooth"], 10)
+        self.assertTrue(0.0 < b["hardware_reach_cm"] <= 1.0)     # G3n: the buckles on their footprint's mean weights
+        self.assertIn("ckd.find_range(c, rad)", src := (Path(__file__).resolve().parents[1] / "blender" /
+                                                        "dungarees_build.py").read_text(encoding="utf-8"))
+        self.assertNotIn("w_above=skin)", src)                   # G3n: the shirt copies the cloth over it
         self.assertGreaterEqual(b["skin_k"], 3)
         self.assertTrue(1.0 <= b["strap_inner_mm"] <= 2.0)
         self.assertTrue(0.0 < b["shirt_hide_cm"] <= 3.0)

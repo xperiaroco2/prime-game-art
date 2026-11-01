@@ -12,7 +12,12 @@ the spec's [gate2] section, resolved on the build's measures) and reads the resu
   nearest point (face, barycentric); per frame its offset from that point, turned back by the other part's best-fit
   rotation, less its rest offset (clothes_bibmove_geom.slip), mm.
 - Flatness: the part's largest distance from its rest shape moved rigidly onto it (Kabsch), mm: change from rest,
-  so a bend the spec draws (lean B's) is allowed and only a new bend counts.
+  so a bend the spec draws (lean B's) is allowed and only a new bend counts. A flat entry with fit = "smooth" (G3n)
+  measures folds instead: the largest distance from a smooth fit of the part's own motion (a polynomial of degree deg,
+  default 3, garment_gate2_geom.smooth_residual), so the part may bend with her trunk but not crease; the rigid
+  value is kept beside it (flat_rigid_mm).
+- Where (G3n): per vs_skin stretch the largest edge beyond her skin in the frame of the clip's worst p95 (its rest
+  midpoint, cm, the frame and its %), stretch_at.
 - Stretch: the part's edges' |length / rest - 1|, the largest and the 95th percentile, %. A stretch entry with
   vs_skin judges the stretch beyond her skin's at the same place in the same frame (garment_gate2_geom.skin_excess):
   each vertex of the part tied at the reference to its nearest point of her skin (cfg skin: the body and its hidden
@@ -236,7 +241,7 @@ def main() -> int:
         f0, f1 = (int(round(x)) for x in act.frame_range)
         res = {"frames": 0, "slip_mm": {}, "flat_mm": {}, "stretch_pct": {}, "stretch_p95_pct": {},
                "skin_excess_pct": {}, "skin_excess_p95_pct": {}, "lap_mm": {}, "lap_through_mm": {}, "lap_gap_mm": {},
-               "lift_mm": {}, "lift_at": {}}
+               "lift_mm": {}, "lift_at": {}, "flat_rigid_mm": {}, "stretch_at": {}}
         sc.frame_set(f0)
         sref0 = None
         for f in range(f0, max(f0 + 1, f1 + 1), max(1, cfg.get("every", 1))):
@@ -280,6 +285,11 @@ def main() -> int:
             for fl in cfg["flat"]:
                 fit = fits.get(fl["part"])
                 v = 1000 * float(fit[2].max()) if fit else None
+                if fl.get("fit") == "smooth":   # G3n: folds, off a smooth fit of its own motion
+                    old = res["flat_rigid_mm"].get(fl["part"])
+                    res["flat_rigid_mm"][fl["part"]] = v if old is None else max(old, v)
+                    ids = parts[fl["part"]]
+                    v = 1000 * max(G.smooth_residual(ref[ids], co[ids], int(fl.get("deg", 3)))) if len(ids) >= 30 else None
                 old = res["flat_mm"].get(fl["part"])
                 res["flat_mm"][fl["part"]] = v if old is None else max(old, v)
             if skin_tie:
@@ -304,7 +314,11 @@ def main() -> int:
                     tie = skin_tie[st["part"]]
                     e = [(i, j) for i, j in edges[st["part"]].tolist() if i in tie and j in tie]
                     s0, s1 = skin_points(sref0, st["part"]), skin_points(sco, st["part"])
-                    mx, p95 = G.skin_excess(ref, co, s0, s1, e) if e else (None, None)
+                    mx, p95, at = G.skin_excess(ref, co, s0, s1, e, where=True) if e else (None, None, None)
+                    best = res["skin_excess_p95_pct"].get(st["part"])
+                    if at is not None and p95 is not None and (best is None or p95 > best):
+                        mid = (ref[at[0]] + ref[at[1]]) / 2
+                        res["stretch_at"][st["part"]] = [round(100 * float(x), 1) for x in mid] + [f, round(mx, 1)]
                     for key, v in (("skin_excess_pct", mx), ("skin_excess_p95_pct", p95)):
                         old = res[key].get(st["part"])
                         res[key][st["part"]] = v if old is None else (old if v is None else max(old, v))
@@ -313,7 +327,7 @@ def main() -> int:
                     old = res[key].get(st["part"])
                     res[key][st["part"]] = v if old is None else (old if v is None else max(old, v))
         for k in ("slip_mm", "flat_mm", "stretch_pct", "stretch_p95_pct", "skin_excess_pct", "skin_excess_p95_pct",
-                  "lap_mm", "lap_through_mm", "lap_gap_mm", "lift_mm"):
+                  "lap_mm", "lap_through_mm", "lap_gap_mm", "lift_mm", "flat_rigid_mm"):
             res[k] = {n: (None if v is None else round(v, 2)) for n, v in res[k].items()}
         rep["clips"][clip] = res
         say("clip", clip, json.dumps(res))
