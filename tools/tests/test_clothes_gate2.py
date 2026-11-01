@@ -628,10 +628,24 @@ class G3fLapTest(unittest.TestCase):
         b = self.spec["build"]
         self.assertTrue(4.0 <= b["plate_lap_cm"] <= 6.0)
         self.assertGreater(b["plate_lap_clear_cm"], 0)
-        self.assertEqual(b["strap_top_cm"], 4.0)
+        self.assertEqual(b["strap_top_cm"], 3.0)          # G3g: 3 cm (G3f's 4 cm; 6 and 8 stretched far more)
         self.assertTrue(5.0 <= b["shirt_follow_fade_cm"] <= 6.0)
         self.assertTrue(0.2 <= b["shirt_hem_in_cm"] <= 0.3)
         self.assertGreater(b["back_cols"], 25)
         for lp in self.spec["gate2"]["laps"]:
             self.assertGreaterEqual(lp["min_mm"], 10.0)
             self.assertEqual(lp["through_mm"], 0.0)
+
+    def test_the_back_panel_rides_the_band(self):
+        """G3g: the back panel on the band's bone alone (k50's half blend rose over the band and stretched the straps),
+        its lap ending at the band's foot, following her back down each column; the shirt ends inside the yoke."""
+        b, d = self.spec["build"], self.spec["dims"]
+        self.assertEqual(b["back_band_share"], 1.0)
+        self.assertLessEqual(b["back_lap_cm"], d["waistband_h"]["cm"])
+        self.assertGreater(b["back_lap_cm"] * 10, self.spec["gate2"]["laps"][1]["min_mm"])
+        self.assertEqual(b["back_column"], "follow")
+        self.assertGreaterEqual(b["back_fit_deg"], 2)
+        self.assertTrue(b["back_lap_hug"] and b["strap_tilt"])
+        band_foot = d["waistband_top_z"]["cm"] - d["waistband_h"]["cm"]
+        self.assertLess(b["shirt_trim_z_cm"], band_foot - 1.0)   # well inside the yoke, under the band
+        self.assertGreater(b["shirt_trim_z_cm"], 88.0)           # over the rise cut: the yoke's ring is round it

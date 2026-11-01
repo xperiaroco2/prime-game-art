@@ -1069,6 +1069,20 @@ blender.run_script("dungarees_build.py", ["--spec", "specs/dungarees_dims.toml",
   blades and at the back panel's edges), the near fallback `shirt_follow_near_cm` 3 cm, and the hem drawn in
   `shirt_hem_in_cm` 2.5 mm toward its middle over its lowest 1.5 cm (`shirt_hem_in`; its hem came out through the
   yoke in Sprint and Jump_Start).
+- **The back on the band's bone, the straps tilted, the shirt trimmed (G3g):** k50's half blend (`back_band_share`
+  0.5) still let the back's lap rise over the band (5.7 mm left in Jump_Start, 1-8 mm inside it in Jog, Sprint,
+  Strafe and Jump_Start) and, since the straps' back ends ride the panel, stretched the straps 16-58 % beyond her skin;
+  a blend of two bones is also not rigid (the panel's flatness and stretch failed). So the back panel rides Spine alone
+  (`back_band_share` 1.0, the band's bone): its lap never slides, so it ends at the band's foot (`back_lap_cm` 4; 5 cm
+  hung under the band like a second belt), and is drawn onto the band as well as pushed off it (`back_lap_hug`; its
+  lower corners stood off her side). Down each column the panel follows her back smoothed (`back_column = "follow"`: a
+  running maximum over +-2 rows, then a mean over +-3, never in front of her), not the hull, which bridged her waist's
+  hollow and stood the panel's side edges 15-31 mm off her (`build.json`'s `back_edge_gap_mm`); across, each row a
+  degree-4 curve (`back_fit_deg`). The straps' rows are tilted across to her shoulder's slope (`strap_tilt`: a line in
+  x through the columns' own radii, lifted onto the highest), where level they stood off her shoulder at the outer
+  edge; their top eases over 3 cm (`strap_top_cm`). The shirt ends at `shirt_trim_z_cm` 93.5, inside the yoke's ring
+  under the band (`shirt_trim`), never seen: its hem came out through the yoke at her hip crease (3-13 vertices, up to
+  8 mm), and moving it in made that worse.
 - **The build's own numbers** (`[build]` in the spec, not sizes a gate measures): the seam blend, the band's ease
   off the shirt, her front's and back's half widths the plates are laid on (11 and 12 cm; `garment_drawing`'s gaps
   read the same), the straps' ray origin, the turn-up's wall, the buckle ring's sizes. A vertex the build leaves

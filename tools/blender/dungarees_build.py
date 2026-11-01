@@ -145,16 +145,17 @@ def chain_y(hull, z: float) -> float:
     return hull[0][1] if z < hull[0][0] else hull[-1][1]
 
 
-def smooth_rows(rows, plate: float):
-    """The back panel's rows across (G3f): per row y = a + b x + c x^2 fitted (least squares) to the row's outer
-    points, the coefficients averaged over the rows +-2 (weights 1 2 3 2 1), then the row lifted (y up: behind her) by
-    the most any of its points stood behind the curve, so it never cuts into her back; the inner face plate in front."""
+def smooth_rows(rows, plate: float, deg: int = 2):
+    """The back panel's rows across (G3f): per row a polynomial in x of degree deg fitted (least squares) to the row's
+    outer points, the coefficients averaged over the rows +-2 (weights 1 2 3 2 1), then the row lifted (y up: behind
+    her) by the most any of its points stood behind the curve, so it never cuts into her back; the inner face plate in
+    front. G3g: deg 4 follows her sides' turn, where the quadratic's lift left the panel's edges off her (3/4 views)."""
     import numpy as np
     coef = []
     for row in rows:
         x = np.array([p.x for p, _q in row])
         y = np.array([p.y for p, _q in row])
-        coef.append(np.polyfit(x, y, 2))
+        coef.append(np.polyfit(x, y, deg))
     coef = np.array(coef)
     k = np.array([1.0, 2.0, 3.0, 2.0, 1.0])
     out = []
@@ -295,6 +296,25 @@ def shirt_follow(top, B, skip_vs, fade: float, reach: float = 0.04, near: float 
             groups[g].add([i], val, "REPLACE")
         changed += 1
     return {"covered": len(got), "faded": changed - len(got), "shirt_verts": len(co), "fade_m": fade}
+
+
+def shirt_trim(top, z_cut: float) -> dict:
+    """The shirt's faces wholly under z_cut (m, world, at rest) removed (G3g): its lowest few cm lie inside the
+    trousers' yoke, a closed ring under the band, never seen; there the yoke folds at her hip crease and the hem came
+    out through it (k50: 3-7 vertices 1-5 mm in Jog, Sprint, Strafe and the jumps; moving it in made it worse)."""
+    if z_cut <= 0:
+        return {"z_cut_m": 0.0, "faces": 0}
+    mw = top.matrix_world
+    bm = bmesh.new()
+    bm.from_mesh(top.data)
+    gone = [f for f in bm.faces if all((mw @ v.co).z < z_cut for v in f.verts)]
+    bmesh.ops.delete(bm, geom=gone, context="FACES")
+    loose = [v for v in bm.verts if not v.link_faces]
+    bmesh.ops.delete(bm, geom=loose, context="VERTS")
+    bm.to_mesh(top.data)
+    bm.free()
+    top.data.update()
+    return {"z_cut_m": z_cut, "faces": len(gone), "verts": len(loose), "shirt_verts": len(top.data.vertices)}
 
 
 def shirt_hem_in(top, inset: float, h: float) -> dict:
@@ -530,8 +550,10 @@ def main() -> None:
     under = BVHTree.FromBMesh(B.bm)
     lap_moved = [0.0]
 
-    def lap_y(x, y, z, front=True):
-        """The outer face's y at (x, z): pushed off the band (and the yoke) in front of it (behind it at the back)."""
+    def lap_y(x, y, z, front=True, hug=False):
+        """The outer face's y at (x, z): pushed off the band (and the yoke) in front of it (behind it at the back).
+        hug (G3g, the back): also drawn in onto it, so the lap lies on the band all round its turn (its lower corners
+        stood off her side in the 3/4 views where the across curve passed behind the band)."""
         if lap <= 0 or z > bbz + lap_up:
             return y
         zq = min(z, bbz - 0.001)
@@ -540,10 +562,10 @@ def main() -> None:
         if hit is None:
             return y
         need = hit.y - sg * (a.plate + lap_clr)
-        push = max(0.0, sg * (y - need))
+        push = sg * (y - need) if hug else max(0.0, sg * (y - need))
         if z > bbz:
             push *= 1 - smooth01((z - bbz) / lap_up)
-        lap_moved[0] = max(lap_moved[0], push)
+        lap_moved[0] = max(lap_moved[0], abs(push))
         return y - sg * push
 
     # --- the bib: lean B -----------------------------------------------------------------------------------------
@@ -604,6 +626,11 @@ def main() -> None:
 
     # --- the back panel: the drawing's shallow V -------------------------------------------------------------------
     kt = d["back_top_z"]
+    # G3g: the back's own lap (on the band's bone it never slides, so it ends at the band's foot: a 5 cm lap hung
+    # 1 cm under it like a second belt)
+    blap = bk.get("back_lap_cm", lap)
+    bn_lap = max(1, int(round(blap / 0.01))) if blap > 0 else 0
+    blap_zs = [bbz - blap + k * blap / bn_lap for k in range(bn_lap)]
     corner = kt + 0.03                                   # garment_drawing.lines: the corners 3 cm over the V
     xs_in = d["strap_x"] - d["strap_w"] / 2
     zb_ = [bbz + i * (corner - bbz) / 48 for i in range(49)]
@@ -614,17 +641,17 @@ def main() -> None:
     rows = []
     back_samples = []
     across = bool(spec["build"].get("back_follows_across", False))
-    foot = 0.0 if n_lap else 0.0002
+    foot = 0.0 if bn_lap else 0.0002
     lap_moved[0] = 0.0
-    for j in range(n_lap + 25):
-        v = (j - n_lap) / 24
+    for j in range(bn_lap + 25):
+        v = (j - bn_lap) / 24
         row = []
         for i in range(nk):
             u = -1 + 2 * i / (nk - 1)
             xt = u * d["back_top_w"] / 2
             ax = abs(xt)
             top_z = kt + 0.03 * min(1.0, ax / xs_in)   # the drawing's shallow V
-            z = lap_zs[j] if j < n_lap else bbz + foot + v * (top_z - bbz - foot)
+            z = blap_zs[j] if j < bn_lap else bbz + foot + v * (top_z - bbz - foot)
             hw = d["back_bottom_w"] / 2 + (d["back_top_w"] - d["back_bottom_w"]) / 2 * max(0.0, z - bbz) / (corner - bbz)
             x = u * hw
             y = back_y(max(z, bbz))
@@ -632,24 +659,42 @@ def main() -> None:
                 yb = ref.front(z, 0.01, back=True, x0=x)
                 y = min(y, yb + SHIRT + d["back_standoff"]) if yb is not None else y
             row.append((Vector((x, y, z)), Vector((x, y - a.plate, z))))
-            if j >= n_lap and (j - n_lap) % 4 == 0 and i % 4 == 0:
+            if j >= bn_lap and (j - bn_lap) % 4 == 0 and i % 4 == 0:
                 back_samples.append(Vector((x, ref.front(z, 0.004, back=True) - 0.006, z)))
         rows.append(row)
     if across:   # one bend down each column and none inward across a row: the plate bridges her spine's hollow
+        follow = spec["build"].get("back_column", "hull") == "follow"
         for i in range(nk):
-            col_ = envelope([(rows[j][i][0].z, rows[j][i][0].y) for j in range(len(rows))], front=False)
+            if follow:   # G3g: down each column her back smoothed (a running max over +-2 rows, then a mean over +-3),
+                # never in front of her: the hull bridged her waist's hollow and stood the panel's sides 15-31 mm off
+                ys = [rows[j][i][0].y for j in range(len(rows))]
+                mx_ = [max(ys[max(0, j - 2):j + 3]) for j in range(len(ys))]
+                sm_ = [sum(mx_[max(0, j - 3):j + 4]) / len(mx_[max(0, j - 3):j + 4]) for j in range(len(ys))]
+                col_y = [max(y_, s_) for y_, s_ in zip(ys, sm_)]
+            else:
+                col_ = envelope([(rows[j][i][0].z, rows[j][i][0].y) for j in range(len(rows))], front=False)
             for j in range(len(rows)):
                 p_ = rows[j][i][0]
-                y = max(p_.y, chain_y(col_, p_.z))
+                y = col_y[j] if follow else max(p_.y, chain_y(col_, p_.z))
                 rows[j][i] = (Vector((p_.x, y, p_.z)), Vector((p_.x, y - a.plate, p_.z)))
         # G3f: across each row a smooth curve, not the convex hull's facets and its ridge at the spine (G3e's
         # close-ups): a quadratic in x fitted to the row, its coefficients smoothed over the neighbouring rows, then
         # lifted so it is nowhere in front of her back (+ the shirt + the standoff) under it
-        rows = smooth_rows(rows, a.plate)
+        rows = smooth_rows(rows, a.plate, int(spec["build"].get("back_fit_deg", 2)))
         rep["back_across"] = {"cols": nk, "profile": "quadratic per row, lifted"}
-    rows = [[(Vector((p.x, lap_y(p.x, p.y, p.z, front=False), p.z)),
-              Vector((p.x, lap_y(p.x, p.y, p.z, front=False) - a.plate, p.z))) for p, _q in row] for row in rows]
+    hug = bool(spec["build"].get("back_lap_hug", False))
+    rows = [[(Vector((p.x, lap_y(p.x, p.y, p.z, front=False, hug=hug), p.z)),
+              Vector((p.x, lap_y(p.x, p.y, p.z, front=False, hug=hug) - a.plate, p.z))) for p, _q in row] for row in rows]
+    # G3g: how far the panel's inner face stands off her shirt at its side edges (the 3/4 views' corners), per height
+    eg = []
+    for row in rows[bn_lap::4]:
+        for p, q in (row[0], row[-1]):
+            yb = ref.front(p.z, 0.004, back=True, x0=p.x)
+            if yb is not None:
+                eg.append([round(p.z * 100, 1), round(p.x * 100, 1), round((q.y - yb - SHIRT) * 1000, 1)])
+    rep["back_edge_gap_mm"] = eg
     rep["lap"]["back_pushed_mm"] = round(lap_moved[0] * 1000, 2)
+    rep["lap"]["back_cm"], rep["lap"]["back_rows"] = round(blap * 100, 2), bn_lap
     w_back = shirt_w.mean(back_samples, keep=TRUNK)
     if a.panel_bone:
         w_back = {a.panel_bone: 1.0}
@@ -708,6 +753,27 @@ def main() -> None:
         mx = [max(prof[max(0, i - 3):i + 4]) for i in range(len(prof))]
         sm = [sum(mx[max(0, i - 2):i + 3]) / len(mx[max(0, i - 2):i + 3]) for i in range(len(mx))]
         prof = [max(p, s) for p, s in zip(prof, sm)]
+        # G3g: each row tilted across to her shoulder's slope, not level at its highest column: a line in x through
+        # the columns' own (smoothed) radii, lifted onto the highest; level, the strap's outer edge stood off her
+        # shoulder where it crosses to the front and a slit showed between its inner edge and the shirt by her neck
+        tilt = bool(spec["build"].get("strap_tilt", False))
+        col_r = []
+        for rr in radii:
+            c_ = [r if r is not None else p for r, p in zip(rr, prof)]
+            m_ = [max(c_[max(0, i - 3):i + 4]) for i in range(len(c_))]
+            col_r.append([sum(m_[max(0, i - 2):i + 3]) / len(m_[max(0, i - 2):i + 3]) for i in range(len(m_))])
+        ks = [k / 4 - 0.5 for k in range(5)]
+        row_r = []
+        for i in range(len(phis)):
+            if not tilt:
+                row_r.append([prof[i]] * 5)
+                continue
+            rs = [max(col_r[k][i], radii[k][i] or 0.0) for k in range(5)]
+            mr = sum(rs) / 5
+            b_ = sum(k * (r - mr) for k, r in zip(ks, rs)) / sum(k * k for k in ks)
+            ln = [mr + b_ * k for k in ks]
+            lift = max(r - l for r, l in zip(rs, ln))
+            row_r.append([l + lift for l in ln])
         sh_pt = Vector((xc, y0, z0)) + dirs[len(dirs) // 2] * prof[len(dirs) // 2]
         w_sh = no_arms(shirt_w.at(sh_pt))
         if a.strap_sh_share < 1.0:
@@ -720,8 +786,8 @@ def main() -> None:
             c = Vector((0, y0, z0))
             zr = (c + dv * prof[i]).z
             dx = 0.0 if phis[i] > math.pi / 2 else (x_bib - xc) * (1 - smooth01((zr - bt) / (lm["collarbone"] - bt)))
-            row = [(c + Vector((x + dx, 0, 0)) + dv * (prof[i] + 0.0022), c + Vector((x + dx, 0, 0)) + dv * (prof[i] + 0.0005))
-                   for x in xs]
+            row = [(c + Vector((x + dx, 0, 0)) + dv * (row_r[i][k] + 0.0022), c + Vector((x + dx, 0, 0)) + dv * (row_r[i][k] + 0.0005))
+                   for k, x in enumerate(xs)]
             rows.append(row)
         pz = [(Vector((0, y0, z0)) + dv * prof[i]) for i, dv in enumerate(dirs)]
         i_front = max(i for i, p in enumerate(pz) if phis[i] < math.pi / 2 and p.z <= bt)
@@ -825,6 +891,7 @@ def main() -> None:
     if not a.no_shirt_follow:
         rep["shirt_follow"] = shirt_follow(top, B, strap_vs, bk.get("shirt_follow_fade_cm", 0.03),
                                            near=bk.get("shirt_follow_near_cm", 0.015), low_z=bbz, low_skip=plate_vs)
+        rep["shirt_trim"] = shirt_trim(top, bk.get("shirt_trim_z_cm", 0.0))   # then its new hem drawn in
         rep["shirt_hem"] = shirt_hem_in(top, bk.get("shirt_hem_in_cm", 0.0), bk.get("shirt_hem_h_cm", 0.015))
     for f in B.bm.faces:   # G3f: every cloth face smooth, the rims kept sharp by angle (flat faces striped the curves)
         f.smooth = f.material_index != 2
