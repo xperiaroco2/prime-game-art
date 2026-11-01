@@ -32,32 +32,17 @@ CHAINS = {"Thumb": ("Metacarpal", "Proximal", "Distal"), "Index": ("Proximal", "
 GRIP_KEYS = {"all", "Thumb", "Index", "Middle", "Ring", "Little", "ThumbTurn", "spread", "mirror", "note"}
 CLIP_KEYS = {"grip", "Left", "Right", "keys", "note"}
 SET_KEYS = {"poses", "skip", "default", "note"}
-# [fist] (H1j): the run fist as a morph (alien_fist_math.py); the defaults, every key optional but `grip`
-FIST_DEFAULTS = {"morph": "fist", "k_mm": 14.0, "k_thumb_mm": 10.0, "pull_mm": 2.0, "hide_mm": 4.0, "relax": 4,
-                 "relax_lambda": 0.3, "band_mm": 2.0, "fade_to": 0.6,
-                 # H1l: route "envelope" (alien_fist_envelope.py): the fingers' blend, the core's, the thumb's, the
-                 # chords' radius share, the palm box's share of the palm, the thumb's shift (mm along the hand's u,
-                 # w, n), the relax's rounds and step
-                 "route": "field", "env_k_mm": 10.0, "env_k_core_mm": 12.0, "env_k_thumb_mm": 8.0, "env_core": 0.9,
-                 "env_palm": 0.95, "thumb_shift_mm": [0.0, 0.0, 0.0], "wrap_rounds": 300, "wrap_lambda": 0.5,
-                 # H1l: env_mode "merge" (one smooth solid) or "press" (each digit inflated, pressed against the others
-                 # with a slit of env_gap_mm, its lip rounded over env_lip_mm)
-                 "env_mode": "merge", "env_inflate": 1.0, "env_gap_mm": 0.4, "env_lip_mm": 3.0,
-                 # H1m: the morph's lead over the grip (alien_fist_math.weight_plan), 1 = in step
-                 "lead": 1.0,
-                 # H1n: the grip's path into and out of the fist grip (stagger_keys): the fingers' tips at the fist by
-                 # curl[0] of a ramp, their knuckles from curl[1]; the thumb from thumb[0] to thumb[1]; [1, 0] and
-                 # [0, 1] = every joint in step
-                 "curl": [1.0, 0.0], "thumb": [0.0, 1.0],
-                 # H1q: route "contact" (alien_fist_envelope.contact): the digits' blend and the thumb's, the moves'
-                 # cap, a vertex this far inside a neighbour (or c_hide_mm inside the union) sinks, the moves' smoothing
+# [fist] (H1j): the run fist as a morph (alien_fist_shape.py); the defaults, every key optional but `grip`. The morph
+# comes from the contact route (H1q, alien_fist_envelope.contact): the digits' fitted stations (band_mm), the finger
+# weight it fades in by (fade_to), the digits' smooth union (c_k_mm, the thumb's c_k_thumb_mm), the moves' cap, a
+# vertex this far inside a neighbour (or c_hide_mm inside the union) sinks, the moves' smoothing. The weight's path in
+# a clip: the morph's lead over the grip (alien_fist_math.weight_plan, 1 = in step); the grip's own path into and out
+# of the fist (stagger_keys): the fingers' tips at the fist by curl[0] of a ramp, their knuckles from curl[1]; the
+# thumb from thumb[0] to thumb[1]; [1, 0] and [0, 1] = every joint in step
+FIST_DEFAULTS = {"morph": "fist", "route": "contact", "band_mm": 2.0, "fade_to": 0.6,
                  "c_k_mm": 8.0, "c_k_thumb_mm": 6.0, "c_cap_mm": 9.0, "c_bury_mm": 0.5, "c_hide_mm": 3.0,
                  "c_smooth": 12, "c_lambda": 0.5,
-                 # H1r: the index-thumb contact zone's own cap within c_local_r_mm of the index's middle and tip
-                 # segments and the thumb's tip (0: off), its hide depth, and its fill: the index's chord cone at
-                 # c_local_core of the stations' radii (0: none), smooth-unioned over c_local_k_core_mm
-                 "c_local_r_mm": 0.0, "c_local_cap_mm": 15.0, "c_local_hide_mm": 3.0, "c_local_core": 0.0,
-                 "c_local_k_core_mm": 8.0}
+                 "lead": 1.0, "curl": [1.0, 0.0], "thumb": [0.0, 1.0]}
 
 
 class HandsError(ValueError):

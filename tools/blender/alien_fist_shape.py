@@ -1,8 +1,8 @@
 """The run fist's shape key on an alien character (art #196, Hands H1j; inside Blender: the maths is alien_fist_math.py).
 
 `add(cfg, arm)` poses the hands file's fist grip (`[fist] grip`), fits each digit's round-cone chain to its own tube
-(stations at rest from the digit's vertices, carried to the pose by their bones), moves the finger vertices onto the
-fist's surface (alien_fist_math.fist_moves), carries the moves back to rest by the inverse skinning and stores them as
+(stations at rest from the digit's vertices, carried to the pose by their bones), moves the finger vertices by the
+contact corrective (alien_fist_envelope.contact: the gaps between touching digits onto their smooth union), carries the moves back to rest by the inverse skinning and stores them as
 the body's shape key `[fist] morph` (value 0). It also writes each action's weight keys into the body's custom
 property `fist_weights` (JSON {action: [[share, weight], ...]}), which alien_loco._export turns into the GLB's weight
 channels. alien_hands.py --apply calls it after the grips when the hands file has a `[fist]` table.
@@ -21,9 +21,8 @@ import alien_hands_math as H
 FINGERS = ("Index", "Middle", "Ring")  # the alien's fingers (Little: bones kept, unweighted)
 SEGS = ("Proximal", "Intermediate", "Distal")
 THUMB_FIT = ("Proximal", "Distal")  # the metacarpal is the thenar pad, not a tube: pushed out, never pulled in
-THUMB_ALL = ("Metacarpal", "Proximal", "Distal")
 PROP = "fist_weights"
-LAST = {}  # per side, the last envelope route's envelope, region and result (for review drivers)
+LAST = {}  # per side, the last run's union, region and result (for review drivers)
 
 
 def body_of(arm):
@@ -107,66 +106,6 @@ def hand_frame(arm, side):
     return h, u, w, n, (mid - h).length
 
 
-def _envelope_moves(arm, body, side, W8, rest, skin, digits, fist):
-    """The envelope route (H1l, alien_fist_envelope.py): the fist's envelope from the fitted digits, the palm and the
-    shifted thumb; the finger vertices shrink-wrapped onto it and relaxed along it, the rim pinned."""
-    import numpy as np
-    mm = 0.001
-    h, u, w, n, ln = hand_frame(arm, side)
-    shift = Vector(fist["thumb_shift_mm"]) * mm
-    shift = u * shift.x + w * shift.y + n * shift.z
-    th = digits["Thumb"]
-    share = [i / (len(th) - 1) for i in range(len(th))]
-    digits = dict(digits)
-    digits["Thumb"] = [(_t(Vector(c) + shift * s), r) for (c, r), s in zip(th, share)]
-    hand = [i for i, x in enumerate(W8) if x.get(f"{side}Hand", 0.0) >= 0.8]
-    loc = np.array([[(rest[i] - h).dot(a) for a in (u, w, n)] for i in hand])
-    loc = loc[(loc[:, 0] > 0.3 * ln) & (loc[:, 0] < 1.05 * ln)]
-    lo, hi = np.percentile(loc, 3, axis=0), np.percentile(loc, 97, axis=0)
-    half = (hi - lo) / 2 * fist["env_palm"]
-    cen = (lo + hi) / 2
-    centre = h + u * cen[0] + w * cen[1] + n * cen[2]
-    palm = (tuple(centre), [tuple(u), tuple(w), tuple(n)], tuple(half), float(min(half) * 0.8))
-    env = E.Envelope(digits, "Thumb", palm, fist["env_k_mm"] * mm, fist["env_k_core_mm"] * mm,
-                     fist["env_k_thumb_mm"] * mm, fist["env_core"], fist["env_mode"], fist["env_inflate"],
-                     fist["env_gap_mm"] * mm, fist["env_lip_mm"] * mm)
-    names = {f"{side}{d}{s}" for d in FINGERS for s in SEGS} | {f"{side}Thumb{s}" for s in THUMB_FIT}
-    fw = [sum(x for b, x in W8[i].items() if b in names) for i in range(len(W8))]
-    region = {i for i, x in enumerate(fw) if x > 0.05}
-    me = body.data
-    rim = {v for e in me.edges for v in e.vertices if (e.vertices[0] in region) != (e.vertices[1] in region)} - region
-    ids = sorted(region | rim)
-    at = {v: k for k, v in enumerate(ids)}
-    edges = np.array([(at[a], at[b]) for a, b in (e.vertices for e in me.edges) if a in at and b in at], dtype=np.int64)
-    me.calc_loop_triangles()
-    tris = np.array([[at[v] for v in t.vertices] for t in me.loop_triangles if all(v in at for v in t.vertices)],
-                    dtype=np.int64)
-    P = np.empty((len(ids), 3))
-    S = np.empty((len(ids), 3))
-    for k, i in enumerate(ids):
-        acc = Vector((0, 0, 0))
-        for b, x in W8[i].items():
-            acc += (skin[b] @ rest[i]) * x
-        P[k] = acc
-        tw = W8[i].get(f"{side}ThumbDistal", 0.0) + 0.5 * W8[i].get(f"{side}ThumbProximal", 0.0)
-        S[k] = acc + shift * tw
-    wt = np.array([F.smoothstep((fw[i] - 0.05) / (fist["fade_to"] - 0.05)) if i in region else 0.0 for i in ids])
-    # each vertex's digit: the one carrying most of its weight (press: it follows that digit's solid)
-    bones = {d: {f"{side}{d}{s}" for s in (SEGS if d != "Thumb" else THUMB_FIT)} for d in env.names}
-    owner = np.array([max(range(len(env.names)), key=lambda k: sum(x for b, x in W8[i].items() if b in bones[env.names[k]]))
-                      for i in ids])
-    X, st = E.wrap(env, P, wt, edges, fist["wrap_rounds"], fist["wrap_lambda"], start=S, owner=owner, tris=tris)
-    met = E.metrics(env, X, tris, wt >= 0.999, owner)
-    met0 = E.metrics(env, P + (env.project(S, 12, owner) - P) * wt[:, None], tris, wt >= 0.999, owner)  # bare wrap
-    LAST[side] = {"env": env, "ids": ids, "P": P, "X": X, "tris": tris, "weight": wt, "owner": owner}
-    moves = {i: tuple(X[k] - P[k]) for k, i in enumerate(ids) if np.linalg.norm(X[k] - P[k]) > 1e-6}
-    st.update({"moved": len(moves), "surface_err_mm": st["off_surface_mm"], **met,
-               "wrap_only": {k: met0[k] for k in ("folded", "min_edge_ratio")},
-               "posed": {k: E.metrics(env, P, tris, wt >= 0.999, owner)[k] for k in ("min_edge_ratio", "edge_p1_ratio")},
-               "palm_half_mm": [round(x * 1000, 1) for x in half]})
-    return moves, st
-
-
 def _contact_moves(arm, body, side, W8, rest, skin, digits, fist):
     """The contact route (H1q, alien_fist_envelope.contact): the bones curl the fist (`[fist] grip`); the morph only
     closes the side gaps between neighbouring digits and smooths the knuckle tops onto the digits' smooth union
@@ -174,7 +113,7 @@ def _contact_moves(arm, body, side, W8, rest, skin, digits, fist):
     sink inside the volume."""
     import numpy as np
     mm = 0.001
-    env = E.Envelope(digits, "Thumb", None, fist["c_k_mm"] * mm, 0.0, fist["c_k_thumb_mm"] * mm, 0.0, "merge")
+    env = E.Envelope(digits, "Thumb", None, fist["c_k_mm"] * mm, 0.0, fist["c_k_thumb_mm"] * mm, 0.0)
     names = {f"{side}{d}{s}" for d in FINGERS for s in SEGS} | {f"{side}Thumb{s}" for s in THUMB_FIT}
     fw = [sum(x for b, x in W8[i].items() if b in names) for i in range(len(W8))]
     region = {i for i, x in enumerate(fw) if x > 0.05}
@@ -196,20 +135,8 @@ def _contact_moves(arm, body, side, W8, rest, skin, digits, fist):
     bones = {d: {f"{side}{d}{s}" for s in (SEGS if d != "Thumb" else THUMB_FIT)} for d in env.names}
     owner = np.array([max(range(len(env.names)), key=lambda k: sum(x for b, x in W8[i].items() if b in bones[env.names[k]]))
                       for i in ids])
-    local = None
-    if fist["c_local_r_mm"] > 0:
-        # H1r: the index-thumb contact zone (the index's middle and tip segments, the thumb's tip and the palm under
-        # them, within c_local_r_mm by a smoothstep falloff) under its own cap; c_local_core > 0 fills the index's
-        # curl by its chord cone (smooth-unioned over c_local_k_core_mm) so its open loop has a surface to close onto
-        env_l = E.Envelope(digits, "Thumb", None, fist["c_k_mm"] * mm, fist["c_local_k_core_mm"] * mm,
-                           fist["c_k_thumb_mm"] * mm, fist["c_local_core"], "merge")
-        env_l.chords = {d: c for d, c in env_l.chords.items() if d == "Index"}
-        zone = env.chains["Index"][1:] + env.chains["Thumb"][1:]
-        d = np.maximum(np.minimum.reduce([E.round_cone(P, *c) for c in zone]), 0.0)
-        t = np.clip(1.0 - d / (fist["c_local_r_mm"] * mm), 0.0, 1.0)
-        local = (env_l, t * t * (3.0 - 2.0 * t), fist["c_local_cap_mm"] * mm, fist["c_local_hide_mm"] * mm)
     X, st = E.contact(env, P, wt, owner, edges, tris, fist["c_cap_mm"] * mm, fist["c_bury_mm"] * mm,
-                      fist["c_hide_mm"] * mm, fist["c_smooth"], fist["c_lambda"], local)
+                      fist["c_hide_mm"] * mm, fist["c_smooth"], fist["c_lambda"])
     LAST[side] = {"env": env, "ids": ids, "P": P, "X": X, "tris": tris, "weight": wt, "owner": owner}
     moves = {i: tuple(X[k] - P[k]) for k, i in enumerate(ids) if np.linalg.norm(X[k] - P[k]) > 1e-6}
     st.update({"surface_err_mm": 0.0})
@@ -218,7 +145,8 @@ def _contact_moves(arm, body, side, W8, rest, skin, digits, fist):
 
 def add(cfg, arm) -> dict:
     fist = cfg["fist"]
-    mm = 0.001
+    if fist["route"] != "contact":
+        raise SystemExit(f"[fist] route {fist['route']!r}: only \"contact\" is left (art #196, H1u)")
     if arm.animation_data:
         arm.animation_data.action = None
     for pb in arm.pose.bones:
@@ -239,36 +167,11 @@ def add(cfg, arm) -> dict:
     W8 = _weights(body, arm)
     rest = [Mo @ v.co for v in body.data.vertices]
     dom = [max(w, key=w.get) if w else "" for w in W8]
-    nbr = {}
-    for e in body.data.edges:
-        a, b = e.vertices
-        nbr.setdefault(a, set()).add(b)
-        nbr.setdefault(b, set()).add(a)
     deltas, stats = {}, {}
     LAST.clear()
     for side in ("Left", "Right"):
         digits = _digits(arm, side, rest, dom, skin, fist)
-        if fist["route"] == "contact":
-            moves, st = _contact_moves(arm, body, side, W8, rest, skin, digits, fist)
-        elif fist["route"] == "envelope":
-            moves, st = _envelope_moves(arm, body, side, W8, rest, skin, digits, fist)
-        else:
-            shape = F.Fist(digits, "Thumb", fist["k_mm"] * mm, fist["k_thumb_mm"] * mm)
-            names = {f"{side}{d}{s}" for d in FINGERS for s in SEGS} | {f"{side}Thumb{s}" for s in THUMB_ALL}
-            own = {f"{side}{d}{s}" for d in FINGERS for s in SEGS} | {f"{side}Thumb{s}" for s in THUMB_FIT}
-            fw = {i: sum(x for n, x in W8[i].items() if n in names) for i in range(len(W8))}
-            idx = [i for i, x in fw.items() if x > 0.05]
-            posed = {}
-            for i in idx:
-                acc = Vector((0, 0, 0))
-                for n, x in W8[i].items():
-                    acc += (skin[n] @ rest[i]) * x
-                posed[i] = _t(acc)
-            weight = {i: F.smoothstep((fw[i] - 0.05) / (fist["fade_to"] - 0.05)) for i in idx}
-            moves, st = F.fist_moves(posed, weight, shape, {i: [j for j in nbr.get(i, ()) if j in posed] for i in idx},
-                                     fist["pull_mm"] * mm, fist["hide_mm"] * mm, fist["relax"], fist["relax_lambda"],
-                                     own={i for i in idx if dom[i] in own})
-            st["verts"] = len(idx)
+        moves, st = _contact_moves(arm, body, side, W8, rest, skin, digits, fist)
         inv_o = Mo.to_3x3().inverted()
         for i, m in moves.items():
             m3 = sum((skin[n].to_3x3() * x for n, x in W8[i].items()), Matrix(((0, 0, 0), (0, 0, 0), (0, 0, 0))))

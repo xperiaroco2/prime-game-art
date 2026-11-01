@@ -24,8 +24,9 @@ spread = 6
 Thumb = [2, 8, 6]
 ThumbTurn = [4, -6]
 
-[grips.loose]  # the solved loose grip: the fingers folded onto the palm, every tip touching it,
-                 # the thumb's pad over the index's and middle's middle segments (H1d-H1f's grids never converged)
+[grips.loose]  # the solver's reference grip (alien_grip_solve.py to body_dims/hand_grips.toml [grips.loose]); no
+                 # clip uses it, the run's fist is `runfist` below: the fingers folded onto the palm, every tip
+                 # touching it, the thumb's pad over the index's and middle's middle segments
 Index = [83.3, 87.5, 12.6, -1.4]    # H1g: solved (tools/blender/alien_grip_solve.py) to body_dims/hand_grips.toml on
 Middle = [67.3, 90.4, 15, 12]  # both characters' hands at once; [base, middle, tip, side turn]
 Ring = [67.5, 90.9, 14.2, 1.1]
@@ -66,39 +67,27 @@ grip = "flat"
 [clips."Jump_Land"]
 keys = [[0.0, "flat"], [0.5, "relaxed"]]
 
-[fist]  # H1j: the run fist as a morph (the engineer's option C, art #196; tools/blender/alien_fist_math.py): the body's
-        # shape key `morph`, made in the `grip` pose, its weight 1 wherever a clip's grip is `grip` (Jog, Sprint,
-        # Strafe), 0 elsewhere, eased between keyed grips; the fingers smooth-unioned over k_mm, the thumb over k_thumb_mm
+[fist]  # the run fist as a morph (the engineer's option C, art #196, H1j-H1u; tools/blender/alien_fist_shape.py): the
+        # body's shape key `morph`, made in the `grip` pose (`runfist`), its weight 1 wherever a clip's grip is `grip`
+        # (Jog, Sprint, Strafe), 0 elsewhere, eased between keyed grips. The bones curl the fist; the morph is the
+        # contact route's (H1q, alien_fist_envelope.contact): it only lays the skin onto the digits' smooth union
+        # (c_k_mm, the thumb's c_k_thumb_mm) where it is inside it (the gaps between touching fingers, the knuckles'
+        # valleys), the moves capped at c_cap_mm and smoothed c_smooth rounds as a field; skin inside a neighbouring
+        # digit or 3 mm inside the union sinks (H1q's grid c1-c4, t0)
 grip = "runfist"
 morph = "fist"
-k_mm = 14.0        # the fingers' webs: H1h's C prototype
-k_thumb_mm = 10.0  # the thumb's web onto the fingers: smaller, so the thumb still reads on its own
-pull_mm = 2.0      # a finger vertex up to this far outside the fitted tubes is pulled onto them
-hide_mm = 4.0      # buried deeper than this (two fingers' facing sides): kept under the surface
-relax = 4          # rounds of relaxing along the surface where the projection moved vertices
-# H1l (art #196): the envelope route (alien_fist_envelope.py) replaces the field above (k_mm .. relax unused): each
-# digit inflated to 1.4 of its fitted radii, its own curl filled by its chord, pressed against the others with a 0.4 mm
-# slit (lip rounded over 4 mm) and kept 0.4 mm off the palm box (0.85 of the palm); the finger skin shrink-wrapped onto
-# its own digit and relaxed 150 rounds by edge springs in the tangent plane, with the fold guard. Grid: H1l p2_press_i140
-env_mode = "press"
-env_inflate = 1.4
-env_lip_mm = 4.0
-env_palm = 0.85
-wrap_rounds = 150
-# H1m (art #196): the morph leads the grip inside a clip, full at half of each ramp into the fist (it alone does not
-# remove the mid-blend ring: H1m's grid)
-lead = 0.5
-# H1n (art #196): the grip's path into the fist inside a clip: the fingers' tips curl first (at the fist by 0.6 of the
-# ramp), the knuckles follow from 0.4, the thumb folds across from 0.6, so the half-curled index and the thumb never
-# close into a ring (H1n's grids: knuckles first, or the thumb in step, still ring at 0.5-0.65); out of it backwards
-curl = [0.6, 0.4]
-thumb = [0.6, 1.0]
-# H1q (art #196): the contact route (alien_fist_envelope.contact) replaces the envelope above (env_*, wrap_rounds
-# unused): the bones curl the fist; the morph only lays the skin onto the digits' smooth union (12 mm, the thumb's
-# 10 mm) where it is inside it (the gaps between touching fingers, the knuckles' valleys), the moves capped at 10 mm and
-# smoothed 6 rounds as a field; skin inside a neighbouring digit or 3 mm inside the union sinks (H1q's grid c1-c4, t0)
 route = "contact"
 c_k_mm = 12.0
 c_k_thumb_mm = 10.0
 c_cap_mm = 10.0
 c_smooth = 6
+# lead, curl and thumb act only where a clip ramps between two grips inside it (keyed grips, e.g. the review drivers'
+# ReviewBlend clip); the shipped Jog, Sprint and Strafe hold `runfist` whole, so their weight is 1 throughout.
+# H1m: the morph leads the grip inside a ramp, full at half of each ramp into the fist (it alone does not remove the
+# mid-blend ring: H1m's grid)
+lead = 0.5
+# H1n: the grip's path into the fist inside a ramp: the fingers' tips curl first (at the fist by 0.6 of the ramp), the
+# knuckles follow from 0.4, the thumb folds across from 0.6, so the half-curled index and the thumb never close into a
+# ring (H1n's grids: knuckles first, or the thumb in step, still ring at 0.5-0.65); out of it backwards
+curl = [0.6, 0.4]
+thumb = [0.6, 1.0]

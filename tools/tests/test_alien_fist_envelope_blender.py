@@ -1,6 +1,6 @@
-"""H1l (art #196): the run fist's envelope route (tools/blender/alien_fist_envelope.py), checked on synthetic shapes
-inside Blender for its numpy (tools/blender/alien_fist_envelope_check.py): the round cone's field, the iso-mesh, the
-shrink-wrap and the relax's metrics (folded triangles, bumps, the slit, a pinned rim). Skips without Blender."""
+"""H1l, H1q (art #196): the run fist's union and contact corrective (tools/blender/alien_fist_envelope.py), checked
+on synthetic shapes inside Blender for its numpy (tools/blender/alien_fist_envelope_check.py): the round cone's field,
+the iso-mesh, the contact corrective's gap fill and sinking sides. Skips without Blender."""
 
 from __future__ import annotations
 
@@ -37,26 +37,6 @@ class EnvelopeTest(unittest.TestCase):
     def test_the_merged_envelope_fills_the_gap(self):
         self.assertGreater(self.d["iso"]["groove_mm"], 0.0)  # the point between the tubes is inside
 
-    def test_a_merged_envelope_folds_the_facing_sides(self):
-        # why the press mode exists: on one merged solid the two tubes' facing sides must fold, relax or not
-        self.assertGreater(self.d["wrap"]["bare"]["folded"], 0)
-        self.assertGreater(self.d["wrap"]["relaxed"]["folded"], 0)
-
-    def test_the_pressed_envelope_wraps_with_no_fold(self):
-        pr = self.d["press"]
-        self.assertEqual(pr["bare"]["folded"], 0)
-        self.assertEqual(pr["relaxed"]["folded"], 0)
-        self.assertLess(pr["relaxed"]["bump_mm"], 0.3)
-        self.assertLess(pr["relaxed"]["sag_mm"], pr["bare"]["sag_mm"])  # the relax evens the facets out
-        self.assertGreater(pr["slit_mm"], 0.2)  # the two tubes stay apart: a slit, no merge
-        self.assertLess(pr["slit_mm"], 1.5)
-
-    def test_a_turned_triangle_counts_as_folded(self):
-        self.assertEqual(self.d["press"]["flip_folded"], 1)
-
-    def test_a_pinned_rim_stays(self):
-        self.assertEqual(self.d["pinned_moved_mm"], 0.0)
-
     def test_the_contact_corrective_closes_a_gap_under_its_cap(self):
         c = self.d["contact"]
         self.assertGreater(c["valley_depth_before_mm"], 0.2)  # the valley's skin starts inside the union
@@ -72,15 +52,6 @@ class EnvelopeTest(unittest.TestCase):
         self.assertGreater(c["buried"], 0)
         self.assertEqual(c["inside_on_shell"], 0)  # never projected onto the outer shell
         self.assertLess(c["inside_max_move_mm"], 4.0)
-
-    def test_the_contact_local_zone_has_its_own_cap(self):
-        c = self.d["contact_local"]
-        self.assertGreater(c["local_verts"], 0)
-        self.assertLessEqual(c["far_max_mm"], 0.5 + 1e-6)  # outside the zone: the global cap
-        self.assertGreater(c["zone_max_mm"], 1.0)  # inside it: past twice the global cap
-        self.assertLessEqual(c["zone_max_mm"], 4.0 + 1e-6)  # under its own
-        self.assertEqual(c["folded"], 0)
-        self.assertEqual(c["flipped"], 0)
 
 
 if __name__ == "__main__":

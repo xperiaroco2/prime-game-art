@@ -1,21 +1,13 @@
-"""The run fist by a smooth envelope (art #196, Hands H1l; numpy, no bpy: alien_fist_shape.py is the Blender side).
+"""The run fist's smooth union of the digits (art #196, Hands H1l, H1q; numpy, no bpy: alien_fist_shape.py is the
+Blender side).
 
-H1j and H1k moved each finger vertex to the nearest point of the fingers' smooth union. Inside the merge the facing
-sides of two fingers had nowhere visible to go: 300-570 vertices per hand folded under the surface and creased it.
-This route builds the fist's whole outer surface first and then spreads the hand's skin over it:
-
-1. The envelope: a signed distance field in the loose grip's posed space. Each digit is a plain union of round cones
-   fitted to its own tube (as H1j); the fingers are smooth-unioned with each other over `k` (the finger grooves'
-   softness); a core (each finger's chord from its root to its tip dome, and the palm as a rounded box) fills the
-   curl's hole and is smooth-unioned in over `k_core`; the thumb, optionally moved across the front (`thumb_shift`,
-   in the hand's frame), is smooth-unioned last over `k_thumb`. `iso_mesh` meshes it (marching tetrahedra) to view
-   it alone.
-2. `wrap`: every finger vertex is projected onto the envelope from where it is (the shrink-wrap), then relaxed along
-   the envelope: an umbrella step taken in the tangent plane and re-projected, a few hundred rounds, the region's
-   rim pinned (the vertices outside it stay where the grip put them; vertices fading into the palm carry part of the
-   move). The uniform umbrella spreads the bunched facing sides over the surface, so no vertex hides or folds.
-3. `metrics`: triangles whose normal disagrees with the envelope's (folded), the shortest edge against the median,
-   the largest distance of a vertex from the envelope (bumps).
+`Envelope`: a signed distance field in the run grip's posed space. Each digit is a plain union of round cones fitted
+to its own tube; the fingers are smooth-unioned with each other over `k`, optionally with a core (each finger's chord
+cone and the palm as a rounded box) over `k_core`, and the thumb last over `k_thumb`. `iso_mesh` meshes a field
+(marching tetrahedra) to view it alone or to test on. `contact` (H1q, the shipped route): the morph's corrective on a
+hand the bones already curled into the fist: only the gaps and valleys between touching digits go out onto the union,
+the contact zones sink, the moves capped and smoothed as a field. (H1l's shrink-wrap onto a whole-fist envelope and
+its "press" mode, and H1r's local index-thumb zone, were tried and dropped: art #196, H1u.)
 """
 from __future__ import annotations
 
@@ -66,75 +58,30 @@ def rounded_box(P: np.ndarray, centre, axes, half, r: float) -> np.ndarray:
     return np.linalg.norm(np.maximum(q, 0.0), axis=1) + np.minimum(q.max(axis=1), 0.0) - r
 
 
-def smax(a: np.ndarray, b: np.ndarray, k: float) -> np.ndarray:
-    """The polynomial smooth maximum over k."""
-    return -smin(-a, -b, k)
-
-
 class Envelope:
     """The fist's envelope. digits {name: [(centre, radius), ...]} stations root to tip dome (metres, posed space);
     thumb: the thumb's name in digits; palm: None or (centre, axes 3x3, half extents, rounding).
 
-    mode "merge" (the brief's smooth union): the fingers smooth-unioned over k, the core (each finger's chord cone at
-    `core` of the stations' radius, and the palm) over k_core, the thumb over k_thumb: one closed solid.
-    mode "press": every digit stays its own solid, inflated by `inflate` (a share of its radii) with its own chord
-    core smooth-unioned over k_core (its curl filled), then clipped against each other digit at their bisector less
-    half the `gap`, and against the palm by the gap, the clip's lip rounded over `lip`: the fingers pressed together
-    with a thin slit between them. Each digit's skin then maps onto its own solid and need not fold; on a merged
-    solid the facing sides of two fingers must fold (in each cross-section a closed loop cannot cover an arc once)."""
+    The fingers smooth-unioned over k, the core (each finger's chord cone at `core` of the stations' radius, and the
+    palm) over k_core, the thumb over k_thumb: one closed solid."""
 
     def __init__(self, digits: dict, thumb: str, palm=None, k: float = 0.01, k_core: float = 0.012,
-                 k_thumb: float = 0.008, core: float = 0.9, mode: str = "merge", inflate: float = 1.0,
-                 gap: float = 0.0004, lip: float = 0.003):
-        if mode not in ("merge", "press"):
-            raise ValueError(f"envelope mode {mode!r}")
-        sc = inflate if mode == "press" else 1.0
-        self.chains = {n: [(st[i][0], st[i + 1][0], st[i][1] * sc, st[i + 1][1] * sc) for i in range(len(st) - 1)]
+                 k_thumb: float = 0.008, core: float = 0.9):
+        self.chains = {n: [(st[i][0], st[i + 1][0], st[i][1], st[i + 1][1]) for i in range(len(st) - 1)]
                        for n, st in digits.items()}
         self.fingers = [n for n in digits if n != thumb]
         self.thumb = thumb if thumb in digits else None
-        self.chords = {n: (digits[n][0][0], digits[n][-1][0], digits[n][0][1] * core * sc,
-                           digits[n][-1][1] * core * sc) for n in self.fingers} if core > 0 else {}
+        self.chords = {n: (digits[n][0][0], digits[n][-1][0], digits[n][0][1] * core,
+                           digits[n][-1][1] * core) for n in self.fingers} if core > 0 else {}
         self.palm = palm
         self.k, self.k_core, self.k_thumb = k, k_core, k_thumb
-        self.mode, self.gap, self.lip = mode, gap, lip
         self.names = list(digits)
 
     def digit(self, name: str, P: np.ndarray) -> np.ndarray:
         return np.minimum.reduce([round_cone(P, *c) for c in self.chains[name]])
 
-    def parts(self, P: np.ndarray) -> dict:
-        """press: {digit: its clipped field}."""
+    def sd(self, P: np.ndarray) -> np.ndarray:
         P = np.atleast_2d(np.asarray(P, float))
-        f = {}
-        for n in self.names:
-            x = self.digit(n, P)
-            if n in self.chords:
-                x = smin(x, round_cone(P, *self.chords[n]), self.k_core)
-            f[n] = x
-        palm = rounded_box(P, *self.palm) if self.palm is not None else None
-        out = {}
-        for n in self.names:
-            others = [f[m] for m in self.names if m != n]
-            c = f[n]
-            if others:
-                c = smax(c, (f[n] - np.minimum.reduce(others)) * 0.5 + self.gap * 0.5, self.lip)
-            if palm is not None and n != self.thumb:  # the thumb lies across the fingers, its root in the palm
-                c = smax(c, self.gap - palm, self.lip)
-            out[n] = c
-        return out
-
-    def sd(self, P: np.ndarray, owner: np.ndarray | None = None) -> np.ndarray:
-        """The field; press with owner (N,) indices into self.names: each point's own digit's field."""
-        P = np.atleast_2d(np.asarray(P, float))
-        if self.mode == "press":
-            parts = self.parts(P)
-            d = np.minimum.reduce(list(parts.values()))
-            if owner is not None:
-                for k, n in enumerate(self.names):
-                    m = owner == k
-                    d[m] = parts[n][m]
-            return d
         d = None
         for n in self.fingers:
             x = self.digit(n, P)
@@ -150,27 +97,27 @@ class Envelope:
             d = x if d is None else smin(d, x, self.k_thumb)
         return d
 
-    def grad(self, P: np.ndarray, owner: np.ndarray | None = None) -> np.ndarray:
+    def grad(self, P: np.ndarray) -> np.ndarray:
         P = np.atleast_2d(np.asarray(P, float))
         g = np.empty_like(P)
         for i in range(3):
             e = np.zeros(3)
             e[i] = EPS_GRAD
-            g[:, i] = (self.sd(P + e, owner) - self.sd(P - e, owner)) / (2 * EPS_GRAD)
+            g[:, i] = (self.sd(P + e) - self.sd(P - e)) / (2 * EPS_GRAD)
         return g
 
-    def normal(self, P: np.ndarray, owner: np.ndarray | None = None) -> np.ndarray:
-        g = self.grad(P, owner)
+    def normal(self, P: np.ndarray) -> np.ndarray:
+        g = self.grad(P)
         return g / np.maximum(np.linalg.norm(g, axis=1, keepdims=True), 1e-12)
 
-    def project(self, P: np.ndarray, steps: int = 8, owner: np.ndarray | None = None) -> np.ndarray:
+    def project(self, P: np.ndarray, steps: int = 8) -> np.ndarray:
         """P moved along the field's gradient onto its zero level (Newton steps, each at most 5 mm)."""
         P = np.array(P, float)
         for _ in range(steps):
-            d = self.sd(P, owner)
+            d = self.sd(P)
             if np.abs(d).max() < 1e-7:
                 break
-            g = self.grad(P, owner)
+            g = self.grad(P)
             gg = np.maximum(np.einsum("ij,ij->i", g, g), 1e-12)
             step = g * (d / gg)[:, None]
             n = np.linalg.norm(step, axis=1, keepdims=True)
@@ -244,102 +191,9 @@ def edges_of(tris: np.ndarray) -> np.ndarray:
     return np.unique(np.sort(e, axis=1), axis=0)
 
 
-def _folded(env: Envelope, X: np.ndarray, T: np.ndarray, owner: np.ndarray | None) -> np.ndarray:
-    """(T,) bool: the triangle's normal against the envelope's at its centre (its first vertex's digit); slivers of
-    no area are not counted."""
-    a, b, c = X[T[:, 0]], X[T[:, 1]], X[T[:, 2]]
-    n = np.cross(b - a, c - a)
-    ot = None if owner is None else np.asarray(owner)[T[:, 0]]
-    big = np.linalg.norm(n, axis=1) > 2e-12  # over 1e-6 mm^2: a degenerate sliver has no side to fold to
-    return big & (np.einsum("ij,ij->i", n, env.normal((a + b + c) / 3, ot)) < 0)
-
-
-def wrap(env: Envelope, P: np.ndarray, weight: np.ndarray, edges: np.ndarray, rounds: int = 300, lam: float = 0.5,
-         start: np.ndarray | None = None, owner: np.ndarray | None = None,
-         tris: np.ndarray | None = None) -> tuple[np.ndarray, dict]:
-    """The hand's skin shrink-wrapped onto the envelope and relaxed along it. P (N, 3) the posed vertices of the hand
-    (the region and its rim); weight (N,) 0..1 how far each follows the envelope (0: pinned, the rim; between: fading
-    into the palm); edges (E, 2) the mesh's edges among them; start: P moved first (the thumb's shift), else P;
-    owner (N,): each vertex's digit (press: it follows its own digit's solid); tris (T, 3): the fold guard's.
-
-    The relax is a spring step towards each edge's posed length, taken in the envelope's tangent plane and
-    re-projected: squeezed vertices spread, stretched ones gather, and the skin keeps its triangles' shapes (a uniform
-    umbrella instead slides a pinned tube's skin towards its rim and folds it). A step that would turn a triangle over
-    against the envelope is undone for that triangle's vertices (the guard), so the relax never adds a fold.
-    Returns (the final positions (N, 3), stats)."""
-    P = np.asarray(P, float)
-    w = np.asarray(weight, float)
-    free = w > 0
-    S = P if start is None else np.asarray(start, float)
-    X = S.copy()
-    own = None if owner is None else np.asarray(owner)[free]
-    X[free] = env.project(S[free], 12, own)
-    deg = np.bincount(edges.ravel(), minlength=len(P)).astype(float)
-    i, j = edges[:, 0], edges[:, 1]
-    L0 = np.linalg.norm(P[j] - P[i], axis=1)
-    T = None
-    if tris is not None:
-        T = np.asarray(tris)[free[np.asarray(tris)].any(axis=1)]
-    undone = 0
-    for _ in range(rounds):
-        E = P + (X - P) * w[:, None]
-        dv = E[j] - E[i]
-        dl = np.maximum(np.linalg.norm(dv, axis=1), 1e-12)
-        f = dv * ((dl - L0) / dl)[:, None] * 0.5
-        acc = np.zeros_like(P)
-        np.add.at(acc, i, f)
-        np.add.at(acc, j, -f)
-        d = (acc / np.maximum(deg, 1)[:, None])[free]
-        nrm = env.normal(X[free], own)
-        d -= nrm * np.einsum("ij,ij->i", d, nrm)[:, None]
-        Xn = X.copy()
-        Xn[free] = env.project(X[free] + lam * d, 3, own)
-        if T is not None:
-            was = _folded(env, P + (X - P) * w[:, None], T, owner)
-            for _ in range(20):  # undoing a vertex can turn over a neighbouring triangle: until none
-                bad = _folded(env, P + (Xn - P) * w[:, None], T, owner) & ~was
-                if not bad.any():
-                    break
-                back = np.unique(T[bad])
-                Xn[back] = X[back]
-                undone += int(bad.sum())
-        X = Xn
-    out = P + (X - P) * w[:, None]
-    full = w >= 0.999
-    keep = np.linalg.norm(out[j] - out[i], axis=1) / np.maximum(L0, 1e-12)
-    return out, {"verts": int(free.sum()), "full": int(full.sum()), "guard_undone": undone,
-                 "max_move_mm": round(float(np.linalg.norm(out - P, axis=1).max()) * 1000, 2),
-                 "edge_keep_min": round(float(keep[(w[i] > 0) | (w[j] > 0)].min()), 3),
-                 "off_surface_mm": round(float(np.abs(env.sd(out[full], None if owner is None else
-                                                             np.asarray(owner)[full])).max()) * 1000, 4)
-                 if full.any() else 0.0}
-
-
-def metrics(env: Envelope, X: np.ndarray, tris: np.ndarray, full: np.ndarray,
-            owner: np.ndarray | None = None) -> dict:
-    """On the triangles whose three vertices fully follow the envelope (full (N,) bool): folded (the triangle's
-    normal against the envelope's at its centre), the shortest edge over the median, the largest distance of a
-    vertex from the envelope (bumps) and of a triangle's centre (the facets' sag). press with owner: a triangle is
-    measured on its first vertex's digit."""
-    T = tris[full[tris].all(axis=1)]
-    if not len(T):
-        return {"tris": 0, "folded": 0, "min_edge_ratio": 0.0, "bump_mm": 0.0, "sag_mm": 0.0}
-    a, b, c = X[T[:, 0]], X[T[:, 1]], X[T[:, 2]]
-    n = np.cross(b - a, c - a)
-    cen = (a + b + c) / 3
-    ot = None if owner is None else np.asarray(owner)[T[:, 0]]
-    folded = int(_folded(env, X, T, owner).sum())
-    el = np.linalg.norm(X[edges_of(T)[:, 0]] - X[edges_of(T)[:, 1]], axis=1)
-    vs = np.unique(T)
-    return {"tris": int(len(T)), "folded": folded, "min_edge_ratio": round(float(el.min() / np.median(el)), 3),
-            "edge_p1_ratio": round(float(np.percentile(el, 1) / np.median(el)), 3),
-            "bump_mm": round(float(np.abs(env.sd(X[vs], None if owner is None else np.asarray(owner)[vs])).max()) * 1000, 4),
-            "sag_mm": round(float(np.abs(env.sd(cen, ot)).max()) * 1000, 3)}
-
-
 def contact(env: Envelope, P: np.ndarray, weight: np.ndarray, owner: np.ndarray, edges: np.ndarray,
             tris: np.ndarray | None = None, cap: float = 0.009, bury: float = 0.0005, hide: float = 0.003,
-            smooth: int = 12, lam: float = 0.5, local=None) -> tuple[np.ndarray, dict]:
+            smooth: int = 12, lam: float = 0.5) -> tuple[np.ndarray, dict]:
     """H1q: the run fist's small corrective on a hand the bones already curled into a fist; its only job is
     tube-against-tube contact. P (N, 3) the bone-curled vertices (the region and its rim); weight (N,) 0..1 (0: the
     pinned rim); owner (N,) each vertex's digit, an index into env.names; env a "merge" envelope of the fitted digits
@@ -353,11 +207,6 @@ def contact(env: Envelope, P: np.ndarray, weight: np.ndarray, owner: np.ndarray,
     - The moves are capped (each move's length to cap * tanh(length / cap)) and smoothed as a field: `smooth`
       Laplacian rounds of step `lam` on the moves themselves, not on the positions, the rim held at zero, so no
       neighbour pair differs sharply; then faded by the weight.
-    - local (H1r): None, or (env_l, mask (N,) 0..1, cap_l, hide_l): a local zone (the index-thumb contact) whose
-      moves come from env_l (the same digits, optionally the index's curl filled by its chord) under its own cap and
-      hide depth; each vertex's raw move is (1 - mask) of the global one plus mask of the local one, before the
-      smoothing, so the zone's edge blends over the mask's falloff.
-
     Returns (X (N, 3), stats): folded counts the triangles of full weight outside the contact zones whose normal
     is against the union's (the bones alone: folded_bones), flipped those the corrective turned over against
     their bone-curled normal."""
@@ -371,25 +220,14 @@ def contact(env: Envelope, P: np.ndarray, weight: np.ndarray, owner: np.ndarray,
     Do[np.arange(n), owner] = np.inf
     near = Do.min(axis=1) if D.shape[1] > 1 else np.full(n, np.inf)
 
-    def moves(e, c, hd):
-        U = e.sd(P)
-        bur = (near < -bury) | (U < -hd)
-        go = free & ~bur & (U < 0)
-        Mv = np.zeros_like(P)
-        if go.any():
-            Mv[go] = e.project(P[go], 12) - P[go]
-        r = np.linalg.norm(Mv, axis=1)
-        return Mv * (c * np.tanh(r / c) / np.maximum(r, 1e-12))[:, None], r, bur
-
-    M, raw, buried = moves(env, cap, hide)
-    mask = np.zeros(n)
-    if local is not None:
-        env_l, mask, cap_l, hide_l = local
-        mask = np.clip(np.asarray(mask, float), 0.0, 1.0)
-        Ml, raw_l, bur_l = moves(env_l, cap_l, hide_l)
-        M = M * (1.0 - mask)[:, None] + Ml * mask[:, None]
-        raw = np.where(mask > 0, np.maximum(raw * (mask < 1), raw_l), raw)
-        buried = np.where(mask >= 0.5, bur_l, buried)
+    U = env.sd(P)
+    buried = (near < -bury) | (U < -hide)
+    go = free & ~buried & (U < 0)
+    M = np.zeros_like(P)
+    if go.any():
+        M[go] = env.project(P[go], 12) - P[go]
+    raw = np.linalg.norm(M, axis=1)
+    M = M * (cap * np.tanh(raw / cap) / np.maximum(raw, 1e-12))[:, None]
     i, j = edges[:, 0], edges[:, 1]
     deg = np.maximum(np.bincount(edges.ravel(), minlength=n), 1).astype(float)
     for _ in range(smooth):
@@ -404,12 +242,6 @@ def contact(env: Envelope, P: np.ndarray, weight: np.ndarray, owner: np.ndarray,
           "max_move_mm": round(float(mv.max()) * 1000, 2) if n else 0.0,
           "step_max_mm": round(float(np.linalg.norm((X - P)[j] - (X - P)[i], axis=1).max()) * 1000, 3)
           if len(edges) else 0.0}
-    if local is not None:
-        z = free & (mask > 0)
-        st.update({"local_verts": int((mask >= 0.5).sum()),
-                   "local_max_move_mm": round(float(mv[z].max()) * 1000, 2) if z.any() else 0.0,
-                   "global_max_move_mm": round(float(mv[free & (mask == 0)].max()) * 1000, 2)
-                   if (free & (mask == 0)).any() else 0.0})
     if tris is not None:
         T = np.asarray(tris)
         T = T[(w[T] >= 0.999).all(axis=1) & ~buried[T].any(axis=1)]
@@ -417,15 +249,12 @@ def contact(env: Envelope, P: np.ndarray, weight: np.ndarray, owner: np.ndarray,
         def nrm(Y):
             return np.cross(Y[T[:, 1]] - Y[T[:, 0]], Y[T[:, 2]] - Y[T[:, 0]])
 
-        loc = mask[T].mean(axis=1) >= 0.5
 
         def against(Y):
             m = nrm(Y)
             big = np.linalg.norm(m, axis=1) > 2e-12
             c = Y[T].mean(axis=1)
             ref = env.normal(c)
-            if local is not None and loc.any():
-                ref[loc] = local[0].normal(c[loc])
             return big & (np.einsum("ij,ij->i", m, ref) < 0)
         st.update({"tris": int(len(T)), "folded": int(against(X).sum()), "folded_bones": int(against(P).sum()),
                    "flipped": int((np.einsum("ij,ij->i", nrm(X), nrm(P)) < 0).sum())})

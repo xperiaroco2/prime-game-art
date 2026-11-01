@@ -1,16 +1,9 @@
 """The run fist as a morph (art #196, Hands H1j, the engineer's option C; pure Python, no bpy: alien_fist_shape.py is
 the Blender side).
 
-The loose grip (`anim_sets/alien_hands.toml` `[grips.loose]`) folds the tube fingers onto the palm, but bones alone
-leave the "@" coil, holes and separate tips. The fist's shape closes them: in the loose grip's posed space each digit
-is a chain of round cones fitted to its own tube (a centre and a radius per station: the root, each joint, the tip
-dome's centre), the chain a plain union (a bent joint's outside stays the tube's, no knuckle bulge); the fingers are
-smooth-unioned with each other (`k_mm`) and with the thumb (`k_thumb_mm`), so gaps and creases between them fill with
-rounded webs while each digit keeps its own surface. Every finger vertex goes onto that surface (pushed out of it or,
-when it lies within `pull_mm` outside, pulled onto it), faded by its finger weight into the palm; a vertex buried
-deeper than `hide_mm` (the facing sides of two fingers) goes under the surface, so the outer skin is one sheet; a few
-rounds of relaxing along the surface even out where vertices bunched. The posed moves are carried back to the rest
-mesh by the inverse of each vertex's skinning: the `fist` shape key, exported as the glTF morph target "fist".
+The run grip (`anim_sets/alien_hands.toml` `[grips.runfist]`) curls the fist by its bones; the morph's shape
+is the contact route's (alien_fist_envelope.contact, driven by alien_fist_shape.py). Here: `stations`, the round-cone
+stations fitted to each digit's own tube, and the morph's weights.
 
 The clips key its weight with the grip (`weight_plan`): 1 where the clip's grip is the fist grip, 0 elsewhere, eased
 like Blender's keys between grips; `key_weights` writes those channels into an exported GLB.
@@ -44,81 +37,6 @@ def _len(a: Vec) -> float:
     return math.sqrt(_dot(a, a))
 
 
-def round_cone(p: Vec, a: Vec, b: Vec, r1: float, r2: float) -> float:
-    """The signed distance from p to the round cone from the sphere (a, r1) to the sphere (b, r2) (exact; |r1 - r2| <
-    |b - a|; a degenerate segment is the larger sphere)."""
-    ba = _sub(b, a)
-    l2 = _dot(ba, ba)
-    rr = r1 - r2
-    if l2 <= rr * rr + 1e-18:
-        return min(_len(_sub(p, a)) - r1, _len(_sub(p, b)) - r2)
-    a2 = l2 - rr * rr
-    il2 = 1.0 / l2
-    pa = _sub(p, a)
-    y = _dot(pa, ba)
-    z = y - l2
-    q = _sub(_mul(pa, l2), _mul(ba, y))
-    x2 = _dot(q, q)
-    y2 = y * y * l2
-    z2 = z * z * l2
-    k = math.copysign(1.0, rr) * rr * rr * x2
-    if math.copysign(1.0, z) * a2 * z2 > k:
-        return math.sqrt(x2 + z2) * il2 - r2
-    if math.copysign(1.0, y) * a2 * y2 < k:
-        return math.sqrt(x2 + y2) * il2 - r1
-    return (math.sqrt(x2 * a2 * il2) + y * rr) * il2 - r1
-
-
-def smin(a: float, b: float, k: float) -> float:
-    """The polynomial smooth minimum (blend width k; k <= 0: the plain minimum)."""
-    if k <= 0:
-        return min(a, b)
-    h = max(k - abs(a - b), 0.0) / k
-    return min(a, b) - h * h * k * 0.25
-
-
-class Fist:
-    """The fist's surface: digits {name: [(centre, radius), ...] stations root to tip dome}, `thumb` the thumb's name;
-    the fingers smooth-unioned in their given order with k, the thumb with k_thumb (metres)."""
-
-    def __init__(self, digits: dict, thumb: str, k: float, k_thumb: float):
-        self.chains = {n: [(st[i][0], st[i + 1][0], st[i][1], st[i + 1][1]) for i in range(len(st) - 1)]
-                       for n, st in digits.items()}
-        self.fingers = [n for n in digits if n != thumb]
-        self.thumb = thumb if thumb in digits else None
-        self.k, self.k_thumb = k, k_thumb
-
-    def digit(self, name: str, p: Vec) -> float:
-        return min(round_cone(p, a, b, r1, r2) for a, b, r1, r2 in self.chains[name])
-
-    def sd(self, p: Vec) -> float:
-        d = None
-        for n in self.fingers:
-            x = self.digit(n, p)
-            d = x if d is None else smin(d, x, self.k)
-        if self.thumb is not None:
-            x = self.digit(self.thumb, p)
-            d = x if d is None else smin(d, x, self.k_thumb)
-        return d
-
-    def grad(self, p: Vec, e: float = 1e-5) -> Vec:
-        return tuple((self.sd(_add(p, d)) - self.sd(_sub(p, d))) / (2 * e)
-                     for d in ((e, 0, 0), (0, e, 0), (0, 0, e)))
-
-    def project(self, p: Vec, level: float = 0.0, steps: int = 6) -> Vec:
-        """p moved along the field's gradient onto the iso-surface sd = level."""
-        for _ in range(steps):
-            d = self.sd(p) - level
-            if abs(d) < 1e-6:
-                break
-            g = self.grad(p)
-            n = _len(g)
-            if n < 1e-9:
-                break
-            p = _sub(p, _mul(g, d / (n * n)))
-        return p
-
-
 def stations(points: list[Vec], axis_a: Vec, axis_b: Vec, ts: list[float], band: float,
              near_n: int = 24, reach: float = 0.03) -> list[tuple[Vec, float]]:
     """Per share t of the segment a -> b: the centre (the mean of the points near the plane through a + t(b - a),
@@ -146,53 +64,6 @@ def stations(points: list[Vec], axis_a: Vec, axis_b: Vec, ts: list[float], band:
         r = sum(_len(_sub(_sub(p, c), _mul(u, _dot(_sub(p, c), u)))) for p in near) / len(near)
         out.append((c, r))
     return out
-
-
-def fist_moves(posed: dict, weight: dict, fist: Fist, nbr: dict, pull: float, hide: float, relax: int = 4,
-               lam: float = 0.3, own: set | None = None) -> tuple[dict, dict]:
-    """The posed moves {vertex: move} onto the fist's surface. posed {vertex: point}; weight {vertex: 0..1} (the finger
-    weight's fade into the palm); own: the vertices of the fitted digit segments (only they are pulled in; any other
-    vertex is only pushed out); nbr {vertex: neighbours}. Returns (moves, stats)."""
-    own = set(posed) if own is None else own
-    level, w, new = {}, {}, {}
-    for i, p in posed.items():
-        d = fist.sd(p)
-        lv = -min(max(0.0, -d - hide) * 0.5, hide)  # buried deep: kept under the surface
-        fade = 1.0 if d <= 0 else (max(0.0, 1.0 - d / pull) if i in own else 0.0)
-        wi = weight.get(i, 0.0) * fade
-        if wi <= 0.0 or (d > 0 and d < 1e-6):
-            continue
-        level[i], w[i] = lv, wi
-        q = fist.project(p, lv)
-        new[i] = _add(p, _mul(_sub(q, p), wi))
-    # relax along the surface where the projection moved vertices (the merged webs), the fully weighted ones only
-    free = [i for i in new if w[i] >= 0.999 and _len(_sub(new[i], posed[i])) > 3e-4 and nbr.get(i)]
-    for _ in range(relax):
-        cur = dict(new)
-        for i in free:
-            ns = nbr[i]
-            m = _mul(tuple(sum(cur.get(j, posed[j])[k] for j in ns) for k in range(3)), 1.0 / len(ns))
-            new[i] = fist.project(_add(cur[i], _mul(_sub(m, cur[i]), lam)), level[i])
-    moves = {i: _sub(q, posed[i]) for i, q in new.items() if _len(_sub(q, posed[i])) > 1e-6}
-    vis = [i for i in new if level[i] == 0.0 and w[i] >= 0.999]
-    stats = {"moved": len(moves), "hidden": sum(1 for i in level if level[i] < 0),
-             "max_move_mm": round(max((_len(m) for m in moves.values()), default=0.0) * 1000, 2),
-             "surface_err_mm": round(max((abs(fist.sd(new[i])) for i in vis), default=0.0) * 1000, 3),
-             "lump_mm": round(lump(moves, nbr) * 1000, 3)}
-    return moves, stats
-
-
-def lump(moves: dict, nbr: dict) -> float:
-    """The largest umbrella (a vertex's move against its neighbours' mean move): a lump or a dent in the move field."""
-    worst = 0.0
-    for i, m in moves.items():
-        ns = nbr.get(i) or ()
-        if not ns:
-            continue
-        z = (0.0, 0.0, 0.0)
-        mean = _mul(tuple(sum(moves.get(j, z)[k] for j in ns) for k in range(3)), 1.0 / len(ns))
-        worst = max(worst, _len(_sub(m, mean)))
-    return worst
 
 
 def smoothstep(t: float) -> float:
