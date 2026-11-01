@@ -932,11 +932,37 @@ The review of #364 (comment 6550662374), raw `lobby/hall/v17` (the pieces copied
   in numbers (H1's limb hit at 3.95 deg, missed at 4.05, from any camera place).
 - `lobby --check`'s and `--shoot`'s request files make `tools/out/lobby` (a fresh worktree has none).
 
+## Follow-up #366: c_back's cause
+
+Raw `lobby/hall/v18` (the pieces copied unchanged from v17). The export's `c_back` was 3.1 of 255 off `--shoot`'s.
+- **The cause.** `hall.gd` `_ship_light` placed each ship-only copy of a pendant and of the Earth's light (layer 11)
+  with `copy.global_transform = lt.global_transform`. `--shoot`, the grids and `--video` set the scene up in
+  `SceneTree._initialize`, before the root is in the tree, where `global_transform` reads identity: the shots' copies
+  sat at the floor's centre aiming north. The export assembles inside the tree and hung them under the pendants as
+  designed, so the hull took about 1.8x their light and warmer (raw `v17/exp2`: every other light, probe and material
+  agreed to 0.2 with the copies and the ship's suns off).
+- **The fix.** The copies take the local transform (`copy.transform = lt.transform`): copies and sources are children
+  of `_rig`, so the place is the same in and out of the tree. `ShipLightCopiesTest` pins the code path (a Godot run
+  would need a window).
+- **The tuning.** The engineer approved K1 as the shots showed it (neutral silver), so the look is kept: `pendant_k`
+  times 0.16 in every set (K1 0.25 -> 0.04, K2 0.4 -> 0.064, K3 0.15 -> 0.024), picked from a ship-grid of 0 to 0.15
+  (raw `v18/grid1`). The Earth's copy was hardly moved (it is a directional light: only its aim counts, and the Earth's
+  light comes from 2 deg above south, near the misplaced north aim), so `earth_k` stays 0.35. Against v17's approved
+  shots (mean lum and R-B of 255): `c_back` west wing +0.6 / +0.9, east wing +1.7 / +2.1, deck +0.1 / 0.0, whole
+  view 0.50; `a_entrance` the hull's top +2.1 / +3.3, the right wing +1.6 / +2.4, whole view 0.25.
+- **The export** (`v18/export`) beside `--shoot`: `c_back` 1.907, `corner_nw` 0.002, `spawn_eye` 0.003: the 2.0 rule
+  holds and question L9 is gone.
+- `spawn_ship` moved most (3.21 against v17): the misplaced pendant copies, aiming north from the floor's centre, lit
+  the ship's aft underside between the engine pods from behind the spawns; placed, they no longer reach it, and it
+  reads darker there (as the package always drew it). `floor_ring` 1.57; every other shot under 0.8.
+- The ship-grid's later variants do not reproduce a fresh `--shoot` everywhere: in `a_entrance` the hull's nose side
+  and underside read 14 to 16 darker than the first variant, whatever the share. Judge a set's numbers by `--shoot`.
+
 ## Open problems
 
-- Step 5b/5c: `c_back` from the package is 3.15 of 255 off `--shoot`'s (step 5c: not the pack; step 5c2: the level
-  script frees the ship's switched-off nodes, the window comparison still to run); the cause is to find before the package
-  goes to the game. The hall's GLBs each embed the metal texture set (about 4 MB each): one shared set would save
+- Follow-up #366: `c_back` from the package now 1.907 of `--shoot`'s (the cause: the shots' misplaced ship-only
+  copies, fixed). `spawn_ship`'s aft underside lost the copies' accidental warm glow (above); a look call if it is
+  missed. The hall's GLBs each embed the metal texture set (about 4 MB each): one shared set would save
   about 24 MB.
 
 - Step 5a7: F36 picked (2026-10-31). From the arch's mouth the ship hides the window.

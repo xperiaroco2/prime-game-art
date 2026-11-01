@@ -864,7 +864,10 @@ func _ship_light(s: Dictionary, l: Dictionary, hall_lights: Dictionary) -> void:
 			if k == "pendant":
 				copy.light_specular = float(s["pendant_specular"])
 			_rig.add_child(copy)
-			copy.global_transform = lt.global_transform
+			# #366: the local transform, both under _rig. global_transform is identity off the tree (the shoot, the grids
+			# and the video set up in SceneTree._initialize), so the copies sat at the floor's centre aiming north there
+			# and hung under the pendants only in the export (assembled inside the tree): the hull 1.8x lit, warmer.
+			copy.transform = lt.transform
 	if bool(s["own_probe"]):
 		for pr: ReflectionProbe in hall_lights["probe"]:
 			pr.reflection_mask = not_ship

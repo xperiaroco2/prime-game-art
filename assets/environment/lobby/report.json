@@ -4,7 +4,7 @@
   "version": 3,
   "scene": "res://levels/lobby/lobby_hall.tscn",
   "root": "LobbyHall",
-  "bytes": 38514077
+  "bytes": 38514184
  },
  "files": 20,
  "load": {
@@ -107,7 +107,7 @@
    "at": [
     0.0,
     -130.829818725586,
-    212.012023925781
+    214.512023925781
    ],
    "far_mode": 1.0,
    "shell_m": 198.377517700195,
@@ -427,6 +427,40 @@
   },
   "size_worst_m": 1.9073486718923505e-06
  },
- "shots": {},
+ "shots": {
+  "c_back": {
+   "draw_calls": 2684,
+   "gpu_ms": 3.51,
+   "mean_abs": 1.907,
+   "off_share": 0.0152,
+   "primitives": 989885,
+   "size": [
+    1920,
+    1080
+   ]
+  },
+  "corner_nw": {
+   "draw_calls": 3199,
+   "gpu_ms": 3.54,
+   "mean_abs": 0.002,
+   "off_share": 0.0,
+   "primitives": 1004918,
+   "size": [
+    1920,
+    1080
+   ]
+  },
+  "spawn_eye": {
+   "draw_calls": 74,
+   "gpu_ms": 2.47,
+   "mean_abs": 0.003,
+   "off_share": 0.0,
+   "primitives": 177096,
+   "size": [
+    1920,
+    1080
+   ]
+  }
+ },
  "problems": []
 }
