@@ -10,15 +10,17 @@ the approved drawing's shapes, garment_drawing.lines), measured against her undr
 - the waistband: a closed ring, the spec's top and height, her trunk + the shirt + [build] band_ease_cm, on one bone
   (--band-bone, Spine): a stiff ring that cannot stretch;
 - the bib: a 2 mm plate, the spec's top, widths and lean B (the forward envelope of her front + the shirt + the
-  bust gap, the top edge at its own gap): straight across, one bend over the bust; on one bone (--panel-bone, Chest),
-  so it moves as one piece; its lower edge goes [build] plate_lap_cm down over the band (G3f, the manager's option
-  (a)), clear of it, so a Spine-against-Chest twist slides it over the band, hidden (G3d's seam blend, [build]
-  seam_blend_cm, eased its lowest cm from the band's weights to Chest's and squeezed them: 0 since G3f);
+  bust gap, the top edge at its own gap): straight across, one bend over the bust; its lower edge goes [build]
+  plate_lap_cm down over the band (G3f, the manager's option (a)), clear of it, hidden;
 - the back panel: the same at the back, its top the drawing's shallow V (the centre at back_top_z, the corners 3 cm
-  higher at back_top_w);
-- the straps: 3.8 cm ribbons at x = +-strap_x laid by rays over the bib, her shirt and the back panel; their ends
-  carry the bib's and the back panel's weights exactly, the middle --strap-sh-share of her shoulder's (default 0: the
-  whole strap rides Chest; no arm bones);
+  higher at back_top_w), following her back across each row and down each column;
+- the straps: 3.8 cm ribbons at x = +-strap_x laid by rays over the bib, her shirt and the back panel;
+- the weights (G3m): every bib, pocket, back panel and strap vertex takes her skin's weights under it ([build]
+  skin_k nearest points of her whole skin, without skin_drop), level with the band the band's (plate_band_blend_cm),
+  smoothed along the cloth's edges and across to the cloth on it (skin_smooth, skin_bridge_cm; bib_smooth more on the
+  bib), so straps, bib and back panel move as one strip with her; the hardware rigid on the cloth under it; the shirt
+  over the band takes her skin's weights where the cloth covers it, and its faces under the plates and the straps'
+  cores go (shirt_hide_cm);
 - the pocket (a `pocket` material plate on the bib), the buckle buttons and rings, the side buttons on the band,
   the turn-ups (rigid rings on the lower leg, the spec's hem, height and width).
 
@@ -97,6 +99,94 @@ class Weights:
             for k, v in norm(self.at(p), keep).items():
                 acc[k] = acc.get(k, 0.0) + v
         return norm(acc)
+
+
+def skin_at(skin: "Weights", q, drop, k: int = 6) -> dict:
+    """G3m: her skin's weights at q: her k nearest skin points (her whole skin, body_removed too), by inverse distance,
+    without the drop bones' shares (G3j's rule for the straps' shoulder rows, since G3m for every cloth vertex)."""
+    acc = {}
+    for _co, idx, dist in skin.kd.find_n(Vector(q), k):
+        for b, v in skin.w[idx].items():
+            if not any(x in b for x in drop):
+                acc[b] = acc.get(b, 0.0) + v / max(dist, 1e-4)
+    return norm(acc)
+
+
+def weight_graph(bm, verts, bridge: float) -> dict:
+    """The neighbours of each of verts along the mesh's edges, plus every other of verts within bridge (m): the strap
+    lying on a plate and a slab's two faces smooth together, so strap, bib and back panel move as one strip."""
+    vs = list(verts)
+    kd = KDTree(len(vs))
+    for i, v in enumerate(vs):
+        kd.insert(v.co, i)
+    kd.balance()
+    vset = set(vs)
+    nb = {v: {e.other_vert(v) for e in v.link_edges if e.other_vert(v) in vset} for v in vs}
+    if bridge > 0:
+        for v in vs:
+            for _co, i, _d in kd.find_range(v.co, bridge):
+                if vs[i] is not v:
+                    nb[v].add(vs[i])
+                    nb[vs[i]].add(v)
+    return nb
+
+
+def smooth_weights(W: dict, nb: dict, iters: int, only=None) -> None:
+    """Laplacian passes on the weights: each vertex (of only, else all of nb) half its own, half its neighbours' mean."""
+    todo = [v for v in nb if only is None or v in only]
+    for _ in range(max(0, iters)):
+        new = {}
+        for v in todo:
+            ns = nb[v]
+            if not ns:
+                continue
+            acc = {b: 0.5 * x for b, x in W[v].items()}
+            for n in ns:
+                for b, x in W[n].items():
+                    acc[b] = acc.get(b, 0.0) + 0.5 * x / len(ns)
+            new[v] = norm({b: x for b, x in acc.items() if x > 1e-4})
+        W.update(new)
+
+
+def tv(a: dict, b: dict) -> float:
+    """Half the L1 distance of two weight sets: 0 the same, 1 no bone shared."""
+    return 0.5 * sum(abs(a.get(k, 0.0) - b.get(k, 0.0)) for k in set(a) | set(b))
+
+
+def shirt_hide(top, faces_sets, reach: float, tilt: float = 0.6) -> dict:
+    """G3m: the shirt's faces nobody sees go: under the plates and the straps' cores. faces_sets: (name, BVH, rings):
+    a face goes when its normal and four rays tilted round it (tan tilt) all meet that BVH within reach, rings rings in
+    from the covered area's edge (the clothes_top --shell-hide rule). The shirt there came through the plates and the
+    straps (its own layer, tracked or not) in every route before G3m."""
+    mw = top.matrix_world
+    nm = mw.to_3x3().inverted().transposed()
+    bm = bmesh.new()
+    bm.from_mesh(top.data)
+    bm.normal_update()
+    gone, rep = set(), {}
+    for name, tree, rings in faces_sets:
+        hid = set()
+        for f in bm.faces:
+            p = mw @ f.calc_center_median()
+            n = (nm @ f.normal).normalized()
+            side = Vector((n.y, -n.x, 0.0))
+            side = side.normalized() if side.length > 1e-6 else Vector((1.0, 0.0, 0.0))
+            up = n.cross(side).normalized()
+            dirs = [n] + [(n + tilt * d_).normalized() for d_ in (side, -side, up, -up)]
+            if all(tree.ray_cast(p + d_ * 1e-4, d_, reach)[0] is not None for d_ in dirs):
+                hid.add(f)
+        for _ in range(rings):
+            hid = {f for f in hid if all(g in hid for v in f.verts for g in v.link_faces)}
+        rep[name] = len(hid)
+        gone |= hid
+    bmesh.ops.delete(bm, geom=list(gone), context="FACES")
+    loose = [v for v in bm.verts if not v.link_faces]
+    bmesh.ops.delete(bm, geom=loose, context="VERTS")
+    bm.to_mesh(top.data)
+    bm.free()
+    top.data.update()
+    rep.update({"faces": len(gone), "verts": len(loose), "reach_m": reach, "shirt_verts": len(top.data.vertices)})
+    return rep
 
 
 class Ref:
@@ -251,7 +341,7 @@ def _spread(top, co, got: dict, fade: float):
 
 def shirt_follow(top, B, skip_vs, fade: float, reach: float = 0.04, near: float = 0.015, low_z: float = -1.0,
                  low_skip=frozenset(), strap_vs=frozenset(), strap_reach: float = 0.0, strap_fade: float = 0.0,
-                 keep=frozenset()) -> dict:
+                 keep=frozenset(), w_above=None) -> dict:
     """The shirt under the dungarees takes their weights (G3e, art #196: on her body's weights it came through the band
     and the plates, 8 mm in Idle, 35 mm in Jump_Start, the band's pale stripes): each shirt vertex whose normal meets the
     garment within reach, or that lies within near of it (not a strap, which lies over her shoulder's skin) takes the garment's weights there (the
@@ -295,11 +385,14 @@ def shirt_follow(top, B, skip_vs, fade: float, reach: float = 0.04, near: float 
             continue
         if f.material_index == 2 or any(x in skip_vs for x in f.verts):
             continue
-        w = poly_3d_calc([x.co for x in f.verts], hit)
-        acc = {}
-        for x, k in zip(f.verts, w):
-            for g, val in B.W.get(x, {}).items():
-                acc[g] = acc.get(g, 0.0) + k * val
+        if w_above is not None and not low:   # G3m: over the band her skin's weights at the shirt vertex
+            acc = w_above(co[v.index])
+        else:
+            w = poly_3d_calc([x.co for x in f.verts], hit)
+            acc = {}
+            for x, k in zip(f.verts, w):
+                for g, val in B.W.get(x, {}).items():
+                    acc[g] = acc.get(g, 0.0) + k * val
         (got_s if strap else got)[v.index] = norm(acc)
     dist, src = _spread(top, co, got, fade)
     dist_s, src_s = _spread(top, co, got_s, strap_fade) if got_s else ({}, {})
@@ -438,49 +531,21 @@ def main() -> None:
     ap.add_argument("--ankle-restore", default="0.125,0.215",
                     help="body_removed faces between these heights rejoin (to --leg-cut: her skin inside the turn-up)")
     ap.add_argument("--plate", type=float, default=0.002, help="the bib's and back panel's thickness (m)")
-    ap.add_argument("--panel-bone", default="Chest",
-                    help="the bib, pocket, back panel and the straps' ends on this bone alone (rigid); '' = her blend")
     ap.add_argument("--band-bone", default="Spine", help="the waistband on this bone alone (rigid); '' = her blend")
-    ap.add_argument("--strap-top-cm", type=float, default=None,
-                    help="the strap's top over her trapezius follows her shoulder: over this arc length (cm) round "
-                         "its highest point a smooth gradient from the panel bone to her shoulder's weights (G3e; "
-                         "default the spec's [build] strap_top_cm, 0: off)")
-    ap.add_argument("--strap-top-share", type=float, default=1.0, help="her shoulder's share at the strap's top")
-    ap.add_argument("--back-band-share", type=float, default=None,
-                    help="the band bone's share in the back panel's one blend (default the spec's [build] "
-                         "back_band_share, 0: Chest alone)")
     ap.add_argument("--lap-clear-cm", type=float, default=None, help="default the spec's [build] plate_lap_clear_cm")
     ap.add_argument("--no-shirt-follow", action="store_true",
                     help="keep the shirt's own weights under the dungarees (G3e: it takes theirs, so it stays under)")
-    ap.add_argument("--strap-back-on-chest", type=int, default=None,
-                    help="1: the straps' back rows on the bib's weights (default the spec's [build] strap_back_on_chest)")
     ap.add_argument("--strap-inner-mm", type=float, default=None,
                     help="the strap's inner face off the shirt (default the spec's [build] strap_inner_mm, else 0.5)")
-    ap.add_argument("--shirt-follow-straps", type=int, default=None,
-                    help="1: the shirt under the straps takes their weights (default the spec's [build] shirt_follow_straps)")
-    ap.add_argument("--strap-skin-z-cm", type=float, default=None,
-                    help="the strap's rows at or over this height take her skin's weights (default the spec's [build] "
-                         "strap_skin_z_cm, 0: off)")
-    ap.add_argument("--strap-skin-blend-cm", type=float, default=None,
-                    help="eased back to the row's own over this arc (default the spec's strap_skin_blend_cm)")
-    ap.add_argument("--strap-back-join-cm", type=float, default=None,
-                    help="the straps' back ends join the back panel: on its weights, eased from her skin's over this "
-                         "arc below the skin rows (default the spec's [build] strap_back_join_cm, 0: off, on Chest)")
-    ap.add_argument("--strap-skin-whole", type=int, default=None,
-                    help="1: her skin's weights under the straps from her whole skin, body_removed too (default the "
-                         "spec's [build] strap_skin_whole, else 1; 0: her kept skin alone, G3j)")
-    ap.add_argument("--back-corner-chest", type=float, default=None,
-                    help="the back panel's top takes this share of the bib's weights (Chest), the straps' back ends "
-                         "the panel's there (default the spec's [build] back_corner_chest, 0: off)")
-    ap.add_argument("--back-corner-fade-cm", type=float, default=None,
-                    help="that share eased in over the panel's top this many cm under its corners (0: the whole panel, "
-                         "rigid; default the spec's [build] back_corner_fade_cm)")
-    ap.add_argument("--strap-skin-drop", default=None,
-                    help="bones (name parts, comma-separated) her skin's weights lose there (default the spec's "
-                         "strap_skin_drop)")
-    ap.add_argument("--strap-sh-share", type=float, default=0.0,
-                    help="the straps' middle: this share of her shoulder's weights, the rest the panel bone's (0: the "
-                         "whole strap rides the panel bone, G3c c01: stretch 0, pokes 0 in every clip; 1.0: 16-57 %%)")
+    ap.add_argument("--skin-smooth", type=int, default=None,
+                    help="G3m: smoothing passes of the cloth's skin weights along its edges (default the spec's [build] "
+                         "skin_smooth)")
+    ap.add_argument("--bib-smooth", type=int, default=None,
+                    help="G3m: further passes on the bib alone (default the spec's [build] bib_smooth)")
+    ap.add_argument("--skin-drop", default=None,
+                    help="G3m: bones (name parts, comma-separated) her skin's weights lose (default the spec's skin_drop)")
+    ap.add_argument("--no-shirt-hide", action="store_true",
+                    help="G3m: keep the shirt's faces under the plates and the straps' cores")
     a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     spec = S.load_spec(a.spec)
     d = {k: v["cm"] / 100 for k, v in spec["dims"].items()}
@@ -496,13 +561,18 @@ def main() -> None:
     arm.data.pose_position = "REST"
     bpy.context.view_layer.update()
     body, top, gar = bpy.data.objects["axolotl_char"], bpy.data.objects["top"], bpy.data.objects["garment"]
-    # G3k: her skin's weights under the straps from her whole skin, the part the dress removed under the cloth too: on
-    # the kept skin alone the strap's back run at 123 cm took her shoulder's (the nearest kept skin 51 mm off, over it)
-    # and stood 15-23 mm off her upper back in the runs
-    whole = a.strap_skin_whole if a.strap_skin_whole is not None else spec["build"].get("strap_skin_whole", True)
+    # G3m: every cloth vertex of the bib, pocket, back panel and straps takes her skin's weights under it (her whole
+    # skin: the kept body and body_removed, the part the dress removed under the cloth; on the kept skin alone the
+    # strap's back run at 123 cm took her shoulder's, the nearest kept skin 51 mm off), then smoothed along the cloth's
+    # edges; G3h-G3l's hand-picked bones (bib Chest, back panel Spine, straps Chest eased to skin) became stretch, lift
+    # or the shirt through wherever they differed from the skin under them
     shirt_w = Weights(top)
-    body_w = Weights(body, bpy.data.objects.get("body_removed")) if whole else Weights(body)
-    rep["strap_skin_whole"] = bool(whole)
+    body_w = Weights(body, bpy.data.objects.get("body_removed"))
+    drop = a.skin_drop.split(",") if a.skin_drop is not None else spec["build"].get("skin_drop", ["Neck", "Head", "Jaw", "Eye", "Gill"])
+    drop = [w for w in drop if w]
+    knn = int(spec["build"].get("skin_k", 6))
+    skin = lambda q: skin_at(body_w, q, drop, knn)
+    rep["skin"] = {"drop": drop, "k": knn}
 
     # --- the bare ankle: her skin back under the raised hem ---------------------------------------------------
     lo_z, hi_z = (float(x) for x in a.ankle_restore.split(","))
@@ -692,7 +762,6 @@ def main() -> None:
     bib_y = lambda z: chain_y(hull, z)
     nb = 17
     rows = []
-    bib_samples = []
     for z in zs:
         hw = d["bib_bottom_w"] / 2 + (d["bib_top_w"] - d["bib_bottom_w"]) / 2 * max(0.0, z - bbz) / (bt - bbz)
         row = []
@@ -700,26 +769,26 @@ def main() -> None:
             x = -hw + 2 * hw * i / (nb - 1)
             y = lap_y(x, bib_y(max(z, bbz)), z)
             row.append((Vector((x, y, z)), Vector((x, y + a.plate, z))))
-            bib_samples.append(Vector((x, 0.0, z)))
         rows.append(row)
     if not n_lap:     # its foot on the band's top (no lap): just over it
         rows[0] = [(p + Vector((0, 0, 0.0002)), q + Vector((0, 0, 0.0002))) for p, q in rows[0]]
-    bib_samples = [Vector((p.x, ref.front(p.z, 0.004) + 0.006, p.z)) for p in bib_samples[::5]]
-    w_bib = shirt_w.mean(bib_samples, keep=TRUNK)
-    if a.panel_bone:  # G3b: rigid, so flat in every clip (b02's blend bent 9-13 mm in Jog and Strafe)
-        w_bib = {a.panel_bone: 1.0}
-    seam = bk["seam_blend_cm"]
+    # G3m: the plates take her skin's weights; level with the band and over plate_band_blend_cm above it the band's,
+    # eased (the band is a rigid ring on --band-bone: a plate on her skin's Hips/Spine there would pass through it)
+    pbb = bk.get("plate_band_blend_cm", 0.03)
 
-    def seam_w(w_top):
-        """The plate's weights: the band's at the band's top, eased to w_top over the seam blend (G3d: on one bone
-        a Spine-against-Chest twist opened the plates' lower corners off the band)."""
-        return lambda p: w_top if seam <= 0 or p.z >= bbz + seam else mix(w_band, w_top, smooth01((p.z - bbz) / seam))
+    def plate_w(p):
+        ws = skin(p)
+        if p.z >= bbz + pbb:
+            return ws
+        return mix(w_band, ws, smooth01((p.z - bbz) / pbb) if pbb > 0 else float(p.z >= bbz))
     plate_vs = set()
-    for r_ in B.slab(rows, seam_w(w_bib), 0):
-        plate_vs.update(v for row_ in r_ for v in row_)
+    bib_vs = set()
+    for r_ in B.slab(rows, plate_w, 0):
+        bib_vs.update(v for row_ in r_ for v in row_)
+    plate_vs |= bib_vs
     rep["lap"] = {"cm": round(lap * 100, 2), "rows": n_lap, "clear_cm": round(lap_clr * 100, 2),
                   "bib_pushed_mm": round(lap_moved[0] * 1000, 2)}
-    rep["bib"] = {"weights": w_bib, "hull": [[round(z * 100, 2), round(y * 100, 2)] for z, y in hull],
+    rep["bib"] = {"hull": [[round(z * 100, 2), round(y * 100, 2)] for z, y in hull],
                   "top_y_cm": round(bib_y(bt) * 100, 2), "band_y_cm": round(bib_y(bbz) * 100, 2)}
 
     # --- the pocket ------------------------------------------------------------------------------------------------
@@ -734,7 +803,8 @@ def main() -> None:
             y = bib_y(z)
             row.append((Vector((x, y - 0.0015, z)), Vector((x, y - 0.0003, z))))
         rows.append(row)
-    B.slab(rows, lambda p: w_bib, 1)
+    for r_ in B.slab(rows, plate_w, 1):
+        bib_vs.update(v for row_ in r_ for v in row_)
 
     # --- the back panel: the drawing's shallow V -------------------------------------------------------------------
     kt = d["back_top_z"]
@@ -751,7 +821,6 @@ def main() -> None:
     back_y = lambda z: chain_y(bhull, z)
     nk = int(spec["build"].get("back_cols", 25))
     rows = []
-    back_samples = []
     across = bool(spec["build"].get("back_follows_across", False))
     foot = 0.0 if bn_lap else 0.0002
     lap_moved[0] = 0.0
@@ -771,8 +840,6 @@ def main() -> None:
                 yb = ref.front(z, 0.01, back=True, x0=x)
                 y = min(y, yb + SHIRT + d["back_standoff"]) if yb is not None else y
             row.append((Vector((x, y, z)), Vector((x, y - a.plate, z))))
-            if j >= bn_lap and (j - bn_lap) % 4 == 0 and i % 4 == 0:
-                back_samples.append(Vector((x, ref.front(z, 0.004, back=True) - 0.006, z)))
         rows.append(row)
     if across:   # one bend down each column and none inward across a row: the plate bridges her spine's hollow
         follow = spec["build"].get("back_column", "hull") == "follow"
@@ -807,37 +874,11 @@ def main() -> None:
     rep["back_edge_gap_mm"] = eg
     rep["lap"]["back_pushed_mm"] = round(lap_moved[0] * 1000, 2)
     rep["lap"]["back_cm"], rep["lap"]["back_rows"] = round(blap * 100, 2), bn_lap
-    w_back = shirt_w.mean(back_samples, keep=TRUNK)
-    if a.panel_bone:
-        w_back = {a.panel_bone: 1.0}
-    band_share = spec["build"].get("back_band_share", 0.0) if a.back_band_share is None else a.back_band_share
-    if band_share > 0:   # G3f: one blend for the whole panel (every vertex the same matrix: still flat), so its lap
-        w_back = mix(w_back, w_band, band_share)   # rises less over the band as she bends forward (h1 on Chest: -39 mm)
-    rep["back_band_share"] = band_share
-    # G3l: the sliding join. The panel's top takes cc of the bib's weights (Chest), eased in over fade cm under its
-    # corners (0: the whole panel, one blend, still rigid), and the straps' back ends over it take the panel's weights
-    # at their height: on Chest over the panel's Spine they hovered 16-22 mm off it (G3k), joined on Spine they stretched
-    cc = a.back_corner_chest if a.back_corner_chest is not None else spec["build"].get("back_corner_chest", 0.0)
-    cf = (a.back_corner_fade_cm if a.back_corner_fade_cm is not None else spec["build"].get("back_corner_fade_cm", 0.0)) / 100
-
-    def w_panel(z):
-        if cc <= 0:
-            return w_back
-        t = 1.0 if cf <= 0 else smooth01((z - (corner - cf)) / cf)
-        return norm(mix(w_back, w_bib, cc * t)) if t > 0 else w_back
-    sw_back = seam_w(w_back)
-
-    def w_back_at(p):
-        if cc <= 0:
-            return sw_back(p)
-        t = 1.0 if cf <= 0 else smooth01((p.z - (corner - cf)) / cf)
-        return norm(mix(sw_back(p), w_bib, cc * t)) if t > 0 else sw_back(p)
-    for r_ in B.slab(rows, w_back_at, 0):
-        plate_vs.update(v for row_ in r_ for v in row_)
-    rep["back_corner"] = {"chest_share": cc, "fade_cm": round(cf * 100, 2),
-                          "corner_weights": {k: round(v, 3) for k, v in w_panel(corner).items()}}
-    rep["back_panel"] = {"weights": w_back, "hull": [[round(z * 100, 2), round(y * 100, 2)] for z, y in bhull],
-                         "corner_m": corner}
+    back_vs = set()
+    for r_ in B.slab(rows, plate_w, 0):
+        back_vs.update(v for row_ in r_ for v in row_)
+    plate_vs |= back_vs
+    rep["back_panel"] = {"hull": [[round(z * 100, 2), round(y * 100, 2)] for z, y in bhull], "corner_m": corner}
 
     # --- the straps: ribbons laid by rays over the plates and her shirt --------------------------------------------
     B.bm.faces.ensure_lookup_table()
@@ -847,6 +888,7 @@ def main() -> None:
     tops = BVHTree.FromPolygons([top.matrix_world @ v.co for v in tm.vertices], [tuple(p.vertices) for p in tm.polygons])
     rep["straps"] = {}
     strap_vs = set()
+    strap_core = set()
     z0, y0 = bk["strap_ray_origin_cm"]["z"] / 100, bk["strap_ray_origin_cm"]["y"] / 100
     far = 0.4
     phis = [math.radians(-4 + i * (178 + 4) / 72) for i in range(73)]
@@ -906,10 +948,6 @@ def main() -> None:
             ln = [mr + b_ * k for k in ks]
             lift = max(r - l for r, l in zip(rs, ln))
             row_r.append([l + lift for l in ln])
-        sh_pt = Vector((xc, y0, z0)) + dirs[len(dirs) // 2] * prof[len(dirs) // 2]
-        w_sh = no_arms(shirt_w.at(sh_pt))
-        if a.strap_sh_share < 1.0:
-            w_sh = mix({a.panel_bone or "UpperChest": 1.0}, w_sh, a.strap_sh_share)
         # the spec: the straps' outer edges flush with the bib's top corners (bib_top_w / 2 - strap_w / 2 on the bib),
         # at strap_x from her collarbone up: eased between the bib's top and her collarbone
         x_bib = sd * (d["bib_top_w"] / 2 - d["strap_w"] / 2)
@@ -924,122 +962,27 @@ def main() -> None:
                    for k, x in enumerate(xs)]
             rows.append(row)
         pz = [(Vector((0, y0, z0)) + dv * prof[i]) for i, dv in enumerate(dirs)]
-        i_front = max(i for i, p in enumerate(pz) if phis[i] < math.pi / 2 and p.z <= bt)
-        i_back = min(i for i, p in enumerate(pz) if phis[i] > math.pi / 2 and p.z <= corner)
-        i_mid = len(dirs) // 2
-
-        # G3h: the straps' back rows on the bib's weights, so the whole strap rides one bone but its top: on the back
-        # panel's (Spine since G3g) it spanned Spine to Chest over her shoulder and stretched 5.8-95 % beyond her skin
-        sboc = a.strap_back_on_chest
-        if sboc is None:
-            sboc = spec["build"].get("strap_back_on_chest", False)
-        # G3k: the back ends join the back panel they lie on (its weights, Spine), eased from her skin's over join_cm
-        # below the skin rows: on Chest over the panel's Spine they stood 17-23 mm off it in the runs (44 mm off her)
-        join = a.strap_back_join_cm if a.strap_back_join_cm is not None else spec["build"].get("strap_back_join_cm", 0.0)
-        w_sb = w_back if join > 0 else (w_bib if sboc else w_back)
-        if cc > 0 and join <= 0:   # G3l: the back ends ride the panel under them (its weights at their height)
-            w_sb = w_panel(corner)
-
-        def w_of_row(i):
-            if i <= i_front:
-                return w_bib
-            if i >= i_back:
-                return w_panel(pz[i].z) if (cc > 0 and join <= 0) else w_sb
-            if i <= i_mid:
-                return mix(w_bib, w_sh, smooth01((i - i_front) / (i_mid - i_front)))
-            return mix(w_sh, w_sb, smooth01((i - i_mid) / (i_back - i_mid)))
-        row_w = [w_of_row(i) for i in range(len(rows))]
-        # G3e: the strap's top over her trapezius follows her shoulder (on Chest alone it arched off it in Jog): over
-        # top_cm of arc round its highest point a smooth gradient from the row's weights to her shoulder's there
-        i_top = max(range(len(pz)), key=lambda i: pz[i].z)
-        arc = [0.0]
-        for i in range(1, len(pz)):
-            arc.append(arc[-1] + (pz[i] - pz[i - 1]).length)
-        top_cm = a.strap_top_cm if a.strap_top_cm is not None else spec["build"].get("strap_top_cm", 0.0)
-        top_pt = pz[i_top] + Vector((xc, 0, 0))   # pz runs at x = 0: the strap's own top is at x = xc
-        w_top = no_arms(shirt_w.at(top_pt))
-        n_top = 0
-        # G3i: behind its top the strap follows her skin under each row over back_cm of arc (on Chest it stood 30-50 mm
-        # off her upper back by the neck as she leaned in the runs, a flap over her shoulder seen from the front)
-        back_cm = spec["build"].get("strap_top_back_cm", 0.0)
-        n_back = 0
-        if top_cm > 0 and w_top:
-            half = top_cm / 200
-            for i in range(i_front + 1, i_back):
-                t = 1 - abs(arc[i] - arc[i_top]) / half
-                if back_cm > 0 and i > i_top:
-                    tb = 1 - (arc[i] - arc[i_top]) / (back_cm / 100)
-                    w_row = no_arms(shirt_w.at(pz[i] + Vector((xc, 0, 0))))
-                    if tb > 0 and w_row:
-                        row_w[i] = norm(mix(row_w[i], w_row, a.strap_top_share * smooth01(tb)))
-                        n_back += 1
-                        continue
-                if t > 0:
-                    row_w[i] = norm(mix(row_w[i], w_top, a.strap_top_share * smooth01(t)))
-                    n_top += 1
-        # G3j: over her shoulder (the rows at or over skin_z, front top to back top) every strap vertex takes her skin's
-        # weights under it, eased back to the row's own (Chest) over blend_cm of arc on the front run to the bib and on
-        # the back run (on Chest the front-top rows let her shoulder skin 20-40 mm through the shirt, the back-top
-        # rows stood 27-51 mm off her back by the neck: a flap); her Neck and Head never (G3i's strap_top_back_cm
-        # took them: 7-64 % beyond her skin)
-        skin_z = a.strap_skin_z_cm if a.strap_skin_z_cm is not None else spec["build"].get("strap_skin_z_cm", 0.0)
-        skin_bl = a.strap_skin_blend_cm if a.strap_skin_blend_cm is not None else spec["build"].get("strap_skin_blend_cm", 4.0)
-        drop = a.strap_skin_drop.split(",") if a.strap_skin_drop is not None else             spec["build"].get("strap_skin_drop", ["Neck", "Head", "Jaw", "Eye", "Gill"])
-        drop = [w for w in drop if w]
-        share = [0.0] * len(rows)
-        core = [i for i in range(i_front + 1, i_back) if skin_z > 0 and pz[i].z >= skin_z / 100]
-        if core:
-            i0, i1 = min(core), max(core)
-            for i in range(i_front + 1, len(rows) if join > 0 else i_back):
-                gap = arc[i0] - arc[i] if i < i0 else (arc[i] - arc[i1] if i > i1 else 0.0)
-                bl = join if (join > 0 and i > i1) else skin_bl
-                share[i] = smooth01(1 - gap / (bl / 100)) if bl > 0 else float(gap == 0.0)
-
-        def skin_at(q):
-            acc = {}
-            for co, idx, dist in body_w.kd.find_n(q, 6):
-                for k, v in body_w.w[idx].items():
-                    if not any(x in k for x in drop):
-                        acc[k] = acc.get(k, 0.0) + v / max(dist, 1e-4)
-            return norm(acc)
-        lookup = {}
-        top_skin = None
-        for i, row in enumerate(rows):
-            for p, q in row:
-                w = row_w[i]
-                if share[i] > 0:
-                    ws = skin_at(q)
-                    w = norm(mix(w, ws, share[i])) if ws else w
-                    if i == i_top and top_skin is None:
-                        top_skin = ws
-                lookup[(round(p.x, 6), round(p.y, 6), round(p.z, 6))] = w
-                lookup[(round(q.x, 6), round(q.y, 6), round(q.z, 6))] = w
+        # G3m: every strap vertex on her skin's weights under it (front run, shoulder and back run alike), smoothed with
+        # the bib's and the back panel's below, so straps, bib and back panel move as one strip; the central three of
+        # its five columns (1.9 cm of its 3.8 cm) are the core the shirt under it goes from
         tr = [[(r[k][0], r[k][1]) for k in range(5)] for r in rows]
-        so, si = B.slab(tr, lambda p: lookup[(round(p.x, 6), round(p.y, 6), round(p.z, 6))], 0)
+        so, si = B.slab(tr, lambda p: skin(p), 0)
         strap_vs.update(v for r_ in so + si for v in r_)
+        strap_core.update(v for r_ in si for v in r_[1:4])
         rep["straps"]["left" if sd > 0 else "right"] = {
-            "front_end_z_m": round(pz[0].z, 4), "back_end_z_m": round(pz[-1].z, 4), "shoulder_weights": w_sh,
-            "bib_rows": i_front + 1, "back_rows": len(rows) - i_back, "back_on_chest": bool(sboc),
-            "inner_mm": round(inner * 1000, 2),
-            "top_back": {"cm": back_cm, "rows": n_back, "rows_to_back": i_back - i_top},
-            "back_join_cm": join, "back_weights": {k: round(v, 3) for k, v in w_sb.items()},
-            "skin": {"z_cm": skin_z, "blend_cm": skin_bl, "drop": drop, "core_rows": len(core),
-                     "blend_rows": sum(1 for x in share if 0 < x < 1),
-                     "core_z_cm": [round(pz[min(core)].z * 100, 2), round(pz[max(core)].z * 100, 2)] if core else None,
-                     "top_weights": {k: round(v, 3) for k, v in (top_skin or {}).items()}},
-            "top": {"cm": top_cm, "share": a.strap_top_share, "rows": n_top, "weights": w_top,
-                    "at_cm": [round(c * 100, 2) for c in top_pt]}}
+            "front_end_z_m": round(pz[0].z, 4), "back_end_z_m": round(pz[-1].z, 4), "rows": len(rows),
+            "inner_mm": round(inner * 1000, 2), "top_z_m": round(max(q.z for q in pz), 4)}
         # the buckle: a ring round the strap at the bib's top edge and its button on the strap
         yb = bib_y(d["buckle_z"]) - 0.0022 - 0.0005
-        B.disc((x_bib, yb, d["buckle_z"]), (0, 1, 0), d["buckle_d"], 0.003, w_bib, 2)
+        B.disc((x_bib, yb, d["buckle_z"]), (0, 1, 0), d["buckle_d"], 0.003, {}, 2)   # weights: below
         yr = bib_y(bt - 0.006) - 0.0025
         ring = bk["buckle_ring_cm"]
         hw, hh, bar = d["strap_w"] / 2 + ring["pad"] / 100, ring["half_h"] / 100, ring["bar"] / 100
         quad = lambda x0, x1, z0_, z1_: [(x0, z0_), (x1, z0_), (x1, z1_), (x0, z1_)]
         outer = quad(x_bib - hw, x_bib + hw, bt - 0.006 - hh, bt - 0.006 + hh)
         inner = quad(x_bib - hw + bar, x_bib + hw - bar, bt - 0.006 - hh + bar, bt - 0.006 + hh - bar)
-        ov = [[B.vert((x, yr - dy, z), w_bib) for x, z in outer] for dy in (0.0, 0.002)]
-        iv = [[B.vert((x, yr - dy, z), w_bib) for x, z in inner] for dy in (0.0, 0.002)]
+        ov = [[B.vert((x, yr - dy, z), {}) for x, z in outer] for dy in (0.0, 0.002)]
+        iv = [[B.vert((x, yr - dy, z), {}) for x, z in inner] for dy in (0.0, 0.002)]
         for k in range(4):
             m = (k + 1) % 4
             B.face([ov[1][k], ov[1][m], iv[1][m], iv[1][k]], 2)
@@ -1084,22 +1027,93 @@ def main() -> None:
                                 "ring_half_cm": [round(ox * 100, 2), round(oy * 100, 2)]}
 
     bmesh.ops.recalc_face_normals(B.bm, faces=B.bm.faces[:])
+    # --- G3m: the cloth's skin weights smoothed along its edges (and across to the cloth lying on it), the bib alone
+    # bib_smooth passes more; then each hardware piece (buckles, rings) rigid on the smoothed cloth under its centre
+    hw_vs = {v for v in B.bm.verts if not B.W.get(v)}
+    cloth = (plate_vs | strap_vs) - hw_vs
+    n_sm = a.skin_smooth if a.skin_smooth is not None else int(spec["build"].get("skin_smooth", 4))
+    n_bib = a.bib_smooth if a.bib_smooth is not None else int(spec["build"].get("bib_smooth", 0))
+    nb = weight_graph(B.bm, cloth, bk.get("skin_bridge_cm", 0.006))
+    smooth_weights(B.W, nb, n_sm)
+    smooth_weights(B.W, nb, n_bib, only=bib_vs - hw_vs)
+    ckd = KDTree(len(cloth))
+    clist = list(cloth)
+    for i, v in enumerate(clist):
+        ckd.insert(v.co, i)
+    ckd.balance()
+    seen, n_hw = set(), 0
+    for v0 in hw_vs:
+        if v0 in seen:
+            continue
+        comp, stack = [], [v0]
+        while stack:
+            v = stack.pop()
+            if v in seen:
+                continue
+            seen.add(v)
+            comp.append(v)
+            stack += [e.other_vert(v) for e in v.link_edges]
+        c = sum((v.co for v in comp), Vector()) / len(comp)
+        w = dict(B.W[clist[ckd.find(c)[1]]])
+        for v in comp:
+            B.W[v] = w
+        n_hw += 1
+    rep["weights"] = {"cloth_verts": len(cloth), "smooth": n_sm, "bib_smooth": n_bib, "hardware_pieces": n_hw,
+                      "bridge_m": bk.get("skin_bridge_cm", 0.006), "plate_band_blend_m": pbb}
     if not a.no_shirt_follow:
-        # G3h: the shirt under the straps takes their weights too (on its own, with her upper arms' share, it came 14-49 mm
-        # through the straps' fronts at her collarbone in every clip: poke.json's top_under_panels_tracked)
-        sfs = a.shirt_follow_straps
-        if sfs is None:
-            sfs = spec["build"].get("shirt_follow_straps", False)
         # G3i: a strap gives its weights only to the shirt directly under it, eased back over a short fade, never to
-        # the collar's band (G3h: the collar and the front between the straps took them whole, her neck came through)
-        keep = collar_band(top, bk.get("collar_keep_cm", 0.0)) if sfs else set()
-        rep["shirt_follow"] = shirt_follow(top, B, set() if sfs else strap_vs, bk.get("shirt_follow_fade_cm", 0.03),
+        # the collar's band (G3h: the collar and the front between the straps took them whole, her neck came through);
+        # G3m: over the band the shirt there takes her skin's weights at its own vertex (the cloth's are hers too),
+        # under it the garment's (the band's and the yoke's)
+        keep = collar_band(top, bk.get("collar_keep_cm", 0.0))
+        rep["shirt_follow"] = shirt_follow(top, B, set(), bk.get("shirt_follow_fade_cm", 0.03),
                                            near=bk.get("shirt_follow_near_cm", 0.015), low_z=bbz, low_skip=plate_vs,
-                                           strap_vs=strap_vs if sfs else frozenset(),
-                                           strap_reach=bk.get("strap_follow_reach_cm", 0.0),
-                                           strap_fade=bk.get("strap_follow_fade_cm", 0.0), keep=keep)
+                                           strap_vs=strap_vs, strap_reach=bk.get("strap_follow_reach_cm", 0.0),
+                                           strap_fade=bk.get("strap_follow_fade_cm", 0.0), keep=keep, w_above=skin)
+    # G3m's probe: per cloth vertex its weights against the shirt vertex under it (the nearest within 2.5 cm) and her
+    # skin's at it, as half the L1 distance (0 the same, 1 nothing shared)
+    tmw = top.matrix_world
+    tnames = {g.index: g.name for g in top.vertex_groups}
+    tco = [tmw @ v.co for v in top.data.vertices]
+    tw = [{tnames[g.group]: g.weight for g in v.groups if g.group in tnames and g.weight > 1e-4} for v in top.data.vertices]
+    tkd = KDTree(len(tco))
+    for i, c in enumerate(tco):
+        tkd.insert(c, i)
+    tkd.balance()
+
+    def stats(xs):
+        xs = sorted(xs)
+        return {"n": len(xs), "p50": round(xs[len(xs) // 2], 4), "p95": round(xs[int(0.95 * (len(xs) - 1))], 4),
+                "max": round(xs[-1], 4)} if xs else {"n": 0}
+    probe = {}
+    for name, vs in (("straps", strap_vs), ("bib", bib_vs), ("back_panel", back_vs)):
+        vs = [v for v in vs - hw_vs if v.co.z >= bbz + pbb]
+        d_sh, d_sk = [], []
+        for v in vs:
+            _c, i, dd = tkd.find(v.co)
+            if dd <= 0.025:
+                d_sh.append(tv(B.W[v], norm(tw[i])))
+            d_sk.append(tv(B.W[v], skin(v.co)))
+        probe[name] = {"vs_shirt": stats(d_sh), "vs_skin": stats(d_sk)}
+    rep["weight_probe"] = probe
+    print("DUNGAREES_PROBE " + json.dumps(probe))
+    if not a.no_shirt_follow:
         rep["shirt_trim"] = shirt_trim(top, bk.get("shirt_trim_z_cm", 0.0))   # then its new hem drawn in
         rep["shirt_hem"] = shirt_hem_in(top, bk.get("shirt_hem_in_cm", 0.0), bk.get("shirt_hem_h_cm", 0.015))
+    if not a.no_shirt_hide and bk.get("shirt_hide_cm", 0.0) > 0:
+        B.bm.verts.index_update()
+        allv = list(B.bm.verts)
+        idx = {v: i for i, v in enumerate(allv)}
+
+        def tree_of(pred):
+            fs = [f for f in B.bm.faces if pred(f)]
+            return BVHTree.FromPolygons([v.co for v in allv], [[idx[x] for x in f.verts] for f in fs])
+        core_plates = (bib_vs | back_vs) - hw_vs
+        rep["shirt_hide"] = shirt_hide(top, [
+            ("plates", tree_of(lambda f: f.material_index == 0 and all(x in core_plates and x.co.z > bbz + 0.01
+                                                                       for x in f.verts)),
+             int(spec["build"].get("shirt_hide_rings", 1))),
+            ("strap_cores", tree_of(lambda f: all(x in strap_core for x in f.verts)), 0)], bk["shirt_hide_cm"])
     for f in B.bm.faces:   # G3f: every cloth face smooth, the rims kept sharp by angle (flat faces striped the curves)
         f.smooth = f.material_index != 2
     me = bpy.data.meshes.new("garment")

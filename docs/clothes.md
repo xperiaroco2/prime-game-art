@@ -1003,20 +1003,18 @@ tools/run.sh gate2 --spec specs/dungarees_dims.toml --body <undressed probe.json
   their front tops above the bib, 5 mm: on Chest their back tops stood 27-51 mm off her upper back by the neck (G3i,
   a flap seen from the front). It replaced the "strap backs on the back panel" join: since G3h the straps' back rows
   ride Chest and end over the panel's corners without lying on it, so no strap vertex was within the join's reach.
-  Over her shoulder the straps take her skin's weights per vertex (`[build] strap_skin_z_cm`, without her Neck and
-  Head, `strap_skin_drop`), eased back to Chest down both runs (`strap_skin_blend_cm`), so strap, the shirt under it
-  and her skin move together there.
+  Since G3m the back panel and the bib's sides (`bib_sides`, |x| 8-11.5 cm) are judged the same way, 5 mm (the
+  manager's spec change of 2026-11-01, listed for the engineer to reverse): on her skin's weights they are no longer
+  rigid plates, so the back panel lost its flat 3 mm and its own 2 % stretch for 5 % beyond her skin; the bib keeps
+  its flatness 3 mm (no folds) and its 2 %, judged beyond her skin.
 - **Off another part (G3l):** a lift entry with `on = "<part>"` (and `reach_mm`, default 25) ties the part's vertices
   to the nearest face of that garment part at the garment's rest (where the build lays it on that part) instead of
   her skin, and judges the size of its change since that rest either way (off it or sunk under it), not since the
   reference clip; its row reads "lift off the
   <part>" and its key in `motion.json` is `"<part> on <part>"` (`garment_gate2_geom.lift_key`). The dungarees judge
   the straps' back ends (`strap_ends`, over the back panel's corners) off the panel's top (`back_top`), 5 mm: with
-  the ends on Chest and the panel on Spine they hovered 16-22 mm off it in the runs (G3k). `[build]
-  strap_skin_whole` picks the skin the straps' shoulder weights come from (her whole skin with `body_removed`, or her
-  kept skin alone); `back_corner_chest` and `back_corner_fade_cm` are the sliding join: the panel's top takes that
-  share of the bib's weights (Chest), eased in over the fade under its corners (0: the whole panel, one blend), and
-  the straps' back ends over it take the panel's weights at their height.
+  the ends on Chest and the panel on Spine they hovered 16-22 mm off it in the runs (G3k); G3l's knobs for it (the
+  whole skin switch, the sliding join) went with G3m's skin weights, which put ends and panel on the same weights.
 - **The shirt (G3e):** `[gate2.shirt] max_count` judges `poke.json`'s `top_under_panels` per clip: the shirt is a
   layer the garment must cover, like her body (d10: up to 9 shirt vertices out through the band and the bib in
   Idle, 42 in Jump_Start, 35 mm deep: the band's pale stripes). The row's name carries the tracked count beside it.
@@ -1116,6 +1114,24 @@ blender.run_script("dungarees_build.py", ["--spec", "specs/dungarees_dims.toml",
   Gate 2 now judges that tracked count too (`[gate2.shirt] tracked_max_count`): the nearest-face count read 0 while
   the straps' fronts were cut through. `strap_inner_mm` (0.5) sets the strap's inner face off the shirt; 1.5 mm (v2)
   only added a millimetre to the same tracked depths.
+- **Her skin's weights everywhere (G3m, the manager's route review of 2026-11-01):** G3h-G3l gave each piece a
+  hand-picked bone (the bib Chest, the back panel Spine, the straps Chest eased to her skin over 2 cm); wherever that
+  bone differed from her skin under it the difference became stretch (a short blend), lift or hover (no blend), or the
+  shirt through (a layer that does not track): five steps traded one Gate 2 failure for another, and G3l's best build
+  hid the straps' back runs under the shirt while its back panel stood 52-68 mm off her upper back. Now every bib,
+  pocket, back panel and strap vertex takes her skin's weights under it (`[build] skin_k` 6 nearest points of her
+  whole skin with `body_removed`, by inverse distance, without `skin_drop`: Neck, Head, Jaw, Eye, Gill), level with
+  the band the band's (a rigid ring on Spine), eased to her skin's over `plate_band_blend_cm`; then `skin_smooth`
+  passes along the cloth's edges and across to cloth within `skin_bridge_cm` (a strap on the bib, a slab's two
+  faces), so straps, bib and back panel move as one strip; `bib_smooth` passes more on the bib alone (its flatness).
+  The buckles and rings are rigid on the smoothed cloth under their centres. Over the band the shirt the cloth covers
+  takes her skin's weights at its own vertex (under the band the garment's, as before); its faces under the plates
+  (one ring in) and under the straps' central 1.9 cm go (`shirt_hide_cm`: five rays all meet them within 2 cm). The
+  build prints `DUNGAREES_PROBE` (and `build.json`'s `weight_probe`): per strap, bib and back panel vertex its
+  weights against the shirt vertex under it and her skin's at it, as half the L1 distance. Removed with the route:
+  `--panel-bone`, `--strap-sh-share`, `--strap-top-cm`, `--back-band-share` and `[build]` `seam_blend_cm`,
+  `back_band_share`, `strap_back_on_chest`, `shirt_follow_straps`, `strap_top_cm`, `strap_top_back_cm`,
+  `strap_skin_*`, `strap_back_join_cm`, `back_corner_*`; the sections above keep their history.
 - **The build's own numbers** (`[build]` in the spec, not sizes a gate measures): the seam blend, the band's ease
   off the shirt, her front's and back's half widths the plates are laid on (11 and 12 cm; `garment_drawing`'s gaps
   read the same), the straps' ray origin, the turn-up's wall, the buckle ring's sizes. A vertex the build leaves
