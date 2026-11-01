@@ -542,6 +542,9 @@ def main() -> None:
                          "skin_smooth)")
     ap.add_argument("--bib-smooth", type=int, default=None,
                     help="G3m: further passes on the bib alone (default the spec's [build] bib_smooth)")
+    ap.add_argument("--plate-band-blend", type=float, default=None,
+                    help="G3n: cm over the band's top the plates ease from the band's weights to her skin's (default "
+                         "the spec's plate_band_blend_cm)")
     ap.add_argument("--skin-drop", default=None,
                     help="G3m: bones (name parts, comma-separated) her skin's weights lose (default the spec's skin_drop)")
     ap.add_argument("--no-shirt-hide", action="store_true",
@@ -774,7 +777,7 @@ def main() -> None:
         rows[0] = [(p + Vector((0, 0, 0.0002)), q + Vector((0, 0, 0.0002))) for p, q in rows[0]]
     # G3m: the plates take her skin's weights; level with the band and over plate_band_blend_cm above it the band's,
     # eased (the band is a rigid ring on --band-bone: a plate on her skin's Hips/Spine there would pass through it)
-    pbb = bk.get("plate_band_blend_cm", 0.03)
+    pbb = a.plate_band_blend / 100 if a.plate_band_blend is not None else bk.get("plate_band_blend_cm", 0.03)
 
     def plate_w(p):
         ws = skin(p)
@@ -1080,8 +1083,10 @@ def main() -> None:
                                            near=bk.get("shirt_follow_near_cm", 0.015), low_z=bbz, low_skip=plate_vs,
                                            strap_vs=strap_vs, strap_reach=bk.get("strap_follow_reach_cm", 0.0),
                                            strap_fade=bk.get("strap_follow_fade_cm", 0.0), keep=keep)
-    # G3m's probe: per cloth vertex its weights against the shirt vertex under it (the nearest within 2.5 cm) and her
-    # skin's at it, as half the L1 distance (0 the same, 1 nothing shared)
+    # G3m's probe: per cloth vertex its weights against the shirt under it and her skin's at it, as half the L1
+    # distance (0 the same, 1 nothing shared). G3n: the shirt under it is the shirt surface's nearest point within
+    # 1.5 cm, its face's weights by barycentric weights (G3m took the nearest shirt vertex within 2.5 cm: on the coarse
+    # shirt that was often a vertex beside the strap or the panel's corner, not under it, 0.26-0.29 off)
     tmw = top.matrix_world
     tnames = {g.index: g.name for g in top.vertex_groups}
     tco = [tmw @ v.co for v in top.data.vertices]
@@ -1090,6 +1095,19 @@ def main() -> None:
     for i, c in enumerate(tco):
         tkd.insert(c, i)
     tkd.balance()
+    from mathutils.interpolate import poly_3d_calc
+    tpolys = [list(p.vertices) for p in top.data.polygons]
+    ttree = BVHTree.FromPolygons(tco, tpolys)
+
+    def shirt_w_at(q):
+        loc, _n, fi, _d = ttree.find_nearest(q, 0.015)
+        if loc is None:
+            return None
+        acc = {}
+        for k, bw in zip(tpolys[fi], poly_3d_calc([tco[k] for k in tpolys[fi]], loc)):
+            for g, val in tw[k].items():
+                acc[g] = acc.get(g, 0.0) + bw * val
+        return norm(acc)
 
     def stats(xs):
         xs = sorted(xs)
@@ -1100,9 +1118,9 @@ def main() -> None:
         vs = [v for v in vs - hw_vs if v.co.z >= bbz + pbb]
         d_sh, d_sk = [], []
         for v in vs:
-            _c, i, dd = tkd.find(v.co)
-            if dd <= 0.025:
-                d_sh.append(tv(B.W[v], norm(tw[i])))
+            ws = shirt_w_at(v.co)
+            if ws is not None:
+                d_sh.append(tv(B.W[v], ws))
             d_sk.append(tv(B.W[v], skin(v.co)))
         probe[name] = {"vs_shirt": stats(d_sh), "vs_skin": stats(d_sk)}
     rep["weight_probe"] = probe
