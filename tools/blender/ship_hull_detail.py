@@ -380,8 +380,8 @@ def pod_ring(args: dict, layout: dict) -> list:
     """A pod's lights (local frame as nozzle_pod; glow_pod: a ring you see, not a lamp): the band in the bell
     housing's groove, the strip between two trim lips on the barrel (n1), and nb's old nozzle look: the rim (a light
     annulus on the housing's rear face), ten light segments with gaps in the bell's lip groove, one ring on the
-    throat's wall 0.3 m below the shell's end, and the small glowing dot on its floor (ext_glow_cyan_dim). All emissive in their materials, so they glow with the ship's
-    run-time lights off (the lobby); glow_pod's light (l 0.15) washes the throat teal in the ship's own night."""
+    throat's wall 0.3 m below the shell's end, and the small glowing dot on its floor (ext_glow_cyan_dim). All
+    emissive in their materials, so they glow with the ship's run-time lights off (the lobby); glow_pod's light (l 0.15) washes the throat teal in the ship's own night."""
     r, ln = float(args.get("r", 1.05)), float(args.get("length", 3.6))
     lp = ln + LIP
 

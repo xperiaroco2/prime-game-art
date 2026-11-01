@@ -16,7 +16,7 @@ the raw folder until approved.
 | `levels/ship/ship.tscn` | the level: `Ship` > `Pieces`, `Environment`, `Lights`, `Probes`, `Clearing` (`Pieces`, `Lights`, `Ground`), `Nose` (the jaw and its `AnimationPlayer`), `Stations`, `Markers` |
 | `package.json` | every file with SHA-256 and bytes, the spots, the spawn, the questions |
 
-204 files, 11.9 MB. Copy only the files `package.json` lists: the export folder also holds the art check's own
+205 files, 13.5 MB. Copy only the files `package.json` lists: the export folder also holds the art check's own
 `_check/`, `project.godot`, `lib/`, `.godot/` and the `.uid` files Godot writes, none of them for the game. No GDScript: the look the art sets by code is saved in the scene as
 overrides inside the pieces' instances (each piece an editable instance, 11.2's rule).
 

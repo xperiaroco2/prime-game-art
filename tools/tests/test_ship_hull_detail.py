@@ -416,6 +416,8 @@ class ShipHullDetailTest(unittest.TestCase):
             for gone in ("pod_vanes", "pod_vane_edges", "pod_spinner", "pod_spinner_band", "pod_hub", "pod_steps",
                          "pod_rings", "pod_glow_hot", "pod_glow_deep"):
                 self.assertNotIn(gone, parts)
+            # the barrel's dark collar keeps its own ring (1.04 r)
+            self.assertGreater(max(math.hypot(x, z) for x, _y, z in parts["pod_collar"]["verts"]), r)
             self.assertFalse([p for p in parts.values() if p["mat"].startswith(("ext_blade", "glow_pod_"))])
             inside = ("pod_throat", "pod_inner_ring", "pod_dot")
             for name, p in parts.items():
