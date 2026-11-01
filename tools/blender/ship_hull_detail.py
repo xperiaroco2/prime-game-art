@@ -267,7 +267,7 @@ def _stringer(r, a, y0, y1, w=0.07, top=1.028):
 
 
 # n3: the stator blades' aerofoil (chord c 0..1 from the leading edge, thickness s x th): a round bevelled leading edge
-# (its three faces the rim-lit edge, ext_blade_edge), a fat front third, a thin trailing edge
+# (its two faces the rim-lit edge, ext_blade_edge), a fat front third, a thin trailing edge
 FOIL = [(0.0, 0.0), (0.035, 0.36), (0.12, 0.5), (0.35, 0.47), (0.7, 0.28), (1.0, 0.07),
         (1.0, -0.07), (0.7, -0.24), (0.35, -0.4), (0.12, -0.44), (0.035, -0.32)]
 FOIL_EDGE = (10, 0)   # faces starting at these loop indices: the leading edge's bevel (both sides of its nose)
@@ -398,7 +398,7 @@ def nozzle_pod(args: dict, layout: dict) -> list:
     # n3: the spinner in depth (collar, groove, chrome band, two-tone cone); the stator blades real aerofoils, twisted
     # 46 deg at the hub to 30 at the wall, bevelled leading edge rim-lit by the glow (n2's flat plates read as a fan
     # icon's cut-outs on the teal disc)
-    collar, sband, cone = _spinner(r, fl)
+    hub_collar, sband, cone = _spinner(r, fl)
     blades = [_blade(360.0 * k / 12 + 15.0, 0.19 * r, 0.57 * r, fl + 0.035, (0.2 * r, 0.31 * r), (46.0, 30.0),
                      (0.055 * r, 0.03 * r)) for k in range(12)]
     smooth = {"pod_mount": 40.0, "pod_collar": 40.0, "pod_housing": 40.0, "pod_bell": 40.0,
@@ -409,7 +409,7 @@ def nozzle_pod(args: dict, layout: dict) -> list:
              L.part("pod_housing", *housing, "ext_silver_c"), L.part("pod_bell", *bell, "ext_frame"),
              L.part("pod_throat", *throat, "ext_nozzle_inner", solid=False),
              L.part("pod_steps", *steps, "ext_frame", solid=False),
-             L.part("pod_hub", *collar, "ext_frame"), L.part("pod_spinner_band", *sband, "ext_chrome"),
+             L.part("pod_hub", *hub_collar, "ext_frame"), L.part("pod_spinner_band", *sband, "ext_chrome"),
              L.part("pod_spinner", *cone, "ext_blade"),
              L.part("pod_vanes", *L.merge(*[b["body"] for b in blades]), "ext_blade"),
              L.part("pod_vane_edges", *L.merge(*[b["edge"] for b in blades]), "ext_blade_edge", solid=False)]
@@ -573,7 +573,7 @@ def _chine_strip(a, b, w, o0, o1, level):
     """A box on the slanted bottom along plan segment a-b at height `level`: across the line up the slope (w wide),
     from o0 to o1 along the face's outward normal. None where the face slants under CHINE[1] or near the jaw."""
     mx, my = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
-    if mx < CHINE[2] and my < CHINE[3]:
+    if abs(mx) < CHINE[2] and my < CHINE[3]:
         return None
     e = 0.04
     hx0, hx1, hy0, hy1 = _bottom(mx - e, my), _bottom(mx + e, my), _bottom(mx, my - e), _bottom(mx, my + e)

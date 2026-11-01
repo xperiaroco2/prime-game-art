@@ -378,6 +378,12 @@ class ShipHullDetailTest(unittest.TestCase):
             for x, y, h in v:
                 self.assertLess(abs(h - D.CHINE[0]), 0.08, (x, y, h))
                 self.assertFalse(abs(x) < D.CHINE[2] - 0.2 and y < D.CHINE[3] - 0.2, (x, y))
+            # mirrored: as many vertices ahead of the jaw's line on the west as on the east (a signed x once dropped
+            # every west segment there)
+            east = sum(1 for x, y, _h in v if x > 0 and y < D.CHINE[3])
+            west = sum(1 for x, y, _h in v if x < 0 and y < D.CHINE[3])
+            self.assertGreater(east, 0)
+            self.assertEqual(east, west)
         seen = total = 0
         v, f = cg
         for face in f:
@@ -403,6 +409,11 @@ class ShipHullDetailTest(unittest.TestCase):
         rim-lit leading edge in ext_blade_edge, the spinner in three parts; all inside the throat's wall."""
         args = {"r": 1.05, "length": 3.6}
         parts = {p["name"]: p for p in D.nozzle_pod(args, LAYOUT)}
+        # the barrel's dark collar keeps its own ring (1.04 r), not the spinner's small collar (pod_hub)
+        def reach(name):
+            return max(math.hypot(x, z) for x, _y, z in parts[name]["verts"])
+        self.assertGreater(reach("pod_collar"), args["r"])
+        self.assertLess(reach("pod_hub"), 0.5 * args["r"])
         for name, mat in (("pod_vanes", "ext_blade"), ("pod_vane_edges", "ext_blade_edge"),
                           ("pod_spinner", "ext_blade"), ("pod_spinner_band", "ext_chrome"), ("pod_hub", "ext_frame")):
             self.assertEqual(parts[name]["mat"], mat)
