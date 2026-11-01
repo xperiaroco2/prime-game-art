@@ -378,8 +378,9 @@ feet = "fail"
 facing = "fail"
 max_materials = 1
 # The run fist (art #196 H1j; the engineer's yes to option C): the body may carry one hand morph, a glTF morph target
-# that presses the loose grip's fingers into one rounded fist. Its weight is keyed in every clip: 1 in the clips
-# matching hand_morph_on (the run: the loose grip), 0 in all others, so a blend between clips blends it too.
+# that closes the run grip's (`runfist`) bone-curled fist into one rounded mass (the contact route). Its weight is keyed
+# in every clip: 1 in the clips matching hand_morph_on (the run: the `runfist` grip), 0 in all others, so a blend
+# between clips blends it too.
 hand_morph = "fist"
 hand_morph_on = ["Jog_*", "Sprint_*", "Strafe_*"]
 

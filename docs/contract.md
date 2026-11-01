@@ -149,8 +149,9 @@ decision of the engineer. For the alien this replaces "No extra bones" and the 1
   not, in practice, enforced on the alien's body. r5 measured the chameleon's top at 1.884 m and the axolotl's at
   1.759 m.
 - The run fist (art #196 H1j; the engineer's yes to option C, 2026-10-31): the alien body may carry one hand morph,
-  `[kinds.alien]` `hand_morph = "fist"`, a glTF morph target on the body mesh that presses the loose grip's folded
-  fingers into one rounded fist (gaps and the "@" hole closed, the thumb over the fingers). Every clip keys its
+  `[kinds.alien]` `hand_morph = "fist"`, a glTF morph target on the body mesh that closes the run grip's
+  (`runfist`) bone-curled fist into one rounded mass (the contact route: the gaps between touching digits closed;
+  the thumb laid across the index's curl by the grip itself). Every clip keys its
   weight: 1 in the clips matching `hand_morph_on` (`Jog_*`, `Sprint_*`, `Strafe_*`, Godot names), 0 in every other
   clip, so a blend between a walk and a run blends the morph with the grip. It is the body's only morph (faces are the
   head's, above). `godot-check --profile alien` checks it (`hand_morph`, `hand_morph_keyed`): one mesh carries
