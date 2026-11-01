@@ -18,7 +18,8 @@ class Flight(unittest.TestCase):
         self.assertEqual(C.floated("Crouch_Fwd_Loop", CROUCH_SHOES, CROUCH_BARE),
                          sum(g > 5 for g in CROUCH_SHOES))
         self.assertGreater(C.floated("Crouch_Fwd_Loop", CROUCH_SHOES, CROUCH_BARE), 10)
-        self.assertGreater(C.floated("Crouch_Run__s4b_Loop", CROUCH_SHOES, CROUCH_BARE), 10)
+        # B1i: the crouch run can fly, so its frames with the bare body up are flight, not a float
+        self.assertEqual(C.floated("Crouch_Run__s4b_Loop", CROUCH_SHOES, CROUCH_BARE), 0)
 
     def test_a_run_keeps_its_flight(self):
         shoes, bare = [0, 0, 40, 120, 60, 0], [0, 1, 45, 130, 70, 2]
@@ -26,9 +27,10 @@ class Flight(unittest.TestCase):
         self.assertEqual(C.floated("Jog_Fwd_Loop", [0, 9, 40, 120, 60, 0], bare), 1)  # frame 1: the bare body down
 
     def test_the_gaits(self):
-        for clip in ("Walk_Loop", "Crouch_Idle_Loop", "Crouch_Run_Loop", "Idle_Loop", "Talk_Upper_Loop"):
+        for clip in ("Walk_Loop", "Crouch_Idle_Loop", "Crouch_Fwd_Loop", "Idle_Loop", "Talk_Upper_Loop"):
             self.assertFalse(C.can_fly(clip), clip)
-        for clip in ("Jog_Fwd_Loop", "Sprint_Fwd_Loop", "Strafe_Left__w03_Loop", "Jump_Land", "Jog_Bwd__p2_Loop"):
+        for clip in ("Jog_Fwd_Loop", "Sprint_Fwd_Loop", "Strafe_Left__w03_Loop", "Jump_Land", "Jog_Bwd__p2_Loop",
+                     "Crouch_Run_Loop", "Crouch_Run__s4b_Loop"):
             self.assertTrue(C.can_fly(clip), clip)
         with self.assertRaises(ValueError):
             C.floated("Walk_Loop", [0.0], [0.0, 0.0])
