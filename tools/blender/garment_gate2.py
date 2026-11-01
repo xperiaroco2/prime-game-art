@@ -337,7 +337,10 @@ def motion_rows(spec, motion: dict, poke: dict | None) -> list[dict]:
         m = (motion.get("clips") or {}).get(clip)
         for j in g2["joins"]:
             v = None if m is None else m["slip_mm"].get(j["name"])
-            rows.append({"clip": clip, "check": f"slip: {j['name']}", "value": v, "unit": "mm", "tol": j["tol_mm"],
+            what = f"slip: {j['name']}"
+            if j.get("frame") == "local":   # G3n: on the tied face's own frame; the one-fit value beside it
+                what += f" (on its face's frame; one fit {None if m is None else (m.get('slip_rigid_mm') or {}).get(j['name'])})"
+            rows.append({"clip": clip, "check": what, "value": v, "unit": "mm", "tol": j["tol_mm"],
                          "pass": G.verdict(v, j["tol_mm"])})
         for lp in g2.get("laps", []):   # G3f: a plate over the band may slide on it, hidden: the overlap kept
             n = lp["name"]

@@ -66,6 +66,35 @@ def slip(co0: "np.ndarray", co: "np.ndarray", pairs, r: "np.ndarray") -> float:
     return most
 
 
+def _tri_frame(p0, p1, p2):
+    """An orthonormal frame (rows: along the first edge, across it in the plane, the normal) of a triangle."""
+    import numpy as np
+    e1 = p1 - p0
+    e1 = e1 / max(float(np.linalg.norm(e1)), 1e-12)
+    n = np.cross(e1, p2 - p0)
+    n = n / max(float(np.linalg.norm(n)), 1e-12)
+    return np.stack([e1, np.cross(n, e1), n])
+
+
+def slip_local(co0: "np.ndarray", co: "np.ndarray", pairs) -> float:
+    """G3n: the largest slide of a moving vertex on a part that bends: as slip(), but its offset from the tied point
+    is turned back by the tied face's own rotation (its triangle's frame then and now), not the part's one best fit.
+    On her skin's weights the bib bends with her trunk (a rigid fit leaves 15-61 mm), so one rotation for the whole bib
+    turned a strap point riding its face by a wrong angle and read millimetres of slip that are not there (m)."""
+    import numpy as np
+    most = 0.0
+    for i, ids, w in pairs:
+        if len(ids) < 3:
+            continue
+        p0 = sum(wk * co0[k] for k, wk in zip(ids, w))
+        p1 = sum(wk * co[k] for k, wk in zip(ids, w))
+        f0 = _tri_frame(*(co0[k] for k in ids[:3]))
+        f1 = _tri_frame(*(co[k] for k in ids[:3]))
+        d = f1 @ (co[i] - p1) - f0 @ (co0[i] - p0)
+        most = max(most, float(np.linalg.norm(d)))
+    return most
+
+
 def concept_ratio(bib_top: float, shoulder: float, band: float) -> float:
     """The bib top's height as a share of the band-to-shoulder span (0 at the waistband's line, 1 at the shoulders'
     top): the measure taken on the concept's front view and on the build alike."""

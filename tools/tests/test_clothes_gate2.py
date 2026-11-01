@@ -598,6 +598,27 @@ class G3eSkinShirtTest(unittest.TestCase):
         self.assertEqual(G.skin_excess(rest, now, rest, rest, [], where=True), (None, None, None))
 
     @unittest.skipUnless(HAVE_NUMPY, "numpy (Blender's Python has it)")
+    def test_slip_on_a_bending_part_is_judged_on_its_face(self):
+        """G3n: a point 6 mm over one face of a part that bends (half of it turned 30 degrees) rides it: no slip on its
+        face's frame, while the part's one best fit reads millimetres."""
+        import math as _m
+        import numpy as np
+        import clothes_bibmove_geom as BG
+        a = _m.radians(30)
+        flat = [(0.0, 0.0, 0.0), (0.1, 0.0, 0.0), (0.1, 0.0, 0.1), (0.2, 0.0, 0.0), (0.2, 0.0, 0.1), (0.0, 0.0, 0.1)]
+        turn = lambda p: (0.1 + (p[0] - 0.1) * _m.cos(a) - p[1] * _m.sin(a), (p[0] - 0.1) * _m.sin(a) + p[1] * _m.cos(a), p[2])
+        ref = np.array(flat + [(0.15, -0.006, 0.03)])
+        now = np.array(flat[:3] + [turn(p) for p in flat[3:5]] + [flat[5], turn((0.15, -0.006, 0.03))])
+        tri = [1, 3, 4]
+        w = [0.5, 0.3, 0.2]
+        p0 = sum(wk * ref[k] for k, wk in zip(tri, w))
+        pairs = [(6, tri, w)]
+        self.assertLess(BG.slip_local(ref, now, pairs), 1e-9)
+        r = BG.rigid_fit(ref[:6], now[:6])[0]
+        self.assertGreater(BG.slip(ref, now, pairs, r), 0.001)
+        self.assertGreater(np.linalg.norm(ref[6] - p0), 0)
+
+    @unittest.skipUnless(HAVE_NUMPY, "numpy (Blender's Python has it)")
     def test_folds_are_off_a_smooth_fit_not_a_rigid_one(self):
         """G3n: a bib bending with her trunk (a smooth bend, here a parabola of 4 cm over its height) is no fold; a
         local bump 5 mm high and 3 cm wide is, and reads near its height."""

@@ -16,6 +16,9 @@ the spec's [gate2] section, resolved on the build's measures) and reads the resu
   measures folds instead: the largest distance from a smooth fit of the part's own motion (a polynomial of degree deg,
   default 3, garment_gate2_geom.smooth_residual), so the part may bend with her trunk but not crease; the rigid
   value is kept beside it (flat_rigid_mm).
+- A join with frame = "local" (G3n) turns each tied offset back by its face's own frame
+  (clothes_bibmove_geom.slip_local), not the part's one best fit: a bib that bends with her trunk; the one-fit value
+  is kept beside it (slip_rigid_mm).
 - Where (G3n): per vs_skin stretch the largest edge beyond her skin in the frame of the clip's worst p95 (its rest
   midpoint, cm, the frame and its %), stretch_at.
 - Stretch: the part's edges' |length / rest - 1|, the largest and the 95th percentile, %. A stretch entry with
@@ -241,7 +244,7 @@ def main() -> int:
         f0, f1 = (int(round(x)) for x in act.frame_range)
         res = {"frames": 0, "slip_mm": {}, "flat_mm": {}, "stretch_pct": {}, "stretch_p95_pct": {},
                "skin_excess_pct": {}, "skin_excess_p95_pct": {}, "lap_mm": {}, "lap_through_mm": {}, "lap_gap_mm": {},
-               "lift_mm": {}, "lift_at": {}, "flat_rigid_mm": {}, "stretch_at": {}}
+               "lift_mm": {}, "lift_at": {}, "flat_rigid_mm": {}, "stretch_at": {}, "slip_rigid_mm": {}}
         sc.frame_set(f0)
         sref0 = None
         for f in range(f0, max(f0 + 1, f1 + 1), max(1, cfg.get("every", 1))):
@@ -256,6 +259,10 @@ def main() -> int:
             for j in cfg["joins"]:
                 pairs, fit = ties[j["name"]], fits.get(j["on"])
                 v = 1000 * B.slip(ref, co, pairs, fit[0]) if pairs and fit else None
+                if j.get("frame") == "local" and pairs:   # G3n: on the tied face's own frame (a part that bends)
+                    old = res["slip_rigid_mm"].get(j["name"])
+                    res["slip_rigid_mm"][j["name"]] = v if old is None else max(old, v)
+                    v = 1000 * B.slip_local(ref, co, pairs)
                 old = res["slip_mm"].get(j["name"])
                 res["slip_mm"][j["name"]] = v if old is None else max(old, v)
             for name, L in laps.items():
@@ -327,7 +334,7 @@ def main() -> int:
                     old = res[key].get(st["part"])
                     res[key][st["part"]] = v if old is None else (old if v is None else max(old, v))
         for k in ("slip_mm", "flat_mm", "stretch_pct", "stretch_p95_pct", "skin_excess_pct", "skin_excess_p95_pct",
-                  "lap_mm", "lap_through_mm", "lap_gap_mm", "lift_mm", "flat_rigid_mm"):
+                  "lap_mm", "lap_through_mm", "lap_gap_mm", "lift_mm", "flat_rigid_mm", "slip_rigid_mm"):
             res[k] = {n: (None if v is None else round(v, 2)) for n, v in res[k].items()}
         rep["clips"][clip] = res
         say("clip", clip, json.dumps(res))

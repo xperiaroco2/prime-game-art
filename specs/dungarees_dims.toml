@@ -444,6 +444,9 @@ name = "strap fronts on the bib"
 moving = "strap_fronts"
 on = "bib"
 reach_mm = 25
+frame = "local"              # G3n (2026-11-01): the bib bends with her trunk, so each strap point's offset is turned back
+                             # by the bib face it rides, not one rigid fit of the whole bib (n1: 3.7-4.6 mm by the one
+                             # fit, which turns a point riding a bent face by the wrong angle); the one-fit value is reported
 tol_mm = 3.0                 # [behaviour] bib: the buckles ride on it, slip under 3 mm
 # G3j: no "strap backs on the back panel" join: since G3h the straps' back rows ride Chest whole and end over the
 # panel's corners without lying on it (G3h/G3i: 80 strap-back vertices at z 117.4-119.1 cm, none within 25 mm of the
