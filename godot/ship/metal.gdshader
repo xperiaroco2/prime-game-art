@@ -70,12 +70,15 @@ void fragment() {
 	n /= (n.x + n.y + n.z);
 	vec4 v = layer(wpos.zy) * n.x + layer(wpos.xz) * n.y + layer(wpos.xy) * n.z;
 	float big = noise(wpos.xz * 0.35 + wpos.y * 0.2);
-	vec3 col = base_color * (0.9 + 0.2 * big) * (1.0 + grain * (v.x - 0.5) * 0.18);
+	// polish n2: faces looking down (the belly) keep a third of the grain: its 1.3/m along-streak noise read as long
+	// stretched streaks over the belly's big flat plates
+	float gr = grain * mix(1.0, 0.35, smoothstep(0.5, 0.9, -wnrm.y));
+	vec3 col = base_color * (0.9 + 0.2 * big) * (1.0 + gr * (v.x - 0.5) * 0.18);
 	col = mix(col, col * 0.35, v.z * seams);
 	col = mix(col, col * 0.75, v.w * grime);
 	col = mix(col, vec3(0.85), v.y * scratches * 0.6);
 	ALBEDO = col;
 	METALLIC = metallic;
-	ROUGHNESS = clamp(roughness + grain * (v.x - 0.5) * 0.12 + 0.06 * (big - 0.5) + v.w * grime * 0.15
+	ROUGHNESS = clamp(roughness + gr * (v.x - 0.5) * 0.12 + 0.06 * (big - 0.5) + v.w * grime * 0.15
 		- v.y * scratches * 0.12 + v.z * seams * 0.2, 0.04, 1.0);
 }

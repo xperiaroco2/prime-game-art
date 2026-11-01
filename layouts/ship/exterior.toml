@@ -40,6 +40,7 @@ place = [
   ["tail_vents", [0.00, 0.00, 0.00], 0.0],
   ["hump_sensors", [0.00, 0.00, 0.00], 0.0],
   ["service_hatches", [0.00, 0.00, 0.00], 0.0],
+  ["belly_lights", [0.00, 0.00, 0.00], 0.0],   # polish n2: the underbody's light lines
   # light layer: the navigation lamps (port red on the west lens rim's forward facet, starboard green on the east's,
   # under the edge light; white on the tail's top centre) and a warm landing light under the belly by each leg
   # NAV SIDE (fix 2: off, "not needed yet"; uncomment with the pieces below and ship.toml's two "nav" lamp rows)
@@ -628,7 +629,7 @@ outside = true
 id = "leg_stern"
 builder = "leg"
 grounded = true                              # built at the real heights (not lifted: the raise)
-args = { top = 1.77, reach = 0.6 }   # the raise (was 1.17, 1.6)
+args = { top = 1.77, reach = 0.6, heavy = true }   # the raise (was 1.17, 1.6); n1: heavy, under the big bells
 collide = true
 outside = true
 
@@ -777,7 +778,7 @@ args = { part = "glow", side = -1.0 }
 [[pieces]]
 id = "nozzle_pod_outer"
 builder = "nozzle_pod"
-args = { r = 1.42, length = 4.665 }    # lens step 2: P's pods (ship_hull_shape.p_pods), 2.84 m across
+args = { r = 1.42, length = 4.665, mount = 2.5 }    # n1: mount (the fairing out of the hull, local y); lens step 2: P's pods (ship_hull_shape.p_pods), 2.84 m across
 outside = true                               # the pods stick out of the stern (turnaround back, side, top)
 
 [[pieces]]
@@ -789,7 +790,8 @@ outside = true
 [[pieces]]
 id = "nozzle_pod_mid"
 builder = "nozzle_pod"
-args = { r = 1.62, length = 4.965 }    # 3.24 m across
+args = { r = 1.62, length = 4.965, mount = 3.15, bridges = [[-3.0, -0.55, 1.42], [3.0, -0.55, 1.42]], bridge_y = [2.1, 4.9] }   # n3: the beams run on over the housings' 2.5 cm gap to the outer bells' lips (it read as a cut in st_eye)
+# n1: the middle pod carries the shared housings (bridges) over its contact with each outer pod; 3.24 m across
 outside = true                               # the pods stick out of the stern (turnaround back, side, top)
 
 [[pieces]]
@@ -989,6 +991,10 @@ builder = "edge_light"
 id = "nav_white"
 builder = "nav_lamp"
 args = { colour = "white", mount = "top" }
+
+[[pieces]]
+id = "belly_lights"                          # polish n2: cyan light lines under the belly, the corridors and the lenses
+builder = "belly_lights"
 
 [[pieces]]
 id = "landing_lamp"                          # light layer: the warm landing lights under the belly

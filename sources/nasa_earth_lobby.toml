@@ -1,0 +1,23 @@
+id = "nasa_earth_lobby"
+title = "NASA Earth maps for the lobby window: Black Marble 2016 (Earth at Night), Blue Marble Next Generation (December 2004, topography and bathymetry), Blue Marble clouds"
+author = "NASA (Earth Observatory, Goddard Space Flight Center: Black Marble 2016 by Joshua Stevens and Miguel Roman from Suomi NPP VIIRS data; Blue Marble by Reto Stockli)"
+url = "https://science.nasa.gov/earth/earth-observatory/earth-at-night/maps"
+licence = "NASA-PD"
+licence_url = "https://www.nasa.gov/nasa-brand-center/images-and-media/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-30
+credit = "Earth imagery: NASA"
+notes = """Downloaded 2026-10-30 for the lobby hall's window (art #356, step 3b) under the engineer's yes of the same day on art #356 adding US government public-domain imagery from NASA to the allowlist (docs/decisions/2026-10-30-nasa-public-domain.md): credit "Earth imagery: NASA", no NASA logos or insignia, no implied endorsement. Fetched from NASA's own image server eoimages.gsfc.nasa.gov (the files behind the Visible Earth / Earth Observatory pages, now redirected to science.nasa.gov): BlackMarble_2016_3km.jpg (13500 x 6750, Visible Earth record 144898, https://eoimages.gsfc.nasa.gov/images/imagerecords/144000/144898/BlackMarble_2016_3km.jpg), world.topo.bathy.200412.3x5400x2700.jpg (5400 x 2700, record 73909, https://eoimages.gsfc.nasa.gov/images/imagerecords/73000/73909/world.topo.bathy.200412.3x5400x2700.jpg) and cloud_combined_8192.tif (8192 x 4096, record 57747, https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57747/cloud_combined_8192.tif). None is marked as a third party's work. `lobby --earth-tex` scales them to 4096 x 2048 JPEGs in lobby/hall/v5/earth/ (the sources are only read). Step 5a4 (2026-10-31): the same command also cuts the [earth.cap] box (lat -8..82, lon -48..72) from the night map and the clouds at their full resolution into earth_night_cap.jpg (4096 x 3072) and earth_clouds_cap.jpg (2730 x 2048) in lobby/hall/v11/earth/; no new download."""
+
+[[raw]]
+file = "lobby/hall/earth-src/BlackMarble_2016_3km.jpg"
+sha256 = "230aac448ae68c358be433dd518888cccb3a85ccf66f7b44326441c324ad6725"
+
+[[raw]]
+file = "lobby/hall/earth-src/world.topo.bathy.200412.3x5400x2700.jpg"
+sha256 = "a9f0088972dee0254610af851c4d6838ca3f2cf79176987e0a5713e2c15ec042"
+
+[[raw]]
+file = "lobby/hall/earth-src/cloud_combined_8192.tif"
+sha256 = "d137775d8966ab8d443fd5126dc6e7ad72072bc1ed50555c5818d221735daf0f"

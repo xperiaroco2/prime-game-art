@@ -200,3 +200,11 @@ sources = [
 ]
 tests = ["test_clothes_texture_*", "test_clothes_strap*", "test_clothes_shell*", "test_sneaker_geom*", "test_clothes_spec*",
          "test_clothes_gate2*", "test_clothes_bibmove*"]
+
+[area.lobby]
+sources = [
+  "layouts/lobby/*", "tools/runner/lobby_*.py", "tools/runner/commands/lobby.py", "tools/runner/commands/_lobby_export.py",
+  "tools/blender/lobby_*",
+  "godot/lobby/*",  # the lobby hall (#356); test_lobby_layout.py is fast and always runs
+]
+tests = ["test_lobby_*"]
