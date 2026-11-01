@@ -166,7 +166,8 @@ def main() -> int:
                             "centre": ref[band].mean(0)}
         rep["parts"]["lap: " + lp["name"]] = {"band_top": len(top), "edge": len(edge), "level": len(level)}
     # her skin under the parts judged against it (vs_skin): each vertex's nearest skin point at the reference
-    skin_parts = [st["part"] for st in cfg["stretch"] if st.get("vs_skin")]
+    skin_parts = list(dict.fromkeys([st["part"] for st in cfg["stretch"] if st.get("vs_skin")] +
+                                    [lf["part"] for lf in cfg.get("lifts", [])]))   # G3j: and the lifts' parts
     skin_objs = [bpy.data.objects[n] for n in cfg.get("skin", []) if n in bpy.data.objects] if skin_parts else []
     for o in skin_objs:
         o.hide_viewport = False
@@ -207,7 +208,8 @@ def main() -> int:
         arm.animation_data.action = act
         f0, f1 = (int(round(x)) for x in act.frame_range)
         res = {"frames": 0, "slip_mm": {}, "flat_mm": {}, "stretch_pct": {}, "stretch_p95_pct": {},
-               "skin_excess_pct": {}, "skin_excess_p95_pct": {}, "lap_mm": {}, "lap_through_mm": {}, "lap_gap_mm": {}}
+               "skin_excess_pct": {}, "skin_excess_p95_pct": {}, "lap_mm": {}, "lap_through_mm": {}, "lap_gap_mm": {},
+               "lift_mm": {}, "lift_at": {}}
         sc.frame_set(f0)
         sref0 = None
         for f in range(f0, max(f0 + 1, f1 + 1), max(1, cfg.get("every", 1))):
@@ -257,6 +259,14 @@ def main() -> int:
                 sco = np.concatenate([world(o) for o in skin_objs])
                 if sref0 is None:   # her skin at the reference (the reference clip's first frame, else this frame)
                     sref0 = sref
+            for lf in cfg.get("lifts", []):   # G3j: a part off her skin under it since the reference (the flap)
+                tie = skin_tie.get(lf["part"])
+                v, at = G.skin_lift(ref, co, sref0, sco, tie, where=True) if tie else (None, None)
+                v = None if v is None else 1000 * v
+                old = res["lift_mm"].get(lf["part"])
+                if v is not None and (old is None or v > old):   # where: its reference point (cm) and the frame
+                    res["lift_at"][lf["part"]] = [round(100 * float(x), 1) for x in ref[at]] + [f]
+                res["lift_mm"][lf["part"]] = v if old is None else (old if v is None else max(old, v))
             for st in cfg["stretch"]:
                 if st.get("vs_skin") and skin_tie.get(st["part"]):
                     tie = skin_tie[st["part"]]
@@ -271,7 +281,7 @@ def main() -> int:
                     old = res[key].get(st["part"])
                     res[key][st["part"]] = v if old is None else (old if v is None else max(old, v))
         for k in ("slip_mm", "flat_mm", "stretch_pct", "stretch_p95_pct", "skin_excess_pct", "skin_excess_p95_pct",
-                  "lap_mm", "lap_through_mm", "lap_gap_mm"):
+                  "lap_mm", "lap_through_mm", "lap_gap_mm", "lift_mm"):
             res[k] = {n: (None if v is None else round(v, 2)) for n, v in res[k].items()}
         rep["clips"][clip] = res
         say("clip", clip, json.dumps(res))

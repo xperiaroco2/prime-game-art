@@ -338,3 +338,34 @@ def lap_overlap(top_ref, edge) -> float | None:
         v = q[2] - float(e[2])
         best = v if best is None else min(best, v)
     return best
+
+
+def skin_lift(rest, now, skin_rest, skin_now, tie, where: bool = False):
+    """The largest lift of a part's vertices off her skin since the reference (art #196, G3j: the straps' flap by her
+    neck), in m: per vertex its distance along the normal of the skin triangle it is tied to (tie: vertex -> (three
+    skin vertex ids, barycentric weights); skin_rest / skin_now her skin's points), less the same at the reference,
+    signed so that away from her skin is positive. None with no tied vertex or only degenerate triangles; with where,
+    (lift, the vertex) (None, None)."""
+    cv = lambda a: a.tolist() if hasattr(a, "tolist") else a
+    rest, now, skin_rest, skin_now = map(cv, (rest, now, skin_rest, skin_now))
+
+    def dist(p, s, ids, w):
+        a, b, c = (s[k] for k in ids[:3])
+        u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]]
+        v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]]
+        n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]]
+        ln = math.sqrt(sum(x * x for x in n))
+        if ln < 1e-12:
+            return None
+        q = [sum(s[k][d] * x for k, x in zip(ids, w)) for d in range(3)]
+        return sum((p[d] - q[d]) * n[d] for d in range(3)) / ln
+
+    best, at = None, None
+    for i, (ids, w) in tie.items():
+        d0, d1 = dist(rest[i], skin_rest, ids, w), dist(now[i], skin_now, ids, w)
+        if d0 is None or d1 is None:
+            continue
+        v = (d1 - d0) if d0 >= 0 else (d0 - d1)
+        if best is None or v > best:
+            best, at = v, i
+    return (best, at) if where else best
