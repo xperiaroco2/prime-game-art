@@ -20,12 +20,6 @@ tools/blender/body_dims/hand_dims.toml, the driver alien_hand_run.py). Headless 
   only (`smooth` rounds); `--grid c:s,...` tries variants (a `--dump-dir` dump each, with `--bend`); `--edges-out`
   / `--edges-in` carry the same cut from body A to B (by index) and to a dressed character (by rest position), so
   both bodies keep one topology. `<out>.json`: the counts, every old vertex's largest move (0) and the new weights.
-- `dense` (H1p): one level of subdivision over each hand: every skin face whose every vertex is weighted on the Hand
-  and the finger chains only (no LowerArm, nothing else; at least `--dense-min` of the vertex's weight on a finger
-  chain for at least one of its vertices) cut once along both directions (bmesh, `use_grid_fill`: four faces each;
-  the region's rim edges stay whole, so its rim faces take bmesh's split patterns and no face outside it changes), the new vertices rounded by bmesh's `smooth`; weights, UVs and
-  shape keys interpolated; every old vertex keeps its index and position. Then run the tube rebuild
-  (`alien_finger_run.py build` on a dump, `apply`) so the new finger vertices lie on the tubes.
 - `diff --blend <before> --other <after> --out <json>`: the whole-body check, per mesh object over the old indices:
   the largest move and weight change outside the hand region (0) and the hand region's largest move.
 """
@@ -422,83 +416,6 @@ def finger_rings(blend: str, out: str, half_mm: float, rmax_mm: float, smooth: f
     return 0
 
 
-def _dense_edges(o, finger_min: float) -> tuple:
-    """The skin faces of both hands made only of vertices weighted on the Hand and the finger chains (H1p), with at
-    least one vertex carrying finger_min of its weight on a finger chain (the palm's front and the hand's back
-    beyond the wrist's blend included, the wrist's LowerArm/Hand blend left out); their edges and per side the faces."""
-    me = o.data
-    gname = {g.index: g.name for g in o.vertex_groups}
-    hand = {f"{s}Hand" for s in SIDES}
-    fing = {f"{s}{f}{p}" for s in SIDES for f, ps in CHAINS.items() for p in ps}
-    ok, fshare, side = set(), {}, {}
-    for v in me.vertices:
-        tot = h = f = 0.0
-        sd = None
-        for g in v.groups:
-            if g.weight <= 0:
-                continue
-            n = gname.get(g.group, "")
-            tot += g.weight
-            if n in hand or n in fing:
-                h += g.weight
-                sd = sd or ("Left" if n.startswith("Left") else "Right")
-            if n in fing:
-                f += g.weight
-        if tot > 0 and h >= tot - 1e-4:
-            ok.add(v.index)
-            fshare[v.index] = f / tot
-            side[v.index] = sd
-    mats = _skin_faces(o)
-    per, inside, outside = {s: 0 for s in SIDES}, set(), set()
-    for p in me.polygons:
-        vs = list(p.vertices)
-        if p.material_index in mats and all(i in ok for i in vs) and max(fshare[i] for i in vs) >= finger_min:
-            per[side[vs[0]]] += 1
-            inside.update(tuple(sorted(k)) for k in p.edge_keys)
-        else:
-            outside.update(tuple(sorted(k)) for k in p.edge_keys)
-    # the region's rim edges stay whole, so no face outside it changes (its rim faces take bmesh's split patterns)
-    return sorted(inside - outside), per
-
-
-def dense(blend: str, out: str, finger_min: float, smooth: float) -> int:
-    """H1p: the hands one subdivision denser (the H1o close-ups: a 90-degree fold and the pressed fist faceted on
-    ~10-12 vertices around a finger and ~3 rings per segment); see the module's `dense`."""
-    import bmesh
-    if Path(out).exists():
-        raise SystemExit(f"{out} exists: never overwritten")
-    bpy.ops.wm.open_mainfile(filepath=blend)
-    arm = _arm()
-    o = _skin_object(arm)
-    me = o.data
-    pairs, per = _dense_edges(o, finger_min)
-    old_co = [v.co.copy() for v in me.vertices]
-    n0, f0 = len(me.vertices), len(me.polygons)
-    bm = bmesh.new()
-    bm.from_mesh(me)
-    bm.verts.ensure_lookup_table()
-    edges = [e for e in (bm.edges.get((bm.verts[a], bm.verts[b])) for a, b in pairs) if e is not None]
-    bmesh.ops.subdivide_edges(bm, edges=edges, cuts=1, use_grid_fill=True, smooth=smooth)
-    bm.verts.index_update()
-    dl = bm.verts.layers.deform.active
-    wsum = [sum(v[dl].values()) for v in bm.verts[n0:]] if dl else []
-    uvl = bm.loops.layers.uv.active
-    bm.to_mesh(me)
-    bm.free()
-    me.update()
-    moved = max(((me.vertices[i].co - old_co[i]).length for i in range(n0)), default=0.0)
-    rep = {"object": o.name, "verts_before": n0, "verts_after": len(me.vertices), "new_verts": len(me.vertices) - n0,
-           "faces_before": f0, "faces_after": len(me.polygons), "cut_edges": len(edges), "faces_cut_per_side": per,
-           "finger_min": finger_min, "smooth": smooth, "uv_layer": bool(uvl),
-           "old_verts_largest_move_mm": round(moved * 1000, 4),
-           "new_weight_sum": [round(min(wsum), 4), round(max(wsum), 4)] if wsum else None}
-    print("DENSE", json.dumps(rep), flush=True)
-    Path(out).parent.mkdir(parents=True, exist_ok=True)
-    bpy.ops.wm.save_as_mainfile(filepath=out, compress=True)
-    Path(out + ".json").write_text(json.dumps(rep, indent=1))
-    return 0
-
-
 def _snapshot() -> dict:
     arm = _arm()
     names = set(region_bones())
@@ -556,7 +473,7 @@ def diff(before: str, after: str, out: str) -> int:
 def main() -> int:
     argv = sys.argv[sys.argv.index("--") + 1:]
     ap = argparse.ArgumentParser(prog="alien_hand_mesh.py")
-    ap.add_argument("mode", choices=("dump", "apply", "rings", "finger-rings", "dense", "diff"))
+    ap.add_argument("mode", choices=("dump", "apply", "rings", "finger-rings", "diff"))
     ap.add_argument("--blend", required=True)
     ap.add_argument("--out", default="")
     ap.add_argument("--moves", default="")
@@ -571,11 +488,7 @@ def main() -> int:
     ap.add_argument("--joint-half-mm", type=float, default=9.0, help="finger-rings: the band each side of a joint")
     ap.add_argument("--joint-rmax-mm", type=float, default=26.0, help="finger-rings: the band's reach from the bone")
     ap.add_argument("--joint-smooth", type=float, default=1.0, help="finger-rings: bmesh's smooth of the new vertices")
-    ap.add_argument("--dense-min", type=float, default=0.05, help="dense: a face needs one vertex this much on a finger")
-    ap.add_argument("--dense-smooth", type=float, default=1.0, help="dense: bmesh's smooth of the new vertices")
     a = ap.parse_args(argv)
-    if a.mode == "dense":
-        return dense(a.blend, a.out, a.dense_min, a.dense_smooth)
     if a.mode == "finger-rings":
         return finger_rings(a.blend, a.out, a.joint_half_mm, a.joint_rmax_mm, a.joint_smooth)
     if a.spec:

@@ -121,8 +121,8 @@ sources = ["tools/blender/alien_hands.py", "tools/blender/alien_hands_math.py", 
 tests = ["test_alien_hands_*", "test_alien_poses_*", "test_alien_grip_solve*", "test_alien_fist_*"]  # the grips are the poses' (alien_pose_math.grip_quats)
 
 [area.alien_hand_mesh]
-sources = ["tools/blender/alien_hand_geom.py", "tools/blender/alien_hand_run.py", "tools/blender/alien_hand_mesh.py", "tools/blender/body_dims/hand_dims.toml", "tools/blender/alien_finger_geom.py", "tools/blender/alien_finger_run.py", "tools/blender/alien_hand_mesh_check.py"]  # the hand and wrist rebuilt in place (#196, Hands H1b); before light's alien_*
-tests = ["test_alien_hand_geom*", "test_alien_finger_geom*", "test_alien_hand_mesh_*"]
+sources = ["tools/blender/alien_hand_geom.py", "tools/blender/alien_hand_run.py", "tools/blender/alien_hand_mesh.py", "tools/blender/body_dims/hand_dims.toml", "tools/blender/alien_finger_geom.py", "tools/blender/alien_finger_run.py"]  # the hand and wrist rebuilt in place (#196, Hands H1b); before light's alien_*
+tests = ["test_alien_hand_geom*", "test_alien_finger_geom*"]
 
 [area.alien_ttm]
 sources = ["tools/blender/alien_ttm.py", "tools/blender/alien_ttm_math.py", "tools/blender/retarget_maps/smpl_contract.toml"]  # text-to-motion on the alien (#196, option A step 2); before light's alien_*
