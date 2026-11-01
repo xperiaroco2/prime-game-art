@@ -554,7 +554,7 @@ class G3eSkinShirtTest(unittest.TestCase):
         g2 = self.spec["gate2"]
         st = {s["part"]: s for s in g2["stretch"]}
         self.assertTrue(st["straps"].get("vs_skin"))
-        self.assertLessEqual(st["straps"]["tol_pct"], 3.0)
+        self.assertLessEqual(st["straps"]["tol_pct"], 5.0)   # G3h: 3 %, or 5 % for the straps (the manager's rule)
         self.assertFalse({"bib_seam", "back_seam"} & set(st))         # G3f: the lap replaced the seam blend
         for name in ("waistband", "bib", "back_panel"):   # the rigid parts keep their own 2 %
             self.assertFalse(st[name].get("vs_skin"), name)
@@ -649,3 +649,13 @@ class G3fLapTest(unittest.TestCase):
         band_foot = d["waistband_top_z"]["cm"] - d["waistband_h"]["cm"]
         self.assertLess(b["shirt_trim_z_cm"], band_foot - 1.0)   # well inside the yoke, under the band
         self.assertGreater(b["shirt_trim_z_cm"], 88.0)           # over the rise cut: the yoke's ring is round it
+
+    def test_the_straps_ride_one_bone_and_the_shirt_follows_them(self):
+        """G3h: the straps' back rows on the bib's weights (on the Spine-borne panel they stretched 5.8-95 %), the shirt
+        under them on theirs (on its own it came 14-49 mm through their fronts), judged on its rest face as well."""
+        b, sh = self.spec["build"], self.spec["gate2"]["shirt"]
+        self.assertTrue(b["strap_back_on_chest"] and b["shirt_follow_straps"])
+        self.assertTrue(0.0 < b["strap_inner_mm"] <= 2.0)
+        self.assertEqual(sh["tracked_max_count"], 0)
+        src = (Path(__file__).resolve().parents[1] / "blender" / "dungarees_build.py").read_text(encoding="utf-8")
+        self.assertIn("any((mw @ v.co).z < z_cut", src)   # a shirt face reaching under the cut goes

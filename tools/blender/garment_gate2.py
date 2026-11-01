@@ -374,6 +374,12 @@ def motion_rows(spec, motion: dict, poke: dict | None) -> list[dict]:
             info = "" if not tt else f"; on its rest face {tt.get('max_count')}, {round(1000 * tt.get('max_depth_m', 0), 1)} mm"
             rows.append({"clip": clip, "check": f"shirt through the garment (deepest {depth} mm{info})", "value": v,
                          "unit": "verts", "tol": g2["shirt"]["max_count"], "pass": G.verdict(v, g2["shirt"]["max_count"])})
+            if "tracked_max_count" in g2["shirt"]:   # G3h: on the face it lay under at rest (the straps' fronts)
+                v = None if pk is None else tt.get("max_count")
+                depth = None if not tt else round(1000 * tt.get("max_depth_m", 0.0), 1)
+                rows.append({"clip": clip, "check": f"shirt through its rest face (deepest {depth} mm)", "value": v,
+                             "unit": "verts", "tol": g2["shirt"]["tracked_max_count"],
+                             "pass": G.verdict(v, g2["shirt"]["tracked_max_count"])})
     return rows
 
 

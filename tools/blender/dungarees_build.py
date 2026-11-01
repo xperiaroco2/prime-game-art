@@ -299,7 +299,8 @@ def shirt_follow(top, B, skip_vs, fade: float, reach: float = 0.04, near: float 
 
 
 def shirt_trim(top, z_cut: float) -> dict:
-    """The shirt's faces wholly under z_cut (m, world, at rest) removed (G3g): its lowest few cm lie inside the
+    """The shirt's faces reaching under z_cut (m, world, at rest) removed (G3g; f1 removed only those wholly under it
+    and kept the hem's vertices at 90.3 and 92 cm, still out): its lowest few cm lie inside the
     trousers' yoke, a closed ring under the band, never seen; there the yoke folds at her hip crease and the hem came
     out through it (k50: 3-7 vertices 1-5 mm in Jog, Sprint, Strafe and the jumps; moving it in made it worse)."""
     if z_cut <= 0:
@@ -307,7 +308,7 @@ def shirt_trim(top, z_cut: float) -> dict:
     mw = top.matrix_world
     bm = bmesh.new()
     bm.from_mesh(top.data)
-    gone = [f for f in bm.faces if all((mw @ v.co).z < z_cut for v in f.verts)]
+    gone = [f for f in bm.faces if any((mw @ v.co).z < z_cut for v in f.verts)]
     bmesh.ops.delete(bm, geom=gone, context="FACES")
     loose = [v for v in bm.verts if not v.link_faces]
     bmesh.ops.delete(bm, geom=loose, context="VERTS")
@@ -372,6 +373,12 @@ def main() -> None:
     ap.add_argument("--lap-clear-cm", type=float, default=None, help="default the spec's [build] plate_lap_clear_cm")
     ap.add_argument("--no-shirt-follow", action="store_true",
                     help="keep the shirt's own weights under the dungarees (G3e: it takes theirs, so it stays under)")
+    ap.add_argument("--strap-back-on-chest", type=int, default=None,
+                    help="1: the straps' back rows on the bib's weights (default the spec's [build] strap_back_on_chest)")
+    ap.add_argument("--strap-inner-mm", type=float, default=None,
+                    help="the strap's inner face off the shirt (default the spec's [build] strap_inner_mm, else 0.5)")
+    ap.add_argument("--shirt-follow-straps", type=int, default=None,
+                    help="1: the shirt under the straps takes their weights (default the spec's [build] shirt_follow_straps)")
     ap.add_argument("--strap-sh-share", type=float, default=0.0,
                     help="the straps' middle: this share of her shoulder's weights, the rest the panel bone's (0: the "
                          "whole strap rides the panel bone, G3c c01: stretch 0, pokes 0 in every clip; 1.0: 16-57 %%)")
@@ -781,12 +788,14 @@ def main() -> None:
         # the spec: the straps' outer edges flush with the bib's top corners (bib_top_w / 2 - strap_w / 2 on the bib),
         # at strap_x from her collarbone up: eased between the bib's top and her collarbone
         x_bib = sd * (d["bib_top_w"] / 2 - d["strap_w"] / 2)
+        # G3h: the strap's inner face off the shirt (0.5 mm let the shirt through as her shoulder moved), its 1.7 mm kept
+        inner = (a.strap_inner_mm if a.strap_inner_mm is not None else spec["build"].get("strap_inner_mm", 0.5)) / 1000
         rows = []
         for i, dv in enumerate(dirs):
             c = Vector((0, y0, z0))
             zr = (c + dv * prof[i]).z
             dx = 0.0 if phis[i] > math.pi / 2 else (x_bib - xc) * (1 - smooth01((zr - bt) / (lm["collarbone"] - bt)))
-            row = [(c + Vector((x + dx, 0, 0)) + dv * (row_r[i][k] + 0.0022), c + Vector((x + dx, 0, 0)) + dv * (row_r[i][k] + 0.0005))
+            row = [(c + Vector((x + dx, 0, 0)) + dv * (row_r[i][k] + inner + 0.0017), c + Vector((x + dx, 0, 0)) + dv * (row_r[i][k] + inner))
                    for k, x in enumerate(xs)]
             rows.append(row)
         pz = [(Vector((0, y0, z0)) + dv * prof[i]) for i, dv in enumerate(dirs)]
@@ -794,14 +803,21 @@ def main() -> None:
         i_back = min(i for i, p in enumerate(pz) if phis[i] > math.pi / 2 and p.z <= corner)
         i_mid = len(dirs) // 2
 
+        # G3h: the straps' back rows on the bib's weights, so the whole strap rides one bone but its top: on the back
+        # panel's (Spine since G3g) it spanned Spine to Chest over her shoulder and stretched 5.8-95 % beyond her skin
+        sboc = a.strap_back_on_chest
+        if sboc is None:
+            sboc = spec["build"].get("strap_back_on_chest", False)
+        w_sb = w_bib if sboc else w_back
+
         def w_of_row(i):
             if i <= i_front:
                 return w_bib
             if i >= i_back:
-                return w_back
+                return w_sb
             if i <= i_mid:
                 return mix(w_bib, w_sh, smooth01((i - i_front) / (i_mid - i_front)))
-            return mix(w_sh, w_back, smooth01((i - i_mid) / (i_back - i_mid)))
+            return mix(w_sh, w_sb, smooth01((i - i_mid) / (i_back - i_mid)))
         row_w = [w_of_row(i) for i in range(len(rows))]
         # G3e: the strap's top over her trapezius follows her shoulder (on Chest alone it arched off it in Jog): over
         # top_cm of arc round its highest point a smooth gradient from the row's weights to her shoulder's there
@@ -830,7 +846,8 @@ def main() -> None:
         strap_vs.update(v for r_ in so + si for v in r_)
         rep["straps"]["left" if sd > 0 else "right"] = {
             "front_end_z_m": round(pz[0].z, 4), "back_end_z_m": round(pz[-1].z, 4), "shoulder_weights": w_sh,
-            "bib_rows": i_front + 1, "back_rows": len(rows) - i_back,
+            "bib_rows": i_front + 1, "back_rows": len(rows) - i_back, "back_on_chest": bool(sboc),
+            "inner_mm": round(inner * 1000, 2),
             "top": {"cm": top_cm, "share": a.strap_top_share, "rows": n_top, "weights": w_top,
                     "at_cm": [round(c * 100, 2) for c in top_pt]}}
         # the buckle: a ring round the strap at the bib's top edge and its button on the strap
@@ -889,7 +906,12 @@ def main() -> None:
 
     bmesh.ops.recalc_face_normals(B.bm, faces=B.bm.faces[:])
     if not a.no_shirt_follow:
-        rep["shirt_follow"] = shirt_follow(top, B, strap_vs, bk.get("shirt_follow_fade_cm", 0.03),
+        # G3h: the shirt under the straps takes their weights too (on its own, with her upper arms' share, it came 14-49 mm
+        # through the straps' fronts at her collarbone in every clip: poke.json's top_under_panels_tracked)
+        sfs = a.shirt_follow_straps
+        if sfs is None:
+            sfs = spec["build"].get("shirt_follow_straps", False)
+        rep["shirt_follow"] = shirt_follow(top, B, set() if sfs else strap_vs, bk.get("shirt_follow_fade_cm", 0.03),
                                            near=bk.get("shirt_follow_near_cm", 0.015), low_z=bbz, low_skip=plate_vs)
         rep["shirt_trim"] = shirt_trim(top, bk.get("shirt_trim_z_cm", 0.0))   # then its new hem drawn in
         rep["shirt_hem"] = shirt_hem_in(top, bk.get("shirt_hem_in_cm", 0.0), bk.get("shirt_hem_h_cm", 0.015))

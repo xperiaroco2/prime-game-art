@@ -283,6 +283,11 @@ back_fit_deg = 4             # G3g: the rows' across curve of degree 4 (the quad
 back_lap_hug = true          # G3g: the back's lap drawn onto the band, not only pushed off it
 back_cols = 41               # G3f: the back panel's columns (25 striped it), its rows a smoothed quadratic across
 strap_tilt = true            # G3g: each strap row tilted across to her shoulder's slope (level, its edge stood off)
+strap_back_on_chest = true   # G3h: the straps' back rows on the bib's weights (on the back panel's Spine they spanned
+                             # Spine to Chest over her shoulder: 5.8-95 % beyond her skin; on Chest 0-4 %)
+strap_inner_mm = 0.5         # G3h: the strap's inner face off the shirt (its 1.7 mm thickness outside that)
+shirt_follow_straps = true   # G3h: the shirt under the straps takes their weights (on its own it came 14-49 mm through
+                             # their fronts at her collarbone in every clip, poke.json's top_under_panels_tracked)
 sharp_deg = 40.0             # G3f: the garment shaded smooth, edges sharper than this kept sharp (the plates' rims)
 strap_top_cm = 3.0           # G3e: the strap's top over her trapezius eases to her shoulder's weights over 4 cm of arc
                              # (G3e's grid: 4 cm stretched at most 4.2 % beyond her skin, 6 cm 70 %, 8 cm 61 %)
@@ -296,7 +301,7 @@ shirt_hem_h_cm = 1.5
 # --- behaviour ------------------------------------------------------------------------------------------------
 [behaviour]
 bib = "rigid: one piece, straight across, the single side-view bend of option B; never folds or wrinkles; moves with the straps' front ends (the buckles ride on it, slip under 3 mm)"
-straps = "bend along their length only, stay 3.8 cm wide; front ends ride the bib, middles the clavicles (Left/RightShoulder), back ends the back panel"
+straps = "bend along their length only, stay 3.8 cm wide; front ends ride the bib, middles the clavicles (Left/RightShoulder), back ends Chest with the bib (G3h)"
 back_panel = "rigid like the bib, rides the UpperChest/Chest; the straps leave its top corners"
 waistband = "stiff ring: follows the Hips/Spine, no stretch over 2 %"
 buttons_buckles = "rigid hardware, each on the nearest panel's surface"
@@ -451,13 +456,17 @@ tol_pct = 2.0
 [[gate2.stretch]]
 part = "straps"
 vs_skin = true
-tol_pct = 3.0                # bend along their length; over the shoulder they may stretch as her skin there
+tol_pct = 5.0                # G3h, the manager's standing decision (3 %, or 5 % for the straps if needed): with their
+                             # back rows on Chest they pass 3 % in every clip but Strafe_Left, 4.1 % (G3g: 5.8-95 %);
+                             # they bend along their length; over the shoulder they may stretch as her skin there
 
 [gate2.pokes]
 max_count = 0                # clothes_proof.py's poke-through, every clip
 
 [gate2.shirt]
 max_count = 0                # the shirt under the dungarees stays under them (poke.json's top_under_panels, G3e)
+tracked_max_count = 0        # G3h: and against the face it lay under at rest (top_under_panels_tracked): the nearest-
+                             # face count missed the straps' fronts, 30-38 vertices 14-49 mm through in g1's videos
 
 # Stations on the silhouettes: kind top / bottom (a row inside the columns u), width / front / back (a row's edges
 # inside u at height z). dim: the spec size it checks (its cm and tol_cm); body_gap (side front / back only): her

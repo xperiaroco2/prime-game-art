@@ -1082,7 +1082,20 @@ blender.run_script("dungarees_build.py", ["--spec", "specs/dungarees_dims.toml",
   x through the columns' own radii, lifted onto the highest), where level they stood off her shoulder at the outer
   edge; their top eases over 3 cm (`strap_top_cm`). The shirt ends at `shirt_trim_z_cm` 93.5, inside the yoke's ring
   under the band (`shirt_trim`), never seen: its hem came out through the yoke at her hip crease (3-13 vertices, up to
-  8 mm), and moving it in made that worse.
+  8 mm), and moving it in made that worse. G3h: a face reaching under the cut goes too (f1 removed only those wholly under it and
+  kept hem vertices at 90.3 and 92 cm that still came out).
+- **The straps on one bone, the shirt under them on theirs (G3h):** with the back panel on Spine the straps' back rows
+  rode it while their fronts rode Chest, so each strap spanned two bones over her shoulder and stretched 5.8-95 %
+  beyond her skin (s1, f1, g1). `strap_back_on_chest` puts the back rows on the bib's weights: the whole strap rides
+  Chest but its 3 cm top, 0 % beyond her skin in every clip but Strafe_Left, 4.1 %, within the straps' 5 % (the
+  manager's standing rule); their back ends slide over the Spine-borne panel's top corners, and the "strap backs on
+  the back panel" join row keeps that slip in check. The shirt under the straps kept its own weights (its upper arms'
+  share near the shoulder), so as her arms came down from the T-pose it stood 14-49 mm through the straps' fronts at
+  her collarbone in every clip, seen in g1's videos as straps cut off just over the bib; `shirt_follow_straps` gives
+  it the straps' weights like the plates' (on its rest face, `top_under_panels_tracked`: 30-38 vertices down to 2-6).
+  Gate 2 now judges that tracked count too (`[gate2.shirt] tracked_max_count`): the nearest-face count read 0 while
+  the straps' fronts were cut through. `strap_inner_mm` (0.5) sets the strap's inner face off the shirt; 1.5 mm (v2)
+  only added a millimetre to the same tracked depths.
 - **The build's own numbers** (`[build]` in the spec, not sizes a gate measures): the seam blend, the band's ease
   off the shirt, her front's and back's half widths the plates are laid on (11 and 12 cm; `garment_drawing`'s gaps
   read the same), the straps' ray origin, the turn-up's wall, the buckle ring's sizes. A vertex the build leaves
