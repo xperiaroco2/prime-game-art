@@ -2066,3 +2066,12 @@ The n2 critic's leftovers (art #263); note `D:/prime-art-raw/ship/v5/notes/polis
   run on round the prow's folds and across the pieces when closed (`HJ.plates` laid a grid per facet).
 - **The hall's floor ring** (`int_amber_ring`) glows and lights nothing (`l` 0): its cell lights, 0.12 m over the
   floor about 0.6 m from the wall, painted orange blobs on the walls by the vault door with no fixture there.
+- **The vault door's lines** (`int_cyan__door`) glow and light nothing (`l` 0): the short light on the leaf burnt a
+  round white-cyan hot spot in its middle (n2's Godot `in_vault_door`).
+- **The middle pod's bridge beams** run to `bridge_y` 4.9 (was 4.05): the outer housings stand 2.5 cm from the middle
+  one and from the lobby spawn the outer bells read as cutting into it; the beams' bevelled ends now grip the outer
+  bells' bases.
+- **Checked, no change**: the orange slab at `in_tip_w`'s left edge is the west alcove's jamb (`lens_bronze`) and its
+  warm cheek strip (`int_amber__lens`), the approved lens room C alcove, 0.3 m from the camera (a Blender ray probe).
+  The jagged shard under the east lead fairing is `skin_belly`'s own plate seam (`ext_seam`, plan (9.0, -2.2, 1.24))
+  ending on the fairing's fold: a `ship_hull_j` seam-end fix, not done in n3.
