@@ -2043,3 +2043,26 @@ A fresh critic's findings on the b4 package (art #263); note `D:/prime-art-raw/s
 - **Not done**: the oculus at 64 sides doubled the hull plating's capped seam corners (727 against the 600 bound of
   `test_the_seam_corners_end_on_their_fold_and_keep_the_groove`): `sides` is also the hull's cut prism, so the visible
   rings need their own count (a next step).
+
+## Polish n3: the stator blades, the chine lines, the oculus trim, the nose's seams (2026-11-01)
+The n2 critic's leftovers (art #263); note `D:/prime-art-raw/ship/v5/notes/polish-n3.md`.
+- **The stator blades** (`ship_hull_detail._blade`) are aerofoils (`FOIL`: a round leading edge, a fat front third, a
+  thin trailing edge) swept in six sections from the hub (0.19 r) to the wall (0.57 r), the pitch 46 deg at the hub
+  to 30 at the wall, 5.5 to 3 cm thick at r 1.0. The leading edge sits deep, toward the glowing floor; its bevel is
+  `ext_blade_edge` (a teal rim, the glow behind seen round the edge), the rest `ext_blade` (dark gunmetal with a
+  faint teal emission). Godot has no bounce light from the throat's emissive floor, so the glow on the blades is
+  painted in these two materials (both `l` 0). The spinner (`_spinner`): a dark collar standing off the floor, a
+  shadow groove, a chrome band and a two-step cone up to pod_ring's hot tip.
+- **The chine lines** (`chine_lines`, in `belly_lights`): n2's flat lines under a bottom 0.17 m over the ground read
+  only at a grazing angle. These follow the bottom's contour at `CHINE[0]` (0.45 m in the shape's frame) by marching
+  squares over `S.heights` (cell 0.12 m), laid on the slanted face along its normal (glow 8-13 mm out, the channel
+  from 6 mm in), where the face rises at least 0.12 per metre, clear of the jaw (|x| < 2 for y < -3.6). They run
+  round the front chine, each lens tip and the stern. Glow only (`glow_cyan__belly`, `l` 0): no pools on the ground.
+- **The oculus**: its 32 sides stay (the hull's cut prism and the plating's seam corners). Outside, the frame ring is
+  128 sides shaded smooth; inside, `oc_trim` lays a bullnose over the lip's inner edge, a dark sleeve just inside the
+  lining's faces and a bead at the glass's foot (`OC_TRIM`, 128 sides, smooth, inside the polygon's apothems).
+- **The closed nose's seams**: `ship_hull_jaw.jaw_cells` plates every jaw face on one global family (faces looking up
+  or down rows of constant y; the others horizontal bands of constant h, ends of constant x or y), so the band seams
+  run on round the prow's folds and across the pieces when closed (`HJ.plates` laid a grid per facet).
+- **The hall's floor ring** (`int_amber_ring`) glows and lights nothing (`l` 0): its cell lights, 0.12 m over the
+  floor about 0.6 m from the wall, painted orange blobs on the walls by the vault door with no fixture there.
