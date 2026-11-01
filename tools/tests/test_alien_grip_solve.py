@@ -143,6 +143,25 @@ class SpecTest(unittest.TestCase):
             self.assertEqual(len(hands["grips"]["loose"][f]), 4, f)
         self.assertLessEqual(max(hands["grips"]["loose"][f][2] for f in G.FING), 15.0)  # the tip joint <= 15
 
+    def test_the_run_uses_runfist_within_its_own_limits(self):
+        # H1u (art #196): the run's fist is the hand-picked `runfist`, pinned here; `loose` is the solver's reference
+        hands = tomllib.loads((ROOT / "tools/blender/anim_sets/alien_hands.toml").read_text(encoding="utf-8"))
+        g = hands["grips"]["runfist"]
+        self.assertEqual(g["Index"], [88, 102, 34, -1.4])
+        self.assertEqual(g["Thumb"], [70, 25, 75])
+        self.assertEqual(g["ThumbTurn"], [90, 45])
+        for clip in ("Jog_*", "Sprint_*", "Strafe_*"):
+            self.assertEqual(hands["clips"][clip]["grip"], "runfist", clip)
+        self.assertEqual(hands["fist"]["grip"], "runfist")
+        self.assertNotIn("loose", {c.get("grip") for c in hands["clips"].values()})
+        lim = G.load_spec()["grips"]["runfist"]["limits"]
+        for f in G.FING:
+            for k, (lo, hi) in enumerate(lim["finger"]):
+                self.assertTrue(lo <= g[f][k] <= hi, (f, k, g[f][k]))
+        for k, (lo, hi) in enumerate(lim["Thumb"]):
+            self.assertTrue(lo <= (g["Thumb"] + g["ThumbTurn"])[k] <= hi, ("Thumb", k))
+        H._check_grip("runfist", g)
+
 
 if __name__ == "__main__":
     unittest.main()

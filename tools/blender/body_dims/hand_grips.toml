@@ -26,7 +26,7 @@ self_clear_mm = 0.5       # a finger's tip capsule stays this clear of its own b
 w_thumb_rest = 0.01       # per degree^2 of the thumb from its first start (no extreme thumb turns for a millimetre)
 iters = 260               # Nelder-Mead iterations per start (twice: a coarse and a fine pass)
 
-[grips.loose]             # the run's fist (Jog, Sprint, Strafe)
+[grips.loose]             # the solver's reference fist (H1g; no clip uses it since H1r: the run's is runfist below)
 tip_clear_mm = [0.0, 1.0]           # every fingertip touches the palm: its capsule 0 to +1 mm off the palm's skin
 tip_before_crease_mm = { Index = 22.0, Middle = 22.0, Ring = 22.0 }  # the contact this far toward the wrist from
 tip_band_mm = 6.0                   # the finger's crease line, +- this. The critic asked 8 to 12 mm: with these 1:1
@@ -45,6 +45,17 @@ Index = [[72.0, 90.0, 10.0, 0.0], [55.0, 105.0, 10.0, 0.0], [88.0, 70.0, 10.0, 0
 Middle = [[78.0, 94.0, 10.0, 0.0], [60.0, 105.0, 10.0, 0.0], [90.0, 75.0, 10.0, 0.0]]
 Ring = [[84.0, 98.0, 10.0, 0.0], [65.0, 105.0, 10.0, 0.0], [92.0, 80.0, 10.0, 0.0]]
 Thumb = [[20.0, 45.0, 20.0, 20.0, 70.0], [10.0, 30.0, 15.0, 0.0, 50.0], [30.0, 50.0, 20.0, 40.0, 90.0]]
+
+[grips.runfist]           # the run's fist (Jog, Sprint, Strafe) and the fist morph's pose: hand-picked on H1q-H1u's
+# grids from the solved loose grip, not solved here (alien_grip_solve.py skips it: no targets, no starts). The bones
+# make the fist: the middle and tip joints curled past loose's (the tips into the palm, past its 15), the thumb laid
+# across the index curl's side mouth with its tip joint bent past loose's 35 so its pad covers the loop (H1t, H1u).
+# Its limits are its own and honest; tests/test_alien_grip_solve.py pins the grip to them.
+thumb_sink_max_mm = 7.5   # the thumb pad's skin inside the index or middle at the grip, the morph at 1 (H1t's poke
+                          # measure, review drivers only; H1t 7.1 axolotl, 6.2 chameleon): clay pressed together
+[grips.runfist.limits]    # degrees as loose's: [base, middle, tip, side]; the thumb [metacarpal, proximal, distal, roll,
+finger = [[60.0, 95.0], [90.0, 110.0], [0.0, 40.0], [-12.0, 12.0]]  # swing]
+Thumb = [[50.0, 80.0], [0.0, 40.0], [40.0, 90.0], [60.0, 100.0], [30.0, 70.0]]
 
 [grips.relaxed]           # Idle, Walk, Talk, Crouch: a gentle knuckle-led curl, the thumb alongside the index
 # each fingertip's target from its knuckle (mm, x y z): H1f's r2 curl (the Walk the critic called better), the tips
