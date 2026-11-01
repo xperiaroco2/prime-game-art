@@ -1989,3 +1989,93 @@ east wall and, since step 6, its mirror on the west (`GILL_SIDES` in ship_interi
     rebuilt; `clad_before_after.png` (rows clad_throat, w_clad_throat, clad_hall, w_clad_hall; left step 6, right
     step 7), `gill_set/` (the three MP4s, the stills, `sheet.png`), `play_test/`); handoff
     `<raw>/ship/v5/notes/ship-step7.md`.
+
+## The stern polish n1 (2026-11-01)
+
+The lobby's players see the stern up close from the spawn (`<raw>/lobby/hall/v15/shots/spawn_ship.png`). n1
+rebuilds the three nozzle pods and the stern legs, keeping every radius, length and placement
+(`tools/blender/ship_hull_detail.py` `nozzle_pod`/`pod_ring`, `ship_hull.py` `_leg_heavy`):
+
+| Part | Now |
+|---|---|
+| Segments | `POD_SEGS` 64 (was 32), the bell, housing, collar, fairing and spinner shaded smooth under 40 deg |
+| Bell | a solid ring with bevelled lips; a continuous light ring 1.6 cm into its lip (the ten gapped lip segments are gone), its plane at length + `LIP` 0.45 (the ring at + 0.434: `hull.pod_tail_m`) |
+| Accents | the housing round the bell's base carries a light strip in a groove; the barrel's strip sits between two trim lips |
+| Throat | two stepped rings (the first with a light ring), a deep wall, a floor in four emissive bands (`glow_pod_dim/_mid/_warm/_hot`) round a pointed spinner with a hot tip and twelve twisted stator vanes |
+| Hull join | a fairing where each pod leaves the hull (args `mount`), six stringers, one collar; the middle pod carries two bolted beams (args `bridges`, `bridge_y`) over its contact with each outer pod, so no collar or fairing crosses another pod in the open |
+| Stern legs | `leg_stern` args `heavy = true`: same pad (r 0.6), a thicker 16-sided oleo, two side dampers, a torque link, a hydraulic line, eight ribs and bolt heads |
+
+**Why the bells were black in the lobby:** their throat was the dark `ext_nozzle_inner`; the teal seen in
+`ship --shoot` came from `ship.gd`'s run-time glow-cell omni lights (`_dress`: one omni per cell of emissive
+surface, `glow_pod` with `l` 0.15). The package keeps those lights under `Lights`, but the lobby zeroes the ship's
+lights (`ship_lights`), so the throat went black. The glow now lives in the pieces' own emissive materials, which
+ship into the package unchanged; their `[light.mats]` rows carry `l = 0.0` (they light nothing, so the look is the
+same with the ship's lights on or off) and `e` scales them in Godot.
+
+Cost: about 12k triangles a pod with its lights (was about 1.6k); the ship 313k.
+
+## Polish n2: the nose, the hall's bays, the underbody (2026-11-01)
+A fresh critic's findings on the b4 package (art #263); note `D:/prime-art-raw/ship/v5/notes/polish-n2.md`.
+- **The closed nose's glare** was no leak: `test_ship_jaw` casts its seal rays and the closed jaws are shut. `ship.gd`
+  `_dress` makes the glow cells' lights in the saved pose (open), so a closed view left the deck tip's cyan light
+  (lights.json `(0, 0.48, -12.07)`) 0.5 m over the path in front of the shut nose. `_jaw_bind` keeps a cell lit
+  only by one jaw piece in that jaw's frame and `_jaw_turn` moves it with the jaw. In the package,
+  `export_scene.gd` reparents each such light under its jaw piece (under `Nose`), so the game's `Nose` clips carry it,
+  and strips the binding's metas.
+- **The mouth ceiling's bars** are `glow_cyan__jaw_ceil` (half glow_cyan's strength, light `l` 0.3): the clamp's
+  2.4 clipped the throat's ceiling white.
+- **The hall's flats** (`flat_panel`) and the vault door wall's sides are relief bays (`ship_interior.relief`): a
+  silver frame 35 mm proud with corner bolts round three panels 20 mm proud over a dark back, seams 14 mm; the field
+  stays flat for a station. The kick plate and belt are kept.
+- **The vault door**: a lit frame edge all round the opening and a centred light line down the leaf between four
+  panels (`int_cyan__door`, e 0.35, a short light `l` 0.25 on the leaf), a reader with a bezel, a dark screen, a lit
+  bar and three keys.
+- **The lens rooms' centre disc** is `int_plate__tip` (matte, darker); the hall's disc keeps `int_plate`.
+- **The underbody**: `belly_lights`, cyan lines (`glow_cyan__belly`, glow only) in a dark channel 4-10 mm under the
+  hull's bottom, along the belly at x +-2.2, spanwise under each corridor and a ring under each lens; a step is left
+  out where the bottom rises over 1.5 cm. `metal.gdshader` keeps a third of the brushed grain on faces looking down
+  (its 1.3/m streak noise read as long streaks on the belly's big plates).
+- **The deck's hazard bands**: a dark band 12 cm wide, 13 cm in from each deck edge, yellow bars slanted every 0.2 m
+  (`deck_hazard`, `deck_hazard_dark`, no collision); the ribs stop 0.3 m from the edges.
+- **Measured, no change**: the deck's top meets the mouth floor at the hinge at 1.200 m (the floor_h; the deck plane
+  through the hinge, ship_hull_jaw.cuts), so the ramp lip does not float; the canopies stand over the roof by design
+  (the approved spine bumps) and already have a fairing ring and a rim lip over the glass's foot.
+- **Not done**: the oculus at 64 sides doubled the hull plating's capped seam corners (727 against the 600 bound of
+  `test_the_seam_corners_end_on_their_fold_and_keep_the_groove`): `sides` is also the hull's cut prism, so the visible
+  rings need their own count (a next step).
+
+## Polish n3: the stator blades, the chine lines, the oculus trim, the nose's seams (2026-11-01)
+The package v6 (`<raw>/ship/v5/export/v6`) is built from these pieces (`assets/environment/ship`).
+The n2 critic's leftovers (art #263); note `D:/prime-art-raw/ship/v5/notes/polish-n3.md`.
+- **The stator blades** (`ship_hull_detail._blade`) are aerofoils (`FOIL`: a round leading edge, a fat front third, a
+  thin trailing edge) swept in six sections from the hub (0.19 r) to the wall (0.57 r), the pitch 46 deg at the hub
+  to 30 at the wall, 5.5 to 3 cm thick at r 1.0. The leading edge sits deep, toward the glowing floor; its bevel is
+  `ext_blade_edge` (a teal rim, the glow behind seen round the edge), the rest `ext_blade` (dark gunmetal with a
+  faint teal emission). Godot has no bounce light from the throat's emissive floor, so the glow on the blades is
+  painted in these two materials (both `l` 0). The spinner (`_spinner`): a dark collar standing off the floor, a
+  shadow groove, a chrome band and a two-step cone up to pod_ring's hot tip.
+- **The chine lines** (`chine_lines`, in `belly_lights`): n2's flat lines under a bottom 0.17 m over the ground read
+  only at a grazing angle. These follow the bottom's contour at `CHINE[0]` (0.45 m in the shape's frame) by marching
+  squares over `S.heights` (cell 0.12 m), laid on the slanted face along its normal (glow 8-13 mm out, the channel
+  from 6 mm in), where the face rises at least 0.12 per metre, clear of the jaw (|x| < 2 for y < -3.6). They run
+  round the front chine, each lens tip and the stern. Glow only (`glow_cyan__belly`, `l` 0): no pools on the ground.
+- **The oculus**: its 32 sides stay (the hull's cut prism and the plating's seam corners). Outside, the frame ring is
+  128 sides shaded smooth; inside, `oc_trim` lays a bullnose over the lip's inner edge, a dark sleeve just inside the
+  lining's faces and a bead at the glass's foot (`OC_TRIM`, 128 sides, smooth, inside the polygon's apothems). The
+  sleeve stands inside the lip's apothem too (0.69, its corners at 0.6933): at 0.6915 the lip's corners poked through
+  it over the lip's top, a band of 32 light and dark teeth round the well in the first n3 shots.
+- **The closed nose's seams**: `ship_hull_jaw.jaw_cells` plates every jaw face on one global family (faces looking up
+  or down rows of constant y; the others horizontal bands of constant h, ends of constant x or y), so the band seams
+  run on round the prow's folds and across the pieces when closed (`HJ.plates` laid a grid per facet).
+- **The hall's floor ring** (`int_amber_ring`) keeps its lights (`l` 0.8, `rr` 0.3): with them off (tried in n3)
+  the hall read near-black from the vault door and its walls were lost; their soft orange spots on the walls are the
+  approved look.
+- **The vault door's lines** (`int_cyan__door`) glow and light nothing (`l` 0): the short light on the leaf burnt a
+  round white-cyan hot spot in its middle (n2's Godot `in_vault_door`).
+- **The middle pod's bridge beams** run to `bridge_y` 4.9 (was 4.05): the outer housings stand 2.5 cm from the middle
+  one and from the lobby spawn the outer bells read as cutting into it; the beams' bevelled ends now grip the outer
+  bells' bases.
+- **Checked, no change**: the orange slab at `in_tip_w`'s left edge is the west alcove's jamb (`lens_bronze`) and its
+  warm cheek strip (`int_amber__lens`), the approved lens room C alcove, 0.3 m from the camera (a Blender ray probe).
+  The jagged shard under the east lead fairing is `skin_belly`'s own plate seam (`ext_seam`, plan (9.0, -2.2, 1.24))
+  ending on the fairing's fold: a `ship_hull_j` seam-end fix, not done in n3.

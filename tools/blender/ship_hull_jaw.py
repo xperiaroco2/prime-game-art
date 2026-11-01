@@ -43,6 +43,12 @@ STRIP = (0.025, 0.006)      # the cyan mouth line: width on the upper face, prou
 PLATED = True       # False: the outer faces flat (the seal and clash checks; the plates sink inside the skin)
 
 
+# polish n2 (art #263): the mouth ceiling's two bars, half glow_cyan's strength; their cell light dimmed in ship.toml
+# (the throat's ceiling clipped white over them, in_throat)
+L.MATERIALS.setdefault("ext_hazard", {"base": (0.92, 0.66, 0.06, 1.0), "metallic": 0.05, "roughness": 0.55})
+L.MATERIALS.setdefault("ext_hazard_dark", {"base": (0.035, 0.035, 0.04, 1.0), "metallic": 0.3, "roughness": 0.6})
+L.MATERIALS["glow_cyan__jaw_ceil"] = {**L.MATERIALS["glow_cyan"], "strength": 3.0}
+
 def jaw(layout: dict) -> dict:
     """The [jaw] numbers with the derived ones: the deck's slope, the roof's underside, the floor and the throat."""
     j = dict(layout["jaw"])
@@ -228,6 +234,19 @@ def _below(polys, plane, gap=0.003):
     return out
 
 
+def jaw_cells(poly, n) -> list:
+    """polish n3: a jaw face's plates on one global seam family for the whole prow, so the closed nose's grids meet
+    across its pieces (HJ.plates laid each facet's grid in its own frame: 3-4 grids that did not meet on the closed
+    front): faces looking up or down rows of constant y and ends of constant x (the hull's top family); the others
+    horizontal bands (planes of constant h) with ends of constant x, or of constant y where the face looks sideways.
+    The bands' seams run on round every fold of the prow, and onto the hull's own fore-looking faces."""
+    if abs(n[2]) > 0.7:
+        r, c = S.Y, S.X
+    else:
+        r, c = S.H, (S.X if abs(n[0]) < 0.7 else S.Y)
+    return [q for _key, q in HJ._rows(poly, r, c)]
+
+
 def _plated(polys, name, under_clip=None, nocol_down=False):
     """Outer faces as the hull's plates (ship_hull_j: inset, chamfered seams, v1's silvers) and the dark under-skin.
     nocol_down: the faces looking down (n_z < -0.3, built closed) and the whole under-skin stay visual (the ramp's
@@ -244,7 +263,7 @@ def _plated(polys, name, under_clip=None, nocol_down=False):
         return _flat(f"{name}_flat", polys, "hull_silver")
     groups, under = {}, []
     for poly, n in polys:
-        for q in HJ.plates(poly, n):
+        for q in jaw_cells(poly, n):
             c = tuple(round(sum(x[k] for x in q) / len(q), 1) for k in range(3))
             mat = HJ.MATS["top"][zlib.crc32(repr(c).encode()) % len(HJ.MATS["top"])]
             groups.setdefault(mat, []).append(HJ.lay(q))
@@ -397,7 +416,7 @@ def lower_parts(j: dict) -> list:
     ribs, edges = [], []
     s = 0.35
     while s < length - 0.4:
-        hw = half(s) - 0.14
+        hw = half(s) - 0.3   # polish n2: the ribs stop short of the hazard bands along the edges
         if hw > 0.2:
             corners = [at(s + d_, sx * hw, hh) for hh in (0.0, 0.014) for d_ in (0.0, 0.07) for sx in (-1, 1)]
             ribs.append((corners, [(0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)]))
@@ -413,11 +432,32 @@ def lower_parts(j: dict) -> list:
             v = [at(s0, a0, 0.0), at(s0, a0 + side * 0.04, 0.0), at(s1, a1 + side * 0.04, 0.0), at(s1, a1, 0.0)]
             v += [at(s0, a0, 0.012), at(s0, a0 + side * 0.04, 0.012), at(s1, a1 + side * 0.04, 0.012), at(s1, a1, 0.012)]
             edges.append((v, [(0, 1, 2, 3), (4, 7, 6, 5), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0)]))
+    # polish n2: hazard bands inboard of the amber edge lights (the old ramp's stripes went with it): a dark band
+    # 12 cm wide, 13 cm in from each edge, yellow bars slanted 45 deg every 0.2 m on it
+    def box(q, h0, h1):
+        v = [at(sv, xv, hh) for hh in (h0, h1) for sv, xv in q]
+        return v, [(3, 2, 1, 0), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]
+    dark, yel = [], []
+    for side in (-1, 1):
+        def xe(sv, e, side=side):
+            return side * (half(sv) - e)
+        sv = 0.3
+        while sv + 0.2 <= length - 0.4:
+            q = [(sv, xe(sv, 0.25)), (sv + 0.2, xe(sv + 0.2, 0.25)), (sv + 0.2, xe(sv + 0.2, 0.13)), (sv, xe(sv, 0.13))]
+            dark.append(box(q if side > 0 else q[::-1], 0.0, 0.004))
+            q = [(sv, xe(sv, 0.25)), (sv + 0.1, xe(sv + 0.1, 0.25)), (sv + 0.2, xe(sv + 0.2, 0.13)),
+                 (sv + 0.1, xe(sv + 0.1, 0.13))]
+            yel.append(box(q if side > 0 else q[::-1], 0.004, 0.007))
+            sv += 0.2
+    hz = [L.part("deck_hazard_dark", *L.merge(*dark), "ext_hazard_dark"),
+          L.part("deck_hazard", *L.merge(*yel), "ext_hazard")]
+    for p_ in hz:
+        p_["nocol"] = True
     rib = L.part("deck_ribs", *L.merge(*ribs), "leg_metal")
     rib["nocol"] = True
     lit = L.part("deck_edges", *L.merge(*edges), "glow_amber")
     lit["nocol"] = True
-    return parts + [rib, lit]
+    return parts + [rib, lit] + hz
 
 
 def upper_parts(j: dict) -> list:
@@ -459,7 +499,7 @@ def upper_parts(j: dict) -> list:
                     a, b = (m, b) if a[2] < lo_h else (a, m)
                 if min(a[2], b[2]) >= lo_h - 1e-6:
                     bars.append(_band(a, b, n, S._sub(cq, a), 0.035, 0.012, 0.004))
-    glow = L.part("ceiling_glow", *L.merge(*bars), "glow_cyan") if bars else None
+    glow = L.part("ceiling_glow", *L.merge(*bars), "glow_cyan__jaw_ceil") if bars else None
     line = L.part("seam_glow", *L.merge(*_strips(parting(j) + _seam_aft(j, j.get("seam_end_y", -6.2)))), "glow_cyan")
     line["nocol"] = True
     out = parts + [line]
