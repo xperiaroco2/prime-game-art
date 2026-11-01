@@ -1026,6 +1026,35 @@ def tip_ceiling_cells():
     return [oc_sector(OC_WELL[0] + 0.02, 3.0, k) for k in range(OC_N)]
 
 
+# polish n3: the oculus's well, lip and glass are the hull cut's 32-gon (plating test); a smooth trim over them: a
+# bullnose ring over the lip's inner edge, a sleeve just inside the lining's faces, a bead at the glass's foot, OC_SEGS
+# sides shaded smooth (all inside the polygon's apothems, so no flat of the 32-gon shows past them)
+OC_SEGS = 128
+OC_TRIM = {   # name: closed (r, dh over the rim) profile
+    "nose": [(0.706, -0.126), (0.688, -0.124), (0.678, -0.114), (0.674, -0.098), (0.677, -0.082), (0.688, -0.072),
+             (0.706, -0.07)],
+    "sleeve": [(0.6955, -0.074), (0.6915, -0.074), (0.6915, 0.228), (0.6955, 0.228)],
+    "bead": [(0.6955, 0.212), (0.688, 0.216), (0.684, 0.226), (0.688, 0.236), (0.6955, 0.24)],
+}
+
+
+def oc_trim(rim: float, name: str):
+    """polish n3: OC_TRIM[name] turned round the room's vertical axis (OC_SEGS sides), wound away from its centre."""
+    prof = OC_TRIM[name]
+    m = len(prof)
+    v = [(r * math.cos(2 * math.pi * j / OC_SEGS), r * math.sin(2 * math.pi * j / OC_SEGS), rim + dh)
+         for j in range(OC_SEGS) for r, dh in prof]
+    f = [(j * m + q, j * m + (q + 1) % m, ((j + 1) % OC_SEGS) * m + (q + 1) % m, ((j + 1) % OC_SEGS) * m + q)
+         for j in range(OC_SEGS) for q in range(m)]
+    rc = sum(r for r, _ in prof) / m
+    hc = rim + sum(dh for _, dh in prof) / m
+
+    def inner(q):
+        a = math.atan2(q[1], q[0])
+        return (rc * math.cos(a), rc * math.sin(a), hc)
+    return v, L.orient(v, f, inner)
+
+
 def tip_ceiling(args, layout):
     """lens step 1: the lens room's ceiling, a plane slanting down outward (tip_clear); details 1: with the oculus at
     its centre (one round roof window, d 1.4 clear): the slab round it, face panels in eight sectors, the well's dark
@@ -1089,6 +1118,10 @@ def tip_ceiling(args, layout):
              P("channel", M(*chan), "int_dark"), P("band", M(*band), "int_lamp"),
              P("ribs", M(*ribs), "int_silver_c"), P("strips", M(*strips), "int_cyan"),
              L.part("glass", *glass, "int_glass", solid=False), L.part("fascia", fv, ff, "int_silver_c", solid=False)]
+    for name, mat in (("nose", "int_silver_a"), ("sleeve", "int_dark"), ("bead", "int_silver_a")):
+        trim = L.part(f"oc_{name}", *oc_trim(rim, name), mat)
+        trim["smooth_deg"] = 40.0
+        parts.append(trim)
     parts += [P(f"face_{m[-1]}", M(*v), m) for m, v in faces.items() if v]
     return _slant(parts, rim - 0.2)
 

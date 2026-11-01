@@ -772,7 +772,7 @@ def lens_frames(args: dict, layout: dict) -> list:
     # 1 cm over the cut's edge and 4 cm down into it, 20 cm out over the plates (their cut slivers), a chamfered crown
     # 8.5 cm proud
     sec = [(-0.012, -0.04), (0.2, -0.02), (0.2, 0.03), (0.14, 0.085), (0.02, 0.085), (-0.012, 0.05)]
-    n = S.P_OCULUS_N * 2
+    n = S.P_OCULUS_N * 4   # polish n3: 128 sides shaded smooth (64 flat ones read low-poly in out_oculus_e)
     ring_v, ring_f = [], []
     for sx in (1, -1):
         cx, cy = sx * S.P_TIP[0], S.P_TIP[1]
@@ -802,7 +802,9 @@ def lens_frames(args: dict, layout: dict) -> list:
                 gv.append((cx + sx * GLOW_PANE_R * math.cos(g), cy + GLOW_PANE_R * math.sin(g), h))
             gf.append((k, k + 1, k + 2, k + 3))
     gf = L.orient(gv, gf, lambda q: (math.copysign(S.P_TIP[0], q[0]), S.P_TIP[1], q[2]))
-    return [L.part("band_frame", *L.merge(*bars), "ext_frame"), L.part("oculus_frame", ring_v, ring_f, "ext_silver_b"),
+    oc = L.part("oculus_frame", ring_v, ring_f, "ext_silver_b")
+    oc["smooth_deg"] = 40.0
+    return [L.part("band_frame", *L.merge(*bars), "ext_frame"), oc,
             L.part("band_glow", gv, gf, "ext_window_glow", solid=False)]
 
 
