@@ -59,7 +59,8 @@ class EnvelopeTest(unittest.TestCase):
 
     def test_the_contact_corrective_closes_a_gap_under_its_cap(self):
         c = self.d["contact"]
-        self.assertGreater(c["valley_up_mm"], 0.3)  # the valley between the two tubes fills outward
+        self.assertGreater(c["valley_depth_before_mm"], 0.2)  # the valley's skin starts inside the union
+        self.assertLess(c["valley_depth_after_mm"], 0.25 * c["valley_depth_before_mm"])  # and fills out onto it
         self.assertLessEqual(c["move_max_mm"], 4.0 + 1e-6)  # the cap
         self.assertLessEqual(c["raw_max_mm"], 8.0)
         self.assertEqual(c["folded"], 0)
@@ -75,8 +76,8 @@ class EnvelopeTest(unittest.TestCase):
     def test_the_contact_local_zone_has_its_own_cap(self):
         c = self.d["contact_local"]
         self.assertGreater(c["local_verts"], 0)
-        self.assertLessEqual(c["far_max_mm"], 1.5 + 1e-6)  # outside the zone: the global cap
-        self.assertGreater(c["zone_max_mm"], 1.5)  # inside it: past the global cap
+        self.assertLessEqual(c["far_max_mm"], 0.5 + 1e-6)  # outside the zone: the global cap
+        self.assertGreater(c["zone_max_mm"], 1.0)  # inside it: past twice the global cap
         self.assertLessEqual(c["zone_max_mm"], 4.0 + 1e-6)  # under its own
         self.assertEqual(c["folded"], 0)
         self.assertEqual(c["flipped"], 0)

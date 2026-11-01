@@ -85,12 +85,18 @@ out["press"]["flip_folded"] = E.metrics(press, Xp, flip, fp, owner)["folded"]
 cdig = {"A": tube(0, 0, 0, 0.05, 0.008), "B": tube(0.020, 0, 0, 0.05, 0.008)}
 plain = E.Envelope(cdig, "Thumb", None, k=0.0, k_core=0.0, k_thumb=0.0, core=0.0)
 Vc, Tc = E.iso_mesh(plain.sd, (-0.012, -0.012, -0.012), (0.032, 0.012, 0.062), 0.0015)
+# the mesher leaves zero-area triangles where grid points land on the surface (H1s: ~200 here); they have no
+# orientation, so any move "folds" them: dropped, as a modelled hand has none
+Tc = Tc[np.linalg.norm(np.cross(Vc[Tc[:, 1]] - Vc[Tc[:, 0]], Vc[Tc[:, 2]] - Vc[Tc[:, 0]]), axis=1) > 2e-12]
 ec = E.edges_of(Tc)
 oc = np.where(Vc[:, 0] < 0.010, 0, 1)
 blend = E.Envelope(cdig, "Thumb", None, k=0.008, k_core=0.0, k_thumb=0.0, core=0.0)
-Xc, stc = E.contact(blend, Vc, np.ones(len(Vc)), oc, ec, Tc, cap=0.004, smooth=12)
-top = (np.abs(Vc[:, 0] - 0.010) < 0.004) & (Vc[:, 1] > 0.004) & (Vc[:, 2] > 0.01) & (Vc[:, 2] < 0.04)
-out["contact"] = {**stc, "valley_up_mm": float((Xc[top, 1] - Vc[top, 1]).mean() * 1000),
+# the shipped smoothing (`[fist] c_smooth` 6); the valley's skin (the facing sides, mid-length) starts inside the
+# union by its fill and ends on it
+Xc, stc = E.contact(blend, Vc, np.ones(len(Vc)), oc, ec, Tc, cap=0.004, smooth=6)
+val = (np.abs(Vc[:, 0] - 0.010) < 0.004) & (Vc[:, 2] > 0.01) & (Vc[:, 2] < 0.04)
+out["contact"] = {**stc, "valley_depth_before_mm": float(np.maximum(-blend.sd(Vc[val]), 0).mean() * 1000),
+                  "valley_depth_after_mm": float(np.maximum(-blend.sd(Xc[val]), 0).mean() * 1000),
                   "move_max_mm": float(np.linalg.norm(Xc - Vc, axis=1).max() * 1000)}
 odig = {"A": tube(0, 0, 0, 0.05, 0.008), "B": tube(0.014, 0, 0, 0.05, 0.008)}
 # each tube's own closed skin, as two bent fingers' skins overlap where they touch
@@ -105,10 +111,11 @@ inside = np.array([blend2.digit("B" if k == 0 else "A", V2t[i:i + 1])[0] < -0.00
 out["contact_touch"] = {**sto, "inside": int(inside.sum()),
                         "inside_max_move_mm": float(np.linalg.norm(Xo[inside] - V2t[inside], axis=1).max() * 1000),
                         "inside_on_shell": int((np.abs(blend2.sd(Xo[inside])) < 0.0002).sum())}
-# H1r local zone: the same two tubes apart, the global cap 1.5 mm, a local cap of 4 mm on their upper half (the mask
-# ramps over z 20-30 mm); the zone moves past the global cap, the far end stays under it, no triangle folds
+# H1r local zone: the same two tubes apart, the global cap 0.5 mm (under the fill's ~2 mm raw moves), a local cap
+# of 4 mm on their upper half (the mask ramps over z 20-30 mm), smoothed as shipped; the zone moves past twice the
+# global cap, the far end stays under it, no triangle folds
 zm = np.clip((Vc[:, 2] - 0.020) / 0.010, 0.0, 1.0)
-Xl, stl = E.contact(blend, Vc, np.ones(len(Vc)), oc, ec, Tc, cap=0.0015, smooth=12,
+Xl, stl = E.contact(blend, Vc, np.ones(len(Vc)), oc, ec, Tc, cap=0.0005, smooth=6,
                     local=(blend, zm * zm * (3 - 2 * zm), 0.004, 0.003))
 ml = np.linalg.norm(Xl - Vc, axis=1) * 1000
 out["contact_local"] = {**stl, "far_max_mm": float(ml[Vc[:, 2] < 0.010].max()),
