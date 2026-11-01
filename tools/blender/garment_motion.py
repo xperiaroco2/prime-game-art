@@ -13,7 +13,10 @@ the spec's [gate2] section, resolved on the build's measures) and reads the resu
   rotation, less its rest offset (clothes_bibmove_geom.slip), mm.
 - Flatness: the part's largest distance from its rest shape moved rigidly onto it (Kabsch), mm: change from rest,
   so a bend the spec draws (lean B's) is allowed and only a new bend counts.
-- Stretch: the part's edges' |length / rest - 1|, the largest and the 95th percentile, %.
+- Stretch: the part's edges' |length / rest - 1|, the largest and the 95th percentile, %. A stretch entry with
+  vs_skin judges the stretch beyond her skin's at the same place in the same frame (garment_gate2_geom.skin_excess):
+  each vertex of the part tied at the reference to its nearest point of her skin (cfg skin: the body and its hidden
+  body_removed, the skin under the cloth), followed by its face and barycentric weights (G3e).
 
 blender -b --python garment_motion.py -- --config CONFIG.json --out OUT.json
 """
@@ -139,6 +142,38 @@ def main() -> int:
                     pairs.append((int(i), ids, list(poly_3d_calc([ref[k] for k in ids], loc))))
         ties[j["name"]] = pairs
         rep["parts"]["join: " + j["name"]] = {"tied": len(pairs)}
+    # her skin under the parts judged against it (vs_skin): each vertex's nearest skin point at the reference
+    skin_parts = [st["part"] for st in cfg["stretch"] if st.get("vs_skin")]
+    skin_objs = [bpy.data.objects[n] for n in cfg.get("skin", []) if n in bpy.data.objects] if skin_parts else []
+    for o in skin_objs:
+        o.hide_viewport = False
+        o.hide_set(False)
+    skin_tie, skin_polys = {}, []
+    if skin_objs:
+        off = 0
+        for o in skin_objs:
+            skin_polys += [[k + off for k in p.vertices] for p in o.data.polygons]
+            off += len(o.data.vertices)
+        skin_tris = [t for p in skin_polys for t in ([p] if len(p) == 3 else [[p[0], p[k], p[k + 1]] for k in range(1, len(p) - 1)])]
+        bpy.context.view_layer.update()
+        sref = np.concatenate([world(o) for o in skin_objs])
+        stree = BVHTree.FromPolygons([tuple(c) for c in sref], skin_tris)
+        for name in skin_parts:
+            tie = {}
+            for i in parts[name]:
+                loc, _n, fi, _d = stree.find_nearest(ref[i], 0.2)
+                if loc is not None:
+                    ids = skin_tris[fi]
+                    tie[int(i)] = (ids, list(poly_3d_calc([sref[k] for k in ids], loc)))
+            skin_tie[name] = tie
+            rep["parts"]["skin under: " + name] = {"tied": len(tie)}
+    rep["skin"] = [o.name for o in skin_objs]
+
+    def skin_points(sco, name):
+        out = {}
+        for i, (ids, w) in skin_tie[name].items():
+            out[i] = sum(sco[k] * x for k, x in zip(ids, w))
+        return out
     say("pieces", json.dumps(rep["pieces"]))
     say("parts", json.dumps(rep["parts"]))
     for clip in cfg["clips"]:
@@ -148,7 +183,10 @@ def main() -> int:
             continue
         arm.animation_data.action = act
         f0, f1 = (int(round(x)) for x in act.frame_range)
-        res = {"frames": 0, "slip_mm": {}, "flat_mm": {}, "stretch_pct": {}, "stretch_p95_pct": {}}
+        res = {"frames": 0, "slip_mm": {}, "flat_mm": {}, "stretch_pct": {}, "stretch_p95_pct": {},
+               "skin_excess_pct": {}, "skin_excess_p95_pct": {}}
+        sc.frame_set(f0)
+        sref0 = None
         for f in range(f0, max(f0 + 1, f1 + 1), max(1, cfg.get("every", 1))):
             sc.frame_set(f)
             co = world(gar)
@@ -168,12 +206,24 @@ def main() -> int:
                 v = 1000 * float(fit[2].max()) if fit else None
                 old = res["flat_mm"].get(fl["part"])
                 res["flat_mm"][fl["part"]] = v if old is None else max(old, v)
+            if skin_tie:
+                sco = np.concatenate([world(o) for o in skin_objs])
+                if sref0 is None:   # her skin at the reference (the reference clip's first frame, else this frame)
+                    sref0 = sref
             for st in cfg["stretch"]:
+                if st.get("vs_skin") and skin_tie.get(st["part"]):
+                    tie = skin_tie[st["part"]]
+                    e = [(i, j) for i, j in edges[st["part"]].tolist() if i in tie and j in tie]
+                    s0, s1 = skin_points(sref0, st["part"]), skin_points(sco, st["part"])
+                    mx, p95 = G.skin_excess(ref, co, s0, s1, e) if e else (None, None)
+                    for key, v in (("skin_excess_pct", mx), ("skin_excess_p95_pct", p95)):
+                        old = res[key].get(st["part"])
+                        res[key][st["part"]] = v if old is None else (old if v is None else max(old, v))
                 mx, p95 = G.stretch(ref, co, edges[st["part"]])   # None for a part with no edges
                 for key, v in (("stretch_pct", mx), ("stretch_p95_pct", p95)):
                     old = res[key].get(st["part"])
                     res[key][st["part"]] = v if old is None else (old if v is None else max(old, v))
-        for k in ("slip_mm", "flat_mm", "stretch_pct", "stretch_p95_pct"):
+        for k in ("slip_mm", "flat_mm", "stretch_pct", "stretch_p95_pct", "skin_excess_pct", "skin_excess_p95_pct"):
             res[k] = {n: (None if v is None else round(v, 2)) for n, v in res[k].items()}
         rep["clips"][clip] = res
         say("clip", clip, json.dumps(res))

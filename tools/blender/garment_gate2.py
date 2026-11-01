@@ -314,7 +314,8 @@ def motion_config(spec, meas, blend: str) -> dict:
     return {"blend": blend, "clips": g2["clips"], "parts": parts, "reference_clip": g2.get("reference_clip"),
             "classify": {"over_z": r(g2["classify"]["over_z"]), "hardware_max_verts": g2["classify"]["hardware_max_verts"]},
             "joins": [{**j, "reach_m": j["reach_mm"] / 1000} for j in g2["joins"]],
-            "flat": g2["flat"], "stretch": g2["stretch"]}
+            "flat": g2["flat"], "stretch": g2["stretch"],
+            "skin": g2.get("skin_meshes", [spec["body"]["mesh"], "body_removed"])}
 
 
 def motion_rows(spec, motion: dict, poke: dict | None) -> list[dict]:
@@ -336,6 +337,13 @@ def motion_rows(spec, motion: dict, poke: dict | None) -> list[dict]:
             rows.append({"clip": clip, "check": f"flatness: {f['part']}", "value": v, "unit": "mm", "tol": f["tol_mm"],
                          "pass": G.verdict(v, f["tol_mm"])})
         for s in g2["stretch"]:
+            if s.get("vs_skin"):   # G3e: the stretch beyond her skin's at the same place (a seam follows her twist)
+                mx = None if m is None else (m.get("skin_excess_pct") or {}).get(s["part"])
+                v = None if m is None else (m.get("skin_excess_p95_pct") or {}).get(s["part"])
+                raw = None if m is None else m["stretch_p95_pct"].get(s["part"])
+                rows.append({"clip": clip, "check": f"stretch p95 beyond her skin's: {s['part']} (max {mx}; own {raw})",
+                             "value": v, "unit": "%", "tol": s["tol_pct"], "pass": G.verdict(v, s["tol_pct"])})
+                continue
             mx = None if m is None else m["stretch_pct"].get(s["part"])
             v = None if m is None else m["stretch_p95_pct"].get(s["part"])   # judged: one torn edge shows in the max
             rows.append({"clip": clip, "check": f"stretch p95: {s['part']} (max {mx})", "value": v, "unit": "%",
@@ -345,6 +353,14 @@ def motion_rows(spec, motion: dict, poke: dict | None) -> list[dict]:
         depth = None if pk is None else round(1000 * pk.get("max_depth_m", 0.0), 1)
         rows.append({"clip": clip, "check": f"pokes (deepest {depth} mm)", "value": v, "unit": "verts",
                      "tol": g2["pokes"]["max_count"], "pass": G.verdict(v, g2["pokes"]["max_count"])})
+        if "shirt" in g2:   # G3e: the shirt is a layer the garment must cover, like her body (poke.json's top under it)
+            tu = None if pk is None else pk.get("top_under_panels")
+            v = None if tu is None else tu.get("max_count")
+            depth = None if tu is None else round(1000 * tu.get("max_depth_m", 0.0), 1)
+            tt = None if pk is None else (pk.get("top_under_panels_tracked") or {})
+            info = "" if not tt else f"; on its rest face {tt.get('max_count')}, {round(1000 * tt.get('max_depth_m', 0), 1)} mm"
+            rows.append({"clip": clip, "check": f"shirt through the garment (deepest {depth} mm{info})", "value": v,
+                         "unit": "verts", "tol": g2["shirt"]["max_count"], "pass": G.verdict(v, g2["shirt"]["max_count"])})
     return rows
 
 

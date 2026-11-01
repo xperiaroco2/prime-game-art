@@ -266,6 +266,32 @@ def stretch(rest, now, edges_ij, min_len: float = 0.003) -> tuple[float | None, 
     return r[-1], p95
 
 
+def skin_excess(rest, now, skin_rest, skin_now, edges_ij, min_len: float = 0.003,
+                skin_min: float = 0.0015) -> tuple[float | None, float | None]:
+    """The stretch beyond her skin's (art #196, G3e; the manager's option (c)): per edge (i, j) longer than min_len at
+    rest, |length / rest - 1| less the same of her skin points tied to i and j (skin_rest / skin_now, one point per
+    garment vertex), never under 0, in %; the largest and the 95th percentile (as stretch()). A garment sewn to the
+    band follows her twist: it may stretch as much as her skin there. Where her two skin points lie closer than
+    skin_min at rest the skin's stretch is unknown and the edge's own stretch counts. (None, None) with no edge."""
+    cv = lambda a: a.tolist() if hasattr(a, "tolist") else a
+    rest, now, skin_rest, skin_now, edges_ij = map(cv, (rest, now, skin_rest, skin_now, edges_ij))
+    r = []
+    for i, j in edges_ij:
+        l0 = math.dist(rest[i], rest[j])
+        if l0 <= min_len:
+            continue
+        g = abs(math.dist(now[i], now[j]) / l0 - 1.0)
+        s0 = math.dist(skin_rest[i], skin_rest[j])
+        s = abs(math.dist(skin_now[i], skin_now[j]) / s0 - 1.0) if s0 > skin_min else 0.0
+        r.append(max(0.0, g - s) * 100)
+    if not r:
+        return None, None
+    r.sort()
+    k = 0.95 * (len(r) - 1)
+    f = int(k)
+    return r[-1], r[f] + (r[min(f + 1, len(r) - 1)] - r[f]) * (k - f)
+
+
 def classify(sizes: list[int], spans: list[tuple[float, float, float, float]], over_z: float, hw_max: int) -> list[str]:
     """Each garment piece's class from its vertex count and rest span (z max, y min, y max, unused): 'strap' if it
     reaches over over_z with points both in front (y < -2 cm) and behind (y > 2 cm), it goes over the shoulder,
