@@ -369,7 +369,7 @@ PLANT_PATCH_M = 0.003  # B1i: a foot's contact patch: its points this close over
 PLANT_ON_M = 0.0015  # B1k: a sole this close over the floor stands on it (the planted frames' bar)
 PLANT_EASE = 2  # B1k: the frames a foot's plant eases in over before its landing and out over after its lift-off
 PLANT_HOLD_MAX_M = 0.15  # B1k: a stance run needing a longer hold is the clip's own slide, lowered but not held
-PLANT_EASE_STEP_M = 0.010  # B1l: a hold eases out over the swing by at most this a frame beyond the source's own step
+PLANT_EASE_STEP_M = 0.010  # B1l: an ease steps a foot at most this a frame past the source's own (B1m: x, y and z)
 
 
 def patch_steps(frames_xy: list, patch: list, wrap: bool = False) -> list[tuple[float, float] | None]:
@@ -461,9 +461,10 @@ def ease_weights(hold: float, room: int, ease: int = PLANT_EASE, step: float = P
     return w
 
 
-def plant_ease_step(off: dict[str, list], runs: dict[str, list[list[int]]]) -> float:
-    """B1l: the largest step (m a frame, x and y) an offset (plant_offsets') adds to a foot beyond the source's own on
-    the steps touching a frame outside its stance runs (merge_runs'): the eased swing frames."""
+def plant_ease_step(off: dict[str, list], runs: dict[str, list[list[int]]], wrap: bool = False) -> float:
+    """B1l: the largest step (m a frame; B1m: x, y and z) an offset (plant_offsets') adds to a foot beyond the source's
+    own on the steps touching a frame outside its stance runs (merge_runs'): the eased swing frames. wrap: a loop whose
+    last frame is its first (B1m: the seam's step counted only where it touches a swing frame)."""
     top = 0.0
     for s, o in off.items():
         n = len(o)
@@ -471,9 +472,11 @@ def plant_ease_step(off: dict[str, list], runs: dict[str, list[list[int]]]) -> f
         for run in runs[s]:
             for i in run:
                 inr[i] = True
+        if wrap and n > 2:
+            inr[-1] = inr[0]
         for j in range(1, n):
             if not (inr[j] and inr[j - 1]):
-                top = max(top, math.hypot(o[j][0] - o[j - 1][0], o[j][1] - o[j - 1][1]))
+                top = max(top, math.dist(o[j], o[j - 1]))
     return top
 
 
@@ -491,7 +494,9 @@ def plant_offsets(lows: dict[str, list[float]], steps: dict[str, list], ground: 
     eases in over `ease` frames before the run (the landing) and out over `ease` after it (the lift-off) by a raised
     cosine, never under the floor; B1l: the hold (x, y) eases out over as many frames as keep its step within
     PLANT_EASE_STEP_M (ease_weights, never past the next landing), and a foot's runs `2 * ease` frames apart or less are
-    one (merge_runs). A run whose hold would pass PLANT_HOLD_MAX_M is lowered without a hold and its
+    one (merge_runs); B1m: the height eases with the hold on the same weights (the step bound in x, y and z), and a
+    merged gap's frames take the straight-line blend of their stance neighbours' height offsets, never under the floor.
+    A run whose hold would pass PLANT_HOLD_MAX_M is lowered without a hold and its
     first frame added to unheld[foot] (a dict given): that is the clip's own slide, not a lift-off's drag (the
     Crouch_Fwd__ual slides 13 cm a frame on his floor; holding it put her Foot 17 cm out of reach). B1e lowered both
     feet by the lower foot's height instead: the lowered foot dragged 37-53 mm a frame along the floor at the crouch's
@@ -511,7 +516,7 @@ def plant_offsets(lows: dict[str, list[float]], steps: dict[str, list], ground: 
         for run in runs[s]:
             for i in run:
                 in_run[i] = True
-        stood = {i for run in raw[s] for i in run}  # a merged gap's frames keep their height (merge_runs)
+        stood = {i for run in raw[s] for i in run}  # a merged gap's frames: not lowered on their own (merge_runs)
         eased = [[0.0, 0.0, 0.0] for _ in range(n)]
         low_s = []
         for run in runs[s]:
@@ -536,6 +541,28 @@ def plant_offsets(lows: dict[str, list[float]], steps: dict[str, list], ground: 
                 unheld[s].append(run[0])
             for i, h in zip(run, hold):
                 off[i] = [h[0], h[1], -z[i] if (i in low_r or z[i] < 0.0) else 0.0]
+            gaps = [t for t, i in enumerate(run) if i not in stood]
+            if len(gaps) < len(run):  # B1m: a merged gap's height blended between its stance neighbours'
+                for t in gaps:
+                    near = []
+                    for sign in (-1, 1):
+                        d = 1
+                        while d < len(run):
+                            u = t + sign * d
+                            if whole:
+                                u %= len(run)
+                            elif not 0 <= u < len(run):
+                                break
+                            if run[u] in stood:
+                                near.append((d, off[run[u]][2]))
+                                break
+                            d += 1
+                    if len(near) == 2:
+                        (d0, z0), (d1, z1) = near
+                        zg = z0 + (z1 - z0) * d0 / (d0 + d1)
+                    else:
+                        zg = near[0][1] if near else off[run[t]][2]
+                    off[run[t]][2] = max(zg, -z[run[t]])
             if whole:
                 continue
             for end, sign in ((run[0], -1), (run[-1], 1)):
@@ -545,14 +572,10 @@ def plant_offsets(lows: dict[str, list[float]], steps: dict[str, list], ground: 
                     if not 0 <= j < n or in_run[j]:
                         break
                     room += 1
-                wxy = ease_weights(math.hypot(off[end][0], off[end][1]), room, ease)
-                wz = ease_weights(0.0, room, ease)
-                for d in range(1, max(len(wxy), len(wz))):
+                w = ease_weights(math.dist(off[end], (0.0, 0.0, 0.0)), room, ease)  # B1m: x, y and z together
+                for d in range(1, len(w)):
                     j = (end + sign * d) % m if wrap and n > 2 else end + sign * d
-                    a = wxy[d] if d < len(wxy) else 0.0
-                    b = wz[d] if d < len(wz) else 0.0
-                    eased[j] = [eased[j][0] + a * off[end][0], eased[j][1] + a * off[end][1],
-                                eased[j][2] + b * off[end][2]]
+                    eased[j] = [e + w[d] * o for e, o in zip(eased[j], off[end])]
         for j in range(n):
             if not in_run[j] and any(eased[j]):
                 off[j] = [eased[j][0], eased[j][1], max(eased[j][2], -z[j])]
@@ -1194,7 +1217,7 @@ def feet_floor(arm, skins, act, rest, up_arm, wrap: bool, no_flight: bool = Fals
            "no_flight": no_flight,
            "max_lower_cm": round(max(0.0, -min(x[2] for v in total.values() for x in v)) * 100, 2),
            "plant_hold_mm": round(max(math.hypot(x[0], x[1]) for v in total.values() for x in v) * 1000, 1),
-           "plant_ease_step_mm": round(plant_ease_step(total, runs_b) * 1000, 1),
+           "plant_ease_step_mm": round(plant_ease_step(total, runs_b, wrap) * 1000, 1),
            "plant_frames": {s: len(v) for s, v in lowered.items()},
            "plant_unheld_runs": {s: sorted(set(v)) for s, v in unheld.items()},
            "ankle_miss_max_cm": miss, "hips_fallback_cm": 0.0,

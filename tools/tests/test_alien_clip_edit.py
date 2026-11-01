@@ -368,22 +368,25 @@ class B1kPlant(unittest.TestCase):
         w = E.ease_weights(0.108, 10)  # the crouch's 10-frame swing: a ramp, 108 / 11 mm a frame
         self.assertEqual(len(w), 11)
         self.assertAlmostEqual(max(0.108 * abs(a - b) for a, b in zip(w, w[1:] + [0.0])), 0.108 / 11)
-        # in place: a 13-frame loop's lift-off held 90 mm, 10 frames of swing to the next landing
+        # in place: a 13-frame loop's lift-off held 50 mm, 8 frames of swing (4..11) to the next landing: room for
+        # a raised cosine over 7 frames (9.8 mm a step at the middle; 6 frames would be 11.1)
         ll = [0.012] * 3 + [0.002] + [0.05] * 8 + [0.012]
         rl = [0.05] * 4 + [0.012] * 8 + [0.05]
-        ls = [(0.0, self.V)] * 3 + [(0.0, self.V + 0.09)] + [(0.0, self.V)] * 9
+        ls = [(0.0, self.V)] * 3 + [(0.0, self.V + 0.05)] + [(0.0, self.V)] * 9
         off, low = E.plant_offsets({"Left": ll, "Right": rl}, {"Left": ls, "Right": [(0.0, self.V)] * 13},
                                    (0.0, self.V), True, wrap=True)
-        self.assertAlmostEqual(off["Left"][3][1], -0.09)
+        self.assertAlmostEqual(off["Left"][3][1], -0.05)
+        self.assertEqual(len(E.ease_weights(math.dist(off["Left"][3], (0, 0, 0)), 8)), 8)  # a cosine, not a ramp
         runs = {s: E.merge_runs(r, 13, True) for s, r in E.foot_stances({"Left": ll, "Right": rl}, True).items()}
-        self.assertLessEqual(E.plant_ease_step(off, runs), E.PLANT_EASE_STEP_M + 1e-12)
-        self.assertGreater(E.plant_ease_step(off, runs), 0.005)
-        self.assertEqual(off["Left"][0][:2], (0.0, 0.0))  # back on the clip's path at its next landing
-        self.assertTrue(all(abs(off["Left"][j][1]) > 0.0 for j in range(3, 12)))
+        self.assertLess(E.plant_ease_step(off, runs, True), E.PLANT_EASE_STEP_M)
+        self.assertGreater(E.plant_ease_step(off, runs, True), 0.009)
+        self.assertEqual(off["Left"][11][:2], (0.0, 0.0))  # back on the clip's path before its next landing
+        self.assertTrue(all(abs(off["Left"][j][1]) > 0.0 for j in range(3, 11)))
 
     def test_a_one_frame_gap_carries_the_hold(self):
         """B1l (the review's minor 2): two stance runs of one foot a frame apart are one: the hold carried across
-        the gap (B1k dropped it from -0.12 to 0 and back in a frame, a 90 mm pop), the gap frame at its own height."""
+        the gap (B1k dropped it from -0.12 to 0 and back in a frame, a 90 mm pop); B1m: the gap frame lowered by its
+        neighbours' blend (B1l kept its height)."""
         ll = [0.01] * 5 + [0.05] + [0.01] * 4
         rl = [0.05] * 5 + [0.01] + [0.05] * 4
         ls = [None] + [(0.0, self.V + 0.03)] * 4 + [(0.0, self.V)] * 5
@@ -394,8 +397,74 @@ class B1kPlant(unittest.TestCase):
         self.assertEqual(E.merge_runs([[6, 7], [9, 10, 11, 0]], 13, wrap=True), [[6, 7, 8, 9, 10, 11, 0]])
         for i, h in enumerate([0.0, -0.03, -0.06, -0.09] + [-0.12] * 6):
             self.assertAlmostEqual(off["Left"][i][1], h, msg=i)
-        self.assertEqual(off["Left"][5][2], 0.0)  # the gap frame keeps its height
+        self.assertAlmostEqual(off["Left"][5][2], -0.01)  # lowered as its neighbours, not to the floor
         self.assertNotIn(5, low["Left"])
+
+    def test_a_gap_frame_takes_its_neighbours_height(self):
+        """B1m (the second review's major): a merged gap frame's height offset is the straight-line blend of its
+        stance neighbours', never under the floor (B1l kept it at 0: the foot 0 -> 14 -> 0 mm in a frame)."""
+        def gap_after(zg, z_out=0.010):
+            ll = [0.05] * 2 + [0.012] * 4 + [zg] + [z_out] * 4 + [0.05] * 5
+            rl = [0.012] * 2 + [0.05] * 4 + [min(0.010, zg - 0.002)] + [0.05] * 4 + [0.012] * 5  # the other foot lower
+            st = [None] + [(0.0, self.V)] * 15
+            off, low = E.plant_offsets({"Left": ll, "Right": rl}, {"Left": st, "Right": st}, (0.0, self.V), True)
+            self.assertNotIn(6, low["Left"])
+            return off["Left"][6][2], [z + o[2] for z, o in zip(ll, off["Left"])]
+        dz, after = gap_after(0.014, 0.012)
+        self.assertAlmostEqual(dz, -0.012)
+        self.assertAlmostEqual(after[6], 0.002)  # 2 mm over the floor between two planted frames
+        self.assertAlmostEqual(after[5], 0.0)
+        self.assertAlmostEqual(after[7], 0.0)
+        dz, after = gap_after(0.014)  # neighbours lowered 12 and 10 mm: the gap 11 mm
+        self.assertAlmostEqual(dz, -0.011)
+        dz, after = gap_after(0.005)  # a gap frame lower than the blend: put on the floor, not under it
+        self.assertAlmostEqual(after[6], 0.0)
+        self.assertTrue(all(z >= -1e-12 for z in after))
+
+    def test_the_seam_step_counts_only_on_a_swing(self):
+        """B1m (the second review's minor): in a loop whose stance crosses the seam the step into the repeated last
+        frame is a stance step; plant_ease_step without wrap read it as a swing's (25 mm against the ramp's 7.7)."""
+        m = 20
+        ll, rl = [0.05] * m, [0.012] * m
+        for i in list(range(16, 20)) + list(range(4)):
+            ll[i], rl[i] = 0.012, 0.05
+        ll, rl = ll + [ll[0]], rl + [rl[0]]
+        ls = [(0.0, self.V)] * (m + 1)
+        for j in (18, 19, 0, 1):
+            ls[j] = (0.0, self.V + 0.025)
+        ls[m] = ls[0]
+        lows = {"Left": ll, "Right": rl}
+        off, _ = E.plant_offsets(lows, {"Left": ls, "Right": [(0.0, self.V)] * (m + 1)}, (0.0, self.V), True,
+                                 wrap=True)
+        runs = {s: E.merge_runs(r, m + 1, True) for s, r in E.foot_stances(lows, True).items()}
+        self.assertEqual(runs["Left"], [[16, 17, 18, 19, 0, 1, 2, 3]])
+        o = off["Left"]
+        swing = max(math.dist(o[j], o[j - 1]) for j in range(4, 17))
+        self.assertAlmostEqual(E.plant_ease_step(off, runs, True), swing)
+        self.assertLess(swing, E.PLANT_EASE_STEP_M)
+        self.assertAlmostEqual(E.plant_ease_step(off, runs), 0.025)  # the seam's stance step, over-read
+
+    def test_the_height_eases_within_the_step_too(self):
+        """B1m (the second review's minor): the height eases out on the hold's weights, so the step bound holds in
+        x, y and z (B1l eased z over 2 frames on the hold's first frames: 11.7 mm a step in 3D)."""
+        m = 20
+        ll, rl = [0.05] * m, [0.012] * m
+        for i in range(12, 18):
+            ll[i], rl[i] = 0.012, 0.05
+        ll, rl = ll + [ll[0]], rl + [rl[0]]
+        ls = [(0.0, self.V)] * (m + 1)
+        for j in (15, 16, 17):
+            ls[j] = (0.0, self.V + 0.02)
+        ls[0] = ls[m]
+        lows = {"Left": ll, "Right": rl}
+        off, _ = E.plant_offsets(lows, {"Left": ls, "Right": [(0.0, self.V)] * (m + 1)}, (0.0, self.V), True,
+                                 wrap=True)
+        runs = {s: E.merge_runs(r, m + 1, True) for s, r in E.foot_stances(lows, True).items()}
+        o = off["Left"]
+        self.assertAlmostEqual(o[17][2], -0.012)
+        self.assertAlmostEqual(o[0][2] / o[17][2], o[0][1] / o[17][1])  # z on the hold's weights
+        self.assertLessEqual(E.plant_ease_step(off, runs, True), E.PLANT_EASE_STEP_M)
+        self.assertEqual(o[7], (0.0, 0.0, 0.0))
 
     def test_no_flight_clips(self):
         self.assertFalse(E.can_fly("Crouch_Fwd_Loop"))
