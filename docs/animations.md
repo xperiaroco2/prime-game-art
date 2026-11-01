@@ -1658,10 +1658,26 @@ fist grip at `tip_to`, the Proximal ones leave the old grip only at `base_from`,
 arrives at `to`; out of it, the same path backwards. Set to `curl = [0.6, 0.4]`, `thumb = [0.6, 1.0]`: at half way
 the hand is an open C with the fingers tucked, at 0.65 a closing C, at 0.8 nearly a fist. H1n's Blender grids
 (`D:/prime-art-raw/2026-10-31-hands/h1n/r1/`, `r2/`): knuckles first, or the thumb in step or early, still ring at
-0.5-0.65, and so does `lead` 1. Godot's ReviewBlend (`h1n/sheets/blend.png`) shows no ring at 50 % on either
-character. Like `lead`, the path acts on ramps keyed inside a clip only: the game's Walk/Jog switch is a 0.15 s
+0.5-0.65, and so does `lead` 1. **Not yet seen in Godot on the axolotl:** H1n's Godot ReviewBlend sheet
+(`h1n/sheets/blend.png`) was read as "no ring at 50 % on either character", but H1o found the axolotl's close-ups
+byte-identical across H1m, H1n and H1o although the GLBs differ (a stale `godot/import/axolotl_review.glb`, or two
+runs importing the same name at once); only the chameleon's render was live. A Godot check of the path needs a GLB
+under a new file name (H1p: `<c>_review_h1p.glb`). Like `lead`, the path acts on ramps keyed inside a clip only: the game's Walk/Jog switch is a 0.15 s
 crossfade (`XFADE_S` in prime-game's `character_rig.gd`) that blends every bone by one weight, so the ring can still
 flash for about 0.05 s there; removing that needs a transition clip or a per-bone crossfade in the game.
+
+**Denser hands (H1p).** Six steps of shape and relax tuning left the Godot close-ups faceted and lumpy (H1f's critic:
+~10-12 vertices around a finger, ~3 rings per segment, a 90 degree fold over them). `alien_hand_mesh.py dense` cuts
+every skin face made only of Hand and finger weights once along both directions (bmesh `subdivide_edges`, grid fill,
+`smooth` 1.0; weights, UVs and shape keys interpolated; the region's rim edges stay whole, so no face outside it
+changes and every old vertex keeps its index and position), then the tube rebuild runs again on a dump of it
+(`alien_finger_run.py build`, `apply`) so the new finger vertices lie on the tubes. On H1i's tube characters
+(`D:/prime-art-raw/2026-10-31-hands/h1p/`): the axolotl 39 319 -> 46 092 vertices (+6 773, about 3.4k per hand; 4 153
+faces cut), every digit's wave 0.00-0.11 mm after the tubes (0.6-1.6 mm on the subdivided mesh before them), nothing
+outside the hand moved (`diff`: 0.0 mm, weights 0). The second tube pass blends the ramp's partial vertices once more
+(the thumb/index web moves up to 5.6 mm against H1i's); keeping them put instead left the ring finger at 0.8 mm
+(over `wave_max_mm`), so the second blend stays. `test_alien_hand_mesh_dense_blender.py` checks `dense` on a
+synthetic rigged tube.
 
 ## The review
 
