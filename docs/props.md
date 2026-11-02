@@ -949,18 +949,41 @@ with a dark screen in a cyan line, the night Earth on the playfield; the hall's 
    body named as its node (`WallLeft`, `WallRight`, `WallTop`, `InlaneLeft`, `InlaneRight`, `FlipperLeft`,
    `FlipperRight`, `Bumper`, `Kicker`, `Target`) at the node's transform, the flippers' pivots at their origins, plus
    `Playfield`, `Glass` and the markers `BallStart` and `Drain`; the game swaps its plain greybox meshes for these.
-   Plain materials (`pinball_teal_dark`, `pinball_teal_light`, `pinball_copper`, `pinball_cyan` emissive,
-   `pinball_screen`, `pinball_glass`, `pinball_field`, `pinball_ivory`, `pinball_chrome`), a chamfer on every edge
-   over 30 degrees, no textures yet (the playfield's night Earth and the side art come with Gate 3).
-3. **The shots and the motion**: `godot/pinball/shots.gd` extends the lobby's `godot/lobby/hall.gd` (the hall, the
+   Step 1 had plain materials and one-segment chamfers; Gate 3 (below) gave them their look.
+3. **The detail (Gate 3, step 2)**: the materials and the art as the concept's, the shape and every contract number
+   unchanged (the build's measured numbers and the clearances are step 1's). Under the hall's light L3 the warm
+   pendants turned the metal brown, so the two greys have less metal and a cooler albedo (`pinball_teal_dark` 0.18
+   metallic, `pinball_teal_light` 0.30) and a tiling roughness break-up (`rough_dark.png`, `rough_light.png`, 512 px,
+   one tile per 40 cm on box-projected UVs), as the hall's panels have. The copper is darker and rougher (base 0.50,
+   0.25, 0.14, roughness 0.46; step 1's 0.78/0.40/0.22 at 0.28 glared orange near the pendants); the cyan emits at 2.2
+   (step 1's 5 bloomed to white); the medallions' domes are dark lenses (`pinball_lens`); the flippers' inlays are a
+   thin cyan line. The front is the concept's V: two copper diagonals from the outer top to the inner bottom
+   (`front.v_top`, `v_bottom`, `v_strip`), the lighter trapezoid between them with a dark plate round the medallion,
+   the dark body outside. The side walls: a lighter band under the rail, the side art framed in copper, copper corner
+   caps over the rails' ends. Rivets are flattened domes (16 segments) in rows: along both side walls under the rails
+   and at the bottom (`rivet_pitch`), the front's corners, the backbox's front corners and side edges. The feet have
+   round copper collars with two cyan rings each (`legs.collar_r`, `ring2_h`) and a copper cap where each leg meets
+   the body. Bevels have 2 segments (3 on the copper) for the CloseUp camera.
+   The art (`tools/blender/pinball_art.py`, numpy inside headless Blender): `earth_field.png` (1024 x 2048) on the
+   `Playfield`'s top (`pinball_field`, base colour and emission 0.55) and `earth_side.png` (2048 x 600) on both side
+   panels (`pinball_side_art`, mirrored), each an orthographic view of a sphere sampled from the hall's cut of NASA's
+   Black Marble (`<raw>/lobby/hall/v11/earth/earth_night_cap.jpg`, `sources/nasa_earth_lobby.toml`; credit "Earth
+   imagery: NASA"; no new download): the city lights, a blue atmosphere on the limb, navy space and sparse stars.
+   The field's limb arcs across the field with the planet at the player's end; the side's rises from the front edge
+   toward the back. The textures go into the GLBs and into `<tag>/tex/`.
+4. **The shots and the motion**: `godot/pinball/shots.gd` extends the lobby's `godot/lobby/hall.gd` (the hall, the
    ship and light L3, as `lobby --shoot`) and adds the cabinet by the request's placement, the table under
    `TableMount`, placeholder text on `Display` and a 3 cm ball; off-screen through `_godot.window()` only. Mode
    `shoot`: a 3/4 front, the side, the player's eye at the spawn (1.65 m), the `CloseUp` camera, the backbox
-   close-up, the hall around it, `sheet.png` with the concept beside the 3/4 front, and the drawing's SVGs as PNGs.
+   close-up, the hall around it, `sheet.png` with the concept beside the 3/4 front, Gate 3's close-ups
+   (`closeups.png`: a copper corner, a foot, the medallion, the side art, the field under the glass) and the drawing's
+   SVGs as PNGs.
    Mode `video`: 10 s at 1280x720 from `CloseUp`, the flippers flicking at the contract's swing (50 degrees) and speed
-   (1500 degrees/s), the ball on a scripted Catmull-Rom path; the frames are encoded by the ship's `ship_video.py`.
-4. **The driver**: `$PYTHON_BIN tools/blender/pinball_run.py [--tag v1] [--no-build] [--no-shots] [--no-video]` runs
+   (1500 degrees/s), the ball on a scripted Catmull-Rom path; the frames are encoded by the ship's `ship_video.py`; every 30th
+   frame and the flicks' frames (2.6, 5.4 and 8.5 s) are kept in `video/frames/`.
+5. **The driver**: `$PYTHON_BIN tools/blender/pinball_run.py [--tag v2] [--no-build] [--no-shots] [--no-video]` runs
    the build, glTF-Validator on both GLBs, the drawing, the clearances in the hall (the east wall, its pilasters, door
    D2: `clearances.json`), the shots and the video into `<raw>/lobby/pinball/<tag>/`. Background only (about 10
    minutes with the hall's first import). `tools/tests/test_props_pinball.py` checks the spec's contract numbers and
-   sums and, with the raw build present, the GLBs' node names and the table nodes' transforms.
+   sums, the front's V and, with the raw build present (the newest of v2, v1), the GLBs' node names, the table
+   nodes' transforms and the art's textures.
