@@ -341,7 +341,7 @@ def _spread(top, co, got: dict, fade: float):
 
 def shirt_follow(top, B, skip_vs, fade: float, reach: float = 0.04, near: float = 0.015, low_z: float = -1.0,
                  low_skip=frozenset(), strap_vs=frozenset(), strap_reach: float = 0.0, strap_fade: float = 0.0,
-                 keep=frozenset(), w_above=None) -> dict:
+                 keep=frozenset(), w_above=None, ring: int = 0, ring_reach: float = 0.04) -> dict:
     """The shirt under the dungarees takes their weights (G3e, art #196: on her body's weights it came through the band
     and the plates, 8 mm in Idle, 35 mm in Jump_Start, the band's pale stripes): each shirt vertex whose normal meets the
     garment within reach, or that lies within near of it (not a strap, which lies over her shoulder's skin) takes the garment's weights there (the
@@ -394,6 +394,37 @@ def shirt_follow(top, B, skip_vs, fade: float, reach: float = 0.04, near: float 
                 for g, val in B.W.get(x, {}).items():
                     acc[g] = acc.get(g, 0.0) + k * val
         (got_s if strap else got)[v.index] = norm(acc)
+    # G3p: rings of shirt vertices round the covered ones take the nearest cloth's weights (its face's, by barycentric
+    # weights), whatever their normal meets: G3o's ring re-ran the cover test, which every vertex outside the covered
+    # set had already failed, so it added none; the shirt face under the cloth's edge kept one faded corner and the
+    # cloth over it read 0.06-0.11 off the shirt (the probe, p95)
+    nbr = {}
+    for e in top.data.edges:
+        i, j = e.vertices
+        nbr.setdefault(i, set()).add(j)
+        nbr.setdefault(j, set()).add(i)
+    added = 0
+    for _ in range(max(0, ring)):
+        new = {}
+        for i in got:
+            for j in nbr.get(i, ()):
+                if j in got or j in got_s or j in keep or j in new:
+                    continue
+                low = co[j].z < low_z
+                tr = low_tree if low else tree
+                hit, _hn, fi, _d = tr.find_nearest(co[j], ring_reach)
+                if hit is None:
+                    continue
+                f = keep_f[fi] if low else gfaces[fi]
+                if f.material_index == 2 or on_strap(f) or any(x in skip_vs for x in f.verts):
+                    continue
+                acc = {}
+                for x, k in zip(f.verts, poly_3d_calc([x.co for x in f.verts], hit)):
+                    for g, val in B.W.get(x, {}).items():
+                        acc[g] = acc.get(g, 0.0) + k * val
+                new[j] = norm(acc)
+        got.update(new)
+        added += len(new)
     dist, src = _spread(top, co, got, fade)
     dist_s, src_s = _spread(top, co, got_s, strap_fade) if got_s else ({}, {})
     groups = {g.name: g for g in top.vertex_groups}
@@ -416,7 +447,7 @@ def shirt_follow(top, B, skip_vs, fade: float, reach: float = 0.04, near: float 
                 groups[g] = top.vertex_groups.new(name=g)
             groups[g].add([i], val, "REPLACE")
         changed += 1
-    return {"covered": len(got), "covered_by_straps": len(got_s), "faded": changed - len(got) - len(got_s),
+    return {"covered": len(got), "ring_added": added, "covered_by_straps": len(got_s), "faded": changed - len(got) - len(got_s),
             "shirt_verts": len(co), "fade_m": fade, "strap_reach_m": strap_reach, "strap_fade_m": strap_fade,
             "kept": len(keep)}
 
@@ -549,6 +580,22 @@ def main() -> None:
                     help="G3m: bones (name parts, comma-separated) her skin's weights lose (default the spec's skin_drop)")
     ap.add_argument("--no-shirt-hide", action="store_true",
                     help="G3m: keep the shirt's faces under the plates and the straps' cores")
+    ap.add_argument("--bib-hug", type=float, default=None,
+                    help="G3p: 0-1, how far the bib moves from lean B's hull toward her front under each column (default "
+                         "the spec's [build] bib_hug)")
+    ap.add_argument("--bib-hug-gap-mm", type=float, default=None,
+                    help="G3p: the bib's least gap over the shirt when it hugs (default the spec's bib_hug_gap_mm)")
+    ap.add_argument("--seam-weld", type=float, default=None,
+                    help="G3p: cm over the band's top the plates ease from the band's weights to their own after the "
+                         "smoothing (a sewn seam; default the spec's plate_seam_cm; 0 off)")
+    ap.add_argument("--bib-shirt-clear-mm", type=float, default=None,
+                    help="G3p: the bib's inner face at least this off the shirt (default the spec's bib_shirt_clear_mm; 0 off)")
+    ap.add_argument("--shirt-ring", type=int, default=None,
+                    help="G3p: rings of shirt vertices round the covered ones that take the nearest cloth's weights "
+                         "(default the spec's shirt_follow_ring)")
+    ap.add_argument("--strap-weld", type=float, default=None,
+                    help="G3p: cm over the bib's top a strap's front run eases from the bib's weights to its own "
+                         "(default the spec's strap_weld_cm; 0 off)")
     a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     spec = S.load_spec(a.spec)
     d = {k: v["cm"] / 100 for k, v in spec["dims"].items()}
@@ -763,6 +810,37 @@ def main() -> None:
     pts[-1] = (bt, min(pts[-1][1], ref.front(bt, hwf) - SHIRT - d["bib_standoff_top"]))
     hull = envelope(pts, front=True)
     bib_y = lambda z: chain_y(hull, z)
+    # G3p: lean B's hull stood the bib 1-5 cm off her (G3o: on her skin's weights her trunk's bend acts on that offset:
+    # bib stretch p95 up to 15 %, folds 3.7-6.1 mm); bib_hug moves each point that share of the way toward her front
+    # under it, dilated (the most forward point within 2 cm across and 1.5 cm up or down), plus the shirt and a gap
+    bhug = a.bib_hug if a.bib_hug is not None else float(spec["build"].get("bib_hug", 0.0))
+    hug_gap = (a.bib_hug_gap_mm if a.bib_hug_gap_mm is not None else float(spec["build"].get("bib_hug_gap_mm", 4.0))) / 1000
+
+    def bib_y2(x, z):
+        y = bib_y(z)
+        if bhug <= 0:
+            return y
+        ys = [ref.front(z + dz, 0.02, x0=x) for dz in (-0.015, 0.0, 0.015)]
+        ys = [v for v in ys if v is not None]
+        if not ys:
+            return y
+        return y + bhug * max(0.0, min(ys) - SHIRT - hug_gap - y)
+    # G3p: the bib's inner face never nearer the shirt than shirt_clear (G3n/G3o: a shirt vertex under the bib at
+    # (+-2.8, -11.3, 102.6) cm had 0.4 mm of room at rest and went 1.1-1.9 mm through it in Jog, Strafe, Jump_Start)
+    sclr = (a.bib_shirt_clear_mm if a.bib_shirt_clear_mm is not None else float(spec["build"].get("bib_shirt_clear_mm", 0.0))) / 1000
+    tm0 = top.evaluated_get(bpy.context.evaluated_depsgraph_get()).to_mesh()
+    shirt_tree = BVHTree.FromPolygons([top.matrix_world @ v.co for v in tm0.vertices], [tuple(p_.vertices) for p_ in tm0.polygons])
+    tm0 = None
+    n_clear = [0]
+
+    def clear_y(x, y, z):
+        if sclr <= 0 or z < bbz:
+            return y
+        hit = shirt_tree.ray_cast(Vector((x, -1.0, z)), Vector((0, 1, 0)), 2.0)[0]
+        if hit is None or y + a.plate <= hit.y - sclr:
+            return y
+        n_clear[0] += 1
+        return hit.y - sclr - a.plate
     nb = 17
     rows = []
     for z in zs:
@@ -770,7 +848,7 @@ def main() -> None:
         row = []
         for i in range(nb):
             x = -hw + 2 * hw * i / (nb - 1)
-            y = lap_y(x, bib_y(max(z, bbz)), z)
+            y = lap_y(x, clear_y(x, bib_y2(x, max(z, bbz)), z), z)
             row.append((Vector((x, y, z)), Vector((x, y + a.plate, z))))
         rows.append(row)
     if not n_lap:     # its foot on the band's top (no lap): just over it
@@ -789,8 +867,9 @@ def main() -> None:
     for r_ in B.slab(rows, plate_w, 0):
         bib_vs.update(v for row_ in r_ for v in row_)
     plate_vs |= bib_vs
+    bib_plate = set(bib_vs)
     rep["lap"] = {"cm": round(lap * 100, 2), "rows": n_lap, "clear_cm": round(lap_clr * 100, 2),
-                  "bib_pushed_mm": round(lap_moved[0] * 1000, 2)}
+                  "bib_pushed_mm": round(lap_moved[0] * 1000, 2), "bib_shirt_clear_moved": n_clear[0]}
     rep["bib"] = {"hull": [[round(z * 100, 2), round(y * 100, 2)] for z, y in hull],
                   "top_y_cm": round(bib_y(bt) * 100, 2), "band_y_cm": round(bib_y(bbz) * 100, 2)}
 
@@ -803,7 +882,7 @@ def main() -> None:
             x = -pw / 2 + pw * i / 10
             zb = pb + 0.01 * abs(x) / (pw / 2)
             z = zb + (pt - zb) * j / 14
-            y = bib_y(z)
+            y = clear_y(x, bib_y2(x, z), z)
             row.append((Vector((x, y - 0.0015, z)), Vector((x, y - 0.0003, z))))
         rows.append(row)
     for r_ in B.slab(rows, plate_w, 1):
@@ -976,9 +1055,9 @@ def main() -> None:
             "front_end_z_m": round(pz[0].z, 4), "back_end_z_m": round(pz[-1].z, 4), "rows": len(rows),
             "inner_mm": round(inner * 1000, 2), "top_z_m": round(max(q.z for q in pz), 4)}
         # the buckle: a ring round the strap at the bib's top edge and its button on the strap
-        yb = bib_y(d["buckle_z"]) - 0.0022 - 0.0005
+        yb = bib_y2(x_bib, d["buckle_z"]) - 0.0022 - 0.0005
         B.disc((x_bib, yb, d["buckle_z"]), (0, 1, 0), d["buckle_d"], 0.003, {}, 2)   # weights: below
-        yr = bib_y(bt - 0.006) - 0.0025
+        yr = bib_y2(x_bib, bt - 0.006) - 0.0025
         ring = bk["buckle_ring_cm"]
         hw, hh, bar = d["strap_w"] / 2 + ring["pad"] / 100, ring["half_h"] / 100, ring["bar"] / 100
         quad = lambda x0, x1, z0_, z1_: [(x0, z0_), (x1, z0_), (x1, z1_), (x0, z1_)]
@@ -1039,6 +1118,45 @@ def main() -> None:
     nb = weight_graph(B.bm, cloth, bk.get("skin_bridge_cm", 0.006))
     smooth_weights(B.W, nb, n_sm)
     smooth_weights(B.W, nb, n_bib, only=bib_vs - hw_vs)
+    # G3p: the sewn seam: the plates' rows over the lap take exactly the band's weights again after the smoothing,
+    # eased back to their own over seam cm above the band's top (the smoothing had mixed her Chest into the lap: in
+    # Jump_Start the shirt showed between the bib's lower edge and the band)
+    seam = a.seam_weld / 100 if a.seam_weld is not None else bk.get("plate_seam_cm", 0.0)
+    n_seam = 0
+    if seam > 0:
+        for v in (bib_vs | back_vs) - hw_vs:
+            if v.co.z <= bbz:
+                B.W[v] = dict(w_band)
+            elif v.co.z < bbz + seam:
+                B.W[v] = mix(w_band, B.W[v], smooth01((v.co.z - bbz) / seam))
+            else:
+                continue
+            n_seam += 1
+    # G3p: each strap's front run on the bib takes the bib's weights under it (its four nearest bib points by inverse
+    # distance), eased back to its own over strap_weld cm above the bib's top: the strap fronts slid 3.3-9.4 mm over
+    # the bib's curving sides (G3o) on weights that differed from the bib's under them
+    sweld = a.strap_weld / 100 if a.strap_weld is not None else bk.get("strap_weld_cm", 0.0)
+    n_sweld = 0
+    if sweld > 0:
+        bl = [v for v in bib_plate - hw_vs]
+        bkd = KDTree(len(bl))
+        for i, v in enumerate(bl):
+            bkd.insert(v.co, i)
+        bkd.balance()
+        for v in strap_vs - hw_vs:
+            if v.co.y > 0 or v.co.z > bt + sweld:
+                continue
+            acc = {}
+            for _co, i, dd in bkd.find_n(v.co, 4):
+                if dd > 0.03:
+                    continue
+                for g, val in B.W[bl[i]].items():
+                    acc[g] = acc.get(g, 0.0) + val / max(dd, 1e-4)
+            if not acc:
+                continue
+            t = 1.0 if v.co.z <= bt else 1.0 - smooth01((v.co.z - bt) / sweld)
+            B.W[v] = mix(B.W[v], norm(acc), t)
+            n_sweld += 1
     ckd = KDTree(len(cloth))
     clist = list(cloth)
     for i, v in enumerate(clist):
@@ -1072,6 +1190,8 @@ def main() -> None:
             B.W[v] = w
         n_hw += 1
     rep["weights"] = {"cloth_verts": len(cloth), "smooth": n_sm, "bib_smooth": n_bib, "hardware_pieces": n_hw,
+                      "seam_m": seam, "seam_verts": n_seam, "strap_weld_m": sweld, "strap_weld_verts": n_sweld,
+                      "bib_hug": bhug, "bib_hug_gap_m": hug_gap,
                       "bridge_m": bk.get("skin_bridge_cm", 0.006), "plate_band_blend_m": pbb}
     if not a.no_shirt_follow:
         # G3i: a strap gives its weights only to the shirt directly under it, eased back over a short fade, never to
@@ -1082,7 +1202,9 @@ def main() -> None:
         rep["shirt_follow"] = shirt_follow(top, B, set(), bk.get("shirt_follow_fade_cm", 0.03),
                                            near=bk.get("shirt_follow_near_cm", 0.015), low_z=bbz, low_skip=plate_vs,
                                            strap_vs=strap_vs, strap_reach=bk.get("strap_follow_reach_cm", 0.0),
-                                           strap_fade=bk.get("strap_follow_fade_cm", 0.0), keep=keep)
+                                           strap_fade=bk.get("strap_follow_fade_cm", 0.0), keep=keep,
+                                           ring=a.shirt_ring if a.shirt_ring is not None
+                                           else int(spec["build"].get("shirt_follow_ring", 0)))
     # G3m's probe: per cloth vertex its weights against the shirt under it and her skin's at it, as half the L1
     # distance (0 the same, 1 nothing shared). G3n: the shirt under it is the shirt surface's nearest point within
     # 1.5 cm, its face's weights by barycentric weights (G3m took the nearest shirt vertex within 2.5 cm: on the coarse
