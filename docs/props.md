@@ -916,3 +916,47 @@ view 4.849 -> 4.641 (-0.21), charger player's view 4.932 -> 4.688 (-0.24), the b
 console control's views, where both shaders draw the same pixels, read the new one 0.47 ms slower and 0.21 ms faster), so a single row under
 about 0.3 ms is noise; the player's-view savings (0.21 board, 0.24 charger) are consistent, within that noise, with fix pass 2's
 prediction (0.26 and 0.34 ms).
+
+## The lobby's pinball machine (art #374)
+
+The lobby's playable pinball machine (prime-game's greybox `levels/lobby/lobby.tscn` `Pinball`, its table contract
+`scenes/pinball/pinball_table.tscn` and `PinballTableSpec`; copies in `<raw>/lobby/pinball/ref/`). Concept (Gate 0,
+the manager's pick): `<raw>/lobby/pinball/ref/concept_p2.png`, a two-tone teal-grey cabinet with copper trims and
+rivets, tapered legs with cyan rings at the feet, cyan rings round the side buttons and the front medallion, a backbox
+with a dark screen in a cyan line, the night Earth on the playfield; the hall's look S4 (teal-grey and copper).
+
+1. **The drawing (Gate 1)**: `tools/blender/pinball_dims.toml`, every size in cm, the concept fitted to the contract;
+   where they disagree the contract wins. The playfield is exactly the contract's 72 x 130 cm (the cabinet's inside
+   is 72 cm, the copper top rails lie over the contract's side walls and hold the glass 10 cm over the field), its
+   front edge 92 cm above the floor, tilted 6.5 degrees (far end up). The tilt lives in `TableMount`'s basis: 180
+   degrees about y (the table's +z, the flippers' end, toward the player on the cabinet's -z), then the tilt, so the
+   game's flat physics table is drawn tilted. The backbox's top is 1.9 m; its screen is 66 x 38 cm for the three
+   Label3D lines of `Display` (best and owner, score, balls; its +z faces the player). `CloseUp` is 1.6 m from
+   `TableMount` on a line 55 degrees down, fov 50, as the greybox's. In the lobby the cabinet's origin (the floor
+   under the footprint's middle) stands at (18, 0, 3.44): its front 40 cm from the greybox's `PinballSpot` (18, 0,
+   2.2). `tools/blender/pinball_drawing.py` draws the front, side and top in cm from the model's own feature edges
+   (`features.json`) with the spec's dimensions: `drawing.svg` on paper, `drawing_model.svg` over the model's
+   orthographic renders, `drawing_concept.svg` beside the concept (a 3/4 picture with no straight views, so nothing
+   lies over it exactly; the Godot sheet sets the 3/4 shot beside it).
+2. **The rough build (Gate 2)**: `tools/blender/pinball_build.py` in headless Blender, every point written in Godot's
+   axes (y up) and turned into Blender's at the end. `pinball.glb`: the cabinet as one mesh `pinball` with its origin
+   on the floor at the footprint's middle, the player on -z, and the markers `TableMount`, `CloseUp`, `Display` as
+   empties at the greybox's roles. `pinball_table.glb`: the table's art in the contract's frame, one mesh per contract
+   body named as its node (`WallLeft`, `WallRight`, `WallTop`, `InlaneLeft`, `InlaneRight`, `FlipperLeft`,
+   `FlipperRight`, `Bumper`, `Kicker`, `Target`) at the node's transform, the flippers' pivots at their origins, plus
+   `Playfield`, `Glass` and the markers `BallStart` and `Drain`; the game swaps its plain greybox meshes for these.
+   Plain materials (`pinball_teal_dark`, `pinball_teal_light`, `pinball_copper`, `pinball_cyan` emissive,
+   `pinball_screen`, `pinball_glass`, `pinball_field`, `pinball_ivory`, `pinball_chrome`), a chamfer on every edge
+   over 30 degrees, no textures yet (the playfield's night Earth and the side art come with Gate 3).
+3. **The shots and the motion**: `godot/pinball/shots.gd` extends the lobby's `godot/lobby/hall.gd` (the hall, the
+   ship and light L3, as `lobby --shoot`) and adds the cabinet by the request's placement, the table under
+   `TableMount`, placeholder text on `Display` and a 3 cm ball; off-screen through `_godot.window()` only. Mode
+   `shoot`: a 3/4 front, the side, the player's eye at the spawn (1.65 m), the `CloseUp` camera, the backbox
+   close-up, the hall around it, `sheet.png` with the concept beside the 3/4 front, and the drawing's SVGs as PNGs.
+   Mode `video`: 10 s at 1280x720 from `CloseUp`, the flippers flicking at the contract's swing (50 degrees) and speed
+   (1500 degrees/s), the ball on a scripted Catmull-Rom path; the frames are encoded by the ship's `ship_video.py`.
+4. **The driver**: `$PYTHON_BIN tools/blender/pinball_run.py [--tag v1] [--no-build] [--no-shots] [--no-video]` runs
+   the build, glTF-Validator on both GLBs, the drawing, the clearances in the hall (the east wall, its pilasters, door
+   D2: `clearances.json`), the shots and the video into `<raw>/lobby/pinball/<tag>/`. Background only (about 10
+   minutes with the hall's first import). `tools/tests/test_props_pinball.py` checks the spec's contract numbers and
+   sums and, with the raw build present, the GLBs' node names and the table nodes' transforms.
