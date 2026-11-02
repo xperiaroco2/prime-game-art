@@ -50,7 +50,7 @@ field_z = -10.93                 # the playfield middle's cabinet z (the body's 
 field_thick = 1.5                # the playfield board under y 0
 glass_y = 10.0                   # the glass's top in the table frame (the walls reach y 8)
 glass_thick = 0.5
-art_inset = 0.0                  # the field's art (the night Earth, a later step) lies on the board's top
+art_inset = 0.0                  # the field's art (the night Earth, pinball_art.py) lies on the board's top
 
 [body]                           # the cabinet's box, tilted with the table; its sizes in the table frame
 outer_w = 82.0                   # across the side walls (the concept: the side walls about 6 % of the body's width)
@@ -64,7 +64,6 @@ rail_out = 42.0                  # their outer edge: a 1 cm lip outside the side
 lockdown_z = [65.0, 74.0]        # the copper lockdown bar across the front, at the rails' height
 trim = 1.2                       # the copper trims along the body's edges: width
 chamfer = 0.6                    # the edge chamfer on the body, legs and backbox
-panel_light = 0.42               # the lighter grey triangles on the front and the side walls' front: their share
 
 [front]                          # the front panel's features (the concept: a medallion between two buttons)
 medallion_r = [9.5, 7.5, 6.5, 5.0]   # copper ring outer, cyan ring outer, cyan inner, the dark dome's radius
@@ -74,7 +73,12 @@ button_len = 3.0                 # how far each stands out of its side wall
 button_z = 64.0                  # table z (8 cm behind the front face) and y of their middle
 button_y = -6.0
 rivet_r = 0.6                    # the copper rivets on the front's corners and the backbox's corners
-rivet_pitch = 9.0
+rivet_pitch = 9.0                # the rows along the side walls (under the rails, at the bottom)
+v_top = 0.17                     # the front's V: the copper diagonals' top, in from the outer edge (share of the width)
+v_bottom = 0.31                  # their foot, in from the outer edge (the concept: converging downward)
+v_strip = 3.0                    # the diagonals' width
+plate = 3.5                      # the dark plate round the medallion: this far outside its copper ring
+cap = 3.0                        # the copper corner caps over the rails' ends: their size
 
 [legs]                           # four tapered legs (the concept: square, flared at the foot, copper collars)
 inset = [7.0, 9.0]               # their tops' centres in from the body's sides (x) and ends (z, table)
@@ -85,6 +89,9 @@ collar_h = 2.5                   # the copper collar above the foot
 ring_h = 1.4                     # the cyan light ring (r 4.1) above the foot's pad
 ring_r = 4.1
 foot_r = [4.6, 3.0]              # the foot's pad: radius, height (bronze, on the floor)
+collar_r = 4.5                   # the round copper collar (Gate 3; step 1 a square box)
+ring2_h = 0.7                    # the second cyan ring, in the collar's middle (the concept: two per foot)
+cap = 0.8                        # the copper cap where each leg meets the body: its lip
 
 [backbox]                        # upright on the body's back end
 w = 82.0
