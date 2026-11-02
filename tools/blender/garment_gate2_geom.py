@@ -267,13 +267,17 @@ def stretch(rest, now, edges_ij, min_len: float = 0.003) -> tuple[float | None, 
 
 
 def skin_excess(rest, now, skin_rest, skin_now, edges_ij, min_len: float = 0.003,
-                skin_min: float = 0.0015, where: bool = False):
+                skin_min: float = 0.0015, where: bool = False, sign: str | None = None, shares: bool = False):
     """The stretch beyond her skin's (art #196, G3e; the manager's option (c)): per edge (i, j) longer than min_len at
     rest, |length / rest - 1| less the same of her skin points tied to i and j (skin_rest / skin_now, one point per
     garment vertex), never under 0, in %; the largest and the 95th percentile (as stretch()). A garment sewn to the
     band follows her twist: it may stretch as much as her skin there. Where her two skin points lie closer than
     skin_min at rest the skin's stretch is unknown and the edge's own stretch counts. (None, None) with no edge.
-    where (G3n): a third value, the largest edge (i, j), or None."""
+    where (G3n): a third value, the largest edge (i, j), or None.
+    sign (G3q, the manager's decision for the bib): "+" counts only the edges that lengthened (a shortened edge bunches,
+    judged by the folds row) and "-" only the shortened; the others count 0 and stay in the population.
+    shares (G3q): a last value, (lengthened, shortened): the shares of the edges at or over the p95 (with an excess
+    over 0) whose own length grew or shrank, or None with none."""
     cv = lambda a: a.tolist() if hasattr(a, "tolist") else a
     rest, now, skin_rest, skin_now, edges_ij = map(cv, (rest, now, skin_rest, skin_now, edges_ij))
     r = []
@@ -281,17 +285,52 @@ def skin_excess(rest, now, skin_rest, skin_now, edges_ij, min_len: float = 0.003
         l0 = math.dist(rest[i], rest[j])
         if l0 <= min_len:
             continue
-        g = abs(math.dist(now[i], now[j]) / l0 - 1.0)
+        gs = math.dist(now[i], now[j]) / l0 - 1.0
+        g = abs(gs)
         s0 = math.dist(skin_rest[i], skin_rest[j])
         s = abs(math.dist(skin_now[i], skin_now[j]) / s0 - 1.0) if s0 > skin_min else 0.0
-        r.append((max(0.0, g - s) * 100, (i, j)))
+        e = max(0.0, g - s) * 100
+        if (sign == "+" and gs < 0) or (sign == "-" and gs > 0):
+            e = 0.0
+        r.append((e, (i, j), gs))
     if not r:
-        return (None, None, None) if where else (None, None)
+        out = (None, None, None) if where else (None, None)
+        return out + (None,) if shares else out
     r.sort(key=lambda x: x[0])
     k = 0.95 * (len(r) - 1)
     f = int(k)
     p95 = r[f][0] + (r[min(f + 1, len(r) - 1)][0] - r[f][0]) * (k - f)
-    return (r[-1][0], p95, r[-1][1]) if where else (r[-1][0], p95)
+    out = (r[-1][0], p95, r[-1][1]) if where else (r[-1][0], p95)
+    if shares:
+        top = [x for x in r if x[0] >= p95 and x[0] > 0]
+        out += ((round(sum(x[2] > 0 for x in top) / len(top), 3), round(sum(x[2] < 0 for x in top) / len(top), 3))
+                if top else None,)
+    return out
+
+
+def turn(a, b, v):
+    """v turned by the least rotation that takes the direction a onto b (Rodrigues; G3q's floor): 3-sequences in, a
+    list out; a or b of zero length, or opposite, leaves v as it is."""
+    na, nb = math.sqrt(sum(x * x for x in a)), math.sqrt(sum(x * x for x in b))
+    if na < 1e-12 or nb < 1e-12:
+        return list(v)
+    a, b = [x / na for x in a], [x / nb for x in b]
+    k = [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+    c = sum(x * y for x, y in zip(a, b))
+    if c < -1 + 1e-9:
+        return list(v)
+    kv = [k[1] * v[2] - k[2] * v[1], k[2] * v[0] - k[0] * v[2], k[0] * v[1] - k[1] * v[0]]
+    kkv = [k[1] * kv[2] - k[2] * kv[1], k[2] * kv[0] - k[0] * kv[2], k[0] * kv[1] - k[1] * kv[0]]
+    return [x + y + z / (1 + c) for x, y, z in zip(v, kv, kkv)]
+
+
+def floor_points(skin_ref, nrm_ref, skin_now, nrm_now, offsets) -> list:
+    """The floor (G3q): where each garment vertex would be if it rode her skin exactly, at its rest stand-off: its tied
+    skin point now plus its offset at the reference (garment - skin point) turned as her skin's surface turned there
+    (the interpolated normal at the reference onto the one now). No weighting of the garment beats this; its stretch
+    beyond her skin is the least a part standing off her can show. One sequence of points per argument, a list out."""
+    return [[s + t for s, t in zip(sn, turn(nr, nn, o))]
+            for sn, nr, nn, o in zip(skin_now, nrm_ref, nrm_now, offsets)]
 
 
 def smooth_residual(rest, now, deg: int = 3) -> list:

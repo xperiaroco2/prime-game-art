@@ -375,6 +375,9 @@ classes = ["panel"]
 x_abs = [0, 11.5]
 y = [-40, 0]
 z = ["waistband_top_z+3.5", "bib_top_z+1"]
+# G3q (2026-11-02, the manager's decision, a measurement fix): the bib's piece only (1836 vertices), not the pocket's
+# separate panel 1.5 mm out over it (330), whose edges G3p counted as the bib's
+piece_verts = [1001, 3600]
 # the plates' strips over the band: the bib's piece (17 x 54 x 2 = 1836 vertices), the back's (41 x 30 x 2 = 2460),
 # not the band's ring (384) nor the trousers' piece with the yoke (over 4000)
 # G3m: the bib's sides (her skin's weights there; in G3l's three-quarter stills the bib stood off her side as a slab)
@@ -383,6 +386,7 @@ classes = ["panel"]
 x_abs = [8, 11.5]
 y = [-40, 0]
 z = ["waistband_top_z+3.5", "bib_top_z+1"]
+piece_verts = [1001, 3600]
 [gate2.parts.bib_lap]
 classes = ["panel"]
 x_abs = [0, 12]
@@ -552,13 +556,22 @@ part = "waistband"
 tol_pct = 2.0                # [behaviour] waistband: no stretch over 2 %
 # G3m: the bib and the back panel on her skin's weights stretch where her skin does: judged beyond it (the bib keeps
 # its 2 %; the back panel 5 % like the straps it runs into, over her shoulder blades)
+# G3q (2026-11-02, the manager's decision, reversible; listed for the engineer): only lengthening counts (a shortened
+# edge bunches, and bunching is judged by the folds row's 3 mm), and the limit is the floor plus 2 %: the floor is the
+# bib's vertices put on her skin at their stand-off, turned with her skin's surface (garment_gate2_geom.floor_points),
+# what no weighting of a bib standing off her can beat (G3p: her skin's exact weights still left 15 %). On condition
+# that the Strafe_Left frame 10 close-up shows no smear on the pocket. Before: 2 % beyond her skin, both signs.
 [[gate2.stretch]]
 part = "bib"
 vs_skin = true
-tol_pct = 2.0
+sign = "+"
+floor = true
+floor_plus_pct = 2.0
+tol_pct = 2.0                # used only without floor_plus_pct
 [[gate2.stretch]]
 part = "back_panel"
 vs_skin = true
+floor = true                 # G3q: reported beside it; the 5 % stays until its Jump_Start frame 12 look
 tol_pct = 5.0
 # The straps against her skin (G3e): their tops follow her shoulders, so they stretch where her shoulders fold and
 # twist; linear skinning cannot bow them out like cloth, and the rule is that they follow her: per edge the stretch

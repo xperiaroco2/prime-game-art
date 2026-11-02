@@ -347,7 +347,8 @@ def motion_rows(spec, motion: dict, poke: dict | None) -> list[dict]:
                 what += f" (on its face's frame; one fit {None if m is None else (m.get('slip_rigid_mm') or {}).get(j['name'])})"
             at = None if m is None else (m.get("slip_at") or {}).get(j["name"])
             if at is not None:   # G3o: the worst point's reference place (cm) and frame
-                what += f" (worst at {at} cm, frame)"
+                rest = (m.get("slip_rest_at") or {}).get(j["name"])
+                what += f" (worst at {at} cm, frame; at rest {rest})"
             rows.append({"clip": clip, "check": what, "value": v, "unit": "mm", "tol": j["tol_mm"],
                          "pass": G.verdict(v, j["tol_mm"])})
         for lp in g2.get("laps", []):   # G3f: a plate over the band may slide on it, hidden: the overlap kept
@@ -373,9 +374,18 @@ def motion_rows(spec, motion: dict, poke: dict | None) -> list[dict]:
                 v = None if m is None else (m.get("skin_excess_p95_pct") or {}).get(s["part"])
                 raw = None if m is None else m["stretch_p95_pct"].get(s["part"])
                 at = None if m is None else (m.get("stretch_at") or {}).get(s["part"])
-                rows.append({"clip": clip, "check": f"stretch p95 beyond her skin's: {s['part']} (max {mx}; own {raw}; "
-                                                    f"worst edge at {at} cm, frame, %)",
-                             "value": v, "unit": "%", "tol": s["tol_pct"], "pass": G.verdict(v, s["tol_pct"])})
+                rest = None if m is None else (m.get("stretch_rest_at") or {}).get(s["part"])
+                sh = None if m is None else (m.get("stretch_shares") or {}).get(s["part"])
+                fl = None if m is None else (m.get("floor_p95_pct") or {}).get(s["part"])
+                tol = s["tol_pct"]
+                if s.get("floor_plus_pct") is not None:   # G3q: the floor (the part on her skin) plus a margin
+                    tol = None if fl is None else round(fl + s["floor_plus_pct"], 2)
+                what = (f"stretch p95 beyond her skin's: {s['part']}{' (lengthened only)' if s.get('sign') == '+' else ''}"
+                        f" (max {mx}; own {raw}; worst edge at {at} cm, frame, %; at rest {rest}; "
+                        f"shares lengthened, shortened {sh}")
+                what += f"; floor {fl})" if s.get("floor") else ")"
+                rows.append({"clip": clip, "check": what, "value": v, "unit": "%", "tol": tol,
+                             "pass": None if tol is None else G.verdict(v, tol)})
                 continue
             mx = None if m is None else m["stretch_pct"].get(s["part"])
             v = None if m is None else m["stretch_p95_pct"].get(s["part"])   # judged: one torn edge shows in the max
@@ -392,8 +402,9 @@ def motion_rows(spec, motion: dict, poke: dict | None) -> list[dict]:
         for cv in g2.get("covers", []):   # G3p: no shirt or skin seen between a plate's edge and the band
             v = None if m is None else (m.get("cover_mm") or {}).get(cv["name"])
             at = None if m is None else (m.get("cover_at") or {}).get(cv["name"])
+            rest = None if m is None else (m.get("cover_rest_at") or {}).get(cv["name"])
             rows.append({"clip": clip, "check": f"covered: {cv['name']} (the longest shirt or skin seen between them; "
-                                                f"at {at} x, z cm, view deg, frame)",
+                                                f"at {at} x, z cm, view deg, frame; at rest {rest} cm)",
                          "value": v, "unit": "mm", "tol": cv["tol_mm"], "pass": G.verdict(v, cv["tol_mm"])})
         pk = None if poke is None else (poke.get("clips") or {}).get(clip)
         v = None if pk is None else pk.get("max_count")

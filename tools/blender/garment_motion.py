@@ -22,6 +22,13 @@ the spec's [gate2] section, resolved on the build's measures) and reads the resu
   with face_dir a join ties only to faces turned toward it, and only points standing over a face (not beside it).
 - Where (G3n): per vs_skin stretch the largest edge beyond her skin in the frame of the clip's worst p95 (its rest
   midpoint, cm, the frame and its %), stretch_at.
+- Rest places (G3q): slip_at, stretch_at and cover_at give the place in the reference (the reference clip's first
+  frame); slip_rest_at, stretch_rest_at and cover_rest_at give the same point at her rest (the T-pose, the build's own
+  coordinates, cm), where a build fix is aimed (G3p's "z 103 at the seam" was Idle's, 5 cm under its rest place).
+- Stretch beyond her skin (G3q): sign "+" counts only the lengthened edges (garment_gate2_geom.skin_excess); the
+  shares of lengthened and shortened edges at the p95 (stretch_shares); with floor, the floor's p95 (floor_p95_pct):
+  the part's vertices put on her skin at their reference stand-off, turned with her skin's surface
+  (garment_gate2_geom.floor_points), the least any weighting of the part can show.
 - Stretch: the part's edges' |length / rest - 1|, the largest and the 95th percentile, %. A stretch entry with
   vs_skin judges the stretch beyond her skin's at the same place in the same frame (garment_gate2_geom.skin_excess):
   each vertex of the part tied at the reference to its nearest point of her skin (cfg skin: the body and its hidden
@@ -66,15 +73,24 @@ def action_for(clip: str):
     return names[0] if names else None
 
 
-def world(o) -> np.ndarray:
+def world(o, normals: bool = False):
+    """The evaluated mesh's vertices in world space (m); with normals (G3q) also its unit vertex normals."""
     dg = bpy.context.evaluated_depsgraph_get()
     ev = o.evaluated_get(dg)
     me = ev.to_mesh()
     co = np.empty(len(me.vertices) * 3)
     me.vertices.foreach_get("co", co)
+    nr = None
+    if normals:
+        nr = np.empty(len(me.vertices) * 3)
+        me.vertices.foreach_get("normal", nr)
     ev.to_mesh_clear()
     m = np.array(o.matrix_world)
-    return co.reshape(-1, 3) @ m[:3, :3].T + m[:3, 3]
+    co = co.reshape(-1, 3) @ m[:3, :3].T + m[:3, 3]
+    if not normals:
+        return co
+    nr = nr.reshape(-1, 3) @ np.linalg.inv(m[:3, :3])
+    return co, nr / np.maximum(np.linalg.norm(nr, axis=1, keepdims=True), 1e-12)
 
 
 def select(co, cls_of_vert, part: dict, piece_n=None) -> np.ndarray:
@@ -264,7 +280,7 @@ def main() -> int:
                     zs_.append(z)
                 run, k = G.sandwiched(labels, C["step"])
                 if k is not None and run > best:
-                    best, at = run, [round(100 * x, 1), round(100 * zs_[k], 1), deg]
+                    best, at = run, [round(100 * x, 1), round(100 * zs_[k], 1), deg, yb, x, zs_[k]]
         return best, at
 
     # her skin under the parts judged against it (vs_skin): each vertex's nearest skin point at the reference
@@ -282,7 +298,8 @@ def main() -> int:
             off += len(o.data.vertices)
         skin_tris = [t for p in skin_polys for t in ([p] if len(p) == 3 else [[p[0], p[k], p[k + 1]] for k in range(1, len(p) - 1)])]
         bpy.context.view_layer.update()
-        sref = np.concatenate([world(o) for o in skin_objs])
+        sw = [world(o, normals=True) for o in skin_objs]
+        sref, snref = np.concatenate([a for a, _n in sw]), np.concatenate([n for _a, n in sw])
         stree = BVHTree.FromPolygons([tuple(c) for c in sref], skin_tris)
         for name in skin_parts:
             tie = {}
@@ -320,6 +337,16 @@ def main() -> int:
         rep["parts"]["lift: " + lift_key(lf)] = {"tied": len(tie), "of": len(parts[lf["part"]]), "faces": len(otris),
                                                  "nearest_mm": None if near is None else round(1000 * near, 1)}
 
+    def floor_of(name, sco, snr):
+        """G3q: the part's vertices on her skin now at their reference stand-off (garment_gate2_geom.floor_points)."""
+        tie = skin_tie[name]
+        ids = list(tie)
+        bary = lambda arr, i: sum(arr[k] * x for k, x in zip(*tie[i]))
+        s_ref = [bary(sref, i) for i in ids]
+        pts = G.floor_points(s_ref, [bary(snref, i) for i in ids], [bary(sco, i) for i in ids],
+                             [bary(snr, i) for i in ids], [ref[i] - p for i, p in zip(ids, s_ref)])
+        return dict(zip(ids, pts))
+
     def skin_points(sco, name):
         out = {}
         for i, (ids, w) in skin_tie[name].items():
@@ -337,7 +364,8 @@ def main() -> int:
         res = {"frames": 0, "slip_mm": {}, "flat_mm": {}, "stretch_pct": {}, "stretch_p95_pct": {},
                "skin_excess_pct": {}, "skin_excess_p95_pct": {}, "lap_mm": {}, "lap_through_mm": {}, "lap_gap_mm": {},
                "lift_mm": {}, "lift_at": {}, "flat_rigid_mm": {}, "stretch_at": {}, "slip_rigid_mm": {}, "slip_at": {},
-               "cover_mm": {}, "cover_at": {}}
+               "cover_mm": {}, "cover_at": {}, "slip_rest_at": {}, "stretch_rest_at": {}, "cover_rest_at": {},
+               "stretch_shares": {}, "floor_p95_pct": {}}
         sc.frame_set(f0)
         sref0 = None
         for f in range(f0, max(f0 + 1, f1 + 1), max(1, cfg.get("every", 1))):
@@ -361,6 +389,7 @@ def main() -> int:
                 old = res["slip_mm"].get(j["name"])
                 if v is not None and at is not None and (old is None or v > old):   # G3o: where (reference cm, frame)
                     res["slip_at"][j["name"]] = [round(100 * float(x), 1) for x in ref[at]] + [f]
+                    res["slip_rest_at"][j["name"]] = [round(100 * float(x), 1) for x in co0[at]] + [f]
                 res["slip_mm"][j["name"]] = v if old is None else max(old, v)
             for name, L in laps.items():
                 if L is None:
@@ -392,7 +421,10 @@ def main() -> int:
                 v, at = cover_gap(cv, C, co)
                 old = res["cover_mm"].get(cv["name"])
                 if at is not None and (old is None or 1000 * v > old):
-                    res["cover_at"][cv["name"]] = at + [f]
+                    res["cover_at"][cv["name"]] = at[:3] + [f]
+                    r0, t0, _r = B.rigid_fit(ref[C["band"]], co0[C["band"]])   # G3q: the band's reference to rest
+                    p0 = r0 @ np.array([at[4], at[3], at[5]]) + t0
+                    res["cover_rest_at"][cv["name"]] = [round(100 * float(x), 1) for x in p0] + [f]
                 res["cover_mm"][cv["name"]] = 1000 * v if old is None else max(old, 1000 * v)
             for fl in cfg["flat"]:
                 fit = fits.get(fl["part"])
@@ -405,7 +437,8 @@ def main() -> int:
                 old = res["flat_mm"].get(fl["part"])
                 res["flat_mm"][fl["part"]] = v if old is None else max(old, v)
             if skin_tie:
-                sco = np.concatenate([world(o) for o in skin_objs])
+                sw = [world(o, normals=True) for o in skin_objs]
+                sco, snr = np.concatenate([a for a, _n in sw]), np.concatenate([n for _a, n in sw])
                 if sref0 is None:   # her skin at the reference (the reference clip's first frame, else this frame)
                     sref0 = sref
             for lf in cfg.get("lifts", []):   # G3j: a part off her skin under it since the reference (the flap)
@@ -426,11 +459,21 @@ def main() -> int:
                     tie = skin_tie[st["part"]]
                     e = [(i, j) for i, j in edges[st["part"]].tolist() if i in tie and j in tie]
                     s0, s1 = skin_points(sref0, st["part"]), skin_points(sco, st["part"])
-                    mx, p95, at = G.skin_excess(ref, co, s0, s1, e, where=True) if e else (None, None, None)
+                    sg = st.get("sign")
+                    mx, p95, at, sh = (G.skin_excess(ref, co, s0, s1, e, where=True, sign=sg, shares=True) if e
+                                       else (None, None, None, None))
                     best = res["skin_excess_p95_pct"].get(st["part"])
                     if at is not None and p95 is not None and (best is None or p95 > best):
                         mid = (ref[at[0]] + ref[at[1]]) / 2
                         res["stretch_at"][st["part"]] = [round(100 * float(x), 1) for x in mid] + [f, round(mx, 1)]
+                        mid0 = (co0[at[0]] + co0[at[1]]) / 2
+                        res["stretch_rest_at"][st["part"]] = [round(100 * float(x), 1) for x in mid0] + [f]
+                        res["stretch_shares"][st["part"]] = sh
+                    if st.get("floor") and e:   # G3q: the floor, the part on her skin at its stand-off
+                        fl = floor_of(st["part"], sco, snr)
+                        fp = G.skin_excess(ref, fl, s0, s1, e, sign=sg)[1]
+                        old = res["floor_p95_pct"].get(st["part"])
+                        res["floor_p95_pct"][st["part"]] = fp if old is None else max(old, fp)
                     for key, v in (("skin_excess_pct", mx), ("skin_excess_p95_pct", p95)):
                         old = res[key].get(st["part"])
                         res[key][st["part"]] = v if old is None else (old if v is None else max(old, v))
@@ -439,7 +482,8 @@ def main() -> int:
                     old = res[key].get(st["part"])
                     res[key][st["part"]] = v if old is None else (old if v is None else max(old, v))
         for k in ("slip_mm", "flat_mm", "stretch_pct", "stretch_p95_pct", "skin_excess_pct", "skin_excess_p95_pct",
-                  "lap_mm", "lap_through_mm", "lap_gap_mm", "lift_mm", "flat_rigid_mm", "slip_rigid_mm", "cover_mm"):
+                  "lap_mm", "lap_through_mm", "lap_gap_mm", "lift_mm", "flat_rigid_mm", "slip_rigid_mm", "cover_mm",
+                  "floor_p95_pct"):
             res[k] = {n: (None if v is None else round(v, 2)) for n, v in res[k].items()}
         rep["clips"][clip] = res
         say("clip", clip, json.dumps(res))

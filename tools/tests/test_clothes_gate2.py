@@ -809,3 +809,88 @@ class G3fLapTest(unittest.TestCase):
         self.assertEqual((skin["value"], skin["pass"]), (42, False))
         other = next(r for r in rows if r["clip"] == g2["clips"][1] and r["check"].startswith("her skin through"))
         self.assertIsNone(other["pass"])                                 # no proof for the clip: unmeasured
+
+
+class G3qFloorTest(unittest.TestCase):
+    """G3q: the bib's stretch counted by sign with its shares, the floor (on her skin at its stand-off), the rest
+    places beside the reference ones, the bib without its pocket."""
+
+    def setUp(self):
+        self.spec = S.load_spec(SPEC)
+
+    def test_skin_excess_by_sign_and_its_shares(self):
+        rest = [(0, 0, 0), (0.1, 0, 0), (0.2, 0, 0)]
+        now = [(0, 0, 0), (0.12, 0, 0), (0.2, 0, 0)]       # edge 0-1 lengthened 20 %, edge 1-2 shortened 20 %
+        e = [(0, 1), (1, 2)]
+        self.assertAlmostEqual(G.skin_excess(rest, now, rest, rest, e)[0], 20.0)
+        mx, p95, at, sh = G.skin_excess(rest, now, rest, rest, e, where=True, shares=True)
+        self.assertEqual(sh, (1.0, 0.0))                     # the p95 edge (the largest of two equal) is the long one
+        self.assertAlmostEqual(G.skin_excess(rest, now, rest, rest, e, sign="+")[1], 19.0)   # p95 of 0 and 20
+        mx, _p, at = G.skin_excess(rest, now, rest, rest, e, where=True, sign="+")
+        self.assertEqual((round(mx, 6), at), (20.0, (0, 1)))
+        self.assertEqual(G.skin_excess(rest, now, rest, rest, e, where=True, sign="-")[2], (1, 2))
+        self.assertEqual(G.skin_excess(rest, rest, rest, rest, e, shares=True)[2], None)    # no excess, no share
+        self.assertEqual(G.skin_excess(rest, now, rest, rest, [], shares=True), (None, None, None))
+
+    def test_turn_is_the_least_rotation(self):
+        v = G.turn((0, 0, 1), (1, 0, 0), (0, 0, 0.01))
+        self.assertTrue(all(abs(a - b) < 1e-12 for a, b in zip(v, (0.01, 0, 0))))
+        self.assertEqual(G.turn((0, 0, 1), (0, 0, 2), (0.1, 0.2, 0.3)), [0.1, 0.2, 0.3])
+        self.assertEqual(G.turn((0, 0, 0), (0, 0, 1), (1, 2, 3)), [1, 2, 3])
+        w = G.turn((0, 0, 1), (0, 1, 0), (0, 1, 0))         # a tangent turns with the surface
+        self.assertTrue(all(abs(a - b) < 1e-12 for a, b in zip(w, (0, 0, -1))))
+
+    def test_floor_on_a_bending_skin_stretches_by_its_stand_off_only(self):
+        """Her skin a strip bent round a corner of radius 10 cm; garment points 1 cm out: on the floor their spacing
+        grows by 1 / 10 = 10 % where her skin keeps its length, the least any weighting can show."""
+        import math as _m
+        n = 21
+        s0 = [(0.0, 0.0, k * 0.005) for k in range(n)]
+        n0 = [(0.0, -1.0, 0.0)] * n
+        rad = 0.10
+        s1, n1 = [], []
+        for k in range(n):
+            a = k * 0.005 / rad
+            s1.append((0.0, rad - rad * _m.cos(a), rad * _m.sin(a)))     # bent away from her front (-y)
+            n1.append((0.0, -_m.cos(a), _m.sin(a)))
+        off = [(0.0, -0.01, 0.0)] * n
+        g0 = [(a[0] + o[0], a[1] + o[1], a[2] + o[2]) for a, o in zip(s0, off)]
+        g1 = G.floor_points(s0, n0, s1, n1, off)
+        self.assertEqual(G.floor_points(s0, n0, s0, n0, off), [list(p) for p in g0])
+        e = [(k, k + 1) for k in range(n - 1)]
+        mx, p95 = G.skin_excess(g0, g1, s0, s1, e)
+        self.assertAlmostEqual(mx, 10.0, places=1)
+        self.assertAlmostEqual(G.skin_excess(g0, g1, s0, s1, e, sign="+")[1], p95)   # all lengthened
+
+    def test_the_bib_drops_its_pocket_and_judges_lengthening_over_its_floor(self):
+        g2 = self.spec["gate2"]
+        self.assertEqual(g2["parts"]["bib"]["piece_verts"], [1001, 3600])
+        st = next(s for s in g2["stretch"] if s["part"] == "bib")
+        self.assertEqual((st["sign"], st["floor"], st["floor_plus_pct"]), ("+", True, 2.0))
+        c0 = g2["clips"][0]
+        clip = {"slip_mm": {}, "flat_mm": {}, "stretch_pct": {}, "stretch_p95_pct": {"bib": 20.0},
+                "skin_excess_pct": {"bib": 15.0}, "skin_excess_p95_pct": {"bib": 11.5}, "floor_p95_pct": {"bib": 10.0},
+                "stretch_shares": {"bib": [0.75, 0.25]}, "stretch_at": {"bib": [1, -10, 103, 5, 15]},
+                "stretch_rest_at": {"bib": [1, -10, 108, 5]}}
+        rows = GG.motion_rows(self.spec, {"parts": {}, "clips": {c0: clip}}, None)
+        row = next(r for r in rows if r["clip"] == c0 and r["check"].startswith("stretch p95 beyond her skin's: bib"))
+        self.assertEqual((row["value"], row["tol"], row["pass"]), (11.5, 12.0, True))
+        for word in ("lengthened only", "at rest [1, -10, 108, 5]", "[0.75, 0.25]", "floor 10.0"):
+            self.assertIn(word, row["check"])
+        other = next(r for r in rows if r["clip"] == g2["clips"][1] and r["check"].startswith("stretch p95 beyond her skin's: bib"))
+        self.assertIsNone(other["pass"])                     # no floor measured: unmeasured, not passed
+        clip["floor_p95_pct"]["bib"] = 9.0
+        row = next(r for r in GG.motion_rows(self.spec, {"parts": {}, "clips": {c0: clip}}, None)
+                   if r["clip"] == c0 and r["check"].startswith("stretch p95 beyond her skin's: bib"))
+        self.assertFalse(row["pass"])
+
+    def test_slip_and_cover_rows_name_the_rest_place(self):
+        g2 = self.spec["gate2"]
+        c0 = g2["clips"][0]
+        j, cv = g2["joins"][0]["name"], g2["covers"][0]["name"]
+        clip = {"slip_mm": {j: 4.0}, "slip_at": {j: [-12.0, -9.7, 110.9, 3]}, "slip_rest_at": {j: [-12.0, -9.0, 116.0, 3]},
+                "flat_mm": {}, "stretch_pct": {}, "stretch_p95_pct": {}, "cover_mm": {cv: 2.0},
+                "cover_at": {cv: [1.0, 98.0, 0, 4]}, "cover_rest_at": {cv: [1.0, -11.0, 103.0, 4]}}
+        rows = [r for r in GG.motion_rows(self.spec, {"parts": {}, "clips": {c0: clip}}, None) if r["clip"] == c0]
+        self.assertIn("at rest [-12.0, -9.0, 116.0, 3]", next(r for r in rows if r["check"].startswith(f"slip: {j}"))["check"])
+        self.assertIn("at rest [1.0, -11.0, 103.0, 4] cm", next(r for r in rows if r["check"].startswith("covered:"))["check"])
