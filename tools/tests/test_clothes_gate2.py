@@ -894,3 +894,11 @@ class G3qFloorTest(unittest.TestCase):
         rows = [r for r in GG.motion_rows(self.spec, {"parts": {}, "clips": {c0: clip}}, None) if r["clip"] == c0]
         self.assertIn("at rest [-12.0, -9.0, 116.0, 3]", next(r for r in rows if r["check"].startswith(f"slip: {j}"))["check"])
         self.assertIn("at rest [1.0, -11.0, 103.0, 4] cm", next(r for r in rows if r["check"].startswith("covered:"))["check"])
+
+    def test_the_build_sews_the_strap_ends_and_eases_the_bib_foot(self):
+        b = self.spec["build"]
+        self.assertGreaterEqual(b["strap_sew_in_mm"], 3.0)            # the strap's sewn end inside the bib's edge
+        self.assertEqual(b["bib_hug_ease_cm"], b["plate_seam_cm"])    # the hug eased in over the seam's ramp
+        self.assertEqual(b["shirt_follow_ring"], 0)                   # G3p's ring made the shirt worse
+        self.assertTrue(b["shirt_hide_front"])
+        self.assertTrue(3.0 <= b["collar_out_mm"] <= 5.0)

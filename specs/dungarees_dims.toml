@@ -326,7 +326,23 @@ bib_hug = 1.0                # 0-1: the bib moved from lean B's hull toward her 
                              # 11.8 %, folds 6.1 -> 5.2 mm, side IoU 0.747 -> 0.752 (0.4: 26 mm, 14.1 %; 0.8: 6 mm, 12.2 %)
 bib_hug_gap_mm = 4.0
 bib_shirt_clear_mm = 3.0     # the bib's inner face at least this off the shirt (n4: 0.4 mm at (+-2.8, -11.3, 102.6) cm)
-shirt_follow_ring = 1        # shirt vertices round the covered ones take the nearest cloth's weights (p4: 23 vertices)
+shirt_follow_ring = 0        # G3q: dropped (G3p's 1 ring, 23 vertices, made the shirt worse: bib vs shirt p95 0.110 ->
+                             # 0.144, the shirt through its rest face in 5 clips not 3)
+# G3q (2026-11-02, art #196; the route review g3p-route): the sewn strap ends, the bib's foot, the collar, two sizes
+strap_sew_in_mm = 3.0        # each strap's run under the bib's top lies on the bib's front (its faces' weights after
+                             # the smoothing), columns at least 3 mm inside the bib's side edge, ended at the buckle
+                             # ring's lower bar (G3p: the end past the buckle overhung the bib's corner, slip 11.5 mm)
+bib_hug_ease_cm = 3.0        # under 3 cm over the band's top the bib is drawn in only onto the band's face + the lap's
+                             # clearance (the S-crease; q1 eased the hug itself to 0: a lip, the cover row 78 mm)
+shirt_hide_front = true      # the shirt's faces enclosed by the plates, their laps and the band together go too
+ring_follows_bib = true      # each buckle ring and button vertex on the bib's weights at its nearest bib point (q2:
+                             # slip 4.4 mm at the rigid button's rim, 1.6 cm across)
+collar_skin_cm = 1.0         # the shirt's collar ring (1 cm from its edge) on her skin's exact weights at its nearest
+collar_out_mm = 3.0          # skin point, moved 3 mm out from it (her neck through the collar by 4.5 mm, Strafe)
+bib_lean_add_deg = 3.0       # the bib's top turned forward above her bust peak (p4's chord -2.04 deg of 0 +- 2; q2:
+bib_lean_from = "bust"       # 2 deg about the band's top made it 0.03 but the bust 0.89 cm off, of 0.3 +- 0.3)
+back_no_strap_bleed = true   # the weight smoothing: the back panel no longer takes the straps' weights at its corners
+back_standoff_adjust_cm = -0.5   # the back panel's build stand-off (p4 measured 1.05 cm of 0.5 +- 0.5)
 
 [behaviour]
 bib = "one piece, straight across, the single side-view bend of option B; never folds or wrinkles (flatness 3 mm); follows her skin under it (G3m: her skin's weights, smoothed), stretching no more than it; the buckles ride on it (slip under 3 mm)"

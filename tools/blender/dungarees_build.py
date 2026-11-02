@@ -44,6 +44,7 @@ import bmesh
 import bpy
 from mathutils import Vector
 from mathutils.bvhtree import BVHTree
+from mathutils.interpolate import poly_3d_calc
 from mathutils.kdtree import KDTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -350,7 +351,6 @@ def shirt_follow(top, B, skip_vs, fade: float, reach: float = 0.04, near: float 
     (its normal meets the strap within strap_reach; the near rule never takes a strap), eased back over strap_fade, and
     never to the shirt's vertices in keep (the collar's band): in G3h every shirt vertex within 3 cm of a strap took it
     whole, the collar and the front between the straps on Chest and her shoulder's bone, and her neck came through."""
-    from mathutils.interpolate import poly_3d_calc
     B.bm.faces.ensure_lookup_table()
     B.bm.faces.index_update()
     gfaces = list(B.bm.faces)
@@ -452,10 +452,11 @@ def shirt_follow(top, B, skip_vs, fade: float, reach: float = 0.04, near: float 
             "kept": len(keep)}
 
 
-def collar_band(top, width: float) -> set:
-    """The shirt's vertices within width (m, along its edges) of its collar: its highest boundary loop (G3i)."""
+def collar_band(top, width: float, dists: bool = False):
+    """The shirt's vertices within width (m, along its edges) of its collar: its highest boundary loop (G3i); with
+    dists (G3q) a dict of each one's distance along the edges instead of a set."""
     if width <= 0:
-        return set()
+        return {} if dists else set()
     import heapq
     mw = top.matrix_world
     co = [mw @ v.co for v in top.data.vertices]
@@ -498,7 +499,56 @@ def collar_band(top, width: float) -> set:
             if nd <= width and nd < dist.get(j, 1e9):
                 dist[j] = nd
                 heapq.heappush(heap, (nd, j))
-    return set(dist)
+    return dist if dists else set(dist)
+
+
+def collar_on_skin(top, width: float, out: float, skins) -> dict:
+    """G3q: the shirt's collar ring (its vertices within width of its collar, collar_band) takes her skin's exact
+    weights at its nearest skin point (the face's vertices by barycentric weights, no bone dropped) and moves out
+    from that point by out (m) at the collar's edge, eased to 0 at width: G3p's one collar vertex at her neck let her
+    skin through by 4.5 mm in Strafe."""
+    ring = collar_band(top, width, dists=True)
+    if not ring:
+        return {"verts": 0}
+    cos, tris, ws = [], [], []
+    for o in skins:
+        names = {g.index: g.name for g in o.vertex_groups}
+        off = len(cos)
+        cos += [o.matrix_world @ v.co for v in o.data.vertices]
+        ws += [{names[g.group]: g.weight for g in v.groups if g.weight > 1e-4 and g.group in names} for v in o.data.vertices]
+        for p in o.data.polygons:
+            vs = [k + off for k in p.vertices]
+            tris += [[vs[0], vs[i], vs[i + 1]] for i in range(1, len(vs) - 1)]
+    tree = BVHTree.FromPolygons(cos, tris)
+    mw = top.matrix_world
+    inv = mw.inverted()
+    groups = {g.name: g for g in top.vertex_groups}
+    moved = 0.0
+    for i in ring:
+        v = top.data.vertices[i]
+        p = mw @ v.co
+        loc, _n, fi, dd = tree.find_nearest(p)
+        if loc is None:
+            continue
+        t = tris[fi]
+        b = poly_3d_calc([cos[k] for k in t], loc)
+        acc = {}
+        for k, x in zip(t, b):
+            for g, val in ws[k].items():
+                acc[g] = acc.get(g, 0.0) + x * val
+        w = norm(acc)
+        for g in groups.values():
+            g.remove([i])
+        for g, val in w.items():
+            if g not in groups:
+                groups[g] = top.vertex_groups.new(name=g)
+            groups[g].add([i], val, "REPLACE")
+        o = out * (1.0 - smooth01(ring[i] / width))
+        if o > 0 and dd > 1e-6:
+            v.co = inv @ (p + (p - loc).normalized() * o)
+            moved = max(moved, o)
+    top.data.update()
+    return {"verts": len(ring), "width_m": width, "out_m": out, "moved_m": moved}
 
 
 def shirt_trim(top, z_cut: float) -> dict:
@@ -596,6 +646,13 @@ def main() -> None:
     ap.add_argument("--strap-weld", type=float, default=None,
                     help="G3p: cm over the bib's top a strap's front run eases from the bib's weights to its own "
                          "(default the spec's strap_weld_cm; 0 off)")
+    ap.add_argument("--strap-sew-mm", type=float, default=None,
+                    help="G3q: a strap's run under the bib's top is sewn on the bib's front, its columns at least this "
+                         "many mm inside the bib's side edge, its end at the buckle ring's lower bar (default the spec's "
+                         "strap_sew_in_mm; negative off)")
+    ap.add_argument("--bib-hug-ease-cm", type=float, default=None,
+                    help="G3q: bib_hug eased from 0 at the band's top to whole this many cm above it, so the bib runs "
+                         "straight into its lap (default the spec's bib_hug_ease_cm; 0 off)")
     a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     spec = S.load_spec(a.spec)
     d = {k: v["cm"] / 100 for k, v in spec["dims"].items()}
@@ -722,7 +779,7 @@ def main() -> None:
     w_band = shirt_w.mean(band_samples, keep=("Hips", "Spine", "Chest"))
     if a.band_bone:   # G3b: a blend of bones bends when they twist (Jog, Strafe: 2-8 % stretch); one bone is rigid
         w_band = {a.band_bone: 1.0}
-    B.slab(rows, lambda p: w_band, 0, closed_u=True)
+    band_vs = {v for r_ in B.slab(rows, lambda p: w_band, 0, closed_u=True) for row_ in r_ for v in row_}
     rep["waistband"] = {"weights": w_band, "top_m": bbz, "bottom_m": wbz,
                         "front_w_m": max(r[0].x for r in rows[2]) - min(r[0].x for r in rows[2])}
 
@@ -816,7 +873,23 @@ def main() -> None:
     bhug = a.bib_hug if a.bib_hug is not None else float(spec["build"].get("bib_hug", 0.0))
     hug_gap = (a.bib_hug_gap_mm if a.bib_hug_gap_mm is not None else float(spec["build"].get("bib_hug_gap_mm", 4.0))) / 1000
 
+    # G3q: the hug's target eased onto the band over the seam's ramp: drawn in to the shirt over the band while the lap
+    # is pushed out off it, the bib made an S-crease over the band's top (the crouch's "shelf"); now under hug_ease cm
+    # over the band's top it is drawn in only as far as the band's face + the lap's clearance, and runs straight down
+    # into the lap. (Easing the hug itself to 0 there, q1, stood the bib's foot out on lean B's hull: a lip over the
+    # band in Jump_Start and the side corners off her, the cover row 6 -> 78 mm.)
+    # G3q: the bib's top turned forward by bib_lean_add_deg about the band's top, or above her bust peak with
+    # bib_lean_from = "bust" (G3p's hug left its chord at -2.04 deg of 0 +- 2; turned about the band, q2, 2 deg made it
+    # 0.03 but stood the bib 0.89 cm off at the bust, of 0.3 +- 0.3)
+    lean_add = math.tan(math.radians(float(spec["build"].get("bib_lean_add_deg", 0.0))))
+    hug_ease = (a.bib_hug_ease_cm if a.bib_hug_ease_cm is not None else float(spec["build"].get("bib_hug_ease_cm", 0.0))) / 100
+
+    lean_from = lm["bust"] if spec["build"].get("bib_lean_from") == "bust" else bbz
+
     def bib_y2(x, z):
+        return bib_hugged(x, z) - lean_add * max(0.0, z - lean_from)
+
+    def bib_hugged(x, z):
         y = bib_y(z)
         if bhug <= 0:
             return y
@@ -824,7 +897,13 @@ def main() -> None:
         ys = [v for v in ys if v is not None]
         if not ys:
             return y
-        return y + bhug * max(0.0, min(ys) - SHIRT - hug_gap - y)
+        tgt = min(ys) - SHIRT - hug_gap
+        if hug_ease > 0 and z < bbz + hug_ease:
+            hit = under.ray_cast(Vector((x, -1.0, min(z, bbz - 0.001))), Vector((0, 1, 0)), 2.0)[0]
+            if hit is not None:
+                t = smooth01((z - bbz) / hug_ease)
+                tgt = t * tgt + (1 - t) * min(tgt, hit.y - a.plate - lap_clr)
+        return y + bhug * max(0.0, tgt - y)
     # G3p: the bib's inner face never nearer the shirt than shirt_clear (G3n/G3o: a shirt vertex under the bib at
     # (+-2.8, -11.3, 102.6) cm had 0.4 mm of room at rest and went 1.1-1.9 mm through it in Jog, Strafe, Jump_Start)
     sclr = (a.bib_shirt_clear_mm if a.bib_shirt_clear_mm is not None else float(spec["build"].get("bib_shirt_clear_mm", 0.0))) / 1000
@@ -898,7 +977,9 @@ def main() -> None:
     corner = kt + 0.03                                   # garment_drawing.lines: the corners 3 cm over the V
     xs_in = d["strap_x"] - d["strap_w"] / 2
     zb_ = [bbz + i * (corner - bbz) / 48 for i in range(49)]
-    pts = [(z, ref.front(z, bk["body_half_w_cm"]["back"] / 100, back=True) + SHIRT + d["back_standoff"]) for z in zb_]
+    # G3q: the build's stand-off moved by back_standoff_adjust_cm (G3p measured 1.05 cm of 0.5 +- 0.5: aimed at the middle)
+    back_so = d["back_standoff"] + float(bk.get("back_standoff_adjust_cm", 0.0))   # bk: metres
+    pts = [(z, ref.front(z, bk["body_half_w_cm"]["back"] / 100, back=True) + SHIRT + back_so) for z in zb_]
     bhull = envelope(pts, front=False)
     back_y = lambda z: chain_y(bhull, z)
     nk = int(spec["build"].get("back_cols", 25))
@@ -920,7 +1001,7 @@ def main() -> None:
             y = back_y(max(z, bbz))
             if across:   # G3e: her back under this column (+ the shirt + the standoff), never behind the flat plate
                 yb = ref.front(z, 0.01, back=True, x0=x)
-                y = min(y, yb + SHIRT + d["back_standoff"]) if yb is not None else y
+                y = min(y, yb + SHIRT + back_so) if yb is not None else y
             row.append((Vector((x, y, z)), Vector((x, y - a.plate, z))))
         rows.append(row)
     if across:   # one bend down each column and none inward across a row: the plate bridges her spine's hollow
@@ -971,6 +1052,10 @@ def main() -> None:
     rep["straps"] = {}
     strap_vs = set()
     strap_core = set()
+    # G3q: the sewn strap ends (each a strap vertex under the bib's top, its bib face's vertices and their weights)
+    sew_in = (a.strap_sew_mm if a.strap_sew_mm is not None else float(spec["build"].get("strap_sew_in_mm", -1.0))) / 1000
+    sewn = []
+    ring_vs = set()   # G3q: the buckle rings' vertices
     z0, y0 = bk["strap_ray_origin_cm"]["z"] / 100, bk["strap_ray_origin_cm"]["y"] / 100
     far = 0.4
     phis = [math.radians(-4 + i * (178 + 4) / 72) for i in range(73)]
@@ -1044,6 +1129,41 @@ def main() -> None:
                    for k, x in enumerate(xs)]
             rows.append(row)
         pz = [(Vector((0, y0, z0)) + dv * prof[i]) for i, dv in enumerate(dirs)]
+        # G3q: the run under the bib's top sewn on the bib: G3p's front end, laid by rays past the buckle, overhung the
+        # bib's corner where the bib curves round her side and slid 11.5 mm on it. Each sewn row lies on the bib's own
+        # front (a ray onto the bib, its face kept), offset out by the strap's inner gap and thickness, its columns at
+        # least sew_in inside the bib's side edge, from the bib's top down to the buckle ring's lower bar (the ring
+        # hides the end); after the smoothing each vertex takes its bib face's weights (below)
+        ring = bk["buckle_ring_cm"]
+        sew_rows, sew_tie = [], []
+        if sew_in >= 0:
+            z_end = bt - 0.006 - ring["half_h"] / 100 + ring["bar"] / 200
+            keep = [i for i in range(len(rows)) if pz[i].z >= bt + 0.002]
+            rows, pz = [rows[i] for i in keep], [pz[i] for i in keep]
+            ns = max(2, int(round((bt - z_end) / 0.0035)))
+            for k in range(ns + 1):
+                z = z_end + (bt - 0.0005 - z_end) * k / ns
+                hwz = d["bib_bottom_w"] / 2 + (d["bib_top_w"] - d["bib_bottom_w"]) / 2 * (z - bbz) / (bt - bbz)
+                lo, hi = x_bib - d["strap_w"] / 2, x_bib + d["strap_w"] / 2
+                if sd > 0:
+                    hi = min(hi, hwz - sew_in)
+                else:
+                    lo = max(lo, -hwz + sew_in)
+                row, tie = [], []
+                for c_ in range(5):
+                    x = lo + (hi - lo) * c_ / 4
+                    h = plates.ray_cast(Vector((x, -1.0, z)), Vector((0, 1, 0)), 2.0)
+                    if h[0] is None:
+                        raise SystemExit(f"DUNGAREES sewn strap: no bib under ({x:.4f}, {z:.4f})")
+                    B.bm.faces.ensure_lookup_table()
+                    fv = list(B.bm.faces[h[2]].verts)
+                    nrm = h[1] if h[1].y < 0 else -h[1]
+                    row.append((h[0] + nrm * (inner + 0.0017), h[0] + nrm * inner))
+                    ok = all(v in bib_plate for v in fv)
+                    tie.append((fv, list(poly_3d_calc([v.co.copy() for v in fv], h[0]))) if ok else None)
+                sew_rows.append(row)
+                sew_tie.append(tie)
+            rows = sew_rows + rows
         # G3m: every strap vertex on her skin's weights under it (front run, shoulder and back run alike), smoothed with
         # the bib's and the back panel's below, so straps, bib and back panel move as one strip; the central three of
         # its five columns (1.9 cm of its 3.8 cm) are the core the shirt under it goes from
@@ -1051,20 +1171,28 @@ def main() -> None:
         so, si = B.slab(tr, lambda p: skin(p), 0)
         strap_vs.update(v for r_ in so + si for v in r_)
         strap_core.update(v for r_ in si for v in r_[1:4])
+        for j, tie in enumerate(sew_tie):
+            for c_, t_ in enumerate(tie):
+                if t_ is not None:
+                    sewn += [(so[j][c_], *t_), (si[j][c_], *t_)]
         rep["straps"]["left" if sd > 0 else "right"] = {
-            "front_end_z_m": round(pz[0].z, 4), "back_end_z_m": round(pz[-1].z, 4), "rows": len(rows),
+            "front_end_z_m": round(sew_rows[0][0][1].z if sew_rows else pz[0].z, 4), "back_end_z_m": round(pz[-1].z, 4),
+            "rows": len(rows), "sewn_rows": len(sew_rows), "sewn_tied": sum(t_ is not None for r_ in sew_tie for t_ in r_),
             "inner_mm": round(inner * 1000, 2), "top_z_m": round(max(q.z for q in pz), 4)}
         # the buckle: a ring round the strap at the bib's top edge and its button on the strap
         yb = bib_y2(x_bib, d["buckle_z"]) - 0.0022 - 0.0005
+        n0_ = len(B.bm.verts)
         B.disc((x_bib, yb, d["buckle_z"]), (0, 1, 0), d["buckle_d"], 0.003, {}, 2)   # weights: below
+        B.bm.verts.ensure_lookup_table()
+        ring_vs.update(B.bm.verts[k] for k in range(n0_, len(B.bm.verts)))   # G3q: the button follows the bib too
         yr = bib_y2(x_bib, bt - 0.006) - 0.0025
-        ring = bk["buckle_ring_cm"]
         hw, hh, bar = d["strap_w"] / 2 + ring["pad"] / 100, ring["half_h"] / 100, ring["bar"] / 100
         quad = lambda x0, x1, z0_, z1_: [(x0, z0_), (x1, z0_), (x1, z1_), (x0, z1_)]
         outer = quad(x_bib - hw, x_bib + hw, bt - 0.006 - hh, bt - 0.006 + hh)
         inner = quad(x_bib - hw + bar, x_bib + hw - bar, bt - 0.006 - hh + bar, bt - 0.006 + hh - bar)
         ov = [[B.vert((x, yr - dy, z), {}) for x, z in outer] for dy in (0.0, 0.002)]
         iv = [[B.vert((x, yr - dy, z), {}) for x, z in inner] for dy in (0.0, 0.002)]
+        ring_vs.update(v for L_ in ov + iv for v in L_)
         for k in range(4):
             m = (k + 1) % 4
             B.face([ov[1][k], ov[1][m], iv[1][m], iv[1][k]], 2)
@@ -1116,6 +1244,10 @@ def main() -> None:
     n_sm = a.skin_smooth if a.skin_smooth is not None else int(spec["build"].get("skin_smooth", 10))
     n_bib = a.bib_smooth if a.bib_smooth is not None else int(spec["build"].get("bib_smooth", 0))
     nb = weight_graph(B.bm, cloth, bk.get("skin_bridge_cm", 0.006))
+    if spec["build"].get("back_no_strap_bleed", False):   # G3q: one way only: the strap's back end takes the back panel's
+        for v in back_vs:                      # weights, the panel's corner not the strap's (its stretch at the
+            if v in nb:                        # corner where the strap's back run meets it, Jump_Start frame 12)
+                nb[v] -= strap_vs
     smooth_weights(B.W, nb, n_sm)
     smooth_weights(B.W, nb, n_bib, only=bib_vs - hw_vs)
     # G3p: the sewn seam: the plates' rows over the lap take exactly the band's weights again after the smoothing,
@@ -1157,12 +1289,36 @@ def main() -> None:
             t = 1.0 if v.co.z <= bt else 1.0 - smooth01((v.co.z - bt) / sweld)
             B.W[v] = mix(B.W[v], norm(acc), t)
             n_sweld += 1
+    # G3q: the sewn strap ends take their bib face's weights exactly (after the smoothing, the seam and the weld)
+    for v, fv, bw in sewn:
+        acc = {}
+        for u, x in zip(fv, bw):
+            for g, val in B.W[u].items():
+                acc[g] = acc.get(g, 0.0) + x * val
+        B.W[v] = norm(acc)
     ckd = KDTree(len(cloth))
     clist = list(cloth)
     for i, v in enumerate(clist):
         ckd.insert(v.co, i)
     ckd.balance()
     seen, n_hw = set(), 0
+    # G3q: a buckle ring (4.6 x 1.2 cm) rigid on the bib's mean weights slid 4.4 mm at its lower bar while the bib bent
+    # under it (q1, once the strap's sewn end no longer did): with ring_follows_bib each ring vertex takes the bib's
+    # weights at its nearest bib point (a ring 1.2 cm tall bends as little as the bib under it)
+    ring_follow = bool(spec["build"].get("ring_follows_bib", False))
+    if ring_follow:
+        bfaces = [f for f in B.bm.faces if all(x in bib_plate for x in f.verts)]
+        bverts = list({x for f in bfaces for x in f.verts})
+        bidx = {x: i for i, x in enumerate(bverts)}
+        btree = BVHTree.FromPolygons([x.co for x in bverts], [[bidx[x] for x in f.verts] for f in bfaces])
+        for v in ring_vs:
+            seen.add(v)
+            loc, _n, fi, _d = btree.find_nearest(v.co)
+            acc = {}
+            for u, x in zip(bfaces[fi].verts, poly_3d_calc([u.co for u in bfaces[fi].verts], loc)):
+                for g, val in B.W[u].items():
+                    acc[g] = acc.get(g, 0.0) + x * val
+            B.W[v] = norm(acc)
     for v0 in hw_vs:
         if v0 in seen:
             continue
@@ -1191,6 +1347,7 @@ def main() -> None:
         n_hw += 1
     rep["weights"] = {"cloth_verts": len(cloth), "smooth": n_sm, "bib_smooth": n_bib, "hardware_pieces": n_hw,
                       "seam_m": seam, "seam_verts": n_seam, "strap_weld_m": sweld, "strap_weld_verts": n_sweld,
+                      "strap_sewn_verts": len(sewn), "strap_sew_in_m": sew_in,
                       "bib_hug": bhug, "bib_hug_gap_m": hug_gap,
                       "bridge_m": bk.get("skin_bridge_cm", 0.006), "plate_band_blend_m": pbb}
     if not a.no_shirt_follow:
@@ -1205,6 +1362,9 @@ def main() -> None:
                                            strap_fade=bk.get("strap_follow_fade_cm", 0.0), keep=keep,
                                            ring=a.shirt_ring if a.shirt_ring is not None
                                            else int(spec["build"].get("shirt_follow_ring", 0)))
+    if bk.get("collar_skin_cm", 0.0) > 0:   # G3q: the collar ring on her skin's exact weights, moved out a little
+        rep["collar_skin"] = collar_on_skin(top, bk["collar_skin_cm"], float(spec["build"].get("collar_out_mm", 0.0)) / 1000,
+                                            [o for o in (body, bpy.data.objects.get("body_removed")) if o is not None])
     # G3m's probe: per cloth vertex its weights against the shirt under it and her skin's at it, as half the L1
     # distance (0 the same, 1 nothing shared). G3n: the shirt under it is the shirt surface's nearest point within
     # 1.5 cm, its face's weights by barycentric weights (G3m took the nearest shirt vertex within 2.5 cm: on the coarse
@@ -1217,7 +1377,6 @@ def main() -> None:
     for i, c in enumerate(tco):
         tkd.insert(c, i)
     tkd.balance()
-    from mathutils.interpolate import poly_3d_calc
     tpolys = [list(p.vertices) for p in top.data.polygons]
     ttree = BVHTree.FromPolygons(tco, tpolys)
 
@@ -1259,11 +1418,17 @@ def main() -> None:
             fs = [f for f in B.bm.faces if pred(f)]
             return BVHTree.FromPolygons([v.co for v in allv], [[idx[x] for x in f.verts] for f in fs])
         core_plates = (bib_vs | back_vs) - hw_vs
+        front_cover = (bib_plate | back_vs | band_vs) - hw_vs if spec["build"].get("shirt_hide_front", False) else set()
         rep["shirt_hide"] = shirt_hide(top, [
             ("plates", tree_of(lambda f: f.material_index == 0 and all(x in core_plates and x.co.z > bbz + 0.01
                                                                        for x in f.verts)),
              int(spec["build"].get("shirt_hide_rings", 1))),
-            ("strap_cores", tree_of(lambda f: all(x in strap_core for x in f.verts)), 0)], bk["shirt_hide_cm"])
+            ("strap_cores", tree_of(lambda f: all(x in strap_core for x in f.verts)), 0)]
+            # G3q: the plates, their laps and the band as one cover: a shirt face enclosed by them together goes too
+            # (the plates over the band's top + 1 cm only left the shirt under the seam: it came through the bib's lap
+            # in 5 clips, G3p, and showed as white specks at the back panel's seam)
+            + ([("cover", tree_of(lambda f: f.material_index == 0 and all(x in front_cover for x in f.verts)),
+                 int(spec["build"].get("shirt_hide_rings", 1)))] if front_cover else []), bk["shirt_hide_cm"])
     for f in B.bm.faces:   # G3f: every cloth face smooth, the rims kept sharp by angle (flat faces striped the curves)
         f.smooth = f.material_index != 2
     me = bpy.data.meshes.new("garment")
