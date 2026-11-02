@@ -9,9 +9,10 @@
 5. the shots in our hall (godot/pinball/shots.gd, which extends the lobby's godot/lobby/hall.gd: the hall, the ship
    and the light of `lobby --shoot`) in an off-screen window (_godot.window()): a 3/4 front, the side, the player's
    eye at the machine's spawn, the CloseUp camera, the backbox close-up, the hall around it, sheet.png with the concept
-   beside, and the drawing's SVGs as PNGs;
+   beside, Gate 3's close-ups (closeups.png) and the drawing's SVGs as PNGs;
 6. the MP4 (10 s, 1280x720) from the CloseUp camera: the flippers at the contract's swing and speed, a ball on a
-   scripted path; frames from the off-screen window, encoded by the ship's ship_video.py in headless Blender.
+   scripted path; frames from the off-screen window, encoded by the ship's ship_video.py in headless Blender; every
+   30th frame and the flicks' frames (KEY_S) are kept.
 Everything goes under <raw>/lobby/pinball/<tag>/.
 
     $PYTHON_BIN tools/blender/pinball_run.py [--tag v1] [--no-build] [--no-shots] [--no-video]
@@ -40,6 +41,9 @@ DIMS = tomllib.loads((Path(__file__).with_name("pinball_dims.toml")).read_text(e
 SCRIPT = "res://pinball/shots.gd"
 GLBS = ("pinball", "pinball_table")
 VIDEO = {"size": [1280, 720], "fps": 30, "seconds": 10.0, "max_mb": 15.0}
+KEY_S = (2.6, 5.4, 8.5)          # the flicks' moments: their frames are kept with every 30th
+# the night map the art is cut from (pinball_art.py): the hall's cut of NASA's Black Marble (sources/nasa_earth_lobby.toml)
+EARTH = RAW / "lobby" / "hall" / "v11" / "earth" / "earth_night_cap.jpg"
 
 
 def clearances(build: dict, layout: dict) -> dict:
@@ -122,7 +126,7 @@ def main() -> int:
     out = BASE / args.tag
     out.mkdir(parents=True, exist_ok=True)
     if not args.no_build:
-        r = blender.run_script("pinball_build.py", ["--out", str(out), "--px", str(args.px)], timeout=900)
+        r = blender.run_script("pinball_build.py", ["--out", str(out), "--px", str(args.px), "--earth", str(EARTH)], timeout=900)
         print(*[x for x in (r.stdout or "").splitlines() if x.startswith("PINBALL_BUILD")], sep="\n", flush=True)
     ok = True
     for g in GLBS:
@@ -152,7 +156,7 @@ def main() -> int:
                                                             str(VIDEO["max_mb"])], timeout=900)
             print(*[x for x in (r.stdout or "").splitlines() if x.startswith("ENCODED")], sep="\n", flush=True)
             for f in sorted((work / "frames").glob("*.png")):   # keep the key frames for the review, drop the rest
-                if int(f.stem) % 30:
+                if int(f.stem) % 30 and int(f.stem) not in {round(k * VIDEO["fps"]) for k in KEY_S}:
                     f.unlink()
         print(f"godot video: exit {code}", flush=True)
     return 0 if ok and code == 0 else 1

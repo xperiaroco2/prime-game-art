@@ -3,7 +3,8 @@ extends "res://lobby/hall.gd"
 ## `lobby --shoot`) with the cabinet placed by the request ("place": ["pinball", origin, 0]), the table's art under its
 ## TableMount marker and three placeholder Label3D lines on its Display marker. Started only by
 ## tools/blender/pinball_run.py through `_godot.window()` (CLAUDE.md, #214), never by hand.
-## mode "shoot": <out>/<view>.png, sheet.png (the concept beside the 3/4 front), drawing*.png (the drawing's SVGs
+## mode "shoot": <out>/<view>.png, sheet.png (the concept beside the 3/4 front), closeups.png (Gate 3's close-ups:
+##   c_corner, c_foot, c_medallion, c_side, c_field), drawing*.png (the drawing's SVGs
 ##   rasterised), shots.json. mode "video": <out>/frames/%05d.png from the CloseUp marker's camera (the flippers at the
 ##   contract's swing and speed, a ball on a scripted path), video.json.
 ## request "pinball": {"table", "concept", "spot", "origin", "fov", "lines", "swing_deg", "speed_deg_s", "rest_deg",
@@ -45,6 +46,21 @@ func _shoot() -> void:
 	_camera.global_transform = cu.global_transform
 	_camera.fov = float(_pb["fov"])
 	images["closeup"] = await _shot("closeup", "the CloseUp marker's camera (fov %d)" % int(_pb["fov"]), shots)
+	# Gate 3's close-ups (step 2): a copper corner with rivets, a foot with its rings, the front medallion, the side
+	# art, the playfield under the glass; closeups.png
+	var close: Array = [
+		["c_corner", "copper corner, rivets", o + Vector3(0.62, 1.18, -1.22), o + Vector3(0.40, 0.96, -0.84), 30.0],
+		["c_foot", "a front foot, its two rings", o + Vector3(0.78, 0.26, -1.30), o + Vector3(0.38, 0.07, -0.78), 25.0],
+		["c_medallion", "the front medallion", o + Vector3(0.12, 0.86, -1.42), o + Vector3(0.0, 0.80, -0.84), 28.0],
+		["c_side", "the side art", o + Vector3(-1.75, 1.00, -0.05), o + Vector3(-0.41, 0.80, 0.10), 40.0],
+		["c_field", "the playfield under the glass", o + Vector3(0.08, 1.55, -0.78), o + Vector3(0.0, 0.98, -0.08), 50.0],
+	]
+	var cimg: Array = []
+	for v: Array in close:
+		_camera.fov = float(v[4])
+		_camera.look_at_from_position(v[2], v[3], Vector3.UP)
+		cimg.append(await _shot(v[0], v[1], shots))
+	_save(_sheet([[cimg[0], cimg[1]], [cimg[2], cimg[3]], [cimg[4]]]), _out.path_join("closeups.png"))
 	var concept: Image = Image.load_from_file(_pb["concept"])
 	concept.convert(Image.FORMAT_RGB8)
 	_save(_sheet([[concept, images["q34"]], [images["side"], images["eye"]], [images["closeup"], images["backbox"]],
