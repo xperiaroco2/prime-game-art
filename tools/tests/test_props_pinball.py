@@ -16,7 +16,7 @@ from runner import common
 
 DIMS = tomllib.loads((common.ROOT / "tools" / "blender" / "pinball_dims.toml").read_text(encoding="utf-8"))
 RAW = common.raw_dir() / "lobby" / "pinball"
-BUILD = RAW / "v1"
+BUILD = next((RAW / t for t in ("v2", "v1") if (RAW / t / "pinball.glb").is_file()), RAW / "v2")   # the newest
 CONTRACT_BODIES = ("WallLeft", "WallRight", "WallTop", "InlaneLeft", "InlaneRight", "FlipperLeft", "FlipperRight",
                    "Bumper", "Kicker", "Target")
 # the contract's node origins (x, y, z in m) and yaw (deg), from pinball_table.tscn at prime-game 77ac43d5
@@ -95,6 +95,14 @@ class PinballSpec(unittest.TestCase):
         self.assertEqual(DIMS["markers"]["closeup_down_deg"], 55.0)
         self.assertEqual(DIMS["markers"]["closeup_fov"], 50.0)
 
+    def test_front_v(self) -> None:
+        """Gate 3's front: the copper diagonals converge downward and the trapezoid's foot clears the medallion's plate."""
+        b, f = DIMS["body"], DIMS["front"]
+        self.assertLess(f["v_top"], f["v_bottom"])
+        foot = b["outer_w"] / 2 - b["outer_w"] * f["v_bottom"]       # the trapezoid's half-width at the foot
+        self.assertGreater(foot, f["medallion_r"][0] + f["plate"])
+        self.assertGreater(DIMS["legs"]["collar_r"], DIMS["legs"]["waist"] / 2 * math.sqrt(2), "the collar hides the leg")
+
 
 class PinballGlbs(unittest.TestCase):
     def setUp(self) -> None:
@@ -104,6 +112,19 @@ class PinballGlbs(unittest.TestCase):
     def test_cabinet_names(self) -> None:
         names = {n.get("name") for n in glb_json(BUILD / "pinball.glb")["nodes"]}
         self.assertTrue({"pinball", "TableMount", "CloseUp", "Display"} <= names, names)
+
+    def test_art_textures(self) -> None:
+        """Gate 3: the playfield and the side art carry the night Earth as base colour and emission textures."""
+        if BUILD.name == "v1":
+            self.skipTest("the v1 build has no textures")
+        for glb, mat in (("pinball_table.glb", "pinball_field"), ("pinball.glb", "pinball_side_art")):
+            g = glb_json(BUILD / glb)
+            m = next((m for m in g["materials"] if m["name"] == mat), None)
+            self.assertIsNotNone(m, (glb, mat))
+            self.assertIn("baseColorTexture", m["pbrMetallicRoughness"], mat)
+            self.assertIn("emissiveTexture", m, mat)
+        names = {m["name"] for m in glb_json(BUILD / "pinball.glb")["materials"]}
+        self.assertTrue({"pinball_teal_dark", "pinball_teal_light", "pinball_copper", "pinball_lens"} <= names, names)
 
     def test_table_nodes(self) -> None:
         g = glb_json(BUILD / "pinball_table.glb")
