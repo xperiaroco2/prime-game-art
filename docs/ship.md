@@ -454,7 +454,7 @@ and the `normal` into the room. The check holds: the point on its room's wall; a
 `ship_interior_place.py` for the trunks, trunk cables and clips, pilasters, the corridors' cable bays and clips and the
 arches); the player's stand (`depth_m` 0.5, the renewers' 1.053, the crystal charger's reach, plus the capsule's radius out from the wall) inside
 the room; and `pass_m` (1.6) of free floor behind the player, the capsule's width inside the rooms, crossing no floor
-spot. The console is a floor spot: 0.35 m of clear floor round (0, 1).
+spot. The console is a floor spot: `radius_m` of clear floor round the hall's centre (0, -0.4) since 2026-11-02.
 
 **How the generator keeps them plain** (`ship_interior.py`, `ship_interior_place.py`):
 - The hall: the 16-gon keeps its facets and ribs, but at the four spots (45 deg, read from ship.toml as `FLATS`) the two

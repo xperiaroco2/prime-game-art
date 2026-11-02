@@ -2,7 +2,7 @@
 
 The empty ship of art#263 (a wide metal manta at night: the hall, the throat and its ramp, two corridors, two lens tip
 rooms, the vault; the throat walls with the gill set) as the game's package, for prime-game#1225 (the engine) and #1285 (boot into it). Written by
-`tools/run.sh ship --out <raw>/ship/v5/polish/nb/pieces --export <raw>/ship/v5/export/v8` (2026-11-01, branch feat/ship-nozzle-back-263, nb: the old nozzle look back inside the smooth bells, a dark throat with one light ring, a small glowing dot and ten gapped lip segments, no fan blades, glowing from their own materials; polish n1/n2/n3: the hall's relief bays, the vault door, the ramp's hazard stripes, the underbody and chine light lines, the smooth oculus trim, one plate seam family over the jaws) (art#335, `docs/ship.md` "The export"); the files and their
+`tools/run.sh ship --out <raw>/ship/v5/polish/sm/pieces --export <raw>/ship/v5/export/v9` (2026-11-01, branch feat/ship-nozzle-back-263, nb: the old nozzle look back inside the smooth bells, a dark throat with one light ring, a small glowing dot and ten gapped lip segments, no fan blades, glowing from their own materials; polish n1/n2/n3: the hall's relief bays, the vault door, the ramp's hazard stripes, the underbody and chine light lines, the smooth oculus trim, one plate seam family over the jaws) (art#335, `docs/ship.md` "The export"); the files and their
 hashes are in `manifest.toml` and the package's `package.json`. The GLBs are not committed here: the package lives in
 the raw folder until approved.
 
@@ -10,13 +10,13 @@ the raw folder until approved.
 
 | Path | What |
 |---|---|
-| `assets/environment/ship/<piece>.glb` | the 189 pieces, each with a minimal `.import` (11.2); colliders are the GLBs' `-col` trimesh hints |
+| `assets/environment/ship/<piece>.glb` | the 195 pieces, each with a minimal `.import` (11.2); colliders are the GLBs' `-col` trimesh hints |
 | `assets/environment/ship/*.gdshader` | the shared metal, the star sky, the lens bronze (`console_metal`) and the charger's traces, arcs and conduits (art shaders shipped as files) |
 | `assets/environment/ship/materials/*.tres` | one `metal_<name>.tres` per shared metal, `night_sky.tres`, `night_env.tres` |
 | `levels/ship/ship.tscn` | the level: `Ship` > `Pieces`, `Environment`, `Lights`, `Probes`, `Clearing` (`Pieces`, `Lights`, `Ground`), `Nose` (the jaw and its `AnimationPlayer`), `Stations`, `Markers` |
 | `package.json` | every file with SHA-256 and bytes, the spots, the spawn, the questions |
 
-205 files, 13.5 MB. Copy only the files `package.json` lists: the export folder also holds the art check's own
+211 files, 13.5 MB. Copy only the files `package.json` lists: the export folder also holds the art check's own
 `_check/`, `project.godot`, `lib/`, `.godot/` and the `.uid` files Godot writes, none of them for the game. No GDScript: the look the art sets by code is saved in the scene as
 overrides inside the pieces' instances (each piece an editable instance, 11.2's rule).
 
@@ -78,19 +78,21 @@ z = plan y, +Z aft; the deck is at y 1.2 m. `metadata/size_m` is the plan's widt
 
 | Node | Spot | Package | at (x, y, z) | yaw (deg) |
 |---|---|---|---|---|
-| `Console` | `console` (hall) | `start_console` | (0.0, 1.2, 0.6) | 180.0 |
+| `Console` | `console` (hall) | `start_console` | (0.0, 1.2, -0.4) | 180.0 |
 | `VentE` | `vent_e` (throat) | `ship:th_wall_e` | (2.409, 1.2, -4.7912) | -71.802 |
 | `VentW` | `vent_w` (throat) | `ship:th_wall_w` | (-2.409, 1.2, -4.7912) | 71.802 |
 | `SocketE` | `socket_e` (hall) | `crystal_socket` | (1.8, 1.2, 3.112) | -152.864 |
 | `SocketW` | `socket_w` (hall) | `crystal_socket` | (-1.8, 1.2, 3.112) | 152.864 |
 | `SocketFE` | `socket_fe` (hall) | `crystal_socket` | (3.4261, 1.2, -2.3578) | -60.256 |
 | `SocketFW` | `socket_fw` (hall) | `crystal_socket` | (-3.4261, 1.2, -2.3578) | 60.256 |
-| `BreakerE` | `breaker_e` (corridor_e) | `breaker_board` | (6.6638, 1.2, -0.9019) | -8.662 |
-| `BreakerW` | `breaker_w` (corridor_w) | `breaker_board` | (-6.6638, 1.2, -0.9019) | 8.662 |
+| `BreakerE` | `breaker_e` (corridor_e) | `breaker_board` | (6.6638, 1.533, -0.9019) | -8.662 |
+| `BreakerW` | `breaker_w` (corridor_w) | `breaker_board` | (-6.6638, 1.533, -0.9019) | 8.662 |
 | `RenewerE` | `renewer_e` (tip_e) | `crystal_charger` | (10.2686, 1.2, 3.2369) | 173.517 |
 | `RenewerW` | `renewer_w` (tip_w) | `crystal_charger` | (-10.2686, 1.2, 3.2369) | -173.517 |
 
-Each package's own `HANDOFF.md` "Placement" holds its offset from the spot (the breaker board 0.07 m out along +Z;
+The console stands at the hall's centre (the engineer, 2026-11-02). A spot's `mount_h_m` (package.json) raises its marker over
+the deck: the breaker boards' 0.333 (the engineer, 2026-11-02: they sat too low), so `BreakerE`/`BreakerW` stand 1.533 m
+up and the board hangs from its marker as is. Each package's own `HANDOFF.md` "Placement" holds its offset from the spot (the breaker board 0.07 m out along +Z;
 the energy crystal at the socket's `crystal_anchor`). The vents are the throat walls in the scene (`Pieces/th_wall_e_*`,
 `th_wall_w_*`) with the gill set: five static glowing slits, the turn bars and a button per wall (the engineer's pick,
 2026-10-30); `godot/ship/gill_set.gd` in the art repo is the reference driver for the game's vent station.
@@ -126,7 +128,7 @@ above beside `ship --shoot`'s: mean difference 0.003, 0.002, 0.003 of 255 (the l
 
 ## Open questions for the game side
 
-- S1: Stations holds Marker3D spots only (+Z the spot's normal into the room, origin on the deck at the wall's face or the console's middle): the station packages (start_console, crystal_socket with energy_crystal at its crystal_anchor, breaker_board, crystal_charger) get their look from their own GDScript (apply()), which an asset may not carry (11.1), so the game's station scenes instance them at the markers. Each package's HANDOFF.md 'Placement' holds its own offset (the breaker board 0.07 m out along the normal).
+- S1: Stations holds Marker3D spots only (+Z the spot's normal into the room, origin on the deck, or mount_h_m over it, at the wall's face or the console's middle): the station packages (start_console, crystal_socket with energy_crystal at its crystal_anchor, breaker_board, crystal_charger) get their look from their own GDScript (apply()), which an asset may not carry (11.1), so the game's station scenes instance them at the markers. Each package's HANDOFF.md 'Placement' holds its own offset (the breaker board 0.07 m out along the normal).
 - S2: the throat vents (VentE, VentW) are part of the ship: since the clean throat (2026-10-29) the spots lie on the walls th_wall_e and th_wall_w under Pieces, which carry the gill set (five static glowing slits, the turn bars and a button per wall; the engineer's pick, 2026-10-30); godot/ship/gill_set.gd is the art's reference driver for the game's vent station.
 - S3: the look the art sets by code is baked into the scene as overrides inside each piece's instance (the glTF materials' night values, the outside pieces' render layer 2, the vents' well lights), every piece an editable instance; the shared metal is metal.gdshader with one .tres per metal. The shaders are art code shipped as files (as the House's kit_set.gdshader): who owns them?
 - S4: the nav lamps' blink (red, green and the white tail flash) is a script in the art's shots; the scene holds their static glow. The game adds the blink if it wants it.
