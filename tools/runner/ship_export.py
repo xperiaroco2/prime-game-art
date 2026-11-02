@@ -44,7 +44,8 @@ PACKAGES = {"console": ("start_console", "console"), "vent": ("ship:th_wall_{sid
             "renewer": ("crystal_charger", "renewer")}
 QUESTIONS = [
     "S1: Stations holds Marker3D spots only (+Z the spot's normal into the room, origin on the deck at the wall's face "
-    "or the console's middle): the station packages (start_console, crystal_socket with energy_crystal at its "
+    "or the console's middle; a breaker board's marker stands at the board's h 0, its spot's mount_h_m over the deck "
+    "(package.json stations[].mount_h_m, 0.333 since the boards were raised, 2026-11-02; every other spot's is 0)): the station packages (start_console, crystal_socket with energy_crystal at its "
     "crystal_anchor, breaker_board, crystal_charger) get their look from their own GDScript (apply()), which an asset "
     "may not carry (11.1), so the game's station scenes instance them at the markers. Each package's HANDOFF.md "
     "'Placement' holds its own offset (the breaker board 0.07 m out along the normal).",
@@ -87,16 +88,19 @@ def station_name(spot: str) -> str:
 
 
 def stations(layout: dict) -> list[dict]:
-    """Every station spot as {name, spot, package, kind, at (Godot x, h, z: on the deck), yaw (deg, +Z the normal)}."""
+    """Every station spot as {name, spot, package, kind, at (Godot x, h, z: on the deck, or mount_h_m over it), yaw
+    (deg, +Z the normal), mount_h_m}. The breaker boards (2026-11-02, raised): their spot's mount_h_m puts the
+    marker at the board's h 0, mount_h_m over the deck; every other station stands on the deck (0)."""
     floor_h = float(layout["deck"]["floor_h"])
     out = []
     for s in layout["stations"]["spot"]:
         prefix, _, side = s["id"].partition("_")
         package, kind = PACKAGES[prefix]
         yaw = (math.degrees(math.atan2(s["normal"][0], s["normal"][1])) if "normal" in s else CONSOLE_YAW)
+        mount = float(s.get("mount_h_m", 0.0))
         out.append({"name": station_name(s["id"]), "spot": s["id"], "package": package.format(side=side), "kind": kind,
-                    "at": [round(s["at"][0], 4), floor_h, round(s["at"][1], 4)], "yaw": round(yaw, 3),
-                    "room": s["room"]})
+                    "at": [round(s["at"][0], 4), round(floor_h + mount, 4), round(s["at"][1], 4)], "yaw": round(yaw, 3),
+                    "room": s["room"], "mount_h_m": mount})
     return out
 
 

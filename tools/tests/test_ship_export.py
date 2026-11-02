@@ -40,9 +40,12 @@ class StationsTest(unittest.TestCase):
         self.assertEqual(by["breaker_e"]["package"], "breaker_board")
 
     def test_a_wall_spot_faces_its_normal_on_the_deck(self) -> None:
+        """Every marker on the deck but the breaker boards', at their mount_h_m over it (raised 2026-11-02)."""
         floor = LAYOUT["deck"]["floor_h"]
         for s, spot in zip(X.stations(LAYOUT), LAYOUT["stations"]["spot"]):
-            self.assertEqual(s["at"][1], floor)
+            self.assertAlmostEqual(s["at"][1], floor + spot.get("mount_h_m", 0.0), places=4)
+            self.assertEqual(s["mount_h_m"], spot.get("mount_h_m", 0.0))
+            self.assertEqual(s["mount_h_m"] > 0, s["kind"] == "breaker")
             if "normal" in spot:  # +Z turned by yaw about Y is (sin, cos): the normal (plan x, y = Godot x, z)
                 yaw = math.radians(s["yaw"])
                 self.assertAlmostEqual(math.sin(yaw), spot["normal"][0], places=3)

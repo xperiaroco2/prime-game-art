@@ -157,7 +157,7 @@ place = [
   ["cor_ceil", [5.4121, 0.4247, 0.0], -8.664],
   ["cor_gutter", [5.4121, 0.4247, 0.0], -8.664],
   ["cor_wall_low_b", [5.4121, 0.4247, 0.0], -8.664],
-  ["cor_wall_up_b", [5.4121, 0.4247, 0.0], -8.664],
+  ["cor_wall_up_b_in", [5.2236, 0.396, 0.0], -8.664],
   ["floor_light", [5.6117, -0.8852, 0.0], -8.664],
   ["cor_gutter", [5.4121, 0.4247, 0.0], 171.336],
   ["cor_wall_low_a", [5.4121, 0.4247, 0.0], 171.336],
@@ -171,7 +171,7 @@ place = [
   ["cor_ceil", [6.438, 0.581, 0.0], -8.664],
   ["cor_gutter", [6.438, 0.581, 0.0], -8.664],
   ["cor_wall_low_a", [6.438, 0.581, 0.0], -8.664],
-  ["cor_wall_up_a", [6.438, 0.581, 0.0], -8.664],
+  ["cor_wall_up_a_board", [6.4378, 0.581, 0.0], -8.664],
   ["floor_light", [6.6376, -0.7289, 0.0], -8.664],
   ["cor_gutter", [6.438, 0.581, 0.0], 171.336],
   ["cor_wall_low_b", [6.438, 0.581, 0.0], 171.336],
@@ -185,7 +185,7 @@ place = [
   ["cor_ceil", [7.464, 0.7374, 0.0], -8.664],
   ["cor_gutter", [7.464, 0.7374, 0.0], -8.664],
   ["cor_wall_low_b", [7.464, 0.7374, 0.0], -8.664],
-  ["cor_wall_up_b", [7.464, 0.7374, 0.0], -8.664],
+  ["cor_wall_up_b_out", [7.6522, 0.7661, 0.0], -8.664],
   ["floor_light", [7.6636, -0.5725, 0.0], -8.664],
   ["cor_gutter", [7.464, 0.7374, 0.0], 171.336],
   ["cor_wall_low_a", [7.464, 0.7374, 0.0], 171.336],
@@ -249,7 +249,7 @@ place = [
   ["floor_light", [-5.2125, 1.7346, 0.0], -171.336],
   ["cor_gutter", [-5.4121, 0.4247, 0.0], 8.664],
   ["cor_wall_low_a", [-5.4121, 0.4247, 0.0], 8.664],
-  ["cor_wall_up_a", [-5.4121, 0.4247, 0.0], 8.664],
+  ["cor_wall_up_a_in", [-5.2236, 0.396, 0.0], 8.664],
   ["floor_light", [-5.6117, -0.8852, 0.0], -171.336],
   ["cor_grate", [-6.438, 0.581, 0.0], -171.336],
   ["cor_ceil", [-6.438, 0.581, 0.0], -171.336],
@@ -263,7 +263,7 @@ place = [
   ["floor_light", [-6.2384, 1.8909, 0.0], -171.336],
   ["cor_gutter", [-6.438, 0.581, 0.0], 8.664],
   ["cor_wall_low_b", [-6.438, 0.581, 0.0], 8.664],
-  ["cor_wall_up_b", [-6.438, 0.581, 0.0], 8.664],
+  ["cor_wall_up_b_board", [-6.4378, 0.581, 0.0], 8.664],
   ["floor_light", [-6.6376, -0.7289, 0.0], -171.336],
   ["cor_grate", [-7.464, 0.7374, 0.0], -171.336],
   ["cor_ceil", [-7.464, 0.7374, 0.0], -171.336],
@@ -277,7 +277,7 @@ place = [
   ["floor_light", [-7.2644, 2.0473, 0.0], -171.336],
   ["cor_gutter", [-7.464, 0.7374, 0.0], 8.664],
   ["cor_wall_low_a", [-7.464, 0.7374, 0.0], 8.664],
-  ["cor_wall_up_a", [-7.464, 0.7374, 0.0], 8.664],
+  ["cor_wall_up_a_out", [-7.6522, 0.7661, 0.0], 8.664],
   ["floor_light", [-7.6636, -0.5725, 0.0], -171.336],
   ["cor_grate", [-8.4899, 0.8937, 0.0], -171.336],
   ["cor_ceil", [-8.4899, 0.8937, 0.0], -171.336],
@@ -796,7 +796,7 @@ foot = [-0.84709, 0.84709, -1.55, -1.15]
 id = "cor_wall_board"
 builder = "cor_wall_mid"
 collide = true
-args = { length = 1.8 }
+args = { length = 1.8, top = 1.8 }
 plain = [-0.9, 0.9, -1.75, -1.45]
 
 [[pieces]]
@@ -843,6 +843,42 @@ id = "cor_wall_up_b"
 builder = "cor_wall_up"
 collide = true
 args = { length = 1.03778, tone = "b" }
+
+[[pieces]]
+id = "cor_wall_up_a_in"
+builder = "cor_wall_up"
+collide = true
+args = { length = 0.6564, tone = "a" }
+
+[[pieces]]
+id = "cor_wall_up_a_out"
+builder = "cor_wall_up"
+collide = true
+args = { length = 0.6569, tone = "a" }
+
+[[pieces]]
+id = "cor_wall_up_b_in"
+builder = "cor_wall_up"
+collide = true
+args = { length = 0.6564, tone = "b" }
+
+[[pieces]]
+id = "cor_wall_up_b_out"
+builder = "cor_wall_up"
+collide = true
+args = { length = 0.6569, tone = "b" }
+
+[[pieces]]
+id = "cor_wall_up_a_board"
+builder = "cor_wall_up"
+collide = true
+args = { length = 1.8, tone = "a", from_h = 1.8 }
+
+[[pieces]]
+id = "cor_wall_up_b_board"
+builder = "cor_wall_up"
+collide = true
+args = { length = 1.8, tone = "b", from_h = 1.8 }
 
 [[pieces]]
 id = "cor_ceil"

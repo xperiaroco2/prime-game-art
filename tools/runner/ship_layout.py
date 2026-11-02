@@ -360,6 +360,7 @@ def check(layout: dict[str, Any]) -> list[str]:
     problems += check_closed(layout)
     problems += check_bands(layout)
     problems += check_spots(layout)
+    problems += check_mounts(layout)
     problems += check_units(layout)
     problems += check_walk(layout)
     problems += hull_skin(layout)
@@ -538,6 +539,15 @@ def check_walk(layout: dict[str, Any]) -> list[str]:
                 problems.append(f"the walk from ({a[0]:g}, {a[1]:g}) to ({b[0]:g}, {b[1]:g}) leaves the rooms' floor "
                                 f"(the capsule's {rad:g} m) at ({c[0]:.2f}, {c[1]:.2f})")
                 break
+    # the console at the hall's centre (2026-11-02): the walk keeps the capsule's radius clear of every floor station
+    for s in layout.get("stations", {}).get("spot", []):
+        if s.get("normal"):
+            continue
+        need = rad + spot_radius(layout, s)
+        near = min((math.dist(c, s["at"]) for c in on_deck), default=need)
+        if near < need - TOL:
+            problems.append(f"the walk passes {near:.2f} m from station {s['id']}'s middle, wants >= {need:g} "
+                            f"(the capsule's {rad:g} m and its {spot_radius(layout, s):g} m)")
     for r in layout["rooms"]:
         if not r.get("closed") and not any(room_margin(r, c) >= 0.0 for c in on_deck):
             problems.append(f"{r['id']}: the walk does not enter it (every room but a closed one needs it)")
@@ -609,6 +619,36 @@ def to_local(pt: tuple[float, float], at: list[float], yaw: float) -> tuple[floa
     return c * dx - s * dy, s * dx + c * dy
 
 
+def spot_radius(layout: dict[str, Any], s: dict[str, Any]) -> float:
+    """A floor spot's footprint radius: its own radius_m (the console's 0.6 m plinth), else [stations] radius_m."""
+    return float(s.get("radius_m", layout["stations"]["radius_m"]))
+
+
+BOARD_TOP_M = 1.404   # the breaker board's beacon top over its own h 0 (assets/prop/breaker_board/report.json)
+
+
+def check_mounts(layout: dict[str, Any]) -> list[str]:
+    """The breaker boards raised (2026-11-02): a wall spot's mount_h_m (the unit's h 0 over the deck) needs a
+    vertical wall face_h_m high over its plain run, above the board's beacon and under the room's clear height."""
+    problems = []
+    by_id = rooms(layout)
+    for s in layout["stations"]["spot"]:
+        mount, face = s.get("mount_h_m"), s.get("face_h_m")
+        if mount is None and face is None:
+            continue
+        if mount is None or face is None or not s.get("normal"):
+            problems.append(f"station {s['id']}: mount_h_m and face_h_m go together, on a wall spot")
+            continue
+        top = mount + (BOARD_TOP_M if s["id"].startswith("breaker") else 0.0)
+        if mount < 0 or face < top + 0.03 - TOL:
+            problems.append(f"station {s['id']}: its vertical face ends at {face:g} m, wants >= {top + 0.03:.3f} "
+                            f"(the unit's top {top:.3f} + 0.03)")
+        clear = by_id[s["room"]].get("clear_h", 99.0)
+        if face > clear - 0.3 + TOL:
+            problems.append(f"station {s['id']}: its vertical face ends at {face:g} m, over the room's {clear:g} - 0.3")
+    return problems
+
+
 def spot_stand(layout: dict[str, Any], s: dict[str, Any]) -> tuple[float, float]:
     """Where a player stands to use a wall spot (the capsule's centre in front of the unit)."""
     n = _unit(s["normal"])
@@ -634,8 +674,9 @@ def check_spots(layout: dict[str, Any]) -> list[str]:
             continue
         if not s.get("normal"):
             margin = room_margin(room, tuple(s["at"]))
-            if margin < st["radius_m"] - TOL:
-                problems.append(f"station {s['id']}: {margin:.2f} m inside {room['id']}, wants >= {st['radius_m']:g}")
+            if margin < spot_radius(layout, s) - TOL:
+                problems.append(f"station {s['id']}: {margin:.2f} m inside {room['id']}, "
+                                f"wants >= {spot_radius(layout, s):g}")
             continue
         n = _unit(s["normal"])
         wall = room_margin(room, (s["at"][0] + n[0] * 0.05, s["at"][1] + n[1] * 0.05))
@@ -675,7 +716,8 @@ def check_spots(layout: dict[str, Any]) -> list[str]:
             if min(in_rooms(layout, q) for q in side) < -TOL:
                 problems.append(f"station {s['id']}: the pass behind it leaves the rooms at ({c[0]:.2f}, {c[1]:.2f})")
                 break
-            near = [o["id"] for o in floors if math.hypot(c[0] - o["at"][0], c[1] - o["at"][1]) < st["radius_m"]]
+            near = [o["id"] for o in floors
+                    if math.hypot(c[0] - o["at"][0], c[1] - o["at"][1]) < spot_radius(layout, o)]
             if near:
                 problems.append(f"station {s['id']}: the pass behind it crosses {near[0]}")
                 break
