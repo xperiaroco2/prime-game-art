@@ -565,9 +565,13 @@ They are copied to `<raw>/start-console/ref/`.
    The drum must stay inside the front block's chord (47.9 cm from the axis at the top): a 51 cm drum first poked
    through its middle as a dark column. Every block edge over 30 degrees gets a 9 mm chamfer marked in UV0 u, which
    the metal brightens (the concept's bright edges).
-3. **The hologram from the ship's own mesh.** The built hull pieces (`skin_top`, `skin_belly`, `skin_mouth`,
-   `skin_cheeks`, the three nozzle pods; `<raw>/<ship.toml raw_dir>/pieces/`, since v5 built on the raised
-   deck: `console_run.py` passes `[deck] lift_m` and the build lowers them back by it) are joined, turned so the nose points at the
+3. **The hologram from the ship's own mesh.** The built hull pieces (`skin_top`, `skin_belly`, `skin_cheeks`; the
+   jaw nose's outer shells, `jaw_lower`, `jaw_upper` and `jaw_root`'s `*_skin_*` objects, each at its hinge in the
+   CLOSED pose of `ship.toml` `[jaw]`, so the prow reads sharp; the three nozzle pods' outer surfaces, `POD_PARTS`;
+   `<raw>/<ship.toml raw_dir>/pieces/` or `console_run.py --pieces DIR`, since holo-v8 the merged package's
+   `<raw>/ship/v5/polish/nb/pieces`; built on the raised deck: `console_run.py` passes `[deck] lift_m` and the build
+   lowers them back by it) are joined (`skin_mouth`, the throat's dark lining, is inside the closed jaws and left
+   out; before holo-v8 the hologram still showed the old tunnel nose), turned so the nose points at the
    button, scaled to 1:16.3 (the 26.1 m span to the drawing's 159.8 cm), the hall's centre put over the core at
    145.7 cm and leaned 12 degrees nose down. **Its plates' own edges do not make a hologram**: the hull is built of
    separate plates, so its open and creased edges are a dense grid that read as white noise (the first trial,

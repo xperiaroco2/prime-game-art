@@ -6,7 +6,10 @@ tall, with the orange start button at hip height (its centre 0.814 m over the fl
 strips either side of the button, the hologram emitter on top, and over it the hologram of the ship, made from the
 built hull's own mesh at 1:16.3 (1.6 m across, its hall's disc 1.457 m over the floor, leaning 12 degrees nose down
 toward the button). Built from code: `tools/blender/console_run.py` (the sizes in
-`tools/blender/console_dims.toml`, the drawing in cm by `console_drawing.py`).
+`tools/blender/console_dims.toml`, the drawing in cm by `console_drawing.py`). Since holo-v8 (2026-11-02) the hologram is today's
+ship (the merged ship package v8's pieces, `<raw>/ship/v5/polish/nb/pieces`): the jaw nose closed, a sharp prow
+reaching 0.72 m toward the button (its lowest point 1.22 m over the floor, clear of the emitter deck's 1.13 m), the
+lens wings and #370's round nozzle pods. The fans' centres and axis did not move (`console.gd` unchanged).
 
 ## Files
 
