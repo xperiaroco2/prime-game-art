@@ -18,8 +18,8 @@ The shape is the drawing tools/blender/console_dims.toml (centimetres; console_d
   graphite bezels on the rim's front block;
 - the emitter inside the rim's top: a graphite deck, the cyan ring in its groove, twelve plates, a raised collar and
   the glowing core, a soft light column up into the hologram;
-- the hologram: the ship's own hull (the built pieces skin_top, skin_belly, skin_mouth, skin_cheeks and the three
-  nozzle pods from <pieces>) at 1:16.3, its hall over the core at [hologram] disc_h, nose down 12 degrees toward the
+- the hologram: the ship's own hull (the built pieces skin_top, skin_belly, skin_cheeks, the jaw nose's shells in
+  its closed pose and the three nozzle pods' outer parts from <pieces>) at 1:16.3, its hall over the core at [hologram] disc_h, nose down 12 degrees toward the
   button, fixed to the ship's axes (its nose to the console's front, which faces the ship's mouth). Hollow: a faint
   see-through shell; lines cut from the hull's mesh (its outline, contours over its top, the keel, its long creases,
   a section grid over its top; the plates' own edges are left out, a dense grid of their own); and the rooms as one
@@ -451,9 +451,20 @@ HOLO = DIMS["hologram"]
 SHIP_SPAN_M = 26.11                      # the built hull's span (skin_top's lens skins: x +-13.055)
 HALL = Vector((0.0, 0.4, 0.0))           # the hall's centre in the pieces' frame (plan (0, -0.4); y = -plan y)
 TIPS = [Vector((-10.5, -1.2, 0.0)), Vector((10.5, -1.2, 0.0))]  # the lens rooms (plan (-+10.5, 1.2))
-HULL_PIECES = ("skin_top", "skin_belly", "skin_mouth", "skin_cheeks")
+HULL_PIECES = ("skin_top", "skin_belly", "skin_cheeks")  # skin_mouth (the throat's dark lining) is inside the jaws
+# the jaw nose (art #263, #359): each jaw at its hinge, in the CLOSED pose (a closed sharp prow is the ship's
+# silhouette; ship.toml [jaw] lower_deg / upper_deg); only their outer shells ("<jaw>_skin_*"): the decks, ceilings,
+# bulkheads, rails and glow lines inside would draw a second nose
+JAWS = (("jaw_lower", (0.0, -8.1, 1.2)), ("jaw_upper", (0.0, -4.6, 4.88)), ("jaw_root", (0.0, 0.0, 0.0)))
+JAW_POSE = "closed"
 PODS = (("nozzle_pod_outer", (-3.0, 9.6, 2.0)), ("nozzle_pod_outer", (3.0, 9.6, 2.0)),
         ("nozzle_pod_mid", (0.0, 9.6, 2.55)))  # layouts/ship/exterior.toml place: plan (x, y), h
+# the pods' outer surfaces of revolution (#370's nb pods): the bolts, the bridge, the ribs and the throat left out
+# (their cuts are rings of small loops), and the glow rings (pod_ring_*) too: the hologram draws its own rings
+POD_PARTS = ("pod_shell", "pod_collar", "pod_mount", "pod_housing", "pod_bell")
+POD_SIMPLIFY = 8.0   # deg: the pods' cuts thinned (#370's pods are round in 128 steps: at 3 deg their rings were 4x the
+                     # old pods' triangles, 22,422 against 5,880, for no line one can see at 1:16.3)
+POD_SHELL = 0.12     # the share of the pods' faces their faint shell keeps (a collapse decimation)
 HULL_STATS: dict = {}
 
 
@@ -491,11 +502,36 @@ def hull_bmesh(pieces: Path) -> bmesh.types.BMesh:
                 bpy.data.meshes.remove(me)
         for o in obs:
             bpy.data.objects.remove(o)
+    jaw_meshes(pieces, bm)
     HULL_STATS["source_triangles"] = sum(len(f.verts) - 2 for f in bm.faces)
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.02)
     bmesh.ops.dissolve_degenerate(bm, edges=bm.edges, dist=0.005)
     bm.normal_update()
     return bm
+
+
+def jaw_meshes(pieces: Path, bm) -> None:
+    """The jaw nose's outer shells into bm, each jaw at exterior.toml's hinge place turned to [jaw]'s closed angle
+    about x (+ lifts the front; the GLBs are built closed, each origin at its hinge, placed at the raised frame's
+    heights: h - LIFT brings them to the hull's frame, as the pods)."""
+    ship = tomllib.loads(SHIP_TOML.read_text(encoding="utf-8"))
+    jaw = ship["jaw"]
+    ext = tomllib.loads((SHIP_TOML.parent / "exterior.toml").read_text(encoding="utf-8"))["place"]
+    angle = {jaw["lower"][0]: jaw["lower_deg"][JAW_POSE], jaw["upper"][0]: jaw["upper_deg"][JAW_POSE]}
+    for name, (x, y, h) in JAWS:
+        if not any(p[0] == name and [round(v, 3) for v in p[1]] == [x, y, h] for p in ext):
+            raise SystemExit(f"console_build.py: JAWS {name} {(x, y, h)} is not in exterior.toml's place list")
+        obs = import_glb(pieces / f"{name}.glb")
+        place = Matrix.Translation(Vector((x, -y, h - LIFT[0]))) @             Matrix.Rotation(math.radians(angle.get(name, 0.0)), 4, "X")
+        for o in obs:
+            mats = [m.name for m in o.data.materials if m] if o.type == "MESH" else []
+            if o.type == "MESH" and "_skin_" in o.name and not any(m.startswith("ext_seam") for m in mats):
+                me = o.data.copy()
+                me.transform(place @ o.matrix_world)
+                bm.from_mesh(me)
+                bpy.data.meshes.remove(me)
+        for o in obs:
+            bpy.data.objects.remove(o)
 
 
 def pod_bmeshes(pieces: Path) -> list:
@@ -511,7 +547,7 @@ def pod_bmeshes(pieces: Path) -> list:
         obs = import_glb(pieces / f"{name}.glb")
         bm = bmesh.new()
         for o in obs:
-            if o.type == "MESH" and not o.name.startswith("pod_throat"):
+            if o.type == "MESH" and o.name.startswith(POD_PARTS):
                 me = o.data.copy()
                 me.transform(Matrix.Translation(Vector((x, -y, h - LIFT[0]))) @ o.matrix_world)
                 bm.from_mesh(me)
@@ -521,6 +557,22 @@ def pod_bmeshes(pieces: Path) -> list:
         bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.01)
         bm.normal_update()
         out.append(bm)
+    return out
+
+
+def decimated(bm, ratio: float):
+    """A copy of bm with ratio of its faces (Blender's collapse decimation on a temporary object)."""
+    me = bpy.data.meshes.new("dec")
+    bm.to_mesh(me)
+    ob = bpy.data.objects.new("dec", me)
+    bpy.context.scene.collection.objects.link(ob)
+    mod = ob.modifiers.new("dec", "DECIMATE")
+    mod.ratio = ratio
+    dg = bpy.context.evaluated_depsgraph_get()
+    out = bmesh.new()
+    out.from_object(ob, dg)
+    bpy.data.objects.remove(ob)
+    bpy.data.meshes.remove(me)
     return out
 
 
@@ -755,11 +807,12 @@ def build_hologram(pieces: Path) -> list:
         cuts = []
         for i in range(1, 6):
             y = lo + (hi - lo) * i / 6.0
-            cuts += [(ln, 100 if i in (1, 5) else 55, line_w if i in (1, 5) else grid_w)
+            cuts += [(simplify(ln, POD_SIMPLIFY), 100 if i in (1, 5) else 55, line_w if i in (1, 5) else grid_w)
                      for ln in section_lines(pod, Vector((0.0, y, 0.0)), Vector((0.0, 1.0, 0.0)))]
         for a in range(0, 180, 45):
             n = Vector((math.cos(math.radians(a)), 0.0, math.sin(math.radians(a))))
-            cuts += [(ln, 70 if a in (0, 90) else 45, grid_w) for ln in section_lines(pod, Vector((cx, 0.0, cz)), n)]
+            cuts += [(simplify(ln, POD_SIMPLIFY), 70 if a in (0, 90) else 45, grid_w)
+                     for ln in section_lines(pod, Vector((cx, 0.0, cz)), n)]
         half = 0.5 * (max(v.co.x for v in pod.verts) - min(v.co.x for v in pod.verts))
         turbines.append({"centre": Vector((cx, hi, cz)), "lo": lo, "half": half,
                          "cuts": [c for c in cuts if len(c[0]) > 1]})
@@ -784,7 +837,7 @@ def build_hologram(pieces: Path) -> list:
     for f in shell.faces:
         f[sidx] = 30
     for pod in pods:
-        pm = pod.copy()
+        pm = decimated(pod, POD_SHELL)
         pidx = pm.faces.layers.int.get(IDX) or pm.faces.layers.int.new(IDX)
         for f in pm.faces:
             f[pidx] = 30

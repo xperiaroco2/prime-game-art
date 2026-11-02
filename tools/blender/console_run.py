@@ -21,7 +21,7 @@ close-ups into <tag>/review/ (sheet.png), the before/after against the shipped b
 manifest.toml with the raw files' hashes.
 
     $PYTHON_BIN tools/blender/console_run.py [--tag build] [--no-build] [--no-shots] [--res 900] [--samples 64]
-        [--asset assets/prop/start_console] [--spinup [--no-video]]
+        [--asset assets/prop/start_console] [--spinup [--no-video]] [--pieces DIR]
 """
 from __future__ import annotations
 
@@ -81,12 +81,14 @@ def main() -> int:
                     help="the look's approval for the manifest (docs/manifest.md: all three together)")
     ap.add_argument("--spinup", action="store_true", help="the spin-up's review shots, before/after and round MP4")
     ap.add_argument("--no-video", action="store_true", help="--spinup without the round's MP4")
+    ap.add_argument("--pieces", type=Path, help="the ship's built pieces (default <raw>/<ship.toml raw_dir>/pieces; "
+                    "the merged package's, e.g. <raw>/ship/v5/polish/nb/pieces)")
     args = ap.parse_args()
     if args.asset and args.no_shots:
         ap.error("--asset needs this run's shots (report.json takes their GPU cost)")
     copy_refs()
     layout = ship_layout.load()
-    pieces = ship_cmd.raw(layout) / "pieces"
+    pieces = args.pieces or ship_cmd.raw(layout) / "pieces"
     out = RAW / "start-console" / args.tag
     renders = out / "renders"
     if not args.no_build:
