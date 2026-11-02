@@ -1230,6 +1230,17 @@ blender.run_script("dungarees_build.py", ["--spec", "specs/dungarees_dims.toml",
   - `strap_weld_cm`: the strap fronts on the bib's weights;
   - `shirt_follow_ring`: one ring of shirt on the nearest cloth's weights. G3o's ring had re-run the cover test,
     which every vertex outside the covered set had already failed, so it added none.
+- **G3q (2026-11-02): rest places, the floor, sewn strap ends.** Gate 2's slip, stretch and cover rows name the worst
+  point at her rest (the build's own coordinates) beside the reference clip's frame (G3p's "z 103" was Idle's, 5 cm
+  under its rest place). A stretch beyond her skin may count one sign (`sign = "+"`: lengthening only, bunching is the
+  folds row's) and reports the shares of lengthened and shortened edges at its p95. The **floor** (`floor = true`): the
+  part's vertices put on her skin at their stand-off, turned with her skin's surface
+  (`garment_gate2_geom.floor_points`), the least any weighting can show; `floor_plus_pct` makes it the limit plus a
+  margin (the bib: the floor + 2 %, the manager's decision). The bib part drops its pocket (`piece_verts`). The build
+  sews each strap's run under the bib's top onto the bib (`strap_sew_in_mm`), puts the buckles on the bib's weights per
+  vertex (`ring_follows_bib`), eases the bib's hug onto the band's face at its foot (`bib_hug_ease_cm`), hides the
+  shirt under the plates, laps and band as one cover (`shirt_hide_front`) and sets the shirt's collar on her skin's
+  exact weights (`collar_skin_cm`, `collar_out_mm`).
 
   Measured against n4: bib stretch beyond her skin 15.3 to 11.8 %, folds 6.1 to 5.2 mm, side IoU 0.747 to 0.752.
   It does not solve everything:
