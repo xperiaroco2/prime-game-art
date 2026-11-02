@@ -17,7 +17,8 @@ from runner.commands import _manifest
 ASSET = common.ROOT / "assets" / "prop" / "start_console"
 EXPORT = ASSET / "export"
 DIMS = common.ROOT / "tools" / "blender" / "console_dims.toml"
-TRIANGLES = 58700  # the whole console: 55,661 at build2; spin-up step 1 58,217, step 2 58,555 (the deck ring, sprites)
+TRIANGLES = 72000  # the whole console: 55,661 at build2; spin-up step 1 58,217, step 2 58,555 (the deck ring, sprites);
+# holo-v8 71,746: the jaw nose and #370's round pods (their cuts 16,194 against 5,880; GPU 0.134 ms against 0.112)
 SURFACES = {"console_bronze", "console_graphite", "console_cyan", "console_button", "console_stage", "console_lamp",
             "console_holo_line", "console_holo_shell", "console_beam", "console_holo_turbine", "console_holo_wire",
             "console_holo_ring", "console_holo_digit"}
@@ -251,6 +252,25 @@ class StartConsoleAsset(unittest.TestCase):
         for name, x, y, h in pods:
             self.assertIn([name, [float(x), float(y), float(h)], 0.0], place)
         self.assertIn('--pieces needs --lift', src)
+
+    def test_build_hull_is_the_jaw_nose_closed(self) -> None:
+        # art#263 holo-v8: the hologram is today's ship, the jaw nose (#359) closed (a sharp prow), not the old tunnel
+        src = (common.ROOT / "tools" / "blender" / "console_build.py").read_text(encoding="utf-8")
+        hull = re.search(r"HULL_PIECES = \(([^)]*)\)", src).group(1)
+        self.assertEqual(re.findall(r'"(\w+)"', hull), ["skin_top", "skin_belly", "skin_cheeks"])
+        jaws = re.findall(r'\("(jaw_\w+)", \(([-0-9.]+), ([-0-9.]+), ([-0-9.]+)\)\)', src)
+        self.assertEqual({j[0] for j in jaws}, {"jaw_lower", "jaw_upper", "jaw_root"})
+        place = tomllib.loads((common.ROOT / "layouts" / "ship" / "exterior.toml").read_text(encoding="utf-8"))["place"]
+        for name, x, y, h in jaws:
+            self.assertIn([name, [float(x), float(y), float(h)], 0.0], place)
+        jaw = tomllib.loads((common.ROOT / "layouts" / "ship" / "ship.toml").read_text(encoding="utf-8"))["jaw"]
+        self.assertIn('JAW_POSE = "closed"', src)
+        self.assertEqual((jaw["lower"], jaw["upper"]), (["jaw_lower"], ["jaw_upper"]))
+        self.assertEqual((jaw["lower_deg"]["closed"], jaw["upper_deg"]["closed"]), (0.0, 0.0))
+        report = json.loads((ASSET / "report.json").read_text(encoding="utf-8"))
+        lo, hi = report["mesh"]["hologram"]["bounds_cm"]
+        self.assertLess(lo[1], -65.0)  # the closed prow reaches past the old tunnel's nose (-39.6 cm)
+        self.assertGreater(lo[2], 113.0)  # over the emitter deck's ring top (deck_ring: 113 cm)
 
     def test_dims_spinup(self) -> None:
         d = tomllib.loads(DIMS.read_text(encoding="utf-8"))["spinup"]

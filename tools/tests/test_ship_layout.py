@@ -40,7 +40,7 @@ class ShipLayoutTest(unittest.TestCase):
 
     def test_the_station_spots_are_the_design_docs(self) -> None:
         """The spots as built (rebuild F): the vents on the throat's slanted walls at (+-2.409, -4.791), the console
-        at (0, 0.6), the back sockets at (+-1.8, 3.112), the front sockets about (+-3.5, -2.4), the breaker boards on
+        at the hall's centre (0, -0.4; 2026-11-02, was (0, 0.6)), the back sockets at (+-1.8, 3.112), the front sockets about (+-3.5, -2.4), the breaker boards on
         the corridors' front wall in their middle (+-6.664, -0.902; lens step 1), the renewers on the lens rooms' aft
         walls at (+-10.269, 3.237), their players 1.453 m in (fix1: the charger's reach, was 1.3)."""
         spots = {s["id"]: s for s in LAYOUT["stations"]["spot"]}
@@ -50,7 +50,7 @@ class ShipLayoutTest(unittest.TestCase):
         # wall's modules 2 and 3 (3/5 of the wall from the mouth), their plain band on those two plain modules
         self.assertEqual(set(spots), {"console", "vent_e", "vent_w", "socket_e", "socket_w", "socket_fe", "socket_fw",
                                       "breaker_e", "breaker_w", "renewer_e", "renewer_w"})
-        self.assertEqual(tuple(spots["console"]["at"]), (0.0, 0.6))
+        self.assertEqual(tuple(spots["console"]["at"]), tuple(sl.rooms(LAYOUT)["hall"]["centre"]))
         for sx in (1, -1):
             sid = "e" if sx > 0 else "w"
             self.assertEqual(spots[f"vent_{sid}"]["room"], "throat")
@@ -232,6 +232,29 @@ class ShipLayoutTest(unittest.TestCase):
         def cut(layout):
             layout["walk"]["points"] = [[-10.994, 1.275, 1.2], [10.994, 1.275, 1.2]]
         self.assertTrue(any("the walk from (-10.994, 1.275) to (10.994, 1.275) leaves" in p for p in problems_after(cut)))
+
+    def test_the_walk_keeps_clear_of_the_console(self) -> None:
+        """2026-11-02: the console at the hall's centre with its own 0.6 m footprint; the walk across the hall goes
+        round it, and the old straight line between the corridor points (0.45 m from its middle) is refused."""
+        spot = next(s for s in LAYOUT["stations"]["spot"] if s["id"] == "console")
+        self.assertEqual(sl.spot_radius(LAYOUT, spot), 0.6)
+        def straight(layout):
+            layout["walk"]["points"].remove([0.0, 0.9, 1.2])
+        self.assertTrue(any("the walk passes 0.45 m from station console" in p for p in problems_after(straight)))
+
+    def test_the_boards_mount_height_needs_its_vertical_face(self) -> None:
+        """2026-11-02: the breaker boards raised, their frame's middle at 1.25 m (mount_h_m 0.333 over the deck, the
+        frame 0.52..1.314 of the board's own h); the wall vertical to face_h_m over the beacon's top, and both or none."""
+        for sid in ("breaker_e", "breaker_w"):
+            spot = next(s for s in LAYOUT["stations"]["spot"] if s["id"] == sid)
+            self.assertAlmostEqual(spot["mount_h_m"] + (0.52 + 1.314) / 2, 1.25, places=3)
+            self.assertGreaterEqual(spot["face_h_m"], spot["mount_h_m"] + sl.BOARD_TOP_M + 0.03)
+        def low(layout):
+            next(s for s in layout["stations"]["spot"] if s["id"] == "breaker_e")["face_h_m"] = 1.45
+        self.assertTrue(any("breaker_e: its vertical face ends at 1.45 m" in p for p in problems_after(low)))
+        def lone(layout):
+            del next(s for s in layout["stations"]["spot"] if s["id"] == "breaker_w")["face_h_m"]
+        self.assertTrue(any("breaker_w: mount_h_m and face_h_m go together" in p for p in problems_after(lone)))
 
     def test_a_cable_bay_on_a_breaker_wall_is_refused(self) -> None:
         def bay(layout):

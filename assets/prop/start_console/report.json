@@ -1,9 +1,9 @@
 {
   "asset": "start_console",
-  "built_by": "tools/blender/console_run.py --tag spinup2 --asset assets/prop/start_console",
+  "built_by": "tools/blender/console_run.py --tag holo-v8 --asset assets/prop/start_console",
   "mesh": {
-    "triangles": 58555,
-    "vertices": 33045,
+    "triangles": 71746,
+    "vertices": 42486,
     "triangles_by_material": {
       "console_graphite": 7310,
       "console_bronze": 2112,
@@ -11,10 +11,10 @@
       "console_stage": 6,
       "console_button": 510,
       "console_beam": 384,
-      "console_holo_line": 20940,
-      "console_holo_shell": 14639,
+      "console_holo_line": 22812,
+      "console_holo_shell": 15644,
       "console_lamp": 800,
-      "console_holo_turbine": 6804,
+      "console_holo_turbine": 17118,
       "console_holo_wire": 3124,
       "console_holo_ring": 600,
       "console_holo_digit": 56
@@ -35,43 +35,43 @@
       "collar": 1152,
       "core_light": 478,
       "beam": 384,
-      "holo_lines": 20940,
-      "holo_shell": 14643,
+      "holo_lines": 22812,
+      "holo_shell": 15646,
       "holo_lamps": 800,
-      "holo_turbines": 6804,
+      "holo_turbines": 17118,
       "holo_wiring": 3124,
       "holo_ring": 600,
       "holo_digits": 56
     },
     "hologram": {
-      "source_triangles": 13993,
+      "source_triangles": 15425,
       "bounds_cm": [
         [
-          -80.01,
-          -39.62,
-          126.96
+          -79.96,
+          -71.98,
+          122.0
         ],
         [
-          80.01,
-          93.75,
-          174.54
+          80.0,
+          94.12,
+          175.15
         ]
       ],
       "lamps": 8,
       "scale": 16.34,
       "lines": {
-        "outline": 1704,
-        "contours": 2628,
-        "keel": 462,
-        "creases": 3012,
-        "grid": 11148,
+        "outline": 1926,
+        "contours": 3240,
+        "keel": 624,
+        "creases": 3120,
+        "grid": 11916,
         "hall disc": 912,
         "tip discs": 984,
         "bands": 24,
         "entrance": 66,
-        "shell": 14643,
+        "shell": 15646,
         "lamps": 800,
-        "turbines": 5880,
+        "turbines": 16194,
         "fans": 924,
         "wiring": 3124,
         "ring": 600,
@@ -79,8 +79,8 @@
       }
     },
     "size_m": [
-      1.6002,
-      1.4721,
+      1.5997,
+      1.661,
       2.285
     ],
     "pedestal_size_m": [
@@ -290,10 +290,10 @@
   },
   "godot_cost": {
     "draw_calls_console": 13,
-    "gpu_ms_console": 0.112,
-    "gpu_ms_with": 0.675,
-    "gpu_ms_without": 0.563,
+    "gpu_ms_console": 0.134,
+    "gpu_ms_with": 0.667,
+    "gpu_ms_without": 0.533,
     "view": "1280x720, eye 1.6 m, 2.1 m away"
   },
-  "review": "<raw>/start-console/spinup2/godot/sheet.png"
+  "review": "<raw>/start-console/holo-v8/godot/sheet.png"
 }

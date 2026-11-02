@@ -143,8 +143,11 @@ pass_m = 1.6                                  # free floor behind a player stand
 
 [[stations.spot]]
 id = "console"
-at = [0.0, 0.6]                               # 1 m aft of the hall's centre (step A: (0, 1))
+at = [0.0, -0.4]                              # the hall's centre (the engineer, 2026-11-02, prime-game#507: "move the
+                                              # console with its hologram to the centre"; was (0, 0.6), 1 m aft)
 room = "hall"
+radius_m = 0.6                                # its own footprint: the plinth 1.2 m across (start_console HANDOFF), the
+                                              # walk keeps the capsule's radius clear of it
 
 [[stations.spot]]
 id = "vent_e"                                 # rebuild C: on the throat's slanted east wall (asked (2.3, -5.8)).
@@ -196,12 +199,20 @@ id = "breaker_e"                              # the corridor's front (north) wal
 at = [6.6638, -0.9019]                        # lens step 1: u 6.512, the middle between the portals (rebuild E (6.030,
 normal = [-0.1506, 0.9886]                    # 0.841))
 room = "corridor_e"
+mount_h_m = 0.333                             # the board's h 0 over the deck (the engineer, 2026-11-02: "raise the
+                                              # breaker boards"): the frame 0.853..1.647, its middle 1.25 (was 0: 0.52..1.314)
+face_h_m = 1.80                               # the wall stands vertical to here over the board's plain run (a recess
+                                              # under the slant; elsewhere 1.45), 6 cm over the beacon's top (1.737)
 
 [[stations.spot]]
 id = "breaker_w"
 at = [-6.6638, -0.9019]
 normal = [0.1506, 0.9886]
 room = "corridor_w"
+mount_h_m = 0.333                             # the board's h 0 over the deck (the engineer, 2026-11-02: "raise the
+                                              # breaker boards"): the frame 0.853..1.647, its middle 1.25 (was 0: 0.52..1.314)
+face_h_m = 1.80                               # the wall stands vertical to here over the board's plain run (a recess
+                                              # under the slant; elsewhere 1.45), 6 cm over the beacon's top (1.737)
 
 [[stations.spot]]
 id = "renewer_e"                              # lens step 1: on the lens's aft wall at its vertex 87.82 deg round the
@@ -540,10 +551,11 @@ int_silver_c__clad = {v = 0.9, r = 0.0, m = 0.2, l = 0.0}                  # ste
 [walk]
 # lens step 1: the corridor points on the axes (u 3.0 from the hall's centre), the lens rooms' 0.5 m past their centres
 # lens C: and each charger's player stand (renewer_e/_w at + normal (0.70 + 0.4), the alcove's reach) and back
+# the console at the hall's centre (2026-11-02): across the hall round it, by (0, 0.9) aft of it
 # jaw nose b4: on the ground 0.6 m in front of the open ramp's tip (y -12.58), then straight up its centre line
 points = [[0.0, -14.0, 0.0], [0.0, -13.2, 0.0], [0.0, -6.6, 1.2], [0.0, -2.2, 1.2], [-2.966, 0.052, 1.6],
           [-10.994, 1.275, 1.2], [-10.393, 2.144, 1.2], [-10.994, 1.275, 1.2], [-2.966, 0.052, 1.2],
-          [2.966, 0.052, 1.2], [10.994, 1.275, 1.2], [10.393, 2.144, 1.2], [10.994, 1.275, 1.2], [2.966, 0.052, 1.6],
+          [0.0, 0.9, 1.2], [2.966, 0.052, 1.2], [10.994, 1.275, 1.2], [10.393, 2.144, 1.2], [10.994, 1.275, 1.2], [2.966, 0.052, 1.6],
           [0.0, -2.2, 1.2], [0.0, -6.6, 1.2], [0.0, -13.2, 0.0], [0.0, -14.0, 0.0]]
 
 # Views: [name, title, eye [x, y, h], look [x, y, h], fov]; the plan view "top" (south up, as plan-3) is added by the

@@ -244,6 +244,31 @@ class ShipInteriorTest(unittest.TestCase):
                                      (i, j, poly))
         self.assertEqual(len(signs), 1)   # one winding: no plate faces down
 
+    def test_the_breaker_boards_recess(self) -> None:
+        """2026-11-02, the boards raised: over the board's plain run the front wall stands vertical up to the spot's
+        face_h_m (cor_wall_board's panel taller), the slant above it starts there over a soffit, and the front wall's
+        slant pieces tile each corridor from end to end without a gap or an overlap."""
+        spot = next(s for s in SHIP["stations"]["spot"] if s["id"] == "breaker_e")
+        self.assertEqual(SP.FACE_H, spot["face_h_m"])
+        mid = {p["name"]: p for p in S.cor_wall_mid(dict(SP.PIECES["cor_wall_board"][1]), SHIP)}
+        self.assertAlmostEqual(max(v[2] for v in mid["body"]["verts"]), S.FLOOR + SP.FACE_H, places=4)
+        self.assertAlmostEqual(max(v[2] for v in mid["panel"]["verts"]), S.FLOOR + SP.FACE_H - 0.02, places=4)
+        up = {p["name"]: p for p in S.cor_wall_up(dict(SP.PIECES["cor_wall_up_a_board"][1]), SHIP)}
+        self.assertGreaterEqual(min(v[2] for v in up["panel"]["verts"]), S.FLOOR + SP.FACE_H)
+        self.assertAlmostEqual(min(v[2] for v in up["body"]["verts"]), S.FLOOR + SP.FACE_H, places=4)   # the soffit
+        widths = {f"cor_wall_up_{t}{k}": SP.PIECES[f"cor_wall_up_{t}{k}"][1]["length"]
+                  for t in ("a", "b") for k in ("", "_in", "_out", "_board")}
+        for sgn in (1, -1):
+            for side in (-1, 1):   # the front (north) wall (its pieces turned under 90 degrees), then the back
+                runs = sorted((along(x, y) - widths[pid] / 2, along(x, y) + widths[pid] / 2, pid)
+                              for pid, (x, y, _), yaw in INTERIOR["place"] if pid in widths and x * sgn > 0
+                              and (abs(yaw) < 90) == (side < 0))
+                self.assertAlmostEqual(runs[0][0], S.COR_X0, places=3)
+                self.assertAlmostEqual(runs[-1][1], S.COR_X1, places=3)
+                for a, b in zip(runs, runs[1:]):
+                    self.assertAlmostEqual(a[1], b[0], places=3, msg=(a, b))
+                self.assertEqual(any(r[2].endswith("_board") for r in runs), side < 0)
+
     def test_corridor_cables_on_both_walls_off_the_breaker_board(self) -> None:
         """inside-fix: both corridor walls carry a cable bay, the front wall's beside the board's plain wall; the
         ceiling ribs only on the ceiling; no hall trunk at a station chord's end."""

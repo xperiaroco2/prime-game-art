@@ -51,7 +51,7 @@ placement `[piece, [x, y, h], yaw]` puts a piece's local origin there, turned by
 | Ramp | 3.3 m wide (the mouth), hinge (0, -8.1) at the tunnel's front, foot (0, -12.6) on the ground: 14.9 deg, 4.66 m long (the raise, step 2; step 1 hinge -7.1, foot -11.6; rebuild C: foot -9.9, 12.1 deg, 2.86 m; v2 2.6 m from (0, -4.6)) | north at the centre |
 | Corridors | `strip` rooms on the axes from the hall's centre (0, -0.4) to the lens rooms' (+-10.5, 1.2) (lens step 1): 10.621 m, 8.66 deg aft; floor 3.708..9.298 along the axis (5.59 m), 3 m wide, straight, 2.4 m high (walls vertical to 1.45, then chamfered) | 5a mirrored: straight, about 3 m wide |
 | Lens rooms (ids `tip_e`, `tip_w`) | circles r 2.0 at (+-10.5, 1.2), the outer wall at +-12.5; the ceiling slants down outward (P's: clear 2.4455 at the corridor's wall face, 2.3545 at the outer one; `clear_h` 2.35, `clear_h_in` 2.45); the window band -65..+45 deg round the outward axis, + aft, sill 1.0, head 2.2 (`band`); one round roof window, the oculus (`oculus`, 1.4 m clear, 32 sides; details 1, was three 0.9 x 0.7 m) | P's lens (art#263 comment 6344490367) |
-| Stations (not built) | console (0, 0.6) clear floor; vents on the throat's slanted walls (+-2.409, -4.791); sockets (+-1.800, 3.112) and the front two on the hall's flats (+-3.426, -2.358); breaker boards (+-6.664, -0.902) in the middle of the corridors' front wall; renewers (+-10.269, 3.237) on the lens rooms' aft wall (a vertex, 87.82 deg aft of the axis), the player at (+-10.433, 1.793) (the fix pass: `depth_m` 1.053, the crystal charger's reach; was 0.9, the player at (+-10.415, 1.945), inside its front pads) | lens step 1; the vents as in "Rebuild F" |
+| Stations (not built) | console (0, -0.4), the hall's centre (2026-11-02; was (0, 0.6)), 0.6 m clear floor; vents on the throat's slanted walls (+-2.409, -4.791); sockets (+-1.800, 3.112) and the front two on the hall's flats (+-3.426, -2.358); breaker boards (+-6.664, -0.902) in the middle of the corridors' front wall; renewers (+-10.269, 3.237) on the lens rooms' aft wall (a vertex, 87.82 deg aft of the axis), the player at (+-10.433, 1.793) (the fix pass: `depth_m` 1.053, the crystal charger's reach; was 0.9, the player at (+-10.415, 1.945), inside its front pads) | lens step 1; the vents as in "Rebuild F" |
 | Vault (lens step 1) | `rect` x +-0.9, y 3.85..5.85 (1.8 x 2 m clear), `closed`: its shut door (1 m) in the hall's back wall at (0, 3.6), no exit, no link, not walkable floor (`check_closed`); ceiling 2.3 m at the door, 1.6 at the back (`clear_h_back`) | a shell only: no item, card or lock |
 | Player | capsule r 0.4, 1.8 m; every room keeps 0.5 m above it | the game's capsule |
 
@@ -73,6 +73,23 @@ back, both change with it. The corridors also run straight (5a: "curve with the 
 vertical to 1.45 m and then slants in (v2: half width 1.15 m at the 2.4 m ceiling, from 1.5 at the wall), so a station
 taller than about 1.5 m at the wall meets the slant. The console at (0, 1) straddles the hall's plain disc (v2: r 1.176)
 and its first grate ring (r 1.294). Step 2 accounts for both.
+
+**The console at the centre, the boards raised (2026-11-02).** The engineer after playing the slice
+(prime-game#507): the console with its hologram moves to the hall's centre, (0, -0.4), and the breaker boards go up.
+- The console stands on the hall's centre disc as it is (r 1.176; the plinth's 0.6 m fits inside it, nothing added
+  round it, the engineer: "add nothing visible he did not ask for"). Its spot carries its own `radius_m` 0.6, and
+  `ship --check` keeps the walk (its points and samples) the capsule's radius (0.4) plus that clear of every floor
+  station: the walk across the hall goes round the console by (0, 0.9) (the straight line passed 0.45 m from it).
+- Each breaker spot carries `mount_h_m` 0.333, the board's h 0 over the deck: its frame 0.853..1.647 (the middle at
+  1.25 m), the beacon's top 1.737. `ship_export.stations()` puts the `Stations/BreakerE`/`BreakerW` markers that high
+  (every other marker stays on the deck) and writes `mount_h_m` into `package.json`.
+- The wall is vertical to 1.45 m only. On the board's plain run (u 5.612..7.412) it now stands vertical up to the
+  spot's `face_h_m` 1.80, 6 cm over the beacon: `cor_wall_board` (`cor_wall_mid` with `top`) is the same plain pillow
+  panel taller, and `cor_wall_up_{a,b}_board` (`cor_wall_up` with `from_h`) starts the slant there over a flat soffit
+  12.9 cm deep; the slant modules the run starts and ends in are cut at it (`cor_wall_up_{a,b}_in`, `_out`).
+  `check_mounts` wants the face at least 3 cm over the board's top and 0.3 m under the room's clear height. Without
+  the recess the board could rise 4.6 cm at most (the beacon's top under 1.45) or 13.6 cm with its plate still on the
+  vertical wall (the plate's top at 1.45).
 
 ## Pieces
 
@@ -156,6 +173,7 @@ tools/run.sh ship                       # the check and plan.txt
 tools/run.sh ship --build               # one GLB per piece (about 1 min); --only ids
 tools/run.sh ship --godot --walk DIR    # headless: sizes, colliders, the capsule walk into DIR/check.json, then DIR/walkthrough.mp4
 tools/run.sh ship --shoot DIR           # off-screen night shots, compare_top.png (plan-3 left), sheet.png
+tools/run.sh ship --shoot DIR --stations   # with the console's and the breaker board's GLBs where the game places them
 tools/run.sh ship --motion DIR          # step 2: the vents' moving parts on their GLBs off-screen: numbers, MP4, sheets
 tools/run.sh ship --jaw-video DIR       # the jaw nose opening at night from a still 3/4 front camera: DIR/open.mp4
 tools/run.sh ship --vent-anim DIR       # the east vent's animation in place at night from the player's eye: MP4, key sheet
@@ -436,7 +454,7 @@ and the `normal` into the room. The check holds: the point on its room's wall; a
 `ship_interior_place.py` for the trunks, trunk cables and clips, pilasters, the corridors' cable bays and clips and the
 arches); the player's stand (`depth_m` 0.5, the renewers' 1.053, the crystal charger's reach, plus the capsule's radius out from the wall) inside
 the room; and `pass_m` (1.6) of free floor behind the player, the capsule's width inside the rooms, crossing no floor
-spot. The console is a floor spot: 0.35 m of clear floor round (0, 1).
+spot. The console is a floor spot: `radius_m` of clear floor round the hall's centre (0, -0.4) since 2026-11-02.
 
 **How the generator keeps them plain** (`ship_interior.py`, `ship_interior_place.py`):
 - The hall: the 16-gon keeps its facets and ribs, but at the four spots (45 deg, read from ship.toml as `FLATS`) the two
@@ -1334,8 +1352,8 @@ writes the ship's game-ready package (for prime-game#1225 and #1285) from `layou
   (art #356, below: the clearing's pieces, its lights and `Ground`, the world boundary, which `ship.gd` names
   `Ground` so the export finds it by name), `Nose` (art #263: the jaw's pieces and their `AnimationPlayer`, "The jaw
   nose" below), `Stations` (one `Marker3D` per `[[stations.spot]]`: `Console`, `VentE`, `VentW`,
-  `SocketE`, `SocketW`, `SocketFE`, `SocketFW`, `BreakerE`, `BreakerW`, `RenewerE`, `RenewerW`; on the deck, +Z the
-  spot's normal, the console turned 180 degrees; `metadata/spot`, `package`, `kind`) and `Markers/Spawn` (the walk's
+  `SocketE`, `SocketW`, `SocketFE`, `SocketFW`, `BreakerE`, `BreakerW`, `RenewerE`, `RenewerW`; on the deck (the
+  breaker boards' at their spot's `mount_h_m` over it, since 2026-11-02), +Z the spot's normal, the console turned 180 degrees; `metadata/spot`, `package`, `kind`) and `Markers/Spawn` (the walk's
   first point at the ramp's foot, facing the ship).
 - `package.json`: every file with its SHA-256 and bytes, the station spots, the spawn and the open questions.
 
