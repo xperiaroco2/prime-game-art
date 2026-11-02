@@ -37,11 +37,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 
 import bpy
 import numpy as np
+from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 from mathutils.interpolate import poly_3d_calc
 
@@ -191,6 +193,80 @@ def main() -> int:
                             "tree": BVHTree.FromPolygons([tuple(c) for c in ref], tris),
                             "centre": ref[band].mean(0)}
         rep["parts"]["lap: " + lp["name"]] = {"band_top": len(top), "edge": len(edge), "level": len(level)}
+    # G3p, the covers: columns of parallel rays over a plate's lowest row (inset margin_cm), from below_cm under the
+    # band's top to above_cm over it, each column's foot on the band's front at the reference
+    covers = []
+    shirt_o = bpy.data.objects.get(cfg.get("shirt_mesh", "top"))
+    body_o = bpy.data.objects.get(cfg["skin"][0]) if cfg.get("skin") else None
+    for cv in cfg.get("covers", []):
+        band, plate = parts[cv["band"]], parts[cv["plate"]]
+        if len(band) < 3 or not len(plate) or shirt_o is None or body_o is None:
+            covers.append((cv, None))
+            continue
+        top_z = float(ref[band, 2].max())
+        pz = ref[plate, 2]
+        low = plate[pz <= pz.min() + 0.01]
+        mg, cs, st = cv["margin_cm"] / 100, cv["col_mm"] / 1000, cv["step_mm"] / 1000
+        on = set(band.tolist())
+        btree = BVHTree.FromPolygons([tuple(c) for c in ref], [t for t in tri_all if all(k in on for k in t)])
+        cols = []
+        for x in np.arange(float(ref[low, 0].min()) + mg, float(ref[low, 0].max()) - mg + 1e-9, cs):
+            hit = btree.ray_cast((float(x), -1.0, top_z - 0.01), (0.0, 1.0, 0.0), 2.0)[0]
+            if hit is not None:
+                cols.append((float(x), float(hit.y)))
+        zs = np.arange(top_z - cv["below_cm"] / 100, top_z + cv["above_cm"] / 100 + 1e-9, st).tolist()
+        covers.append((cv, {"band": band, "cols": cols, "zs": zs, "step": st}))
+        rep["parts"]["cover: " + cv["name"]] = {"columns": len(cols), "rows": len(zs)}
+    spolys = [list(p.vertices) for p in shirt_o.data.polygons] if shirt_o is not None else []
+    kpolys = [list(p.vertices) for p in body_o.data.polygons] if body_o is not None else []
+    LIMB = ("UpperArm", "LowerArm", "Hand", "Thumb", "Index", "Middle", "Ring", "Little", "Pinky")
+
+    def limb_faces(o, polys):
+        """Faces with a vertex mostly on an arm or hand bone (her arm, the sleeve): a ray meeting one first sees
+        nothing of the gap (n4's first row read her hand at her hip in Jog as 72 mm of gap)."""
+        if o is None:
+            return set()
+        names = {g.index: g.name for g in o.vertex_groups}
+        limb_v = set()
+        for v in o.data.vertices:
+            gs = [(g.weight, names.get(g.group, "")) for g in v.groups]
+            if gs and any(k in max(gs)[1] for k in LIMB):
+                limb_v.add(v.index)
+        return {i for i, p in enumerate(polys) if any(k in limb_v for k in p)}
+    slimb, klimb = limb_faces(shirt_o, spolys), limb_faces(body_o, kpolys)
+
+    def cover_gap(cv, C, co):
+        """The longest run of shirt or skin seen between the garment under and over it (m), and where."""
+        r_, t_, _res = B.rigid_fit(ref[C["band"]], co[C["band"]])
+        fr = lambda pts: ((pts - t_) @ r_).tolist()   # into the band's reference frame (garment_gate2_geom.to_frame)
+        trees = [(True, BVHTree.FromPolygons(fr(co), polys), set()),
+                 (False, BVHTree.FromPolygons(fr(world(shirt_o)), spolys), slimb),
+                 (False, BVHTree.FromPolygons(fr(world(body_o)), kpolys), klimb)]
+        best, at = 0.0, None
+        for deg in cv["view_deg"]:
+            a = math.radians(deg)
+            d = Vector((math.sin(a), math.cos(a), 0.0))
+            for x, yb in C["cols"]:
+                labels, zs_ = [], []
+                for z in C["zs"]:
+                    q = Vector((x, yb, z))
+                    hits = []
+                    for g, tree, limb in trees:
+                        h = tree.ray_cast(q - 0.6 * d, d, 1.2)
+                        if h[0] is not None:
+                            hits.append((h[3], g, h[2] in limb))
+                    if not hits:
+                        continue
+                    dist, g, limb = min(hits)
+                    if limb or (not g and dist < 0.6 - 0.03):   # an arm, a hand or a sleeve in front: nothing seen here
+                        continue
+                    labels.append(g)
+                    zs_.append(z)
+                run, k = G.sandwiched(labels, C["step"])
+                if k is not None and run > best:
+                    best, at = run, [round(100 * x, 1), round(100 * zs_[k], 1), deg]
+        return best, at
+
     # her skin under the parts judged against it (vs_skin): each vertex's nearest skin point at the reference
     skin_parts = list(dict.fromkeys([st["part"] for st in cfg["stretch"] if st.get("vs_skin")] +
                                     [lf["part"] for lf in cfg.get("lifts", []) if not lf.get("on")]))   # G3j: lifts
@@ -260,7 +336,8 @@ def main() -> int:
         f0, f1 = (int(round(x)) for x in act.frame_range)
         res = {"frames": 0, "slip_mm": {}, "flat_mm": {}, "stretch_pct": {}, "stretch_p95_pct": {},
                "skin_excess_pct": {}, "skin_excess_p95_pct": {}, "lap_mm": {}, "lap_through_mm": {}, "lap_gap_mm": {},
-               "lift_mm": {}, "lift_at": {}, "flat_rigid_mm": {}, "stretch_at": {}, "slip_rigid_mm": {}, "slip_at": {}}
+               "lift_mm": {}, "lift_at": {}, "flat_rigid_mm": {}, "stretch_at": {}, "slip_rigid_mm": {}, "slip_at": {},
+               "cover_mm": {}, "cover_at": {}}
         sc.frame_set(f0)
         sref0 = None
         for f in range(f0, max(f0 + 1, f1 + 1), max(1, cfg.get("every", 1))):
@@ -309,6 +386,14 @@ def main() -> int:
                     v = None if v is None else 1000 * v
                     old = res[key].get(name)
                     res[key][name] = v if old is None else (old if v is None else worst(old, v))
+            for cv, C in covers:
+                if C is None:
+                    continue
+                v, at = cover_gap(cv, C, co)
+                old = res["cover_mm"].get(cv["name"])
+                if at is not None and (old is None or 1000 * v > old):
+                    res["cover_at"][cv["name"]] = at + [f]
+                res["cover_mm"][cv["name"]] = 1000 * v if old is None else max(old, 1000 * v)
             for fl in cfg["flat"]:
                 fit = fits.get(fl["part"])
                 v = 1000 * float(fit[2].max()) if fit else None
@@ -354,7 +439,7 @@ def main() -> int:
                     old = res[key].get(st["part"])
                     res[key][st["part"]] = v if old is None else (old if v is None else max(old, v))
         for k in ("slip_mm", "flat_mm", "stretch_pct", "stretch_p95_pct", "skin_excess_pct", "skin_excess_p95_pct",
-                  "lap_mm", "lap_through_mm", "lap_gap_mm", "lift_mm", "flat_rigid_mm", "slip_rigid_mm"):
+                  "lap_mm", "lap_through_mm", "lap_gap_mm", "lift_mm", "flat_rigid_mm", "slip_rigid_mm", "cover_mm"):
             res[k] = {n: (None if v is None else round(v, 2)) for n, v in res[k].items()}
         rep["clips"][clip] = res
         say("clip", clip, json.dumps(res))

@@ -1215,6 +1215,26 @@ blender.run_script("dungarees_build.py", ["--spec", "specs/dungarees_dims.toml",
   meaning, both open questions for the manager. The strap-fronts join can now tie to faces turned toward `face_dir`
   only, and only points standing over a face (`face_min_dot`; the bib's front, `[0, -1, 0]`). Each slip row names
   its worst point (`slip_at`: reference cm, frame).
+- **G3p (2026-11-02): the gap between the bib and the band gets a row; the bib is drawn in toward her.** G3o's Godot
+  stills showed the striped shirt between the bib's lower edge and the band in Jump_Start while every lap row passed.
+  `[[gate2.covers]]` now measures it: per frame, in the band's frame, parallel rays from the front and both
+  three-quarter views over the bib's lowest row; a run of rays that meet the shirt or her skin first, with the
+  garment met under and over it in the same column, is a gap (`garment_gate2_geom.sandwiched`). Rays that meet her
+  arm, hand or sleeve first (faces mostly on an arm or hand bone) see nothing there. Without that, her hand at her
+  hip in Jog read as 72 mm of gap. On n4 the row is off in 6 clips (worst 80 mm before the arm rule, 12 mm in
+  Jump_Start). Build p4 (`D:/prime-art-raw/2026-10-31-gate2/g3p/p4/`) brings it to 2-6 mm in 6 clips, where the
+  shirt comes through the lap at the band's height. p4 adds these build switches (`[build]`):
+  - `bib_hug`: lean B's hull moved toward her front, dilated;
+  - `bib_shirt_clear_mm`: the bib's inner face kept off the shirt;
+  - `plate_seam_cm`: the band's weights put back on the lap after the smoothing;
+  - `strap_weld_cm`: the strap fronts on the bib's weights;
+  - `shirt_follow_ring`: one ring of shirt on the nearest cloth's weights. G3o's ring had re-run the cover test,
+    which every vertex outside the covered set had already failed, so it added none.
+
+  Measured against n4: bib stretch beyond her skin 15.3 to 11.8 %, folds 6.1 to 5.2 mm, side IoU 0.747 to 0.752.
+  It does not solve everything:
+  - The strap fronts' slip worsened from 9.4 to 11.5 mm. The weld does not hold a strap whose bib bends under it.
+  - The shirt goes through its rest face in 5 clips instead of 3 (2.5-3.0 mm).
 - **The build's own numbers** (`[build]` in the spec, not sizes a gate measures): the seam blend, the band's ease
   off the shirt, her front's and back's half widths the plates are laid on (11 and 12 cm; `garment_drawing`'s gaps
   read the same), the straps' ray origin, the turn-up's wall, the buckle ring's sizes. A vertex the build leaves

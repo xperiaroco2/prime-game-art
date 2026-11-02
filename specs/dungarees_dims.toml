@@ -315,6 +315,19 @@ strap_inner_mm = 1.5         # the strap's inner face off the shirt (G3h 0.5; G3
 shirt_hide_cm = 2.0          # G3m: the shirt's faces under the plates (one ring in, shirt_hide_rings) and under the
 shirt_hide_rings = 1         # straps' central 1.9 cm go: five rays all meet them within 2 cm (clothes_top's rule)
 
+# G3p (2026-11-02, art #196; build p4): the sewn seam, the strap fronts welded to the bib, the bib drawn in toward her,
+# its inner face kept off the shirt, one ring of shirt round the cloth on the cloth's weights
+plate_seam_cm = 3.0          # after the smoothing the plates' rows over the lap take the band's weights again, eased
+                             # back over 3 cm above the band's top (the smoothing had mixed Chest into the lap)
+strap_weld_cm = 3.0          # each strap's front run on the bib takes the bib's weights under it, eased back over 3 cm
+                             # above the bib's top (p4: the slip row did not improve; kept for the manager's look)
+bib_hug = 1.0                # 0-1: the bib moved from lean B's hull toward her front (dilated 2 cm across, 1.5 cm up
+                             # and down) + the shirt + bib_hug_gap_mm; p4: the gap row 80 -> 6 mm, bib stretch 15.3 ->
+                             # 11.8 %, folds 6.1 -> 5.2 mm, side IoU 0.747 -> 0.752 (0.4: 26 mm, 14.1 %; 0.8: 6 mm, 12.2 %)
+bib_hug_gap_mm = 4.0
+bib_shirt_clear_mm = 3.0     # the bib's inner face at least this off the shirt (n4: 0.4 mm at (+-2.8, -11.3, 102.6) cm)
+shirt_follow_ring = 1        # shirt vertices round the covered ones take the nearest cloth's weights (p4: 23 vertices)
+
 [behaviour]
 bib = "one piece, straight across, the single side-view bend of option B; never folds or wrinkles (flatness 3 mm); follows her skin under it (G3m: her skin's weights, smoothed), stretching no more than it; the buckles ride on it (slip under 3 mm)"
 straps = "bend along their length only, stay 3.8 cm wide; on her skin's weights under them from the bib over the shoulder to the back panel, smoothed with both plates: one strip with the bib and the back panel (G3m)"
@@ -503,6 +516,24 @@ plate = "back_lap"
 on = "waistband"
 min_mm = 10.0
 through_mm = 0.0
+
+# G3p (2026-11-02, art #196): no shirt or skin seen between the bib's lower edge and the band. G3o's Godot stills
+# showed a band of the striped shirt there in Jump_Start 0.77 s (front and both three-quarters) while every lap row
+# passed. Per frame, in the band's frame, parallel rays from the front and the three-quarter views (view_deg) at
+# columns col_mm apart over the bib's lowest row (inset margin_cm at each side), from below_cm under the band's top to
+# above_cm over it every step_mm: in a column, a run of rays meeting the shirt or her skin first with the garment met
+# both under and over it is a gap (garment_gate2_geom.sandwiched); the longest run, mm
+[[gate2.covers]]
+name = "bib to band"
+plate = "bib_lap"
+band = "waistband"
+view_deg = [0, 35, -35]
+margin_cm = 1.5
+below_cm = 1.5
+above_cm = 8.0
+col_mm = 5.0
+step_mm = 2.0
+tol_mm = 0.0
 
 # G3n (2026-11-01, the manager's decision; the engineer's "flat" means no folds, not rigid): on her skin's weights the
 # bib bends with her trunk, and the old row (the largest distance from one rigid fit of it) read that bend as a fold,

@@ -702,6 +702,30 @@ class G3fLapTest(unittest.TestCase):
         self.assertLess(G.lap_overlap(top, [(0, -0.152, 1.004)]), 0)    # over the band's top: it shows
         self.assertIsNone(G.lap_overlap(top, []))
 
+    def test_sandwiched_counts_only_a_gap_inside_the_garment(self):
+        # G3p: the band below, the shirt, then the bib above it: a 3-sample gap
+        self.assertEqual(G.sandwiched([True, True, False, False, False, True, True], 0.002), (0.006, 2))
+        self.assertEqual(G.sandwiched([True] * 5, 0.002), (0.0, None))                 # covered all the way
+        self.assertEqual(G.sandwiched([True, True, False, False], 0.002), (0.0, None))  # the shirt over the bib's top
+        self.assertEqual(G.sandwiched([False, False, True, True], 0.002), (0.0, None))  # under the band
+        # the longest of two gaps
+        self.assertEqual(G.sandwiched([True, False, True, False, False, True], 1.0), (2.0, 3))
+
+    def test_covers_are_judged_per_clip(self):
+        g2 = self.spec["gate2"]
+        c0 = g2["clips"][0]
+        name = g2["covers"][0]["name"]
+        clip = {"slip_mm": {}, "flat_mm": {}, "stretch_pct": {}, "stretch_p95_pct": {},
+                "cover_mm": {name: 4.0}, "cover_at": {name: [1.0, -9.0, 101.0, 35, 18]}}
+        rows = [r for r in GG.motion_rows(self.spec, {"parts": {}, "clips": {c0: clip}}, None)
+                if r["clip"] == c0 and r["check"].startswith("covered")]
+        self.assertEqual(len(rows), len(g2["covers"]))
+        self.assertEqual((rows[0]["value"], rows[0]["pass"]), (4.0, False))   # 4 mm of shirt seen: off
+        clip["cover_mm"][name] = 0.0
+        rows = [r for r in GG.motion_rows(self.spec, {"parts": {}, "clips": {c0: clip}}, None)
+                if r["clip"] == c0 and r["check"].startswith("covered")]
+        self.assertIs(rows[0]["pass"], True)
+
     def test_laps_are_judged_per_clip(self):
         g2 = self.spec["gate2"]
         c0 = g2["clips"][0]

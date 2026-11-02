@@ -364,6 +364,23 @@ def lap_overlap(top_ref, edge) -> float | None:
     return best
 
 
+def sandwiched(labels, step: float):
+    """The longest run of uncovered samples (False: the shirt or her skin seen) with the garment (True) seen both
+    below and above it in one column of rays from one view, ordered upward (art #196, G3p: the shirt showed between
+    the bib's lower edge and the band in Jump_Start), as (length = run samples x step, index of the run's first
+    sample); (0.0, None) with none. A run open at the column's top or bottom is the shirt beside the garment, not a
+    gap in it, and does not count."""
+    best, at, start, seen = 0.0, None, None, False
+    for i, g in enumerate(labels):
+        if g:
+            if start is not None and seen and (i - start) * step > best:
+                best, at = (i - start) * step, start
+            start, seen = None, True
+        elif start is None:
+            start = i
+    return best, at
+
+
 def lift_key(lf: dict) -> str:
     """A [[gate2.lifts]] row's key in garment_motion's lift_mm: its part, or "<part> on <part>" for a lift off another
     part of the garment (G3l: the straps' back ends over the back panel)."""

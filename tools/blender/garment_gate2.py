@@ -170,6 +170,10 @@ def check_gate2(spec) -> list[str]:
         for key in ("plate", "on"):
             if lp[key] not in g2["parts"]:
                 bad.append(f"laps '{lp['name']}': {key} {lp[key]!r} is no part")
+    for cv in g2.get("covers", []):
+        for key in ("plate", "band"):
+            if cv[key] not in g2["parts"]:
+                bad.append(f"covers '{cv['name']}': {key} {cv[key]!r} is no part")
     for lf in g2.get("lifts", []):
         if lf.get("on") and lf["on"] not in g2["parts"]:
             bad.append(f"lifts: on {lf['on']!r} is no part")
@@ -322,6 +326,7 @@ def motion_config(spec, meas, blend: str) -> dict:
             "classify": {"over_z": r(g2["classify"]["over_z"]), "hardware_max_verts": g2["classify"]["hardware_max_verts"]},
             "joins": [{**j, "reach_m": j["reach_mm"] / 1000} for j in g2["joins"]],
             "flat": g2["flat"], "stretch": g2["stretch"], "laps": g2.get("laps", []), "lifts": g2.get("lifts", []),
+            "covers": g2.get("covers", []), "shirt_mesh": g2.get("shirt_mesh", "top"),
             "skin": g2.get("skin_meshes", [spec["body"]["mesh"], "body_removed"])}
 
 
@@ -384,6 +389,12 @@ def motion_rows(spec, motion: dict, poke: dict | None) -> list[dict]:
             rows.append({"clip": clip, "check": f"lift off {off}: {lf['part']} (largest; at {at} cm, frame)",
                          "value": v, "unit": "mm",
                          "tol": lf["tol_mm"], "pass": G.verdict(v, lf["tol_mm"])})
+        for cv in g2.get("covers", []):   # G3p: no shirt or skin seen between a plate's edge and the band
+            v = None if m is None else (m.get("cover_mm") or {}).get(cv["name"])
+            at = None if m is None else (m.get("cover_at") or {}).get(cv["name"])
+            rows.append({"clip": clip, "check": f"covered: {cv['name']} (the longest shirt or skin seen between them; "
+                                                f"at {at} x, z cm, view deg, frame)",
+                         "value": v, "unit": "mm", "tol": cv["tol_mm"], "pass": G.verdict(v, cv["tol_mm"])})
         pk = None if poke is None else (poke.get("clips") or {}).get(clip)
         v = None if pk is None else pk.get("max_count")
         depth = None if pk is None else round(1000 * pk.get("max_depth_m", 0.0), 1)
