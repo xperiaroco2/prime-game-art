@@ -30,10 +30,20 @@ R_TIP_DISC, R_TIP_GRATE0, REF_TIP = 0.55, 0.62, 1.07   # inside-1: the tip floor
 
 # inside-fix: the breaker board's plain run on a corridor's front wall (u along the corridor's axis from the hall's
 # centre): the spot's plain width + 0.1 a side
-_SPOT = next(s["at"] for s in S._SHIP["stations"]["spot"] if s["room"] == "corridor_e")
+_BOARD_SPOT = next(s for s in S._SHIP["stations"]["spot"] if s["room"] == "corridor_e")
+_SPOT = _BOARD_SPOT["at"]
 _BOARD = (_SPOT[0] - S.HALL_C[0]) * S.COR_DIR[0] + (_SPOT[1] - S.HALL_C[1]) * S.COR_DIR[1]
 BOARD_X = (round(_BOARD - S._SHIP["stations"]["plain_width_m"] / 2 - 0.1, 4),
            round(_BOARD + S._SHIP["stations"]["plain_width_m"] / 2 + 0.1, 4))
+# the boards raised (2026-11-02): over the board's plain run the wall stands vertical up to the spot's face_h_m (a
+# recess under the slant, cor_wall_up's from_h); the front wall's slant modules end at BOARD_X: the one the run starts
+# in shortened to UP_IN, the one it ends in to UP_OUT, the ones inside it replaced by the recess's slant
+FACE_H = _BOARD_SPOT.get("face_h_m", S.PROF[1][1])
+_M0 = math.floor((BOARD_X[0] - S.COR_X0) / S.MOD_L)      # the module the board's run starts in
+_M1 = math.ceil((BOARD_X[1] - S.COR_X0) / S.MOD_L) - 1   # the module it ends in
+UP_IN = round(BOARD_X[0] - (S.COR_X0 + _M0 * S.MOD_L), 4)
+UP_OUT = round(S.COR_X0 + (_M1 + 1) * S.MOD_L - BOARD_X[1], 4)
+_M_BOARD = math.floor((_BOARD - S.COR_X0) / S.MOD_L)     # the module under the spot: the recess takes its tone
 # v2: the corridors' cyan arches (u), 0.232 in from each portal, off the breaker board's span; rebuild A: three
 # ceiling ribs evenly between them (inside-fix: v2 had two between 4.15 and 6.4)
 TIP_NARROW = 0.03                                      # step 6: the tip door's frame inside the corridor's walls
@@ -145,7 +155,7 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     # inside-fix: a corridor's front wall in three runs, a cable bay either side of the breaker board's plain wall
     "cor_bay_in": ("cor_channel", {"length": BOARD_X[0] - S.COR_X0}, True),
     "cor_bay_in_cables": ("cor_cables", {"length": BOARD_X[0] - S.COR_X0}, False),
-    "cor_wall_board": ("cor_wall_mid", {"length": BOARD_X[1] - BOARD_X[0]}, True),
+    "cor_wall_board": ("cor_wall_mid", {"length": BOARD_X[1] - BOARD_X[0], "top": FACE_H}, True),
     "cor_bay_out": ("cor_channel", {"length": S.COR_X1 - BOARD_X[1]}, True),
     "cor_bay_out_cables": ("cor_cables", {"length": S.COR_X1 - BOARD_X[1]}, False),
     "cor_ceil_rib": ("cor_ceil_rib", {}, False),        # inside-fix: the ceiling's ribs between the arches
@@ -159,6 +169,11 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     # step 6: clad in the throat's end-frame metal (flat, the station spot stays plain), a soft warm lamp on it (ship.toml)
     "cor_wall_up_a": ("cor_wall_up", {"length": S.MOD_L, "tone": "a"}, True),
     "cor_wall_up_b": ("cor_wall_up", {"length": S.MOD_L, "tone": "b"}, True),
+    # the boards raised: the front wall's slant over the board's run (its recess) and the two modules cut at its ends
+    **{f"cor_wall_up_{t}_{k}": ("cor_wall_up", {"length": n, "tone": t}, True)
+       for t in ("a", "b") for k, n in (("in", UP_IN), ("out", UP_OUT))},
+    **{f"cor_wall_up_{t}_board": ("cor_wall_up", {"length": BOARD_X[1] - BOARD_X[0], "tone": t, "from_h": FACE_H}, True)
+       for t in ("a", "b")},
     "cor_ceil": ("cor_ceil", {"length": S.MOD_L}, False),
     # inside 3-1: the mouth's own wide portal and arch (S.MOUTH_PROF: hall_out-2's opening)
     # the tip rooms
@@ -397,8 +412,18 @@ def placements() -> list[tuple[str, list[float], float]]:
                 t = tones[(i + (side > 0)) % len(tones)]
                 put(f"{prefix}_gutter", mc, yaw + side)
                 put(f"{prefix}_wall_low{t}", mc, yaw + side)
-                put(f"{prefix}_wall_up{t}", mc, yaw + side)
                 wall = local(mc, yaw + side, 0.0, -half)
+                if prefix == "cor" and wall[1] < mc[1] and _M0 <= i <= _M1:
+                    # the boards raised: the front wall's slant cut at the board's run, the recess over it
+                    m0 = x0 + length * i
+                    if i == _M0:
+                        put(f"cor_wall_up{t}_in", local((0.0, 0.0), yaw, m0 + UP_IN / 2, 0.0), yaw + side)
+                    if i == _M1:
+                        put(f"cor_wall_up{t}_out", local((0.0, 0.0), yaw, m0 + length - UP_OUT / 2, 0.0), yaw + side)
+                    if i == _M_BOARD:
+                        put(f"cor_wall_up{t}_board", local((0.0, 0.0), yaw, sum(BOARD_X) / 2, 0.0), yaw + side)
+                else:
+                    put(f"{prefix}_wall_up{t}", mc, yaw + side)
                 if prefix == "cor" and wall[1] < mc[1]:
                     pass   # inside-fix: the front (north) wall's three runs, below
                 else:

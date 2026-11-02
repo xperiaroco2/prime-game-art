@@ -65,13 +65,19 @@ point is the core's centre, (u, 0.872, 0.18).
 
 ## Placement
 
-On both breaker spots (`layouts/ship/ship.toml` `[[stations.spot]]`): u 0 on the spot, its h 0 on the deck
-(floor_h 1.2), turned about Y so its +Z is the spot's normal, and **moved 0.07 m out along the normal** from the
+On both breaker spots (`layouts/ship/ship.toml` `[[stations.spot]]`): u 0 on the spot, its h 0 **the spot's
+`mount_h_m` (0.333 m) over the deck** (floor_h 1.2; raised on 2026-11-02 after the engineer played the slice, "they
+sit too low": the frame 0.853 to 1.647 m over the deck, its middle at 1.25, the beacon's top at 1.737; was on the
+deck, the frame 0.52 to 1.314), turned about Y so its +Z is the spot's normal, and **moved 0.07 m out along the normal** from the
 spot's `at` (`report.json` `placement`, `mount_d_cm`). The spot's `at` lies on the corridor wall's face plane (its
 seams), and the wall's pillow panels stand 4.4 to 7.0 cm proud of it inside the board's outline: the plate's back
 rests on their crowns, and the graphite mount block behind it (and the cable clamps) reaches 0.075 m back, 0.005 m
-into the wall's body, so no gap shows. The wall stands vertical to 1.45 m over the deck; the beacon's top is at
-1.404 (measured by rays on the built ship, board-2).
+into the wall's body, so no gap shows. The corridor's wall stands vertical to 1.45 m over the deck and then slants
+in; over the board's plain run it stands vertical to the spot's `face_h_m` (1.80 m), the same plain pillow panel
+taller under a flat soffit, so the whole plate hangs on a vertical face and the beacon clears the soffit by 6 cm
+(`docs/ship.md`, "The console at the centre, the boards raised"). The package's `Stations/BreakerE`/`BreakerW`
+markers stand at the board's h 0 (`mount_h_m` over the deck, also in `package.json` `stations[].mount_h_m`): put
+the board on the marker and move it 0.07 m out along +Z.
 
 | Spot | Plan (x, y) | Normal | Yaw (deg) |
 |---|---|---|---|

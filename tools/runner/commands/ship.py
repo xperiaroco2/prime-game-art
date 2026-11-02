@@ -52,6 +52,10 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--charger", action="store_true",
                         help="--shoot with the crystal charger's GLB (assets/prop/crystal_charger) and a crystal on "
                              "renewer_e and renewer_w, for the look review only (the package keeps the spots as markers)")
+    parser.add_argument("--stations", action="store_true",
+                        help="--shoot with the start console's and the breaker board's approved GLBs (their plain-PBR "
+                             "fallback) on their spots as the game places them (ship_export.stations), for placement "
+                             "reviews only (the package keeps the spots as markers)")
     parser.add_argument("--vent-states", default="", help="--shoot with the vents in a state each, e.g. e=problem,w=calm "
                         "(calm: slats open, the cyan glow, the lamp dim; problem: slats shut, the orange heat, the lamp lit)")
     parser.add_argument("--motion", type=Path, metavar="DIR",
@@ -158,7 +162,8 @@ def run(args: argparse.Namespace) -> int:
         if code:
             return code
     if args.shoot:
-        code = shoot(layout, out, args.shoot.resolve(), args.views, args.vent_states, args.charger)
+        code = shoot(layout, out, args.shoot.resolve(), args.views, args.vent_states, args.charger,
+                     args.stations)
         if code:
             return code
     if args.export:
@@ -411,6 +416,28 @@ def charger_places(layout: dict) -> list:
     return out
 
 
+STATION_GLBS = {"start_console": common.ROOT / "assets" / "prop" / "start_console" / "export" / "start_console.glb",
+                "breaker_board": common.ROOT / "assets" / "prop" / "breaker_board" / "export" / "breaker_board.glb"}
+BOARD_MOUNT_D = 0.07   # the breaker board's stand-off along its spot's normal (assets/prop/breaker_board HANDOFF Placement)
+
+
+def station_places(layout: dict) -> list:
+    """--shoot --stations (art#263, the console at the hall's centre, the boards raised): the start console on its
+    floor spot and a breaker board on each breaker spot, where the package's Stations markers stand (the board
+    BOARD_MOUNT_D out along the normal, at its spot's mount_h_m over the deck), as Godot [package, [x, h, z], yaw]."""
+    from .. import ship_export
+    out = []
+    for st in ship_export.stations(layout):
+        if st["package"] not in STATION_GLBS:
+            continue
+        x, h, z = st["at"]
+        if st["kind"] == "breaker":
+            yaw = math.radians(st["yaw"])
+            x, z = x + math.sin(yaw) * BOARD_MOUNT_D, z + math.cos(yaw) * BOARD_MOUNT_D
+        out.append([st["package"], [round(x, 4), h, round(z, 4)], st["yaw"]])
+    return out
+
+
 CHARGER_STATE = {"charger": "idle", "crystal": True, "charge": 0.0}   # the game's default: idle, a spent crystal seated
 
 
@@ -430,8 +457,13 @@ def shoot_script(charger: bool) -> str:
     return CHARGER_SCRIPT if charger else GODOT_SCRIPT
 
 
-def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "", charger: bool = False) -> int:
+def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "", charger: bool = False,
+          stations: bool = False) -> int:
     req, staged = built_request(layout, out)
+    if stations:
+        req["pieces"].update({k: f"res://import/{k}.glb" for k in STATION_GLBS})
+        staged.update(STATION_GLBS)
+        req["place"] += station_places(layout)
     if charger:
         req["pieces"].update({"crystal_charger": "res://import/crystal_charger.glb",
                               "energy_crystal": "res://import/energy_crystal.glb"})

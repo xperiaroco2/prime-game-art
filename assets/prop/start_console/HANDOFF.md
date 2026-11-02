@@ -26,8 +26,8 @@ Keep the four look files together (they preload each other by relative path).
 
 ## Placement
 
-On the ship's console spot (`layouts/ship/ship.toml` `[[stations.spot]]` "console": plan (0, 0.6), 1 m aft of the
-hall's centre) on the deck, 1.2 m over the ground, turned 180 degrees about Y in the ship's frame, so its front (glTF
+On the ship's console spot (`layouts/ship/ship.toml` `[[stations.spot]]` "console": plan (0, -0.4), the hall's centre since
+2026-11-02) on the deck, 1.2 m over the ground, turned 180 degrees about Y in the ship's frame, so its front (glTF
 +Z, the button) faces the mouth (-Z) and the hologram's nose points the way the ship's does. Origin on the floor under
 the console's middle. A collider: a cylinder of radius 0.6 m and 1.1 m tall (the hologram has none). The ship's
 layout gives a floor station a 0.35 m footprint radius; this console's plinth is 0.6 m (the drawing's 1.2 m), so

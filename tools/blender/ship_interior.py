@@ -715,11 +715,14 @@ def cor_cables(args, layout):
 
 
 def cor_wall_mid(args, layout):
-    """v2: the plain wall between the low wall and the upper wall where a cable bay would be (a breaker board's)."""
+    """v2: the plain wall between the low wall and the upper wall where a cable bay would be (a breaker board's);
+    `top` (the boards raised, 2026-11-02): it stands vertical up to there (the spot's face_h_m), under the slant's
+    recess (cor_wall_up's from_h), the same plain pillow panel taller."""
     hl = args["length"] / 2
     fr = _north(args=args)
-    panel = G.pillow(fr, -hl + 0.01, hl - 0.01, 1.12, PROF[1][1] - 0.02, 0.0, 0.03, 0.07, 0.012)
-    return [P("body", G.slab(fr, G.rect(-hl, hl, 1.1, PROF[1][1]), -0.2, 0.0), "int_silver_b"),
+    top = args.get("top", PROF[1][1])
+    panel = G.pillow(fr, -hl + 0.01, hl - 0.01, 1.12, top - 0.02, 0.0, 0.03, 0.07, 0.012)
+    return [P("body", G.slab(fr, G.rect(-hl, hl, 1.1, top), -0.2, 0.0), "int_silver_b"),
             P("panel", panel, "int_silver_a")]
 
 
@@ -736,6 +739,9 @@ def clip_h(args, layout):
 
 
 def cor_wall_up(args, layout):
+    """The slanted upper wall from the vertical wall's top to the ceiling; `from_h` (the breaker boards raised,
+    2026-11-02): the slant starts there instead, over a flat soffit back to the wall's plane, so the plain wall under
+    it (cor_wall_mid's `top`) stands vertical up to from_h: the board's recess."""
     hl = args["length"] / 2
     prof = _prof(args)
     a, b = prof[1], prof[2]
@@ -744,8 +750,13 @@ def cor_wall_up(args, layout):
     fr = G.Frame((0.0, a[0], FLOOR + a[1]), (1, 0, 0), vdir, (0.0, vdir[2], -vdir[1]))
     e = hl - 0.006
     tone = "int_silver_b" if args.get("tone", "a") == "a" else "int_silver_a"
-    body = [G.slab(fr, G.rect(-hl, hl, 0.0, vlen), -0.2, 0.0)]
-    panels = [G.pillow(fr, -e, e, 0.05, vlen - 0.03, 0.0, 0.03, 0.065, 0.012)]
+    t0 = (args["from_h"] - a[1]) / (b[1] - a[1]) * vlen if args.get("from_h") else 0.0
+    body = [G.slab(fr, G.rect(-hl, hl, t0, vlen), -0.2, 0.0)]
+    panels = [G.pillow(fr, -e, e, t0 + 0.05, vlen - 0.03, 0.0, 0.03, 0.065, 0.012)]
+    if t0 > 0:   # the soffit: flat, from the wall's plane to the slant's foot at from_h
+        y1 = a[0] + (b[0] - a[0]) * t0 / vlen
+        fs = G.Frame((0.0, 0.0, FLOOR + args["from_h"]), (1, 0, 0), (0, 1, 0), (0, 0, -1))
+        body.append(G.slab(fs, G.rect(-hl, hl, a[0] - 0.2, y1), -0.2, 0.0))
     if a[1] > PROF[1][1] + 0.01:  # the mouth: a vertical panel from the bay's lintel up to the chamfer
         fv = _north(args=args)
         body.append(G.slab(fv, G.rect(-hl, hl, PROF[1][1], a[1]), -0.2, 0.0))
