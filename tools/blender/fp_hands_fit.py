@@ -40,7 +40,21 @@ W, H = 192, 108          # the masks' size (the targets are 1536 x 864: 8 x 8 pi
 PARTS = ("skin", "sleeve", "crystal")
 WEIGHT = {"skin": 1.0, "sleeve": 0.6, "crystal": 1.0}
 HIT_ACROSS_DEG = 25.0  # the crystal hit's contact turns about the axes across the view at most this much
-WRAP_TILT_DEG = 30.0   # a held hand's length is tangent to the crystal within this much: its fingers wrap round it
+WRAP_TILT_DEG = 30.0
+RISE_MIN = 0.2         # a forearm rises toward the wrist at least this much (its direction's z): the arms come in from
+                       # below the frame, never from above
+SIDE_MAX = 0.35        # and crosses the view at most this much toward its own side (the right arm comes from the right)
+
+
+def arms_off(s: B.State, sides=B.SIDES) -> float:
+    """How far the forearms break the rule (0 when they keep it), a slope the search can climb down."""
+    off = 0.0
+    for side in sides:
+        d = s.fore.get(side)
+        if d is None:
+            continue
+        off += max(0.0, RISE_MIN - d.z) + max(0.0, (d.x - SIDE_MAX) if side == "Right" else (-SIDE_MAX - d.x))
+    return off   # a held hand's length is tangent to the crystal within this much: its fingers wrap round it
 
 
 # ------------------------------------------------------------------------------------------- target masks
@@ -186,7 +200,7 @@ class Scene:
                 if not glow or poly.material_index in glow:
                     for i in poly.vertices:
                         loc.append(rel @ me.vertices[i].co)
-        self.crystal_local = np.array([tuple(v) for v in loc], dtype=np.float32)
+        self.crystal_local = np.array([tuple(v) for v in loc], dtype=np.float32) * B.CRYSTAL_SCALE[0]
         self.crystal_materials = sorted({m.name for o in crystal_meshes for m in o.data.materials if m})
 
     def fill(self, pts: np.ndarray, tri: np.ndarray) -> np.ndarray:
@@ -267,9 +281,16 @@ def fit_free(sc: Scene, poses: B.Poses, name: str, want: dict, evals: int, bend_
 
     def f(x):
         s = poses.state(name, {"R": make(x)})
-        return score(sc.render(s, False), want, ("skin", "sleeve"))[0]
+        return score(sc.render(s, False), want, ("skin", "sleeve"))[0] - 3.0 * arms_off(s, ("Right",))
 
-    x0 = [0, 0, 0, 0, 0, 0, b0[0], b0[1]]
+    # starts turned about the view's axis (the forearm's slant on the screen), the best one searched from
+    x0, top = None, None
+    for ry in range(-60, 61, 15):
+        for dz in (0.0, -0.04):
+            x = [0, 0, dz, 0, ry, 0, b0[0], b0[1]]
+            v = f(x)
+            if top is None or v > top:
+                x0, top = x, v
     step = [0.03, 0.04, 0.03, 12, 12, 12, 8, 8]
     lo = [-0.2, -0.15, -0.2, -60, -60, -90, -bend_max, -bend_max]
     hi = [0.2, 0.3, 0.2, 60, 60, 90, bend_max, bend_max]
@@ -280,14 +301,14 @@ def fit_free(sc: Scene, poses: B.Poses, name: str, want: dict, evals: int, bend_
     return {"R": R}, {"overlap": score(got, want, ("skin", "sleeve"))[1], "render": got}
 
 
-MID = Vector((0.0, 0.0, 0.17))   # the crystal's middle in its own space (the tip at the origin, 0.35 m long)
+MID = [Vector((0.0, 0.0, 0.17))]  # the crystal's middle in its own space (the tip at the origin, 0.35 m long), scaled
 
 
 def crystal_spec(base: dict, x) -> dict:
     """The crystal `base` turned about its middle by the rotation vector x[3:6] (degrees) and its middle moved by
     x[0:3] (m)."""
     m0 = B.crystal_matrix(base)
-    c0 = m0 @ MID
+    c0 = m0 @ MID[0]
     up0, front0 = B.V(base["up"]).normalized(), B.V(base["front"]).normalized()
     q = rotvec(x[3], x[4], x[5])
     c = c0 + Vector(x[:3])
@@ -295,14 +316,15 @@ def crystal_spec(base: dict, x) -> dict:
     return {"p": vec(tip), "up": vec(q @ up0), "front": vec(q @ front0)}
 
 
-def fit_crystal_frame(sc: Scene, poses: B.Poses, want: dict, evals: int, parts, across: float = 150.0) -> dict:
+def fit_crystal_frame(sc: Scene, poses: B.Poses, want: dict, evals: int, parts, across: float = 150.0,
+                      check_arms: bool = False) -> dict:
     """The crystal's place and turn (the hands carried with it). `across`: the most it turns about the axes across
     the view (x and z, degrees); the swing's turn about the view's own axis (y) is free."""
     base = poses.cfg["poses"]["crystal"]["crystal"]
 
     def f(x):
         s = poses.state("crystal", {"crystal": crystal_spec(base, x)})
-        return score(sc.render(s, True), want, parts)[0]
+        return score(sc.render(s, True), want, parts)[0] - (3.0 * arms_off(s) if check_arms else 0.0)
 
     # a coarse grid of turns about the view's axis (y) and across it (x), then the pattern search from the best
     best = None
@@ -345,7 +367,7 @@ def fit_held_hand(sc: Scene, poses: B.Poses, side: str, want: dict, evals: int, 
         h, roll = make(x)
         poses.fit[side]["roll"] = roll
         s = poses.state("crystal", {key: h})
-        return score(sc.render(s, True), want, ("skin", "sleeve"))[0]
+        return score(sc.render(s, True), want, ("skin", "sleeve"))[0] - 3.0 * arms_off(s, (side,))
 
     best = None
     for daz in range(-150, 181, 30):  # the side of the crystal first, coarse
@@ -437,6 +459,8 @@ def main(argv) -> None:
     hands = tomllib.loads(B.HANDS.read_text(encoding="utf-8"))
     grips = dict(hands.get("grips", {}))
     grips.update(cfg.get("grips", {}))
+    B.CRYSTAL_SCALE[0] = float(view.get("crystal_scale", 1.0))
+    MID[0] = Vector((0.0, 0.0, 0.17 * B.CRYSTAL_SCALE[0]))
     arm, body, top, sock, _, _ = B.cut(cfg, raw)
     rig = B.Rig(arm, cfg)
     poses = B.Poses(cfg, grips)
@@ -470,7 +494,8 @@ def main(argv) -> None:
         if "crystal_hit" in only:
             # the hit: the hold swung across the view (a turn about the view's axis, at most HIT_ACROSS_DEG
             # about the others), fitted on the crystal: the grips stay as held
-            hit = fit_crystal_frame(sc, poses, wants["crystal_hit"], a.evals, ("crystal",), across=HIT_ACROSS_DEG)
+            hit = fit_crystal_frame(sc, poses, wants["crystal_hit"], a.evals, ("crystal",), across=HIT_ACROSS_DEG,
+                                    check_arms=True)
             s = poses.state("crystal", {"crystal": hit})
             got = sc.render(s, True)
             shown["crystal_hit"] = got
@@ -498,6 +523,12 @@ def main(argv) -> None:
         doc = {"source": "fp_hands_fit.py: the target frames of [view] targets, the hands' camera at [view] fov_deg",
                "poses": fitted, "hold_roll": {sd: round(poses.fit[sd]["roll"], 2) for sd in B.SIDES},
                "overlap": {n: report[n]["overlap"] for n in fitted}}
+        if B.FITTED.exists():  # a partial fit (--only) keeps the other poses
+            old = json.loads(B.FITTED.read_text(encoding="utf-8"))
+            for k in ("poses", "overlap"):
+                doc[k] = {**old.get(k, {}), **doc[k]}
+            if not ({"crystal", "crystal_hit"} & set(fitted)):
+                doc["hold_roll"] = old.get("hold_roll", doc["hold_roll"])
         B.FITTED.write_text(json.dumps(doc, indent=1) + "\n", encoding="utf-8")
     print("FP_FIT " + json.dumps({k: v for k, v in report.items() if k not in ("fitted", "hold_fit")}, default=str))
 

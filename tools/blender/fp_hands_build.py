@@ -40,6 +40,7 @@ CHAIN = ("Shoulder", "UpperArm", "LowerArm", "Hand")
 FIT_PALM_MM = 0.5    # a held palm may sink this far into the crystal's surface (a soft hand on a hard crystal)
 FIT_DIGIT_MM = 1.5   # and a curled digit this far
 VIEW_FOV = [50.0]   # [view] fov_deg, set by main
+CRYSTAL_SCALE = [1.0]   # [view] crystal_scale, set by main: the held crystal's size in first person
 EASES = {"linear": lambda u: u, "in": lambda u: u * u * u, "out": lambda u: 1.0 - (1.0 - u) ** 3,
          "inout": lambda u: u * u * (3.0 - 2.0 * u)}
 
@@ -136,7 +137,7 @@ class Poses:
         if "mix" in spec:
             a, b, w = self.crystal_spec(spec["mix"][0]), self.crystal_spec(spec["mix"][1]), float(spec["mix"][2])
             ma, mb = crystal_matrix(a), crystal_matrix(b)
-            mid = Vector((0.0, 0.0, 0.17))
+            mid = Vector((0.0, 0.0, 0.17 * CRYSTAL_SCALE[0]))
             ca, cb = ma @ mid, mb @ mid
             q = turn_mix(ma.to_quaternion(), mb.to_quaternion(), w)
             m = q.to_matrix()
@@ -158,9 +159,10 @@ class Poses:
         n = V(h["toward"]).normalized()
         f = V(h["wrap"])
         f = (f - n * f.dot(n)).normalized()
-        mid0 = Vector((0.0, 0.0, float(h["z"])))
+        k = CRYSTAL_SCALE[0]  # the crystal's own measures grow with its first-person scale, the hand's do not
+        mid0 = Vector((0.0, 0.0, float(h["z"]) * k))
         n = Matrix.Rotation(math.radians(roll), 3, f) @ n  # the hand rolled about its length (fit_hold)
-        mid = mid0 + V(h["toward"]).normalized() * (float(h["r"]) + dr) + n * float(rig["palm_m"])
+        mid = mid0 + V(h["toward"]).normalized() * (float(h["r"]) * k + dr) + n * float(rig["palm_m"])
         return mid - f * float(rig["reach_m"]), f, n
 
     def state(self, base: str, over: dict | None = None) -> State:
@@ -472,6 +474,7 @@ def cut(cfg: dict, raw: Path) -> tuple:
     bpy.context.view_layer.update()
     sock.matrix_parent_inverse = Matrix.Identity(4)
     sock.matrix_world = Matrix.Identity(4)
+    sock.scale = (CRYSTAL_SCALE[0],) * 3   # the held crystal's first-person size: a child of the socket takes it
     body.name = "FPArms"
     top.name = "FPSleeves"
     arm.name = "FPRig"
@@ -734,6 +737,7 @@ def main(argv) -> None:
     grips = dict(hands.get("grips", {}))
     grips.update(cfg.get("grips", {}))
     VIEW_FOV[0] = float(cfg["view"]["fov_deg"])
+    CRYSTAL_SCALE[0] = float(cfg["view"].get("crystal_scale", 1.0))
     fitted = json.loads(FITTED.read_text(encoding="utf-8")) if FITTED.exists() else {}
     for name, fields in fitted.get("poses", {}).items():
         cfg["poses"].setdefault(name, {}).update(fields)
@@ -806,6 +810,7 @@ def main(argv) -> None:
     stats["clips"] = report
     stats["arm_lengths_m"] = [round(rig.la, 4), round(rig.lb, 4)]
     stats["vm_fov"] = VIEW_FOV[0]
+    stats["crystal_scale"] = CRYSTAL_SCALE[0]
     stats["fitted_from"] = fitted.get("source")
     (out / "build.json").write_text(json.dumps(stats, indent=1), encoding="utf-8")
     print("FP_HANDS " + json.dumps(stats))

@@ -46,6 +46,8 @@ park_L = { p = [-0.26, 0.02, -0.62], f = [0.3, 1.0, 0.2], n = [-0.2, 0.0, 1.0] }
 # hands sit low at the frame's edges as in the target frames instead of reaching up into a wide view; the game renders
 # the hands' layer through a second camera with this vertical field of view, following the player's camera
 fov_deg = 50.0
+crystal_scale = 1.3   # the held crystal drawn this much bigger in first person (CrystalSocket's own scale), the usual
+                      # viewmodel cheat: at true size the hands read too big for it (the engineer's pick, 2026-11-11)
 bend_max_deg = 20.0   # the most a wrist bends from the forearm's line, up or sideways (a straight, unbroken wrist)
 # the target frame per key pose (batch 2026-11-11-fp-hand-frames, the engineer's direction of 2026-11-11), which
 # fp_hands_fit.py fits the pose to by silhouette
