@@ -1,7 +1,7 @@
 """The first-person hands (art#136, xperiaroco2/prime-game#1587, concept A): build, check, shoot. Plain Python.
 
     $PYTHON_BIN tools/blender/fp_hands_run.py --tag <tag> [--no-build] [--preview] [--no-shots] [--fps 30]
-        [--asset assets/character/fp_hands]
+        [--asset assets/body/fp_hands]
 
 1. fp_hands_build.py in headless Blender: <raw>/2026-11-11-fp-hands/<tag>/fp_hands.{blend,glb}, build.json.
 2. glTF-Validator: validator.json (no errors).
@@ -10,7 +10,8 @@
    then shot in an off-screen window (the runner's _godot.window()): each clip's frames, check.json.
 4. The videos (Blender's FFmpeg, encode_clips.py): one per clip and reel.mp4 (idle, punch, run, then the same with
    the crystal), and a key-frame sheet per clip.
-5. With --asset: the GLB and the .blend copied into the asset folder (its manifest and HANDOFF are written by hand).
+5. With --asset, and only when every check passed: the GLB and the .blend copied into the asset folder (its manifest
+   and HANDOFF are written by hand).
 Prints one JSON line `FP_RUN {...}`; exit 0 only when every check passes. Long: run it in the background.
 """
 from __future__ import annotations
@@ -82,8 +83,24 @@ def shoot(proj: Path, out: Path, build: dict, fps: int) -> dict:
     return json.loads((frames / "check.json").read_text(encoding="utf-8"))
 
 
-def checks(build: dict, check: dict, validator_ok: bool) -> list[str]:
-    bad = [] if validator_ok else ["glTF-Validator reports errors"]
+def build_checks(build: dict) -> list[str]:
+    """Blender's own numbers: no wrist out of the arm's reach, no held hand inside or off the crystal."""
+    bad = []
+    for name, c in build["clips"].items():
+        for side, mm in c["out_of_reach_mm"].items():
+            if mm > 1.0:
+                bad.append(f"{name}: the {side} wrist is {mm} mm out of the arm's reach")
+        for side, cc in c.get("crystal_contact_mm", {}).items():
+            if cc["deepest_inside"] > 3.0:
+                bad.append(f"{name}: the {side} hand is {cc['deepest_inside']} mm inside the crystal")
+            if cc["nearest_gap"] > 4.0:
+                bad.append(f"{name}: the {side} hand floats {cc['nearest_gap']} mm off the crystal")
+    return bad
+
+
+def checks(build: dict, check: dict) -> list[str]:
+    """Godot's import against the build: the socket, every clip's length and loop mode, the fist at the punch."""
+    bad = []
     if check.get("socket_parent") != "BoneAttachment3D":
         bad.append(f"CrystalSocket's parent is {check.get('socket_parent')}, not a BoneAttachment3D")
     want = build["socket_in_view"]  # Blender's view space (x right, y forward, z up) -> Godot's (x, z, -y)
@@ -98,14 +115,6 @@ def checks(build: dict, check: dict, validator_ok: bool) -> list[str]:
             bad.append(f"{name}: loop mode {got['loop']}, built {'a loop' if c['loop'] else 'once'}")
         if c["hit_s"] is not None and not c["holds_crystal"] and got.get("fist_at_hit", 0) < 0.99:
             bad.append(f"{name}: the fist morph is {got.get('fist_at_hit')} at the hit")
-        for side, mm in c["out_of_reach_mm"].items():
-            if mm > 1.0:
-                bad.append(f"{name}: the {side} wrist is {mm} mm out of the arm's reach")
-        for side, cc in c.get("crystal_contact_mm", {}).items():
-            if cc["deepest_inside"] > 3.0:
-                bad.append(f"{name}: the {side} hand is {cc['deepest_inside']} mm inside the crystal")
-            if cc["nearest_gap"] > 4.0:
-                bad.append(f"{name}: the {side} hand floats {cc['nearest_gap']} mm off the crystal")
         w = want.get(name)
         if w is not None:
             g = got["socket"]["origin"]
@@ -164,14 +173,16 @@ def main() -> int:
     build = json.loads((out / "build.json").read_text(encoding="utf-8"))
     report = _export.validate(glb, out / "validator.json")
     ok, why = _export.verdict(report)
+    problems = ([] if ok else ["glTF-Validator reports errors"]) + build_checks(build)
     result = {"tag": a.tag, "validator": why}
     if not a.no_shots:
         proj = stage(a.tag, glb)
         check = shoot(proj, out, build, a.fps)
         videos(out, build, a.fps)
-        result["problems"] = checks(build, check, ok)
+        problems += checks(build, check)
         result["gpu_ms"] = {n: c["gpu_ms"] for n, c in check["clips"].items()}
-    if a.asset:
+    result["problems"] = problems
+    if a.asset and not problems:
         asset = ROOT / a.asset
         (asset / "export").mkdir(parents=True, exist_ok=True)
         (asset / "source").mkdir(parents=True, exist_ok=True)
@@ -179,7 +190,7 @@ def main() -> int:
         shutil.copyfile(out / "fp_hands.blend", asset / "source" / "fp_hands.blend")
         shutil.copyfile(out / "validator.json", asset / "report.json")
     print("FP_RUN " + json.dumps(result))
-    return 0 if ok and not result.get("problems") else 1
+    return 0 if not problems else 1
 
 
 if __name__ == "__main__":

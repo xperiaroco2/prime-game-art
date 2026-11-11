@@ -35,7 +35,8 @@ Not approved yet: the look is shown at the next review.
 
 - The hits last 0.5 s, the GDD's rate (one swing each 0.5 s), so a held button can chain them.
 - The left arm rests below the frame in the clips without the crystal.
-- The `fist` morph is keyed in every clip (1 through the punch, 0 elsewhere); the importer plays it with the clip.
+- The `fist` morph has a track in every clip: in `Punch` it rises to 1 by 0.06 s, holds to 0.32 s and is 0 again
+  at 0.5 s; every other clip holds 0. Godot plays it with the clip.
 - The run's speed: the clip is one character Jog cycle; scale its speed by the player's speed if the steps should match.
 
 ## What the game side builds (not done here)

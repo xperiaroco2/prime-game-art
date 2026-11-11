@@ -320,6 +320,7 @@ def cut(cfg: dict, raw: Path) -> tuple:
         if o.animation_data:
             o.animation_data_clear()
     arm.matrix_world = Matrix.Identity(4)
+    bpy.context.view_layer.update()  # the meshes' world matrices follow their armature parent before they are read
     to_arm = {o.name: o.matrix_world.copy() for o in (body, top)}
     tv = [to_arm["top"] @ v.co for v in top.data.vertices]
     cuff = {s: max(abs(p.x) for p in tv if (p.x < 0) == (s == "Right")) for s in SIDES}

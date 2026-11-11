@@ -1744,8 +1744,10 @@ checks and shoots them; the numbers are in `tools/blender/fp_hands.toml`.
   lens). The crystal pose places the crystal; each held hand is given where its palm touches it (`z`, `toward`, `r`,
   `wrap`) and `fit_hold` seats it: the hand's roll about its length and the palm's distance chosen so the palm with
   the thumb's mound sinks at most 0.5 mm into the crystal's surface (its glowing core excepted), the thumb's turn
-  searched, then each digit's curl scaled until it stops at most 1.5 mm in. The crystal clips move only the crystal;
-  the hands ride on it.
+  searched, then each digit's curl scaled until it stops at most 1.5 mm in. The crystal clips key the crystal (and,
+  in `Crystal_Hit`, the shoulder joints' shift); the hands ride on the crystal. The inside test takes the sign
+  against the nearest face of the crystal's surface, which is not closed everywhere (the loop, the skirt's rim): the
+  shots are the check of a hold.
 - **Clips** (60 fps keys; Godot drops the `_Loop` suffix and loops them): `Idle_Loop` 3 s, `Run_Loop` one Jog cycle of
   the character (0.917 s, two steps), `Crystal_Idle_Loop`, `Crystal_Run_Loop`, and the hits, 0.5 s each (one swing each
   0.5 s, GDD "Melee: any item hits"): `Punch` (the fist morph keyed through it, the contact at 0.15 s) and
