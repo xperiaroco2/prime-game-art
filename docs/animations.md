@@ -1779,6 +1779,42 @@ are in `tools/blender/fp_hands.toml`, the fitted key poses in `tools/blender/fp_
   two punches, the run, then the same with the crystal), and `light_<n>.png`: the held crystal at 100, 40 and 15 % of
   its own light (crystal.gd's `omni_energy`; the hands no longer take it).
 
+### The detailed first-person hand (art #136, 2026-11-11)
+
+Up close the character's own hand read as a shapeless lump (the bare-arm close-ups, t12), so the viewmodel has its own
+hand: concept A refined (four digits: three thick rounded fingers and a thumb; batch
+2026-11-11-fp-hand-model-concepts, the engineer's pick), its spec `specs/fp_hand_dims.toml` (Gate 1: every size
+measured off the concept's back view at 2 px/mm, the hand 20.84 cm long as the character's, the forearm 22.05 cm),
+built by `tools/blender/fp_hand_model.py --raw <raw> --out <dir> [--renders] [--fist-grid <json>]` (headless
+Blender, about 2.5 minutes with the bake). `fp_hands.toml [source] char` names its output.
+
+- **The shape is a signed distance field**: the forearm a smoothed elliptic profile through the spec's stations
+  (its end domed into the carpus: a flat cut or a chain of cones left rings), the palm three flattened cones fanned
+  from the carpus to the knuckles with a carpal pad and the two mounds, blended soft; each finger three round cones,
+  joined hard (a soft join swells each joint into a ring), webbed onto the palm (10 mm); neighbouring digits meet in a
+  3 mm crease, which is what keeps each finger readable in the fist.
+- **The mesh**: surface nets on a 3 mm grid (the 5 mm gap between the thumb and the palm stays open; the Euler number
+  is checked, 2), relaxed along the surface and projected back onto it: about 24 400 quads (48 800 triangles) an arm.
+  Smart UV projection; the left arm is the right mirrored with the same UVs.
+- **The maps** (2048 px): the normal map is baked in Cycles from a 0.7 mm surface of the same field with the creases
+  carved in (each finger's palm side at its joints, faint wrinkles over the middle knuckles, two palm lines, the
+  wrist); the base colour is computed per texel from the low mesh's baked positions and normals: the character's hand
+  teal (the median of its skin texture under the hand, sRGB 0.40 0.79 0.79), the palm and fingertips lighter and paler,
+  the knuckles' tops a touch deeper, the creases and the field's own occlusion a little darker. Roughness 0.42, no
+  metal.
+- **The rig**: the character's armature with the hand and finger bones moved to the model's joints (same names; the
+  ring finger is `Ring`, `Little` stays and carries nothing); the fingers' bone z points to the palm, so a grip's
+  positive curl closes the hand as on the character. Weights from the parts: each part's bone through
+  exp(-distance / sigma), four kept.
+- **The fist** is the grip `[grips.fist]` (fingers 80-85 / 100 / 50 degrees, the thumb's turn and curls searched so
+  its last phalanx lies down the fist's front onto the index's curled middle phalanx) plus the corrective morph
+  `fist`: the skinned vertices projected onto the field posed with the same bones, a vertex deep inside the fist left
+  to the skinning, the move smoothed over the mesh. The morph is right only with `[grips.fist]`: the punch's keys use it.
+  `--fist-grid` renders a JSON list of finger and thumb variants (side, back, three-quarters behind) for a pick by eye.
+- **Its review**: `--renders` shoots the concept's four views at its scale (orthographic, 2 px/mm) and lays them under
+  it with the concept's outline over them (`renders/compare.png`), with each view's silhouette overlap; `model.json`
+  holds the spec's sizes measured on the build (open and in the fist) and the ones off the spec's tolerance.
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
