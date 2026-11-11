@@ -12,7 +12,7 @@
 [source]
 # the character build the arms are cut from: the axolotl of H1u, the hands merged in #373 (art#196), the
 # striped top on her; rebuilt from the frozen body when there is one
-char = "2026-11-11-fp-hand-model/m10/fp_hand_char.blend"
+char = "2026-11-11-fp-hand-model/m25/fp_hand_char.blend"
 # since 2026-11-11 the detailed first-person hand (concept A refined, specs/fp_hand_dims.toml): fp_hand_model.py's
 # build of the axolotl H1u character with its body replaced by the two first-person arms (the rig's hand and finger
 # bones moved to the model's joints, the morph `fist` its corrective); was the H1u character itself
@@ -85,11 +85,11 @@ ThumbTurn = [30, 25]
 
 
 [grips.fist]      # the punch's fist on the detailed hand (fp_hand_model.py's fit, specs/fp_hand_dims.toml [fist]):
-                  # the fingers folded under the palm, the thumb tucked down the fist's front; the morph
-                  # `fist` (weight 1 with it) is its corrective
-Index = [80, 100, 50]
-Middle = [82, 100, 50]
-Ring = [85, 100, 50]
+                  # the first phalanges half bent, the middle phalanges the fist's front, the thumb tucked down
+                  # the index's side; the morph `fist` (weight 1 with it) is the fist's own surface
+Index = [55, 90, 50]
+Middle = [57, 90, 50]
+Ring = [60, 90, 50]
 Little = [0, 0, 0]
 mirror = true
 Thumb = [25, 30, 40]
