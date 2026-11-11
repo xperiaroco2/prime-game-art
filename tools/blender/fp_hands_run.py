@@ -70,7 +70,7 @@ def shoot(proj: Path, out: Path, build: dict, fps: int) -> dict:
     clips = [{"name": _godot.godot_name(n)[0], "crystal": c["holds_crystal"], "hit": c["hit_s"], "cycles": 2 if "Run" in n else 1}
              for n, c in build["clips"].items()]
     req = {"scene": "res://levels/ship/ship.tscn", "hands": "res://fp/fp_hands.glb",
-           "crystal": "res://fp/energy_crystal.glb", "eye": EYE, "look": LOOK, "fov": FOV, "fps": fps,
+           "crystal": "res://fp/energy_crystal.glb", "eye": EYE, "look": LOOK, "fov": FOV, "vm_fov": build["vm_fov"], "size": list(SIZE), "fps": fps,
            "out": str(frames).replace("\\", "/"), "clips": clips, "light_levels": LIGHT_LEVELS}
     frames.mkdir(parents=True)
     rq = out / "shots_request.json"

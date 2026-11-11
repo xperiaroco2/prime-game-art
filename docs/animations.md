@@ -1727,38 +1727,57 @@ thumb's sink, 7.5 mm at most) and `test_alien_grip_solve.py` pins it and its use
 ## The first-person hands (art #136)
 
 The hands a player sees in first person (xperiaroco2/prime-game#1587): concept A, "the hand as on the character",
-the engineer's pick of 2026-11-10. `tools/blender/fp_hands_run.py --tag <tag> [--asset assets/body/fp_hands]` builds,
-checks and shoots them; the numbers are in `tools/blender/fp_hands.toml`.
+the engineer's pick of 2026-11-10. He rejected the first build (art PR #378, 2026-11-11: a broken, twisted wrist,
+the crystal's light burning the hands white, a strange hold: true-size arms solved from the shoulder under the
+world's wide lens, poses set by numbers, no look check) and, after a look at how other games draw them, picked the
+viewmodel: the hands on their own camera, each key pose matched to an approved target frame.
+`tools/blender/fp_hands_run.py --tag <tag> [--asset assets/body/fp_hands]` builds, checks and shoots them; the numbers
+are in `tools/blender/fp_hands.toml`, the fitted key poses in `tools/blender/fp_hands_fit.json`.
 
+- **Target frames first**: one approved picture per key moment from the eye (batch 2026-11-11-fp-hand-frames, edits
+  of concept A's frames: `idle`, `punch`, `hold`, `crystal_hit`; `[view] targets`). The 3D is fitted to them, and a
+  rebuilt look is judged beside them before anything is shown.
+- **The fit** (`fp_hands_fit.py --raw <raw> --out <dir> --write`, headless Blender): each target's arm is what differs
+  from the empty hall it was made over (`[view] background`); of it the bright cyan is the crystal, the teal the skin,
+  the rest the sleeve. A pose is searched (a pattern search, about 300 renders) so its silhouette from the hands'
+  camera covers the same pixels, part by part (intersection over union): a free hand's wrist, turn and wrist bend; the
+  held crystal's place and turn on its glow, then each hand's height and side on it with its length tangent to the
+  crystal (the fingers wrap round its front, never along it), then `fit_hold`; the hit's contact as the hold swung
+  across the view (about the view's axis, at most 25 degrees about the others). `compare_<pose>.png` shows each fit
+  over its target; `--write` stores the poses for the build.
 - **The cut** (`fp_hands_build.py`, headless Blender): the alien's arms are cut out of a character build
-  (`[source] char`): the skin from 3.5 cm inside the sleeve's cuff to the fingertips, the striped sleeve from the
-  shoulder joint out, the run fist's morph `fist` kept. The arm bones stay with their names under a new root `View` at
-  the eye, beside a `Crystal` bone that carries the node `CrystalSocket`.
+  (`[source] char`): the skin from 3.5 cm inside the sleeve's cuff to the fingertips, the striped sleeve from 14 cm
+  above the elbow out (no upper arm in a viewmodel), the run fist's morph `fist` kept. The arm bones stay with their
+  names under a new root `View` at the eye, beside a `Crystal` bone that carries the node `CrystalSocket`.
 - **The camera's space**: x right, y forward, z up, the eye at the origin; the GLB maps it to Godot's camera space, so
-  the root goes under the `Camera3D` with no offset. The arms keep the character's lengths (upper arm 24.9 cm, forearm
-  22.1 cm); only the shoulder joints sit lower and further forward than the body's (`[rig] shoulder_*`), the usual
-  first-person placement, and a pose may shift them (the hits drive the shoulder forward).
-- **Poses**: a hand is a wrist point `p`, the fingers' direction `f` and the back of the hand's normal `n`; the arm is a
-  two-bone solve toward `[rig] elbow_*`, the forearm takes `twist_share` of the hand's twist. The free poses were
-  measured off concept A's frames (where the cuff, the knuckles and the fist sit on the screen at the game's 75 degree
-  lens). The crystal pose places the crystal; each held hand is given where its palm touches it (`z`, `toward`, `r`,
-  `wrap`) and `fit_hold` seats it: the hand's roll about its length and the palm's distance chosen so the palm with
-  the thumb's mound sinks at most 0.5 mm into the crystal's surface (its glowing core excepted), the thumb's turn
-  searched, then each digit's curl scaled until it stops at most 1.5 mm in. The crystal clips key the crystal (and,
-  in `Crystal_Hit`, the shoulder joints' shift); the hands ride on the crystal. The inside test takes the sign
-  against the nearest face of the crystal's surface, which is not closed everywhere (the loop, the skirt's rim): the
-  shots are the check of a hold.
+  the root goes under the hands' camera with no offset. The arms keep the character's lengths (upper arm 24.9 cm,
+  forearm 22.1 cm).
+- **The viewmodel's arm**: a pose sets the wrist `p`, the fingers' direction `f`, the back of the hand's normal `n`
+  and the wrist's `bend` (at most `[view] bend_max_deg`, 20 degrees: a straight wrist); the forearm runs back from
+  the wrist along that, the elbow bends at most `[rig] elbow_max_deg` (30 degrees) in the plane that leaves the least
+  twist between forearm and upper arm (no wrung sleeve), and the shoulder joint goes wherever the upper arm ends;
+  the forearm takes 90 % of the hand's twist (`twist_share`), as a real forearm does.
+- **The hold**: `fit_hold` seats each held hand: its roll about its length (within 15 degrees of the fitted one) and
+  the palm's distance so the palm sinks at most 0.5 mm into the crystal's surface (its glowing core excepted), the
+  thumb's turn searched with its base, then each digit's curl scaled until it stops at most 1.5 mm in. The crystal
+  clips key the crystal; the hands ride on it. The inside test takes the sign against the nearest face of the
+  crystal's surface, which is not closed everywhere (the loop, the skirt's rim): the shots are the check of a hold.
 - **Clips** (60 fps keys; Godot drops the `_Loop` suffix and loops them): `Idle_Loop` 3 s, `Run_Loop` one Jog cycle of
   the character (0.917 s, two steps), `Crystal_Idle_Loop`, `Crystal_Run_Loop`, and the hits, 0.5 s each (one swing each
   0.5 s, GDD "Melee: any item hits"): `Punch` (the fist morph keyed through it, the contact at 0.15 s) and
-  `Crystal_Hit` (a diagonal two-handed swing, cap first, the contact at 0.18 s). Each hit starts and ends in its idle.
+  `Crystal_Hit` (the contact at 0.18 s). The hits' keys are mixes of the fitted frames (`{ mix = [a, b, w] }`: w below
+  0 a wind-up, above 1 a follow-through). Each hit starts and ends in its idle.
+- **Godot** (`godot/fp_hands/shots.gd`, what the game repeats; `HANDOFF.md`): the hands and the crystal on their own
+  render layer (20), drawn by a second camera with `[view] fov_deg` (50 degrees) in a transparent `SubViewport` over
+  the player's camera (75), which leaves that layer out; the level's lights are put on that layer too (a camera draws
+  only the lights on its layers), one soft fill light lights it alone, and the crystal's own light stays off it.
 - **Checks** (the run's exit code): glTF-Validator; in Godot (a copy of the ship package v9 with the hands and the
-  energy crystal, `godot/fp_hands/shots.gd` in the off-screen window) the socket is a `BoneAttachment3D` within 2 mm
-  of Blender's place, every clip's length and loop mode, the fist morph at 1 at the punch's contact; in Blender no
-  wrist beyond the arm's reach and no held hand more than 3 mm inside or 4 mm off the crystal in any sampled frame.
+  energy crystal, in the off-screen window) the socket is a `BoneAttachment3D` within 2 mm of Blender's place, every
+  clip's length and loop mode, the fist morph at 1 at the punch's contact; in Blender no held hand more than 3 mm
+  inside or 4 mm off the crystal in any sampled frame.
 - **Shots**: each clip's frames from the hall at eye height, a key-frame sheet per clip, MP4s and `_reel.mp4` (idle,
-  two punches, the run, then the same with the crystal), and `light_<n>.png`: the held crystal's own light at 100, 40
-  and 15 % (crystal.gd's `omni_energy`).
+  two punches, the run, then the same with the crystal), and `light_<n>.png`: the held crystal at 100, 40 and 15 % of
+  its own light (crystal.gd's `omni_energy`; the hands no longer take it).
 
 ## The review
 

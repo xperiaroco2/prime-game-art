@@ -15,8 +15,9 @@
 char = "2026-10-31-hands/h1u/p/axolotl/axolotl_char.blend"
 crystal = "energy-crystal/lit1/energy_crystal.glb"   # assets/prop/energy_crystal's GLB (the raw copy, same hash)
 skin_inside_cuff_m = 0.035   # the skin is kept from this far inside the sleeve's cuff out to the fingertips
-sleeve_from_m = 0.15         # the sleeve is kept from this far out along the arm (the shoulder joint), so its cut
-                             # end stays behind the eye when an arm reaches forward
+sleeve_above_elbow_m = 0.14  # the sleeve is kept from this far above the elbow out to its cuff: enough that its cut
+                             # end stays behind the frame's corner, short of the upper arm (the first build kept it
+                             # whole and it entered the frame)
 
 [rig]
 fps = 60
@@ -29,9 +30,29 @@ elbow_R = [1.0, -0.2, -1.0]     # where the elbow points (a direction, before it
 elbow_L = [-1.0, -0.2, -1.0]
 palm_m = 0.02                   # a held hand: the palm's middle this far off the surface (half the hand's thickness)
 reach_m = 0.045                 # and the wrist this far back from the palm's middle, along the fingers
-twist_share = 0.5               # the forearm takes this share of the hand's twist about the forearm (the rest stays
-                                # at the wrist), so a turned hand does not wring the wrist
+twist_share = 0.9               # the forearm takes this share of the hand's twist about the forearm (the rest stays
+                                # at the wrist): a turned hand turns the forearm, as a real one does, never the wrist
+# the viewmodel (since the engineer's rejection of the first build, 2026-11-11): a pose with a wrist `bend` sets its
+# forearm's direction itself (the hand's length bent by at most [view] bend_max_deg at the wrist), and the upper arm
+# runs from the elbow back along upper_* out of the frame; the shoulder joint goes wherever that ends
+upper_R = [-0.10, 0.90, -0.40]  # the upper arm's direction, shoulder to elbow: mostly forward, so the shoulder ends
+upper_L = [0.10, 0.90, -0.40]   # up behind the eye and the upper arm never enters the frame
+elbow_max_deg = 30.0            # the elbow bends at most this far, so the upper arm runs on near the forearm's line
+                                # out of the frame (a deeper bend put the elbow's crease in view)
 park_L = { p = [-0.26, 0.02, -0.62], f = [0.3, 1.0, 0.2], n = [-0.2, 0.0, 1.0] }   # the free left hand, below the frame
+
+[view]
+# the hands' own camera (the usual first-person viewmodel): a narrower lens than the world's 75 degrees, so true-size
+# hands sit low at the frame's edges as in the target frames instead of reaching up into a wide view; the game renders
+# the hands' layer through a second camera with this vertical field of view, following the player's camera
+fov_deg = 50.0
+bend_max_deg = 20.0   # the most a wrist bends from the forearm's line, up or sideways (a straight, unbroken wrist)
+# the target frame per key pose (batch 2026-11-11-fp-hand-frames, the engineer's direction of 2026-11-11), which
+# fp_hands_fit.py fits the pose to by silhouette
+targets = { idle = "2026-11-11-fp-hand-frames/idle/image-0.png", fist_out = "2026-11-11-fp-hand-frames/punch/image-0.png", crystal = "2026-11-11-fp-hand-frames/hold/image-0.png", crystal_hit = "2026-11-11-fp-hand-frames/crystal_hit/image-0.png" }
+# the empty hall the concept frames were made over (the ship package v9's night render), for the arm's silhouette:
+# what differs from it
+background = "2026-11-08-fp-hand-concepts/_refs/ship_hall.png"
 
 [grips.rest]      # the free hand at rest in the view: alien_hands.toml's relaxed curled a little more, so the
                   # fingers read soft and slightly curled, as in concept A, never a pointing index
@@ -109,24 +130,26 @@ run = { bob = 0.020, side = 0.016, fwd = 0.008, roll = 4.0, pitch = 3.0, yaw = 2
 pose = "idle"
 seconds = 0.5
 hit = 0.15                  # the contact, for the game's hit sound and the shake
+# the keys are mixes of the two fitted frames (idle and fist_out): w 0 is the idle, 1 the contact, below 0 a
+# pull-back, above 1 past it
 keys = [
   { t = 0.0 },
-  { t = 0.06, R = { p = [0.30, 0.33, -0.25], f = [-0.15, 1.0, 0.3], n = [0.5, -0.2, 1.0] }, grip_R = "runfist", fist = 1.0, ease = "inout" },
-  { t = 0.15, R = "fist_out", grip_R = "runfist", fist = 1.0, shoulder_R = [-0.03, 0.06, 0.06], ease = "out" },
-  { t = 0.20, R = { p = [0.115, 0.235, -0.07], f = [-0.05, 1.0, 0.42], n = [0.3, -0.45, 1.0] }, grip_R = "runfist", fist = 1.0, shoulder_R = [-0.025, 0.05, 0.05], ease = "out" },
-  { t = 0.32, R = { p = [0.22, 0.33, -0.17], f = [-0.2, 1.0, 0.35], n = [0.45, -0.3, 1.0] }, grip_R = "runfist", fist = 1.0, ease = "inout" },
+  { t = 0.06, R = { mix = ["idle", "fist_out", -0.2], dp = [0.0, -0.02, -0.01] }, grip_R = "runfist", fist = 1.0, ease = "inout" },
+  { t = 0.15, R = "fist_out", grip_R = "runfist", fist = 1.0, ease = "out" },
+  { t = 0.21, R = { mix = ["idle", "fist_out", 0.93] }, grip_R = "runfist", fist = 1.0, ease = "out" },
+  { t = 0.34, R = { mix = ["idle", "fist_out", 0.3] }, grip_R = "runfist", fist = 1.0, ease = "inout" },
   { t = 0.5, fist = 0.0, ease = "inout" },
 ]
 
-[clips.Crystal_Hit]         # a two-handed diagonal swing: raised up to the right, then brought down across the view to the
-                            # left, the heavy cap leading (seen from the eye, a straight bash forward only shrinks)
+[clips.Crystal_Hit]         # a two-handed swing to the hit frame (crystal_hit, fitted): the crystal drawn back past the
+                            # hold, brought across to the contact, a short follow-through and back; the hands stay on it
 pose = "crystal"
 seconds = 0.5
 hit = 0.18
 keys = [
   { t = 0.0 },
-  { t = 0.10, crystal = { p = [0.07, 0.36, -0.21], up = [0.6, 0.15, 0.8], front = [0.0, -1.0, 0.0] }, shoulder_R = [-0.02, 0.07, 0.14], shoulder_L = [0.03, 0.07, 0.10], ease = "inout" },
-  { t = 0.18, crystal = { p = [-0.01, 0.42, -0.16], up = [-0.55, 0.5, 0.65], front = [0.0, -1.0, 0.0] }, shoulder_R = [-0.07, 0.19, 0.20], shoulder_L = [0.02, 0.15, 0.12], ease = "in" },
-  { t = 0.24, crystal = { p = [-0.04, 0.40, -0.20], up = [-0.7, 0.4, 0.5], front = [0.0, -1.0, 0.0] }, shoulder_R = [-0.07, 0.18, 0.18], shoulder_L = [0.02, 0.14, 0.10], ease = "out" },
+  { t = 0.10, crystal = { mix = ["crystal", "crystal_hit", -0.45], dp = [0.0, -0.02, 0.0] }, ease = "inout" },
+  { t = 0.18, crystal = "crystal_hit", ease = "in" },
+  { t = 0.24, crystal = { mix = ["crystal", "crystal_hit", 1.12] }, ease = "out" },
   { t = 0.5, ease = "inout" },
 ]

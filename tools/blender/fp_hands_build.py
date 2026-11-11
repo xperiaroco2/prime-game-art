@@ -33,11 +33,13 @@ import alien_fist_math as F  # noqa: E402
 import export_glb as EG  # noqa: E402
 
 CFG = HERE / "fp_hands.toml"
+FITTED = HERE / "fp_hands_fit.json"   # the key poses fitted to their target frames by fp_hands_fit.py (over CFG's)
 HANDS = HERE / "anim_sets" / "alien_hands.toml"
 SIDES = ("Right", "Left")
 CHAIN = ("Shoulder", "UpperArm", "LowerArm", "Hand")
 FIT_PALM_MM = 0.5    # a held palm may sink this far into the crystal's surface (a soft hand on a hard crystal)
 FIT_DIGIT_MM = 1.5   # and a curled digit this far
+VIEW_FOV = [50.0]   # [view] fov_deg, set by main
 EASES = {"linear": lambda u: u, "in": lambda u: u * u * u, "out": lambda u: 1.0 - (1.0 - u) ** 3,
          "inout": lambda u: u * u * (3.0 - 2.0 * u)}
 
@@ -64,8 +66,28 @@ class State:
 
     def __init__(self):
         self.p, self.q, self.grip, self.shoulder = {}, {}, {}, {}
+        self.fore = {}  # per side the forearm's direction (elbow to wrist) when the pose sets the wrist's bend
         self.fist = 0.0
         self.crystal: Matrix | None = None
+
+
+def fore_dir(q: Quaternion, bend) -> Vector:
+    """The forearm's direction for a hand of rotation q (frame(f, n)) bent at the wrist by bend = [up, side]
+    degrees: the hand's length tilted back toward its back (+up: the hand cocked up) and toward its thumb side."""
+    m = q.to_matrix()
+    f, n = m.col[1], m.col[2]
+    x = m.col[0]
+    d = Matrix.Rotation(math.radians(-float(bend[0])), 3, x) @ f
+    return (Matrix.Rotation(math.radians(-float(bend[1])), 3, n) @ d).normalized()
+
+
+def turn_mix(qa: Quaternion, qb: Quaternion, w: float) -> Quaternion:
+    """qa turned toward qb by the share w of the way (w below 0 or above 1 goes past either end)."""
+    d = qa.rotation_difference(qb)
+    if d.w < 0:
+        d.negate()
+    axis, ang = d.to_axis_angle()
+    return Quaternion(axis, ang * w) @ qa
 
 
 def crystal_matrix(c: dict) -> Matrix:
@@ -92,9 +114,39 @@ class Poses:
             g[f] = [v * k for v in vals[:3]] + vals[3:]
         return {b: Quaternion(q) for b, q in PM.grip_quats(g, side).items()}
 
-    def hand(self, spec) -> tuple[Vector, Quaternion]:
+    def resolve(self, spec):
+        """A hand spec: a pose's name, {p, f, n, bend}, or {mix = [a, b, w]} between two of them (w past 0 or 1
+        goes beyond them: a wind-up, an overshoot)."""
         if isinstance(spec, str):
-            spec = self.cfg["poses"][spec]["R"]
+            return self.cfg["poses"][spec]["R"]
+        if "mix" in spec:
+            a, b, w = self.resolve(spec["mix"][0]), self.resolve(spec["mix"][1]), float(spec["mix"][2])
+            q = turn_mix(hand_q(a["f"], a["n"]), hand_q(b["f"], b["n"]), w).to_matrix()
+            ba, bb = a.get("bend", [0.0, 0.0]), b.get("bend", [0.0, 0.0])
+            out = {"p": list(V(a["p"]).lerp(V(b["p"]), w)), "f": list(q.col[1]), "n": list(q.col[2]),
+                   "bend": [ba[i] + (bb[i] - ba[i]) * w for i in range(2)]}
+            if "dp" in spec:
+                out["p"] = list(V(out["p"]) + V(spec["dp"]))
+            return out
+        return spec
+
+    def crystal_spec(self, spec) -> dict:
+        if isinstance(spec, str):
+            return self.cfg["poses"][spec]["crystal"]
+        if "mix" in spec:
+            a, b, w = self.crystal_spec(spec["mix"][0]), self.crystal_spec(spec["mix"][1]), float(spec["mix"][2])
+            ma, mb = crystal_matrix(a), crystal_matrix(b)
+            mid = Vector((0.0, 0.0, 0.17))
+            ca, cb = ma @ mid, mb @ mid
+            q = turn_mix(ma.to_quaternion(), mb.to_quaternion(), w)
+            m = q.to_matrix()
+            c = ca.lerp(cb, w) + (V(spec["dp"]) if "dp" in spec else Vector())
+            tip = c - m @ mid
+            return {"p": list(tip), "up": list(m.col[2]), "front": list(-m.col[1])}
+        return spec
+
+    def hand(self, spec) -> tuple[Vector, Quaternion]:
+        spec = self.resolve(spec)
         return V(spec["p"]), hand_q(spec["f"], spec["n"])
 
     def on_crystal(self, h: dict, dr: float = 0.0, roll: float = 0.0) -> tuple[Vector, Vector, Vector]:
@@ -123,7 +175,7 @@ class Poses:
             s.shoulder[side] = V(pose.get(f"shoulder_{side[0]}", [0, 0, 0]))
         s.fist = float(pose.get("fist", 0.0))
         crystal = pose.get("crystal") or self.cfg["poses"]["crystal"]["crystal"]
-        s.crystal = crystal_matrix(crystal)
+        s.crystal = crystal_matrix(self.crystal_spec(crystal))
         if "R_c" in pose:  # the hands in the crystal's space
             for side, key in (("Right", "R_c"), ("Left", "L_c")):
                 fit = self.fit[side]
@@ -131,8 +183,13 @@ class Poses:
                 p, f, n = self.on_crystal(pose[key], fit["dr"], fit["roll"])
                 s.p[side] = s.crystal @ p
                 s.q[side] = (s.crystal.to_3x3() @ frame(f, n)).to_quaternion()
+                if "bend" in pose[key]:
+                    s.fore[side] = fore_dir(s.q[side], pose[key]["bend"])
         if "R" in pose:
             s.p["Right"], s.q["Right"] = self.hand(pose["R"])
+            spec = self.resolve(pose["R"])
+            if "bend" in spec:
+                s.fore["Right"] = fore_dir(s.q["Right"], spec["bend"])
         return s
 
 
@@ -143,6 +200,8 @@ def mix(a: State, b: State, w: float, base: dict) -> State:
         s.q[side] = a.q[side].slerp(b.q[side], w)
         s.shoulder[side] = a.shoulder[side].lerp(b.shoulder[side], w)
         s.grip[side] = {k: a.grip[side][k].slerp(b.grip[side][k], w) for k in a.grip[side]}
+        if side in a.fore and side in b.fore:
+            s.fore[side] = a.fore[side].lerp(b.fore[side], w).normalized()
     s.fist = a.fist + (b.fist - a.fist) * w
     loc = a.crystal.translation.lerp(b.crystal.translation, w)
     rot = a.crystal.to_quaternion().slerp(b.crystal.to_quaternion(), w)
@@ -153,6 +212,8 @@ def mix(a: State, b: State, w: float, base: dict) -> State:
         for side in SIDES:
             s.p[side] = moved @ a.p[side]
             s.q[side] = moved.to_quaternion() @ a.q[side]
+            if side in a.fore:
+                s.fore[side] = (moved.to_3x3() @ a.fore[side]).normalized()
     return s
 
 
@@ -162,6 +223,8 @@ def rigid(s: State, g: Matrix, sides=SIDES, crystal=True) -> None:
     for side in sides:
         s.p[side] = g @ s.p[side]
         s.q[side] = gq @ s.q[side]
+        if side in s.fore:
+            s.fore[side] = (g.to_3x3() @ s.fore[side]).normalized()
     if crystal and s.crystal is not None:
         s.crystal = g @ s.crystal
 
@@ -241,6 +304,22 @@ class Rig:
         rel = self.rest[self.parent[child]].inverted() @ self.rest[child]
         return rel.inverted() @ parent_pose.inverted() @ child_pose
 
+    def _frames(self, head, elbow, wrist, side, H3):
+        """The upper arm's and the forearm's frames for the joints head, elbow and wrist (armature space), and the
+        hand's twist about the forearm that is left (radians)."""
+        r = self.rest
+        yu, yl = (elbow - head).normalized(), (wrist - elbow).normalized()
+        flex = yl - yu * yl.dot(yu)
+        hinge = yu.cross(flex.normalized()) if flex.length > 1e-6 else self.hinge0[side]
+        h0 = self.hinge0[side]
+        U3 = frame(yu, hinge) @ frame(r[f"{side}UpperArm"].to_3x3().col[1], h0).transposed() @ r[f"{side}UpperArm"].to_3x3()
+        L03 = frame(yl, hinge) @ frame(r[f"{side}LowerArm"].to_3x3().col[1], h0).transposed() @ r[f"{side}LowerArm"].to_3x3()
+        rel_h = r[f"{side}LowerArm"].to_3x3().inverted() @ r[f"{side}Hand"].to_3x3()
+        q = ((L03 @ rel_h).inverted() @ H3).to_quaternion()
+        twist = 2.0 * math.atan2(q.y, q.w)
+        twist = (twist + math.pi) % (2 * math.pi) - math.pi
+        return yu, yl, hinge, U3, L03, twist
+
     def solve(self, s: State) -> dict:
         """{bone: basis 4x4} for every posed bone at this moment."""
         r, rig = self.rest, self.cfg["rig"]
@@ -255,25 +334,42 @@ class Rig:
             wrist = self.Ai @ s.p[side]
             head = self.Ai @ (V(rig[f"shoulder_{side[0]}"]) + s.shoulder[side])
             S_pose = Matrix.Translation(head - r[f"{side}UpperArm"].translation) @ r[f"{side}Shoulder"]
-            d = wrist - head
-            self.short[side] = max(self.short.get(side, 0.0), d.length - (self.la + self.lb) * 0.999)
-            dist = min(d.length, (self.la + self.lb) * 0.999)
-            dirn = d.normalized()
-            pole = self.A3i @ V(rig[f"elbow_{side[0]}"])
-            pole = (pole - dirn * pole.dot(dirn)).normalized()
-            a = (self.la ** 2 - self.lb ** 2 + dist ** 2) / (2 * dist)
-            elbow = head + dirn * a + pole * math.sqrt(max(self.la ** 2 - a * a, 0.0))
-            wrist = head + dirn * dist
-            yu, yl = (elbow - head).normalized(), (wrist - elbow).normalized()
-            flex = yl - yu * yl.dot(yu)
-            hinge = yu.cross(flex.normalized()) if flex.length > 1e-6 else self.hinge0[side]
-            h0 = self.hinge0[side]
-            U3 = frame(yu, hinge) @ frame(r[f"{side}UpperArm"].to_3x3().col[1], h0).transposed() @ r[f"{side}UpperArm"].to_3x3()
-            L03 = frame(yl, hinge) @ frame(r[f"{side}LowerArm"].to_3x3().col[1], h0).transposed() @ r[f"{side}LowerArm"].to_3x3()
-            rel_h = r[f"{side}LowerArm"].to_3x3().inverted() @ r[f"{side}Hand"].to_3x3()
-            q = ((L03 @ rel_h).inverted() @ H3).to_quaternion()
-            twist = 2.0 * math.atan2(q.y, q.w)
-            twist = (twist + math.pi) % (2 * math.pi) - math.pi
+            if side in s.fore:
+                # the viewmodel's arm: the forearm runs along the pose's own direction back from the wrist, the upper
+                # arm from the elbow toward [rig] upper_* (out of the frame); the shoulder joint goes where that ends
+                fa = (self.A3i @ s.fore[side]).normalized()
+                elbow = wrist - fa * self.lb
+                up0 = (self.A3i @ V(rig[f"upper_{side[0]}"])).normalized()
+                bend = min(math.degrees(fa.angle(up0)), float(rig["elbow_max_deg"]))
+                # the elbow bends at most elbow_max_deg (a near-straight arm, its crease out of view), in the plane
+                # that leaves the least twist between the forearm and the upper arm (no wrung sleeve at the elbow),
+                # kept near upper_*: the upper arm's direction is searched round the forearm
+                e1 = fa.orthogonal().normalized()
+                e2 = fa.cross(e1)
+                best = None
+                for k in range(24):
+                    ph = 2.0 * math.pi * k / 24
+                    ax = e1 * math.cos(ph) + e2 * math.sin(ph)
+                    uc = Matrix.Rotation(math.radians(bend), 3, ax) @ fa
+                    hc = elbow - uc * self.la
+                    tw = self._frames(hc, elbow, wrist, side, H3)[5]
+                    cost = abs(tw) + 0.6 * uc.angle(up0)
+                    if best is None or cost < best[0]:
+                        best = (cost, hc)
+                head = best[1]
+                S_pose = Matrix.Translation(head - r[f"{side}UpperArm"].translation) @ r[f"{side}Shoulder"]
+                self.short[side] = 0.0
+            else:
+                d = wrist - head
+                self.short[side] = max(self.short.get(side, 0.0), d.length - (self.la + self.lb) * 0.999)
+                dist = min(d.length, (self.la + self.lb) * 0.999)
+                dirn = d.normalized()
+                pole = self.A3i @ V(rig[f"elbow_{side[0]}"])
+                pole = (pole - dirn * pole.dot(dirn)).normalized()
+                a = (self.la ** 2 - self.lb ** 2 + dist ** 2) / (2 * dist)
+                elbow = head + dirn * a + pole * math.sqrt(max(self.la ** 2 - a * a, 0.0))
+                wrist = head + dirn * dist
+            yu, yl, hinge, U3, L03, twist = self._frames(head, elbow, wrist, side, H3)
             L3 = L03 @ Matrix.Rotation(twist * float(rig["twist_share"]), 3, "Y")
             U_pose = Matrix.Translation(head) @ U3.to_4x4()
             L_pose = Matrix.Translation(elbow) @ L3.to_4x4()
@@ -326,7 +422,11 @@ def cut(cfg: dict, raw: Path) -> tuple:
     cuff = {s: max(abs(p.x) for p in tv if (p.x < 0) == (s == "Right")) for s in SIDES}
     skin_from = {s: cuff[s] - float(src["skin_inside_cuff_m"]) for s in SIDES}
     stats = {"cuff_m": {s: round(cuff[s], 4) for s in SIDES}}
-    for o, edge in ((body, skin_from), (top, {s: float(src["sleeve_from_m"]) for s in SIDES})):
+    # the sleeve from a little above the elbow: a viewmodel shows no upper arm
+    elbow = {sd: abs((arm.matrix_world @ arm.data.bones[f"{sd}LowerArm"].head_local).x) for sd in SIDES}
+    sleeve_from = {sd: elbow[sd] - float(src["sleeve_above_elbow_m"]) for sd in SIDES}
+    stats["sleeve_from_m"] = {sd: round(v, 4) for sd, v in sleeve_from.items()}
+    for o, edge in ((body, skin_from), (top, sleeve_from)):
         bm = bmesh.new()
         bm.from_mesh(o.data)
         M = to_arm[o.name]
@@ -502,7 +602,7 @@ def pose_now(rig: Rig, s: State) -> None:
     bpy.context.view_layer.update()
 
 
-def fit_hold(rig: Rig, poses: Poses, body, solid: Solid, base: str = "crystal") -> dict:
+def fit_hold(rig: Rig, poses: Poses, body, solid: Solid, base: str = "crystal", roll_span: float | None = None) -> dict:
     """Seats each held hand on the crystal in the pose `base`: the palm moves out along the back of the hand from
     `r` until it is no more than FIT_PALM_MM inside the crystal's surface, then each digit curls (its grip's curls
     scaled) as far as it goes with at most FIT_DIGIT_MM inside: the fingers close round the crystal and stop on it."""
@@ -511,7 +611,9 @@ def fit_hold(rig: Rig, poses: Poses, body, solid: Solid, base: str = "crystal") 
         fit = poses.fit[side]
         fit["scale"] = {f: 0.0 for f in PM.FINGERS}
         seat = None
-        for roll in range(-45, 46, 9):  # the roll about the hand's length that lets the palm sit closest
+        r0 = fit["roll"]
+        rolls = range(-45, 46, 9) if roll_span is None else [r0 + d for d in range(-int(roll_span), int(roll_span) + 1, 5)]
+        for roll in rolls:  # the roll about the hand's length that lets the palm sit closest (about the fitted one)
             fit["roll"] = float(roll)
             for k in range(0, 61):
                 fit["dr"] = -0.010 + 0.0015 * k
@@ -530,7 +632,7 @@ def fit_hold(rig: Rig, poses: Poses, body, solid: Solid, base: str = "crystal") 
             for swing in range(-40, 61, 10):
                 fit["turn"] = [roll, swing]
                 pose_now(rig, poses.state(base))
-                deep, gap = contact(body, solid, side, THUMB)
+                deep, gap = contact(body, solid, side, ("ThumbMetacarpal",) + THUMB)  # its base turns with it
                 if deep <= FIT_DIGIT_MM and (best_turn is None or gap < best_turn[0]):
                     best_turn = (gap, [roll, swing])
         fit["turn"] = best_turn[1] if best_turn else None
@@ -569,7 +671,7 @@ def preview(out: Path, arm, body, clips, crystal_objs, held) -> None:
     sc.render.film_transparent = False
     cam_data = bpy.data.cameras.new("eye")
     cam_data.sensor_fit = "VERTICAL"
-    cam_data.angle_y = math.radians(75.0)
+    cam_data.angle_y = math.radians(float(VIEW_FOV[0]))
     cam_data.clip_start = 0.02
     cam = bpy.data.objects.new("eye", cam_data)
     sc.collection.objects.link(cam)
@@ -631,18 +733,24 @@ def main(argv) -> None:
     hands = tomllib.loads(HANDS.read_text(encoding="utf-8"))
     grips = dict(hands.get("grips", {}))
     grips.update(cfg.get("grips", {}))
+    VIEW_FOV[0] = float(cfg["view"]["fov_deg"])
+    fitted = json.loads(FITTED.read_text(encoding="utf-8")) if FITTED.exists() else {}
+    for name, fields in fitted.get("poses", {}).items():
+        cfg["poses"].setdefault(name, {}).update(fields)
     arm, body, top, sock, run_seconds, stats = cut(cfg, raw)
     fps = int(cfg["rig"]["fps"])
     sc = bpy.context.scene
     sc.render.fps, sc.render.fps_base = fps, 1.0
     rig = Rig(arm, cfg)
     poses = Poses(cfg, grips)
+    for side, roll in fitted.get("hold_roll", {}).items():
+        poses.fit[side]["roll"] = float(roll)
     pose_now(rig, poses.state("crystal"))
     crystal_objs, crystal_meshes = load_crystal(raw / cfg["source"]["crystal"], sock)
     bpy.context.view_layer.update()
     solid = Solid(crystal_meshes, sock)
     stats["solid_skips"] = solid.skipped
-    stats["hold_fit"] = fit_hold(rig, poses, body, solid)
+    stats["hold_fit"] = fit_hold(rig, poses, body, solid, roll_span=15 if "hold_roll" in fitted else None)
     clips, plans, report = {}, {}, {}
     for name, spec in cfg["clips"].items():
         clip = Clip(name, spec, poses, run_seconds)
@@ -697,6 +805,8 @@ def main(argv) -> None:
     stats["fist_weights"] = got
     stats["clips"] = report
     stats["arm_lengths_m"] = [round(rig.la, 4), round(rig.lb, 4)]
+    stats["vm_fov"] = VIEW_FOV[0]
+    stats["fitted_from"] = fitted.get("source")
     (out / "build.json").write_text(json.dumps(stats, indent=1), encoding="utf-8")
     print("FP_HANDS " + json.dumps(stats))
 

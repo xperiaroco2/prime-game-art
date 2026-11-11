@@ -1,10 +1,15 @@
 extends SceneTree
 ## The first-person hands' review frames (art#136, prime-game#1587) in an off-screen window (the runner's
 ## _godot.window(); tools/blender/fp_hands_run.py stages a copy of the ship package with the hands, the crystal and
-## this script, and calls it). The hands GLB goes under the Camera3D with no offset, as the game will put it; the
-## energy crystal (its GLB with crystal.gd's look, charged) goes under the hands' CrystalSocket, its tip at the
-## socket. The camera stands in the ship's hall at eye height (1.6 m over the floor) with the game's lens (75 degrees
-## vertical). For each clip of the request: its frames as PNGs at the request's fps into OUT/<clip>/, played `cycles`
+## this script, and calls it). The camera stands in the ship's hall at eye height (1.6 m over the floor) with the
+## game's lens (75 degrees vertical). The hands are a viewmodel, as the game draws them: on their own render layer
+## (VM_LAYER), which the world's camera leaves out, drawn by a second camera with the request's `vm_fov` that follows
+## the world camera, in a transparent SubViewport laid over the frame; the hands GLB goes under that camera with no
+## offset; they cast no shadow. The energy crystal (its GLB with crystal.gd's look, charged) goes under the hands'
+## CrystalSocket, its tip at the socket, on the same layer; its own light leaves the hands' layer out (its glow
+## lights the world, never burns the hands: it stays off the hands' camera, which draws only the lights on its
+## layer); the world's own lights are put on that layer too and reach it (the ship's are made for layer 1 only),
+## and one soft fill light lights only that layer. For each clip of the request: its frames as PNGs at the request's fps into OUT/<clip>/, played `cycles`
 ## times; then OUT/check.json: per clip the socket's place in the camera's space at its first frame, the morph
 ## `fist`'s weight at the hit, the loop mode, and the GPU ms of a held frame.
 ## Args after "--": <request.json>
@@ -17,6 +22,8 @@ var _cam: Camera3D
 var _player: AnimationPlayer
 var _arms: MeshInstance3D
 var _socket: Node3D
+var _vcam: Camera3D
+const VM_LAYER := 20   # the viewmodel's render layer (1-based), left out of the world camera's cull mask
 
 
 func _initialize() -> void:
@@ -42,8 +49,56 @@ func _run() -> void:
 	root.add_child(_cam)
 	_cam.make_current()
 	_cam.look_at_from_position(_v(_req["eye"]), _v(_req["look"]), Vector3.UP)
+	var bit: int = 1 << (VM_LAYER - 1)
+	_cam.cull_mask &= ~bit
+	for n: Node in ship.find_children("*", "Light3D", true, false):   # the hall's lights reach the hands too
+		(n as Light3D).light_cull_mask |= bit
+		(n as Light3D).layers |= bit   # a camera draws only the lights on its layers too
+	# the viewmodel: a transparent SubViewport sharing the world, its camera at the world camera's place
+	var vm := SubViewport.new()
+	vm.size = Vector2i(int(_req["size"][0]), int(_req["size"][1]))   # the shot's size (the window starts as one pixel)
+	vm.transparent_bg = true
+	vm.msaa_3d = Viewport.MSAA_4X
+	vm.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	root.add_child(vm)
+	_vcam = Camera3D.new()
+	_vcam.fov = float(_req["vm_fov"])
+	_vcam.near = 0.01
+	_vcam.far = 10.0
+	_vcam.cull_mask = bit
+	vm.add_child(_vcam)
+	_vcam.global_transform = _cam.global_transform
+	_vcam.make_current()
+	var env_node: WorldEnvironment = null
+	for n: Node in ship.find_children("*", "WorldEnvironment", true, false):
+		env_node = n as WorldEnvironment
+	if env_node != null and env_node.environment != null:
+		var env: Environment = env_node.environment.duplicate() as Environment
+		env.background_mode = Environment.BG_CLEAR_COLOR
+		env.background_color = Color(0, 0, 0, 0)
+		env.ssr_enabled = false
+		env.ssao_enabled = false
+		env.ssil_enabled = false
+		env.sdfgi_enabled = false
+		env.fog_enabled = false
+		env.volumetric_fog_enabled = false
+		_vcam.environment = env
+	var fill := DirectionalLight3D.new()   # the hands' own soft light, on their layer only
+	fill.light_cull_mask = bit
+	fill.layers = bit
+	fill.light_energy = float(_req.get("fill_energy", 0.35))
+	fill.light_color = Color(1.0, 0.93, 0.85)
+	fill.shadow_enabled = false
+	_vcam.add_child(fill)
+	fill.rotation_degrees = Vector3(-35.0, -25.0, 0.0)
+	var over := TextureRect.new()
+	over.texture = vm.get_texture()
+	over.set_anchors_preset(Control.PRESET_FULL_RECT)
+	var layer := CanvasLayer.new()
+	root.add_child(layer)
+	layer.add_child(over)
 	var hands: Node3D = (load(_req["hands"]) as PackedScene).instantiate()
-	_cam.add_child(hands)
+	_vcam.add_child(hands)
 	_player = hands.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	_socket = hands.find_child("CrystalSocket", true, false) as Node3D
 	_arms = hands.find_child("FPArms", true, false) as MeshInstance3D
@@ -54,6 +109,13 @@ func _run() -> void:
 	_socket.add_child(crystal)
 	var look: Dictionary = Crystal.apply(crystal)
 	Crystal.set_charge(look, 1.0)
+	(look["omni"] as OmniLight3D).light_cull_mask &= ~bit   # the crystal's glow lights the world, not the hands
+	for n: Node in hands.find_children("*", "VisualInstance3D", true, false) + crystal.find_children("*", "VisualInstance3D", true, false):
+		if n is Light3D:
+			continue
+		(n as VisualInstance3D).layers = bit
+		if n is GeometryInstance3D:
+			(n as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var check: Dictionary = {"socket_parent": _socket.get_parent().get_class(), "animations": Array(_player.get_animation_list()), "clips": {}}
 	var vp: RID = root.get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp, true)
@@ -71,7 +133,7 @@ func _run() -> void:
 		_player.seek(0.0, true)
 		_player.pause()
 		await process_frame
-		info["socket"] = _xf(_cam.global_transform.affine_inverse() * _socket.global_transform)
+		info["socket"] = _xf(_vcam.global_transform.affine_inverse() * _socket.global_transform)
 		if c.has("hit") and c["hit"] != null:
 			_player.seek(float(c["hit"]), true)
 			await process_frame
