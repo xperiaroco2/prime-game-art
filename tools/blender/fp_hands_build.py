@@ -409,6 +409,22 @@ def cut(cfg: dict, raw: Path) -> tuple:
     arm = next(o for o in bpy.data.objects if o.type == "ARMATURE")
     body = next(o for o in bpy.data.objects if o.type == "MESH" and o.data.shape_keys and "fist" in o.data.shape_keys.key_blocks)
     top = bpy.data.objects["top"]
+    if not src.get("sleeve", True) and "body_removed" in bpy.data.objects:
+        # the bare arm: the skin the build took off under the clothes (body_removed, skinned to the same rig with the
+        # same materials) joined back onto the body, the seam welded
+        rem = bpy.data.objects["body_removed"]
+        rem.hide_set(False)
+        rem.hide_render = False
+        bpy.ops.object.select_all(action="DESELECT")
+        rem.select_set(True)
+        body.select_set(True)
+        bpy.context.view_layer.objects.active = body
+        bpy.ops.object.join()
+        bm = bmesh.new()
+        bm.from_mesh(body.data)
+        bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=0.0005)
+        bm.to_mesh(body.data)
+        bm.free()
     for o in list(bpy.data.objects):
         if o not in (arm, body, top):
             bpy.data.objects.remove(o, do_unlink=True)
@@ -428,6 +444,9 @@ def cut(cfg: dict, raw: Path) -> tuple:
     elbow = {sd: abs((arm.matrix_world @ arm.data.bones[f"{sd}LowerArm"].head_local).x) for sd in SIDES}
     sleeve_from = {sd: elbow[sd] - float(src["sleeve_above_elbow_m"]) for sd in SIDES}
     stats["sleeve_from_m"] = {sd: round(v, 4) for sd, v in sleeve_from.items()}
+    bare = not src.get("sleeve", True)
+    if bare:  # the bare arm (the engineer, 2026-11-11): the skin from above the elbow, no garment; a sleeve comes later
+        skin_from = sleeve_from   # from the worn outfit's own mesh
     for o, edge in ((body, skin_from), (top, sleeve_from)):
         bm = bmesh.new()
         bm.from_mesh(o.data)
@@ -457,7 +476,10 @@ def cut(cfg: dict, raw: Path) -> tuple:
     view.use_deform = crystal.use_deform = False
     bpy.ops.object.mode_set(mode="OBJECT")
     names = {b.name for b in arm.data.bones}
-    for o in (body, top):
+    if bare:
+        bpy.data.objects.remove(top, do_unlink=True)
+        top = None
+    for o in [x for x in (body, top) if x is not None]:
         for g in list(o.vertex_groups):
             if g.name not in names:
                 o.vertex_groups.remove(g)
@@ -476,7 +498,8 @@ def cut(cfg: dict, raw: Path) -> tuple:
     sock.matrix_world = Matrix.Identity(4)
     sock.scale = (CRYSTAL_SCALE[0],) * 3   # the held crystal's first-person size: a child of the socket takes it
     body.name = "FPArms"
-    top.name = "FPSleeves"
+    if top is not None:
+        top.name = "FPSleeves"
     arm.name = "FPRig"
     arm.data.name = "FPRig"
     stats["eye_m"] = [round(x, 4) for x in eye]
@@ -795,7 +818,7 @@ def main(argv) -> None:
     arm.animation_data.action = clips["Idle_Loop"][0]
     sc.frame_set(0)
     bpy.ops.object.select_all(action="DESELECT")
-    for o in (arm, body, top, sock):
+    for o in [x for x in (arm, body, top, sock) if x is not None]:
         o.select_set(True)
     for _ in range(3):  # the character's unused head maps, actions and meshes: the .blend keeps only the hands
         bpy.data.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=True)

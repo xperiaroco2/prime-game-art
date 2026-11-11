@@ -38,6 +38,9 @@ EYE = [0.0, 2.8, 2.6]       # the hall: its floor at 1.2 m, the eye 1.6 m over i
 LOOK = [0.0, 2.55, -3.0]    # by the hall's back wall looking past the console into the throat
 SOCKET_TOL_M = 0.002
 LIGHT_LEVELS = [1.0, 0.4, 0.15]   # the held crystal's own light on the hands: as built, and two lower (a question)
+# close-ups of the right hand from beside the eye with a long lens, for judging the hand itself (closeup_<name>.png)
+CLOSEUPS = [{"name": "open", "clip": "Idle", "t": 0.0}, {"name": "fist", "clip": "Punch", "t": 0.15},
+            {"name": "windup", "clip": "Punch", "t": 0.06}, {"name": "run", "clip": "Run", "t": 0.25}]
 # the reel: (clip, times) in order; the hits between idles, as a player sees them
 REEL = [("Idle_Loop", 1), ("Punch", 1), ("Punch", 1), ("Run_Loop", 2),
         ("Crystal_Idle_Loop", 1), ("Crystal_Hit", 1), ("Crystal_Hit", 1), ("Crystal_Run_Loop", 2)]
@@ -71,7 +74,7 @@ def shoot(proj: Path, out: Path, build: dict, fps: int) -> dict:
              for n, c in build["clips"].items()]
     req = {"scene": "res://levels/ship/ship.tscn", "hands": "res://fp/fp_hands.glb",
            "crystal": "res://fp/energy_crystal.glb", "eye": EYE, "look": LOOK, "fov": FOV, "vm_fov": build["vm_fov"], "size": list(SIZE), "fps": fps,
-           "out": str(frames).replace("\\", "/"), "clips": clips, "light_levels": LIGHT_LEVELS}
+           "out": str(frames).replace("\\", "/"), "clips": clips, "light_levels": LIGHT_LEVELS, "closeups": CLOSEUPS}
     frames.mkdir(parents=True)
     rq = out / "shots_request.json"
     rq.write_text(json.dumps(req, indent=1), encoding="utf-8")

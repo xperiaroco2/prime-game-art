@@ -175,6 +175,43 @@ func _run() -> void:
 			var still: Image = root.get_texture().get_image()
 			still.convert(Image.FORMAT_RGB8)
 			still.save_png(out.path_join("light_%03d.png" % int(round(level * 100))))
+	# close-ups for judging the hand itself: a clip at a time, a camera beside the hands' camera aimed at the right
+	# hand with a long lens (the world's camera turned the same way), closeup_<name>.png
+	if _req.has("closeups"):
+		var skel: Skeleton3D = hands.find_child("*", true, false) as Skeleton3D
+		for n: Node in hands.find_children("*", "Skeleton3D", true, false):
+			skel = n as Skeleton3D
+		var cc := Camera3D.new()
+		cc.fov = float(_req.get("closeup_fov", 22.0))
+		cc.near = 0.01
+		cc.cull_mask = _vcam.cull_mask
+		cc.environment = _vcam.environment
+		_vcam.get_parent().add_child(cc)
+		var keep_fov: float = _cam.fov
+		var keep_xf: Transform3D = _cam.global_transform
+		for c: Dictionary in _req["closeups"]:
+			crystal.visible = bool(c.get("crystal", false))
+			_player.play(String(c["clip"]))
+			_player.seek(float(c["t"]), true)
+			_player.pause()
+			await process_frame
+			var bone: int = skel.find_bone(String(c.get("bone", "RightHand")))
+			var at: Vector3 = (skel.global_transform * skel.get_bone_global_pose(bone)).origin
+			var off: Vector3 = _vcam.global_transform.basis * _v(c.get("offset", [0.0, 0.0, 0.0]))
+			cc.global_transform = _vcam.global_transform
+			cc.look_at(at + off, _vcam.global_transform.basis.y)
+			cc.make_current()
+			_cam.fov = cc.fov * keep_fov / _vcam.fov
+			_cam.global_transform = cc.global_transform
+			for w: int in 8:
+				await process_frame
+			await RenderingServer.frame_post_draw
+			var img: Image = root.get_texture().get_image()
+			img.convert(Image.FORMAT_RGB8)
+			img.save_png(out.path_join("closeup_%s.png" % String(c["name"])))
+		_vcam.make_current()
+		_cam.fov = keep_fov
+		_cam.global_transform = keep_xf
 	var f: FileAccess = FileAccess.open(out.path_join("check.json"), FileAccess.WRITE)
 	f.store_string(JSON.stringify(check, " "))
 	f.close()

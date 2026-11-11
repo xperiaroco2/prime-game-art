@@ -189,7 +189,7 @@ def dense(obj) -> np.ndarray:
 class Scene:
     def __init__(self, rig, body, top, crystal_meshes, sock, eye: Eye):
         self.rig, self.body, self.top, self.eye = rig, body, top, eye
-        self.tri = {"skin": dense(body), "sleeve": dense(top)}
+        self.tri = {"skin": dense(body), "sleeve": dense(top) if top is not None else None}
         self.sock = sock
         loc = []
         for o in crystal_meshes:
@@ -210,7 +210,8 @@ class Scene:
     def render(self, s: B.State, crystal: bool) -> dict:
         B.pose_now(self.rig, s)
         out = {"skin": self.eye.splat(self.fill(mesh_points(self.body), self.tri["skin"]), 1),
-               "sleeve": self.eye.splat(self.fill(mesh_points(self.top), self.tri["sleeve"]), 1)}
+               "sleeve": (self.eye.splat(self.fill(mesh_points(self.top), self.tri["sleeve"]), 1) if self.top is not None
+                          else np.zeros((H, W), dtype=bool))}
         if crystal:
             M = np.array(s.crystal, dtype=np.float32)
             pts = self.crystal_local @ M[:3, :3].T + M[:3, 3]
