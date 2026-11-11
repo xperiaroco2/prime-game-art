@@ -104,6 +104,9 @@ curl_deg = { index = [80, 100, 50], middle = [82, 100, 50], ring = [85, 100, 50]
 # `tuck`); `fit = true` would search it instead (fp_hand_model.fit_thumb: its pad on a curled finger's front), which
 # laid it out in front of the fist, a dangling lump from the player's eye
 thumb = { turn = [-20, 35], curl = [25, 30, 40], fit = false }
+# the tunnel a fist leaves between the tucked tips, the palm and the thumb, filled in the morph (an ellipsoid in the
+# hand's space, mm): up close it read as a dark hole from the side (the Godot close-up, t14)
+cavity = { c = [95.0, 25.0, -38.0], r = [24.0, 36.0, 17.0] }
 
 # The skin (the concept's look, the character's teal): the base is the character's own hand albedo (its median, read
 # off its skin texture under the hand), so the first-person hand matches the body; the palm, the fingers' palm side and

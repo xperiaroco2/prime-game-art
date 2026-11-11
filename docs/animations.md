@@ -1788,9 +1788,11 @@ measured off the concept's back view at 2 px/mm, the hand 20.84 cm long as the c
 built by `tools/blender/fp_hand_model.py --raw <raw> --out <dir> [--renders] [--fist-grid <json>]` (headless
 Blender, about 2.5 minutes with the bake). `fp_hands.toml [source] char` names its output.
 
-- **The shape is a signed distance field**: the forearm a smoothed elliptic profile through the spec's stations
-  (its end domed into the carpus: a flat cut or a chain of cones left rings), the palm three flattened cones fanned
-  from the carpus to the knuckles with a carpal pad and the two mounds, blended soft; each finger three round cones,
+- **The shape is a signed distance field**: one smoothed profile from the upper arm's stub through the wrist to the
+  knuckles (the forearm's stations, then the palm's outline and thickness; a rounded ellipse, a flatter superellipse
+  in the palm; its end domed under the fingers' roots), with the thumb's and the little side's mounds blended on. A
+  forearm ending in a palm of its own left a seam at the wrist or across the palm in every variant tried (a chain of
+  cones left rings, a domed end a ledge, a blend a sawtooth groove in the Godot close-up). Each finger three round cones,
   joined hard (a soft join swells each joint into a ring), webbed onto the palm (10 mm); neighbouring digits meet in a
   3 mm crease, which is what keeps each finger readable in the fist.
 - **The mesh**: surface nets on a 3 mm grid (the 5 mm gap between the thumb and the palm stays open; the Euler number

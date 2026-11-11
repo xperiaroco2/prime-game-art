@@ -794,7 +794,12 @@ def corrective(hand: Hand, arm, ob, sp: Space, right_n: int, spec: dict) -> dict
     rest = np.array([v.co[:] for v in ob.data.vertices[:right_n]])
     D = deltas_hand(arm, sp)
     ph = posed @ sp.npi[:3, :3].T + sp.npi[:3, 3]
-    fn = lambda p: hand.sdf(p, D)  # noqa: E731
+    cav = spec["fist"].get("cavity")
+    if cav:   # the fist's tunnel (between the tucked tips, the palm and the thumb) filled: no dark hole from the side
+        fill = Part("ell", "Hand", 1.0, c=cav["c"], r=cav["r"])
+        fn = lambda p: smin(hand.sdf(p, D), fill(p), 8.0)  # noqa: E731
+    else:
+        fn = lambda p: hand.sdf(p, D)  # noqa: E731
     target = project(ph.copy(), fn, 5)
     move = target - ph
     depth = fn(ph)
