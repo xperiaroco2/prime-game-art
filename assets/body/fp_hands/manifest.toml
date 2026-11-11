@@ -1,0 +1,35 @@
+# The first-person hands (art#136, xperiaroco2/prime-game#1587): concept A, the engineer's pick of 2026-11-10.
+# Built by tools/blender/fp_hands_run.py --tag t4 --asset assets/body/fp_hands; a rebuild changes the hashes below.
+id = "fp_hands"
+kind = "body"
+slot = ""
+title = "The first-person hands: the alien's forearms and hands with the striped sleeves, in the camera's space"
+notes = "Cut from the axolotl character build of art#196 H1u (the shared body S4b with the hands of #373 and the code-built striped top), true size, under a root bone View at the eye, with a Crystal bone and its CrystalSocket node for the energy crystal; the clips are keyed from tools/blender/fp_hands.toml in headless Blender (own work, no motion source): Idle_Loop 3 s, Run_Loop 0.917 s, Crystal_Idle_Loop 3 s, Crystal_Run_Loop 0.917 s, Punch 0.5 s (contact 0.15 s, the fist morph), Crystal_Hit 0.5 s (contact 0.18 s); Godot names drop _Loop. The held hands are seated on the energy crystal (assets/prop/energy_crystal, used to fit and check, not shipped here). The skin's paint is the body's own, its colours measured from the axolotl head's paint (a colour value, no generated pixels). HANDOFF.md for the game side."
+tools = ["blender 5.2.2", "prime-game-art fp_hands_build.py, fp_hands_run.py", "glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (checks, shots)"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game"
+public_repo_ok = true
+ai_generated = false
+approved_by = []
+approved_at = ""
+approval_pr = ""
+
+[source]
+service = "own"
+plan = "own-work"
+model_version = ""
+task_ids = []
+generated_at = 2026-11-11
+url = "https://github.com/xperiaroco2/prime-game-art/issues/136"
+
+[[raw]]
+file = "2026-10-31-hands/h1u/p/axolotl/axolotl_char.blend"
+sha256 = "08ca7ad340a1eebddd5cfcc0bb426b07e621460d22969fbd2b8bee856b859c19"
+
+[[raw]]
+file = "2026-11-11-fp-hands/t4/fp_hands.glb"
+sha256 = "e79a04060d0f9397f619beeccd8e066f71fa80d15c6d480834bad00f5c93369d"
+
+[[raw]]
+file = "2026-11-11-fp-hands/t4/fp_hands.blend"
+sha256 = "bb38b25c327a02e0d63cf367997eceafe78af7e6325924ee945a935ee577d0f7"
