@@ -1808,11 +1808,30 @@ Blender, about 2.5 minutes with the bake). `fp_hands.toml [source] char` names i
   ring finger is `Ring`, `Little` stays and carries nothing); the fingers' bone z points to the palm, so a grip's
   positive curl closes the hand as on the character. Weights from the parts: each part's bone through
   exp(-distance / sigma), four kept.
-- **The fist** is the grip `[grips.fist]` (fingers 80-85 / 100 / 50 degrees, the thumb's turn and curls searched so
-  its last phalanx lies down the fist's front onto the index's curled middle phalanx) plus the corrective morph
-  `fist`: the skinned vertices projected onto the field posed with the same bones, a vertex deep inside the fist left
-  to the skinning, the move smoothed over the mesh. The morph is right only with `[grips.fist]`: the punch's keys use it.
-  `--fist-grid` renders a JSON list of finger and thumb variants (side, back, three-quarters behind) for a pick by eye.
+- **The fist** is the grip `[grips.fist]` (fingers 55-60 / 90 / 50 degrees, the thumb tucked down the index's side,
+  picked by eye) plus the morph `fist`, the fist's own surface (`FistField`, 2026-11-12, the engineer's pick of route
+  over more tuning of a corrective). The field is the hand's parts posed with the grip's bones, but each finger keeps
+  its own round surface, a little fuller (`swell_mm`), blended into the palm only at its root. The back has a big
+  knuckle head per finger and a valley between neighbours, without which the back read as one smooth slab. The
+  palm's flesh wraps the middle phalanges and tips pressed into it, and fills the tunnel they leave in front of it,
+  which read as a dark hole from the player's eye. The skinned
+  vertices are carried onto it group by group:
+  - a finger's or the thumb's vertex goes out along the ray from its phalanx's posed axis to its finger's surface,
+    blended with the nearest-point projection by its share of the finger's weight;
+  - the palm's (the thumb's mound included) goes onto the palm;
+  - a web or root shared by groups follows its neighbours as a membrane;
+  - a few rounds of relaxing on the surface and of Taubin smoothing where the surface is still rough.
+
+  The move goes back into the rest through each vertex's skinning matrix. One field for the whole fist, with the
+  vertices projected onto it nearest-point (the first build), melted the fingers into a mitten and left a slit by
+  the thumb. These left torn flaps:
+  - each phalanx on its own surface;
+  - a 120-degree middle joint, which folds the middle phalanx back over the first;
+  - a fingertip cutting the palm's edge.
+
+  `--fist-grid` renders a JSON list of variants (the curls, the thumb, any `[fist]` key; `debug` colours the vertices
+  by group or by bone, `zoom` frames one spot) with each one's fist sizes, for a pick by eye. The morph is right only
+  with `[grips.fist]`: the punch's keys use it.
 - **Its review**: `--renders` shoots the concept's four views at its scale (orthographic, 2 px/mm) and lays them under
   it with the concept's outline over them (`renders/compare.png`), with each view's silhouette overlap; `model.json`
   holds the spec's sizes measured on the build (open and in the fist) and the ones off the spec's tolerance.
