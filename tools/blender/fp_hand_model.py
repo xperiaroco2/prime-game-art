@@ -10,8 +10,9 @@ nets on a `--low-mm` grid, relaxed and projected back onto it); its normal map i
 the same field with the creases carved in; its base colour is computed per texel from the baked positions and normals
 (the character's hand teal, the palm and fingertips lighter, the knuckles a touch deeper, the creases and the field's
 own occlusion a little darker). Weights come from the same parts (each part's bone, blended by distance). The fist is
-a finger pose of the rig plus a corrective morph `fist`: the skinned vertices projected onto the field posed with the
-same bones (linear skinning alone thins each bent joint's inner side).
+a finger pose of the rig plus the morph `fist`, the fist's own surface (FistField: the parts posed with the same
+bones, each finger its own round surface, knuckle heads and valleys over the back, the palm wrapped round the curled
+fingers), onto which the skinned vertices are carried group by group (corrective).
 
 Writes <out>/fp_hand_char.blend: the character build (spec [hand] character) with its body meshes replaced by the two
 first-person arms (one mesh with the morph; the left the right's mirror, its UVs shared) and its hand and finger bones
@@ -782,34 +783,252 @@ def deltas_hand(arm, sp: Space, side="Right") -> dict:
     return out
 
 
+def group_of(bone: str) -> str:
+    for name in DIGITS + ("thumb",):
+        if bone.startswith(RIG[name]):
+            return name
+    return "base"
+
+
+class FistField:
+    """The fist's own surface, a field per group (the palm and forearm, each finger, the thumb) in the hand's space,
+    posed by the grip's bone deltas D: each finger a whole round sausage of its own (its phalanges blended at the
+    joints, a little fuller than open: flesh pressed), blended into the palm only at its root, so where neighbours
+    press together each keeps its own surface and a crisp crease shows between them, and the thumb lies on the
+    curled fingers' front as its own piece; the palm side carries a knuckle head per finger (the metacarpal's end
+    under the back of the curled finger's root), the tunnel's fill (spec [fist] cavity) if any, and wraps round the
+    middle phalanges and tips pressed into it (`tip_blend_mm`)."""
+
+    def __init__(self, hand: Hand, D: dict, spec: dict):
+        self.hand, self.D = hand, D
+        fs = spec["fist"]
+        self.swell = float(fs.get("swell_mm", 0.0))
+        self.root = float(fs.get("root_blend_mm", 12.0))
+        self.tip = float(fs.get("tip_blend_mm", 0.0))
+        self.extra = []
+        kn = fs.get("knuckle", {})
+        for name in DIGITS if kn else ():
+            part = hand.parts[name][0]
+            a, b = part.kw["a"], part.kw["b"]
+            t = (b - a) / np.linalg.norm(b - a)
+            r = float(part.kw["r1"])
+            c = a + t * float(kn.get("along", 0.0)) + np.array([0.0, 0.0, float(kn.get("up", 4.0))])
+            self.extra.append(Part("ell", "Hand", 1.0, c=c, r=[r * kn["r"][0], r * kn["r"][1], r * kn["r"][2]]))
+        # the valleys between the knuckles over the back (a groove per pair of neighbours, from the back of the hand
+        # over the knuckle row): what makes a fist's fingers read from behind, with the knuckle heads
+        self.valleys = []
+        va = fs.get("valley", {})
+        if va:
+            for n0, n1 in zip(DIGITS[:-1], DIGITS[1:]):
+                a0, a1 = hand.parts[n0][0].kw["a"], hand.parts[n1][0].kw["a"]
+                m = 0.5 * (a0 + a1)
+                self.valleys.append((np.array([m[0] - float(va.get("back", 30.0)), m[1], 0.0]),
+                                     np.array([m[0] + float(va.get("front", 12.0)), m[1], 0.0])))
+            self.valley_depth = float(va["depth"])
+            self.valley_width = float(va.get("width", 6.0))
+        cav = fs.get("cavity")
+        self.cavity = Part("ell", "Hand", 1.0, c=cav["c"], r=cav["r"]) if cav else None
+
+    def groups(self, p, which):
+        """{group: distance} at p for the groups in `which`."""
+        F = self.hand.fields(p, self.D)
+        B = F["base"]
+        for e in self.extra:
+            B = smin(B, e(p), 6.0)
+        if self.valleys:
+            for q0, q1 in self.valleys:
+                d = q1 - q0
+                t = np.clip(((p - q0) @ d) / float(d @ d), 0.0, 1.0)
+                off = p - (q0 + t[:, None] * d)
+                lat = np.sqrt(off[:, 0] ** 2 + off[:, 1] ** 2)
+                back = np.clip(p[:, 2] / 8.0, 0.0, 1.0)   # the back of the hand only
+                B = B + self.valley_depth * np.exp(-(lat / self.valley_width) ** 2) * back
+        out = {}
+        if "base" in which:
+            pb = smin(B, self.cavity(p), 8.0) if self.cavity is not None else B
+            if self.tip > 0:   # the palm's flesh round the curled middle phalanges and tips pressed into it: they
+                # cut its front and side, the cut's edge a torn ring; wrapped by the palm's flesh, unseen
+                tips = np.minimum.reduce([np.minimum(F[name][1], F[name][2]) for name in DIGITS])
+                pb = smin(pb, tips, self.tip)
+            out["base"] = pb
+        for name in DIGITS:
+            if name in which:
+                P1, I1, D1 = F[name]
+                chain = smin(smin(P1, I1, 4.0), D1, 3.0) - self.swell
+                root = np.maximum(smin(B, P1, 10.0), P1 - self.root)   # the blend into the palm, near the root only
+                out[name] = np.minimum(chain, root)
+        if "thumb" in which:
+            M, Tp, Td = F["thumb"]
+            chain = smin(smin(M, Tp, 6.0), Td, 3.0) - self.swell
+            root = np.maximum(smin(B, smin(M, Tp, 6.0), 12.0), np.minimum(M, Tp) - self.root)
+            out["thumb"] = np.minimum(chain, root)
+        return out
+
+    def field(self, which, k=0.0):
+        """The surface of the groups in `which`: one group's own, or (a web, a root between groups) their union,
+        blended over `k` mm (a hard crease there gathers the vertices of both sides into a crumpled fold)."""
+        def fn(p):
+            vals = list(self.groups(p, which).values())
+            out = vals[0]
+            for v in vals[1:]:
+                out = smin(out, v, k)
+            return out
+        return fn
+
+
+def membership(ob, right_n: int, floor=0.25) -> list:
+    """Per vertex the groups it belongs to: its largest group, and any other holding at least `floor` of its weight."""
+    names = {g.index: g.name for g in ob.vertex_groups}
+    out = []
+    for v in ob.data.vertices[:right_n]:
+        acc = {}
+        for g in v.groups:
+            k = group_of(names[g.group][len("Right"):])
+            acc[k] = acc.get(k, 0.0) + g.weight
+        tot = max(sum(acc.values()), 1e-9)
+        top = max(acc, key=acc.get)
+        out.append(tuple(sorted({top} | {k for k, w in acc.items() if w / tot >= floor})))
+    return out
+
+
 def corrective(hand: Hand, arm, ob, sp: Space, right_n: int, spec: dict) -> dict:
-    """The morph `fist`: the right arm's skinned vertices in the fist projected onto the field posed with the same
-    bones, carried back through each vertex's skinning matrix into the rest."""
+    """The morph `fist`: the right arm's skinned vertices in the fist carried onto the fist's own surface
+    (FistField), group by group, so the fingers never melt into each other or into the thumb: each projected onto its
+    own group's field (a web or a root between groups onto their union, blended); a finger's or the thumb's vertex
+    then out along the ray from its phalanx's axis to its finger's surface; a few rounds of relaxing on the surface; a
+    web or root shared by groups re-spanned as a membrane; what is still rough Taubin-smoothed. The move is carried
+    back through each vertex's skinning matrix into the rest."""
     pose_grip(arm, fist_grip(spec))
     dg = bpy.context.evaluated_depsgraph_get()
     ev = ob.evaluated_get(dg)
     me = ev.to_mesh()
     posed = np.array([v.co[:] for v in me.vertices[:right_n]])
     ev.to_mesh_clear()
-    rest = np.array([v.co[:] for v in ob.data.vertices[:right_n]])
     D = deltas_hand(arm, sp)
     ph = posed @ sp.npi[:3, :3].T + sp.npi[:3, 3]
-    cav = spec["fist"].get("cavity")
-    if cav:   # the fist's tunnel (between the tucked tips, the palm and the thumb) filled: no dark hole from the side
-        fill = Part("ell", "Hand", 1.0, c=cav["c"], r=cav["r"])
-        fn = lambda p: smin(hand.sdf(p, D), fill(p), 8.0)  # noqa: E731
-    else:
-        fn = lambda p: hand.sdf(p, D)  # noqa: E731
-    target = project(ph.copy(), fn, 5)
-    move = target - ph
-    depth = fn(ph)
-    keep = np.clip((depth + 14.0) / 8.0, 0.0, 1.0)   # deep inside the fist (a palm under curled fingers): left to the
-    move *= keep[:, None]                            # skinning, hidden there; a soft edge between
-    deep = keep < 0.5
-    # the move smoothed over the mesh (no ragged edge between moved and kept vertices)
+    ff = FistField(hand, D, spec)
+    mem = membership(ob, right_n)
+    names = {g.index: g.name for g in ob.vertex_groups}
+    top = []
+    for v in ob.data.vertices[:right_n]:
+        g = max(v.groups, key=lambda x: x.weight)
+        top.append(names[g.group][len("Right"):])
+    # the thumb's mound (its metacarpal's vertices) is palm flesh: the metacarpal's turn swings it rigidly through
+    # the index's root, so it goes onto the palm and the thumb blended, never out along a ray
+    mem = [tuple(sorted(set(s) | {"base"})) if b == "ThumbMetacarpal" else s for s, b in zip(mem, top)]
+    target = ph.copy()
+    sigs = {}
+    for i, s in enumerate(mem):
+        sigs.setdefault(s, []).append(i)
+    web = float(spec["fist"].get("web_blend_mm", 8.0))
+    fields = {s: ff.field(s, web) for s in sigs}
+    sigs = {s: np.array(idx) for s, idx in sigs.items()}
+
+    def onto(x, iters):
+        for s, idx in sigs.items():
+            x[idx] = project(x[idx], fields[s], iters)
+        return x
+    target = onto(target, 6)
+    # a finger's or the thumb's vertex instead goes out along the ray from its own phalanx's posed axis through it, to
+    # where it first leaves its finger's surface: one to one round each sausage (a nearest-point projection maps a
+    # whole patch onto one ridge, a crumpled fold); a ray that does not leave within `ray_max_mm` keeps the projection
+    owner_part = {}
+    for name in DIGITS + ("thumb",):
+        for part in hand.parts[name]:
+            if part.owner != "ThumbMetacarpal":
+                owner_part[part.owner] = part
+    smax = float(spec["fist"].get("ray_max_mm", 40.0))
+    share = np.zeros(right_n)   # each vertex's weight in its top bone's group (a finger, the thumb), of its total
+    for i, v in enumerate(ob.data.vertices[:right_n]):
+        gname = group_of(top[i])
+        tot = sum(g.weight for g in v.groups)
+        share[i] = sum(g.weight for g in v.groups if group_of(names[g.group][len("Right"):]) == gname) / max(tot, 1e-9)
+    gfield = {name: ff.field((name,)) for name in DIGITS + ("thumb",)}
+    rayed = 0
+    for bone, part in owner_part.items():
+        idx = np.array([i for i, b in enumerate(top) if b == bone])
+        if not len(idx):
+            continue
+        fn = gfield[group_of(bone)]
+        Dm = D.get(bone, np.eye(4))
+        a = Dm[:3, :3] @ part.kw["a"] + Dm[:3, 3]
+        b = Dm[:3, :3] @ part.kw["b"] + Dm[:3, 3]
+        x = ph[idx]
+        ab = b - a
+        t = np.clip(((x - a) @ ab) / float(ab @ ab), 0.0, 1.0)
+        c = a + t[:, None] * ab
+        d = x - c
+        d /= np.maximum(np.linalg.norm(d, axis=1), 1e-9)[:, None]
+        steps = np.arange(0.0, smax + 0.5, 1.0)
+        f = fn((c[:, None, :] + steps[None, :, None] * d[:, None, :]).reshape(-1, 3)).reshape(len(idx), len(steps))
+        out_ = f > 0.0
+        first = np.where(out_.any(1), out_.argmax(1), -1)
+        ok = first > 0
+        lo = steps[np.maximum(first - 1, 0)]
+        hi = steps[np.maximum(first, 0)]
+        for _ in range(7):
+            mid = 0.5 * (lo + hi)
+            inside = fn(c + mid[:, None] * d) <= 0.0
+            lo = np.where(inside, mid, lo)
+            hi = np.where(inside, hi, mid)
+        hit = c + (0.5 * (lo + hi))[:, None] * d
+        # blended with the projection by the vertex's share in its finger: a finger's own vertex on the ray, a web's
+        # or a root's between, so the two never meet in a seam
+        w = np.clip((share[idx] - 0.5) / 0.4, 0.0, 1.0)
+        w = (w * w * (3.0 - 2.0 * w))[:, None]
+        sel = idx[ok]
+        target[sel] = target[sel] * (1.0 - w[ok]) + hit[ok] * w[ok]
+        rayed += int(ok.sum())
+    log(f"fist rays {rayed} of {sum(1 for b in top if b in owner_part)} finger vertices")
+    # untangled on the fist's surface: where the skinned vertices crossed (a bent joint's inner side, a finger pressed
+    # on its neighbour or the thumb) the projection leaves them crumpled, a torn-looking fold; each round moves every
+    # vertex halfway to its neighbours' mean and back onto its own group's surface, which spreads the crumple out
     E = np.array([e.vertices[:] for e in ob.data.edges])
     E = E[(E < right_n).all(1)]
-    for _ in range(4):
+    cnt = np.zeros(right_n)
+    np.add.at(cnt, E[:, 0], 1)
+    np.add.at(cnt, E[:, 1], 1)
+    for _ in range(int(spec["fist"].get("untangle", 8))):
+        avg = np.zeros_like(target)
+        np.add.at(avg, E[:, 0], target[E[:, 1]])
+        np.add.at(avg, E[:, 1], target[E[:, 0]])
+        target = onto(0.5 * target + 0.5 * avg / np.maximum(cnt, 1)[:, None], 2)
+    # a web or a root shared by groups (the web between the thumb and the index above all) is not projected: its move
+    # is the membrane spanned by its neighbours' (each vertex its neighbours' mean, the single-group vertices held), so
+    # it can never crumple between two groups' surfaces
+    shared = np.array([len(sg) > 1 for sg in mem])
+    if spec["fist"].get("web_membrane", True) and shared.any():
+        mv = target - ph
+        for _ in range(int(spec["fist"].get("membrane_rounds", 60))):
+            nb = np.zeros_like(mv)
+            np.add.at(nb, E[:, 0], mv[E[:, 1]])
+            np.add.at(nb, E[:, 1], mv[E[:, 0]])
+            mv[shared] = (nb / np.maximum(cnt, 1)[:, None])[shared]
+        target = ph + mv
+    # crumples left where groups meet in a fold (the web between the thumb and the index as the thumb curls over):
+    # vertices standing off their neighbours' mean by more than `rough_mm`, three rings round them, Taubin-smoothed
+    # (lambda/mu, no shrinking) in place
+    nb = np.zeros_like(target)
+    np.add.at(nb, E[:, 0], target[E[:, 1]])
+    np.add.at(nb, E[:, 1], target[E[:, 0]])
+    rough = np.linalg.norm(target - nb / np.maximum(cnt, 1)[:, None], axis=1)
+    mask = rough > float(spec["fist"].get("rough_mm", 1.0))
+    crumpled = int(mask.sum())
+    for _ in range(3):
+        grow = mask.copy()
+        grow[E[:, 0]] |= mask[E[:, 1]]
+        grow[E[:, 1]] |= mask[E[:, 0]]
+        mask = grow
+    for k in range(2 * int(spec["fist"].get("smooth_rounds", 10))):
+        nb = np.zeros_like(target)
+        np.add.at(nb, E[:, 0], target[E[:, 1]])
+        np.add.at(nb, E[:, 1], target[E[:, 0]])
+        lap = nb / np.maximum(cnt, 1)[:, None] - target
+        target[mask] += (0.5 if k % 2 == 0 else -0.53) * lap[mask]
+    log(f"fist crumpled vertices {crumpled}, smoothed {int(mask.sum())}")
+    move = target - ph
+    # the move smoothed over the mesh (no ragged edge between moved and kept vertices)
+    for _ in range(2):
         sm = np.zeros_like(move)
         c = np.zeros(len(move))
         np.add.at(sm, E[:, 0], move[E[:, 1]])
@@ -818,7 +1037,7 @@ def corrective(hand: Hand, arm, ob, sp: Space, right_n: int, spec: dict) -> dict
         np.add.at(c, E[:, 1], 1)
         move = 0.5 * move + 0.5 * sm / np.maximum(c, 1)[:, None]
     m = np.linalg.norm(move, axis=1)
-    cap = 10.0
+    cap = float(spec["fist"].get("move_cap_mm", 14.0))
     move *= np.minimum(1.0, cap / np.maximum(m, 1e-9))[:, None]
     ta = (ph + move) @ sp.np[:3, :3].T + sp.np[:3, 3]
     # each vertex's skinning matrix (armature space), inverted
@@ -839,7 +1058,7 @@ def corrective(hand: Hand, arm, ob, sp: Space, right_n: int, spec: dict) -> dict
     co[:right_n] = key
     sk.data.foreach_set("co", co.ravel())
     return {"moved_mm_p50": round(float(np.median(m)), 2), "moved_mm_p99": round(float(np.percentile(m, 99)), 2),
-            "capped": int((m > cap).sum()), "deep_kept": int(deep.sum())}
+            "capped": int((m > cap).sum()), "groups": len(sigs), "rayed": rayed, "crumpled": crumpled}
 
 
 def fit_thumb(hand: Hand, arm, sp: Space, spec: dict) -> dict:
@@ -862,6 +1081,9 @@ def fit_thumb(hand: Hand, arm, sp: Space, spec: dict) -> dict:
     rf = 0.5 * float(spec["fingers"]["middle"]["width"]) * float(spec["fingers"]["middle"]["thickness"]) / float(
         spec["fingers"]["middle"]["width"])
     target = M + out_dir * (rf + rT - 2.0)
+    # the thumb kept off the fingers by `gap` mm past both fist surfaces' swell: where the two cut into each other at a
+    # grazing angle the 3 mm mesh shows the cut as a torn, jagged hole; a gap reads as a soft crease
+    gap = float(tt.get("gap", 1.0)) + 2.0 * float(spec["fist"].get("swell_mm", 0.0))
     across = np.array([0.0, -1.0, 0.0])
 
     def cost(x):
@@ -878,7 +1100,7 @@ def fit_thumb(hand: Hand, arm, sp: Space, spec: dict) -> dict:
         F = hand.fields(pts, D)
         fing = np.minimum.reduce([np.minimum.reduce(F[n]) for n in DIGITS] + [F["base"]])
         r_here = np.array([rT] * 8)
-        pen = np.clip(r_here - 2.0 - fing, 0.0, None)
+        pen = np.clip(r_here + gap - fing, 0.0, None)
         pad = pts[-3:-1].mean(0)
         d = pts[-1] - pts[-4]
         d /= max(np.linalg.norm(d), 1e-9)
@@ -916,6 +1138,29 @@ def fit_thumb(hand: Hand, arm, sp: Space, spec: dict) -> dict:
     spec["fist"]["thumb"]["curl"] = x[2:]
     return {"turn": x[:2], "curl": x[2:], "deepest_mm": round(c[1], 1), "pad_to_target_mm": round(c[2], 1),
             "across": round(c[3], 2), "target": [round(float(t), 1) for t in target]}
+
+
+def fist_measure(ob, arm, sp: Space, spec: dict, right_n: int) -> dict:
+    """The spec's fist sizes on the build (posed, morphed; the hand's space, mm): width, the thumb's lowest point,
+    depth, and the length (wrist to the fingers' lowest point)."""
+    pose_grip(arm, fist_grip(spec))
+    ob.data.shape_keys.key_blocks["fist"].value = 1.0
+    dg = bpy.context.evaluated_depsgraph_get()
+    ev = ob.evaluated_get(dg)
+    me = ev.to_mesh()
+    pf = np.array([x.co[:] for x in me.vertices[:right_n]])
+    ev.to_mesh_clear()
+    ob.data.shape_keys.key_blocks["fist"].value = 0.0
+    pose_grip(arm, None)
+    pf = pf @ sp.npi[:3, :3].T + sp.npi[:3, 3]
+    mem = membership(ob, right_n, floor=1.1)
+    hp = pf[pf[:, 0] > 0]
+    fs = spec["fist"]
+    fing = pf[np.array([s[0] in DIGITS for s in mem])]
+    return {"width": [fs["width"], round(float(np.ptp(hp[:, 1])), 1)],
+            "thumb_low_u": [fs["thumb_low_u"], round(float(hp[:, 0].max()), 1)],
+            "depth": [fs["depth"], round(float(np.ptp(hp[:, 2])), 1)],
+            "length": [fs["length"], round(float(fing[:, 0].max()), 1)]}
 
 
 # ---------------------------------------------------------------------------------------------- measures
@@ -1052,11 +1297,43 @@ def renders(out: Path, arm, ob, sp: Space, spec: dict, concept: Path, samples: i
         pose_grip(arm, fist_grip(spec) if vw["fist"] else None)
         key.value = 1.0 if vw["fist"] else 0.0
         f = out / "renders" / f"{name}.png"
-        shoot(sc, cam, sp, vw, [centre_u if not name.endswith("3q") else 95.0, 0.0, 0.0], f)
+        if name in ("fist_3q", "fist_fp", "open_3q"):   # the close-ups: the hand alone, framed tight
+            shoot(sc, cam, sp, vw, [105.0, 0.0, -15.0], f, (640, 640), 0.27)
+        else:
+            shoot(sc, cam, sp, vw, [centre_u, 0.0, 0.0], f)
         files[name] = f
     key.value = 0.0
     pose_grip(arm, None)
     return compare(out, files, concept, spec)
+
+
+def debug_colours(ob, right_n: int, by_bone: bool = False) -> None:
+    """The arm's material swapped for one coloured per vertex by its top bone's group (palm grey, index red, middle
+    green, ring blue, thumb yellow; a thumb's metacarpal orange)."""
+    col = {"base": (0.6, 0.6, 0.6), "index": (0.9, 0.15, 0.1), "middle": (0.1, 0.8, 0.2), "ring": (0.15, 0.3, 0.95),
+           "thumb": (0.95, 0.85, 0.1)}
+    names = {g.index: g.name for g in ob.vertex_groups}
+    attr = ob.data.color_attributes.new("dbg", "FLOAT_COLOR", "POINT")
+    for i, v in enumerate(ob.data.vertices):
+        if not v.groups:
+            attr.data[i].color = (0, 0, 0, 1)
+            continue
+        g = max(v.groups, key=lambda x: x.weight)
+        bone = names[g.group].removeprefix("Right").removeprefix("Left")
+        c = (1.0, 0.5, 0.0) if bone == "ThumbMetacarpal" else col[group_of(bone)]
+        if by_bone and group_of(bone) != "base":   # the phalanges apart: the proximal full, then darker
+            k = 1.0 if bone.endswith(("Proximal", "Metacarpal")) else 0.55 if bone.endswith("Intermediate") else 0.25
+            c = tuple(x * k for x in c)
+        attr.data[i].color = (*c, 1.0)
+    mat = bpy.data.materials.new("dbg")
+    mat.use_nodes = True
+    nt = mat.node_tree
+    bsdf = nt.nodes["Principled BSDF"]
+    a = nt.nodes.new("ShaderNodeAttribute")
+    a.attribute_name = "dbg"
+    nt.links.new(a.outputs["Color"], bsdf.inputs["Base Color"])
+    ob.data.materials.clear()
+    ob.data.materials.append(mat)
 
 
 def fist_grid(out: Path, hand: Hand, arm, ob, sp: Space, spec: dict, variants: list, right_n: int, samples: int) -> list:
@@ -1076,14 +1353,22 @@ def fist_grid(out: Path, hand: Hand, arm, ob, sp: Space, spec: dict, variants: l
             spec["fist"]["thumb"] = dict(var["thumb"])
         else:
             var["thumb_fit"] = fit_thumb(hand, arm, sp, spec)
+        if "fist" in var:   # any other [fist] key (swell_mm, knuckle, cavity, root_blend_mm, move_cap_mm)
+            spec["fist"].update(var["fist"])
         var["morph"] = corrective(hand, arm, ob, sp, right_n, spec)
+        var["measured"] = fist_measure(ob, arm, sp, spec, right_n)
         pose_grip(arm, fist_grip(spec))
         key.value = 1.0
+        if var.get("debug"):   # each vertex coloured by its top bone's group: whose surface makes a defect
+            debug_colours(ob, right_n, var["debug"] == "bone")
         files = []
-        for vn in ("fist_side", "fist_3q", "fist_fp"):
+        for vn in ("fist_back", "fist_side", "fist_3q", "fist_fp"):
             f = d / f"{k:02d}_{vn}.png"
             vw = dict(VIEWS[vn])
-            shoot(sc, cam, sp, vw, [100.0, 0.0, 0.0], f, (320, 320), 0.24)
+            if "zoom" in var:   # a close-up of one spot (the hand's space, mm) at the view's angle
+                shoot(sc, cam, sp, vw, var["zoom"], f, (320, 320), 0.09)
+            else:
+                shoot(sc, cam, sp, vw, [105.0, 0.0, -15.0], f, (320, 320), 0.29)
             files.append(f)
         key.value = 0.0
         pose_grip(arm, None)
@@ -1253,23 +1538,7 @@ def main(argv) -> None:
     log(f"fist morph {stats['fist_morph']}")
     # the spec's sizes on the build: open (rest) and the fist (posed, morphed)
     m = {"open": measure(hand, v, top_bone, spec, "open")}
-    pose_grip(arm, fist_grip(spec))
-    ob.data.shape_keys.key_blocks["fist"].value = 1.0
-    dg = bpy.context.evaluated_depsgraph_get()
-    ev = ob.evaluated_get(dg)
-    me = ev.to_mesh()
-    pf = np.array([x.co[:] for x in me.vertices[:right_n]])
-    ev.to_mesh_clear()
-    ob.data.shape_keys.key_blocks["fist"].value = 0.0
-    pose_grip(arm, None)
-    pf = pf @ sp.npi[:3, :3].T + sp.npi[:3, 3]
-    hp = pf[pf[:, 0] > 0]
-    fs = spec["fist"]
-    m["fist"] = {"width": [fs["width"], round(float(np.ptp(hp[:, 1])), 1)],
-                 "thumb_low_u": [fs["thumb_low_u"], round(float(hp[:, 0].max()), 1)],
-                 "depth": [fs["depth"], round(float(np.ptp(hp[:, 2])), 1)]}
-    fingers_only = pf[[(not b.startswith("Thumb")) and b not in ("Hand", "LowerArm", "UpperArm") for b in top_bone]]
-    m["fist"]["length"] = [fs["length"], round(float(fingers_only[:, 0].max()), 1)]
+    m["fist"] = fist_measure(ob, arm, sp, spec, right_n)
     stats["measured"] = m
     stats["off_spec"] = check(m, spec)
     stats["tris_per_arm"] = 2 * len(f)

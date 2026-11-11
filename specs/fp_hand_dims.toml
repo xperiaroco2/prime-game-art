@@ -98,15 +98,41 @@ width = 156.0
 length = 140.0
 thumb_low_u = 157.0
 depth = 125.0
-# a tight fist (view 3: compact, the middle phalanges pressed under the palm, the tips tucked into it)
-curl_deg = { index = [80, 100, 50], middle = [82, 100, 50], ring = [85, 100, 50] }
-# the thumb tucked down the fist's front and round its side: picked by eye from a variant grid (2026-11-11, g4
-# `tuck`); `fit = true` would search it instead (fp_hand_model.fit_thumb: its pad on a curled finger's front), which
-# laid it out in front of the fist, a dangling lump from the player's eye
-thumb = { turn = [-20, 35], curl = [25, 30, 40], fit = false }
-# the tunnel a fist leaves between the tucked tips, the palm and the thumb, filled in the morph (an ellipsoid in the
-# hand's space, mm): up close it read as a dark hole from the side (the Godot close-up, t14)
-cavity = { c = [95.0, 25.0, -38.0], r = [24.0, 36.0, 17.0] }
+# the concept's fist (views 2 and 3): the first phalanges bent about half way at the knuckles (seen from the back as
+# rounded columns below the knuckle row), the middle phalanges making the fist's front, the tips tucked into the palm
+# (variant grids g6-g8 and g19, 2026-11-12: an 80-degree knuckle bend hid the fingers end-on from the back and made
+# the fist too short; a 15-degree one with a 120-degree middle joint folded the middle phalanx back over the first in
+# a torn flap on the thumb's side)
+curl_deg = { index = [55, 90, 50], middle = [57, 90, 50], ring = [60, 90, 50] }
+# the thumb tucked down the side of the index's curled finger, its tip by the index's middle phalanx: picked by eye
+# from variant grids (g4 `tuck` 2026-11-11, g15 and g16 2026-11-12, the vertices coloured by group). The search
+# (`fit = true`, fp_hand_model.fit_thumb, steered by `thumb_target`) sent the thumb out in front of the fist or, turned
+# across it, up and away
+thumb = { turn = [-20.0, 35.0], curl = [25.0, 30.0, 40.0], fit = false }
+# the fist's own surface (fp_hand_model.FistField and corrective): each finger keeps its own round surface (a crease
+# where neighbours press together), a little fuller than open (`swell_mm`), blended into the palm only near its root
+# (`root_blend_mm`); a knuckle head per finger on the back (an ellipsoid at the knuckle joint, radii as shares of the
+# finger's radius along u, v, w, raised `up` mm toward the back) and a valley between neighbours; the palm's flesh wraps the middle phalanges and
+# tips pressed into it (`tip_blend_mm`: they cut its front and side in a torn-looking ring otherwise). A finger's
+# vertex goes out along a ray from its phalanx's axis; a web or root shared by groups follows its neighbours as a
+# membrane; then `untangle` rounds of relaxing on the surface and `smooth_rounds` of smoothing where it is still
+# rough (more than `rough_mm` off its neighbours' mean); a vertex moves at most `move_cap_mm`
+swell_mm = 1.5
+root_blend_mm = 12.0
+tip_blend_mm = 8.0
+web_blend_mm = 8.0
+untangle = 8
+smooth_rounds = 10
+rough_mm = 1.0
+move_cap_mm = 60.0
+knuckle = { r = [0.9, 0.95, 0.85], up = 5.0, along = 0.0 }
+# the valleys between the knuckles over the back of the fist (a groove per pair of neighbours, `back` mm toward the
+# wrist and `front` mm past the knuckle row, `depth` deep, a Gaussian `width` wide): with the knuckle heads what makes
+# each finger read from behind (grid g20, 2026-11-12; without them the back read as one smooth slab)
+valley = { depth = 5.0, width = 7.0, back = 35.0, front = 16.0 }
+# the tunnel the curled fingers leave in front of the palm, filled with the palm's flesh (an ellipsoid in the hand's
+# space, mm): from the player's eye its opening by the thumb read as a dark hole (the Godot close-up t17; grid g21)
+cavity = { c = [96.0, 15.0, -36.0], r = [26.0, 55.0, 17.0] }
 
 # The skin (the concept's look, the character's teal): the base is the character's own hand albedo (its median, read
 # off its skin texture under the hand), so the first-person hand matches the body; the palm, the fingers' palm side and
