@@ -1,0 +1,37 @@
+# The how-to card style check, for the UI track (prime-game#150). The engineer, 2026-10-22, UI chat (translated): round
+# 3's variation 1 (its inks) plus variation 4 (the white gloves), the antenna balls red; "make one quality generation
+# to make sure we understood each other". One frame (fry without burning), high quality, two images to pick one; then, on his note that the eyes must
+# be the same in every frame (the fry frame's, white with pupils, not the plate frame's dark alien ovals), the plate frame
+# drawn from the fry frame's alien.
+# The standing permission for OpenAI images: art#196 comment 6291187194 (2026-10-20). No game, film, studio, brand,
+# artist or character names; no real people. Schema: docs/openai-images.md.
+
+id = "2026-10-22-howto-style-check"
+service = "openai-images"
+purpose = "The how-to card style check (prime-game#150): one high-quality frame of round 3's variation 1 with variation 4's gloves and red antenna balls."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 3.0
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-20"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6291187194"
+model = "gpt-image-2.5-sunburst"
+quality = "high"
+
+[defaults]
+size = "1024x768"
+n = 2
+background = "opaque"
+
+[[items]]
+id = "check-fry"
+kind = "edit"
+prompt = "Two reference images of the same cartoon. Image 1 is the master: keep its rendering exactly (a 1940s workplace-safety poster, offset print on cream paper, thick confident brush outlines with thick-and-thin, flat inks of teal-green, signal red and navy, their overprint, a slight consistent misregistration), its scene layout, its cute small round-bodied teal-green alien with the big round head, big dark oval eyes and small mouth. Change only two things: give the alien the white three-fingered cartoon gloves of image 2 on both hands, and make the two ball tips of its antennae signal red. Scene: the alien flips a golden-brown burger patty on a small navy barbecue grill at just the right moment; on a small table beside it a second patty is burnt black and sends up a curl of smoke; the alien glances at it, embarrassed. Wordless: no lettering, no text, no numbers, no logos; no photorealism, no 3D, no gradients, no glow. Plain cream background, nothing behind the scene. Big simple shapes that read as a 160 by 120 pixel thumbnail."
+images = [{ file = "raw:2026-10-22-howto-styles-r3/v01-fry/image-0.png", provenance = "r3 v01-fry image 0 (the inks, the master), our own OpenAI generation (UI track, prime-game#150)", sha256 = "18e49f74351d609fb3663bcbac0815fc9672088e5cb85d8614177c12c9ac3d51" }, { file = "raw:2026-10-22-howto-styles-r3/v04-fry/image-0.png", provenance = "r3 v04-fry image 0 (the gloves), our own OpenAI generation (UI track, prime-game#150)", sha256 = "df1758751fb0edef0047189fa94f11b5727b0ade0d0fe52057becf0dc7aeea47" }]
+
+[[items]]
+id = "check-plate"
+kind = "edit"
+prompt = "Two reference images of the same cartoon. Image 1 is the master CHARACTER and RENDERING: keep exactly its cute small round-bodied teal-green alien, its big round head, its eyes (white eyeballs with dark pupils and a little eyebrow line, never solid dark alien ovals), its small mouth, its white three-fingered cartoon gloves, its two antennae with signal-red ball tips, and its rendering (a 1940s workplace-safety poster, offset print on cream paper, thick confident brush outlines with thick-and-thin, flat inks of teal-green, signal red and navy, a slight consistent misregistration). Image 2 sets only the SCENE LAYOUT. Scene: the alien, proud and smiling, puts the top bun on a burger on a round white plate marked with three red dots on its rim; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the sesame top bun, neatly stacked. Wordless: no lettering, no text, no numbers, no logos; no photorealism, no 3D, no gradients, no glow. Plain cream background, nothing behind the scene. Big simple shapes that read as a 160 by 120 pixel thumbnail."
+images = [{ file = "raw:2026-10-22-howto-style-check/check-fry/image-0.png", provenance = "check-fry image 0 (the character and rendering, the master), our own OpenAI generation (UI track, prime-game#150)", sha256 = "3b045b817831d760fa9b21e3b2b4f4c25127a1261e6b3947e3cfa06bbf5fc53b" }, { file = "raw:2026-10-22-howto-styles-r3/v01-plate/image-0.png", provenance = "r3 v01-plate image 0 (the scene layout), our own OpenAI generation (UI track, prime-game#150)", sha256 = "ad2a8eb4f1807c5156f563b8c1c944ab59320f7e974900d7928feae11c9e130d" }]

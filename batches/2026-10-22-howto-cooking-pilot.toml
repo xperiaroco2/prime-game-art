@@ -1,0 +1,82 @@
+# The how-to card pilot for the Cooking task, asked by the engineer on 2026-10-22 (UI chat, translated: "let's do it
+# on cooking; we are not limited to 4 cards, it can scroll if needed"): the clean-sketch cards of prime-game-ui are
+# outdated now that the game has its own look, so the card frames are drawn in the game look instead, with the
+# chameleon head h01-3 as the character (the engineer, 2026-10-22: rf2 rejected, "take this one").
+# One frame per step of the Cooking chain as the game plays it now (prime-game docs/decisions/2026-10-10-cooking-task.md
+# with its amendments, docs/design/estate-map.md): read the order, decode the herb, print the bun and the patty, fry the
+# patty without burning it, pick the herb, build the burger on its numbered plate, serve it. Seven frames, three
+# variants each, medium (exploration). Every item is an edit with h01-3 as the character and style reference only.
+# The cards are wordless: no letters anywhere. The frames sit in prime-game-ui's how-to card (ui-2.0.0: a dark violet
+# tile, a mint accent), 4:3, shown as small as 160x120, so one action, one plain background, big readable shapes.
+# The standing permission for OpenAI images: art#196 comment 6291187194 (2026-10-20). No game, film, studio or
+# character names; no real people. Schema: docs/openai-images.md. Plan issue: xperiaroco2/prime-game#150.
+
+id = "2026-10-22-howto-cooking-pilot"
+service = "openai-images"
+purpose = "The how-to card pilot for Cooking (prime-game#150): seven wordless 4:3 frames in the alien release look, three variants each, the chameleon h01-3 as the character, for the engineer to judge on a private page."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 3.0
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-20"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6291187194"
+model = "gpt-image-2.5-sunburst"
+quality = "medium"
+
+[defaults]
+size = "1280x960"
+n = 3
+background = "opaque"
+
+[variants.frame]
+prompt = "The reference image shows our alien character and the exact rendering style to match: a smooth stylized toy look like soft matte clay, rounded forms, gentle studio light, keep this head exactly: the big curled crest sweeping back, the big round domed eyes with heavy half-closed bored lids, the two nostril dots, the wide flat teal lips and the long thin neck; the teal skin with faint darker bands, fading to pale mint on the face, throat and belly. Draw a new image in exactly this style: ONE frame of a wordless how-to comic about cooking a burger. The same chameleon alien appears full body, slim, long-necked, four-fingered hands, no clothes, small in the frame with room around it. The background is one flat, plain, solid deep violet (#2A2540) with a slightly lighter floor shadow, nothing else behind: no room, no walls, no scenery. Only the one or two props the step needs, big and simple so the frame reads at a thumbnail size. The single most important object of the step glows with a soft mint-green (#6FF2B4) rim light; nothing else is mint. Absolutely no text, letters, numbers written as words, labels, logos, speech bubbles with words or UI. Camera: a straight side or three-quarter view at the alien's chest height. The step: "
+
+[[items]]
+id = "c1-order"
+kind = "edit"
+variant = "frame"
+prompt = "the alien stands in front of a small wall board and reads an order on it: the board shows three simple pictures in a row, a round sesame bun, a brown meat patty and a small abstract symbol (a triangle made of three dots) standing for a herb. The alien rubs its chin, memorising. The board glows mint."
+images = [{ file = "raw:2026-10-22-alien-roster-r2/h01/image-2.png", provenance = "h01-3, the chameleon head the engineer kept (3 yes, art#196 comment 6335728985) and picked for the how-to cards on 2026-10-22 (UI chat), our own OpenAI generation, batch 2026-10-22-alien-roster-r2 item h01, image 2", sha256 = "5b3bba07e423a43cdffdba3312381651f26408bb82e6fbdee372fef9477f5547" }]
+
+[[items]]
+id = "c2-decode"
+kind = "edit"
+variant = "frame"
+prompt = "the alien looks at a second board that pairs symbols with plants: in one column three abstract symbols (a triangle of three dots, a ring, a wavy line), beside each a different herb leaf (a round basil-like leaf, a spiky leaf, a feathery sprig). The alien points at the triangle of three dots and its matching spiky leaf; that one pair glows mint. A small light bulb of understanding is NOT used; just the pointing hand and a pleased face."
+images = [{ file = "raw:2026-10-22-alien-roster-r2/h01/image-2.png", provenance = "h01-3, the chameleon head the engineer kept (3 yes, art#196 comment 6335728985) and picked for the how-to cards on 2026-10-22 (UI chat), our own OpenAI generation, batch 2026-10-22-alien-roster-r2 item h01, image 2", sha256 = "5b3bba07e423a43cdffdba3312381651f26408bb82e6fbdee372fef9477f5547" }]
+
+[[items]]
+id = "c3-print"
+kind = "edit"
+variant = "frame"
+prompt = "the alien stands at a rounded, friendly food printer machine (a boxy kiosk with a soft slot at the front, a few buttons without labels). Out of the slot slides a round sesame bun, and a raw pink meat patty already lies in the tray. The alien catches the bun with both hands, surprised and delighted. The bun and the patty glow mint."
+images = [{ file = "raw:2026-10-22-alien-roster-r2/h01/image-2.png", provenance = "h01-3, the chameleon head the engineer kept (3 yes, art#196 comment 6335728985) and picked for the how-to cards on 2026-10-22 (UI chat), our own OpenAI generation, batch 2026-10-22-alien-roster-r2 item h01, image 2", sha256 = "5b3bba07e423a43cdffdba3312381651f26408bb82e6fbdee372fef9477f5547" }]
+
+[[items]]
+id = "c4-grill"
+kind = "edit"
+variant = "frame"
+prompt = "the alien stands at a small round barbecue grill and flips one meat patty with a spatula at just the right moment: the patty is golden brown and glows mint. Beside the grill on a little side plate lies one burnt, black, smoking patty, the one it forgot earlier; the alien glances at it with its heavy bored lids, embarrassed. The joke must read at a glance: one good patty, one burnt."
+images = [{ file = "raw:2026-10-22-alien-roster-r2/h01/image-2.png", provenance = "h01-3, the chameleon head the engineer kept (3 yes, art#196 comment 6335728985) and picked for the how-to cards on 2026-10-22 (UI chat), our own OpenAI generation, batch 2026-10-22-alien-roster-r2 item h01, image 2", sha256 = "5b3bba07e423a43cdffdba3312381651f26408bb82e6fbdee372fef9477f5547" }]
+
+[[items]]
+id = "c5-herb"
+kind = "edit"
+variant = "frame"
+prompt = "the alien kneels at a low flower bed with three kinds of herbs growing in it (round leaves, spiky leaves, feathery sprigs) and plucks one spiky-leaf herb, the right one; the plucked herb glows mint. The other herbs stay in the soil."
+images = [{ file = "raw:2026-10-22-alien-roster-r2/h01/image-2.png", provenance = "h01-3, the chameleon head the engineer kept (3 yes, art#196 comment 6335728985) and picked for the how-to cards on 2026-10-22 (UI chat), our own OpenAI generation, batch 2026-10-22-alien-roster-r2 item h01, image 2", sha256 = "5b3bba07e423a43cdffdba3312381651f26408bb82e6fbdee372fef9477f5547" }]
+
+[[items]]
+id = "c6-plate"
+kind = "edit"
+variant = "frame"
+prompt = "the alien stands at a counter and builds a burger on a round white plate that has a big simple painted dot pattern (three dots) on its rim as its mark: the bottom bun, the brown patty, the spiky herb leaf and the top bun, stacked neatly; the alien puts the top bun on with care, tongue slightly out in concentration. The finished burger glows mint."
+images = [{ file = "raw:2026-10-22-alien-roster-r2/h01/image-2.png", provenance = "h01-3, the chameleon head the engineer kept (3 yes, art#196 comment 6335728985) and picked for the how-to cards on 2026-10-22 (UI chat), our own OpenAI generation, batch 2026-10-22-alien-roster-r2 item h01, image 2", sha256 = "5b3bba07e423a43cdffdba3312381651f26408bb82e6fbdee372fef9477f5547" }]
+
+[[items]]
+id = "c7-serve"
+kind = "edit"
+variant = "frame"
+prompt = "the finish: the alien proudly holds out the finished burger on its plate towards a serving hatch in a wall panel (a simple rounded opening); above the hatch a big round tick mark symbol lights up mint. The alien's heavy lids are lifted for once: a small proud smile. Calm, satisfying, the end of the task."
+images = [{ file = "raw:2026-10-22-alien-roster-r2/h01/image-2.png", provenance = "h01-3, the chameleon head the engineer kept (3 yes, art#196 comment 6335728985) and picked for the how-to cards on 2026-10-22 (UI chat), our own OpenAI generation, batch 2026-10-22-alien-roster-r2 item h01, image 2", sha256 = "5b3bba07e423a43cdffdba3312381651f26408bb82e6fbdee372fef9477f5547" }]

@@ -1,0 +1,126 @@
+# How-to card styles, round 1, for the UI track (prime-game#150). The engineer, 2026-10-22, UI chat (translated): the
+# 3D pilot (batch 2026-10-22-howto-cooking-pilot) "looks like AI slop"; the cards are flat 2D cartoon, the figure need
+# not be a game character, and a player must not take them for AI images; go wide first: research, then about ten
+# looks. The ten directions and their prompts come from the research of prime-game-ui
+# docs/research/2026-10-22-howto-card-styles/report.md. Two frames of the Cooking card per direction (fry the patty
+# without burning it; build the burger on its marked plate), two images each, medium, text-only generations.
+# The standing permission for OpenAI images: art#196 comment 6291187194 (2026-10-20). No game, film, studio, brand,
+# artist or character names; no real people. Schema: docs/openai-images.md.
+
+id = "2026-10-22-howto-styles-r1"
+service = "openai-images"
+purpose = "How-to card styles round 1 (prime-game#150): ten flat 2D directions on two Cooking frames each, for the engineer to compare on a private page."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 3.0
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-20"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6291187194"
+model = "gpt-image-2.5-sunburst"
+quality = "medium"
+
+[defaults]
+size = "1024x768"
+n = 2
+background = "opaque"
+
+[[items]]
+id = "s01-screenprint-fry"
+kind = "generate"
+prompt = "Three-colour screenprint illustration: only three flat ink colours (orange-red #E4572E, teal #2A9D8F, dark navy #2B2D42) on cream paper #F2E8D5, shapes slightly off-register, bold simple shapes, no outlines, overprint where inks overlap. Scene, one frame of a wordless how-to comic, 4:3: a small round-bodied cartoon alien with a big head stands at a small barbecue grill and flips a golden-brown round burger patty with a spatula at just the right moment. To the right, on a plate, a second patty is burnt black and gives off a curl of smoke; the alien glances at it, embarrassed. Empty plain background, nothing behind the scene. Flat 2D only: no gradients, no soft shading, no glow, no rim light, no bokeh, no 3D, no depth of field, no texture detail beyond the named print process, no text, letters, numbers or logos anywhere. Neutral white balance. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "s01-screenprint-plate"
+kind = "generate"
+prompt = "Three-colour screenprint illustration: only three flat ink colours (orange-red #E4572E, teal #2A9D8F, dark navy #2B2D42) on cream paper #F2E8D5, shapes slightly off-register, bold simple shapes, no outlines, overprint where inks overlap. Scene, one frame of a wordless how-to comic, 4:3: the same kind of small round-bodied cartoon alien with a big head puts the top bun on a burger on a round plate that has three dots on its rim as its mark; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the top bun, neatly stacked. Empty plain background, nothing behind the scene. Flat 2D only: no gradients, no soft shading, no glow, no rim light, no bokeh, no 3D, no depth of field, no texture detail beyond the named print process, no text, letters, numbers or logos anywhere. Neutral white balance. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "s02-sticker-fry"
+kind = "generate"
+prompt = "Flat vector cartoon with one thick uniform black outline of exactly the same weight on every object, solid fills from a four-colour palette (yellow #FFD23F, mint #6FF2B4, coral #FF6B6B, white), rounded simple shapes, no inner detail lines. Scene, one frame of a wordless how-to comic, 4:3: a small round-bodied cartoon alien with a big head stands at a small barbecue grill and flips a golden-brown round burger patty with a spatula at just the right moment. To the right, on a plate, a second patty is burnt black and gives off a curl of smoke; the alien glances at it, embarrassed. Empty plain background, nothing behind the scene. Flat 2D only: no gradients, no soft shading, no glow, no rim light, no bokeh, no 3D, no depth of field, no texture detail beyond the named print process, no text, letters, numbers or logos anywhere. Neutral white balance. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "s02-sticker-plate"
+kind = "generate"
+prompt = "Flat vector cartoon with one thick uniform black outline of exactly the same weight on every object, solid fills from a four-colour palette (yellow #FFD23F, mint #6FF2B4, coral #FF6B6B, white), rounded simple shapes, no inner detail lines. Scene, one frame of a wordless how-to comic, 4:3: the same kind of small round-bodied cartoon alien with a big head puts the top bun on a burger on a round plate that has three dots on its rim as its mark; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the top bun, neatly stacked. Empty plain background, nothing behind the scene. Flat 2D only: no gradients, no soft shading, no glow, no rim light, no bokeh, no 3D, no depth of field, no texture detail beyond the named print process, no text, letters, numbers or logos anywhere. Neutral white balance. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "s03-isotype-fry"
+kind = "generate"
+prompt = "Geometric pictogram in the manner of a public information sign system: figure and objects as solid flat silhouettes made of circles and rectangles, no outlines, no facial features, near-black #1D1D1F and off-white #F4F1EA with one mint accent #6FF2B4 on the object that matters. Scene, one frame of a wordless how-to comic, 4:3: a small round-bodied cartoon alien with a big head stands at a small barbecue grill and flips a golden-brown round burger patty with a spatula at just the right moment. To the right, on a plate, a second patty is burnt black and gives off a curl of smoke; the alien glances at it, embarrassed. Empty plain background, nothing behind the scene. Flat 2D only: no gradients, no soft shading, no glow, no rim light, no bokeh, no 3D, no depth of field, no texture detail beyond the named print process, no text, letters, numbers or logos anywhere. Neutral white balance. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "s03-isotype-plate"
+kind = "generate"
+prompt = "Geometric pictogram in the manner of a public information sign system: figure and objects as solid flat silhouettes made of circles and rectangles, no outlines, no facial features, near-black #1D1D1F and off-white #F4F1EA with one mint accent #6FF2B4 on the object that matters. Scene, one frame of a wordless how-to comic, 4:3: the same kind of small round-bodied cartoon alien with a big head puts the top bun on a burger on a round plate that has three dots on its rim as its mark; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the top bun, neatly stacked. Empty plain background, nothing behind the scene. Flat 2D only: no gradients, no soft shading, no glow, no rim light, no bokeh, no 3D, no depth of field, no texture detail beyond the named print process, no text, letters, numbers or logos anywhere. Neutral white balance. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "s04-lineart-fry"
+kind = "generate"
+prompt = "Assembly-instruction line drawing: one even-weight black line, white fills, no shading, no hatching, charming simple proportions; the only colour is solid mint green #6FF2B4 on the one object that matters in the step. Scene, one frame of a wordless how-to comic, 4:3: a small round-bodied cartoon alien with a big head stands at a small barbecue grill and flips a golden-brown round burger patty with a spatula at just the right moment. To the right, on a plate, a second patty is burnt black and gives off a curl of smoke; the alien glances at it, embarrassed. Empty plain background, nothing behind the scene. Flat 2D only: no gradients, no soft shading, no glow, no rim light, no bokeh, no 3D, no depth of field, no texture detail beyond the named print process, no text, letters, numbers or logos anywhere. Neutral white balance. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "s04-lineart-plate"
+kind = "generate"
+prompt = "Assembly-instruction line drawing: one even-weight black line, white fills, no shading, no hatching, charming simple proportions; the only colour is solid mint green #6FF2B4 on the one object that matters in the step. Scene, one frame of a wordless how-to comic, 4:3: the same kind of small round-bodied cartoon alien with a big head puts the top bun on a burger on a round plate that has three dots on its rim as its mark; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the top bun, neatly stacked. Empty plain background, nothing behind the scene. Flat 2D only: no gradients, no soft shading, no glow, no rim light, no bokeh, no 3D, no depth of field, no texture detail beyond the named print process, no text, letters, numbers or logos anywhere. Neutral white balance. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "s05-riso-fry"
+kind = "generate"
+prompt = "Two-colour risograph print: only fluorescent pink #FF5C8A and blue #2F5BEA ink on off-white paper #F4EFE6, overlaps make purple, fine visible grain, simple flat shapes, plates misaligned by a hair. Scene, one frame of a wordless how-to comic, 4:3: a small round-bodied cartoon alien with a big head stands at a small barbecue grill and flips a golden-brown round burger patty with a spatula at just the right moment. To the right, on a plate, a second patty is burnt black and gives off a curl of smoke; the alien glances at it, embarrassed. Empty plain background, nothing behind the scene. Flat 2D only: no gradients, no soft shading, no glow, no rim light, no bokeh, no 3D, no depth of field, no texture detail beyond the named print process, no text, letters, numbers or logos anywhere. Neutral white balance. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "s05-riso-plate"
+kind = "generate"
+prompt = "Two-colour risograph print: only fluorescent pink #FF5C8A and blue #2F5BEA ink on off-white paper #F4EFE6, overlaps make purple, fine visible grain, simple flat shapes, plates misaligned by a hair. Scene, one frame of a wordless how-to comic, 4:3: the same kind of small round-bodied cartoon alien with a big head puts the top bun on a burger on a round plate that has three dots on its rim as its mark; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the top bun, neatly stacked. Empty plain background, nothing behind the scene. Flat 2D only: no gradients, no soft shading, no glow, no rim light, no bokeh, no 3D, no depth of field, no texture detail beyond the named print process, no text, letters, numbers or logos anywhere. Neutral white balance. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "s06-cutpaper-fry"
+kind = "generate"
+prompt = "Cut-paper collage: figure and props made of flat coloured paper pieces with straight scissor-cut edges, no paper texture, no depth, one hard offset shadow, five flat colours (#E76F51, #2A9D8F, #264653, #E9C46A on #F6E7CB). Scene, one frame of a wordless how-to comic, 4:3: a small round-bodied cartoon alien with a big head stands at a small barbecue grill and flips a golden-brown round burger patty with a spatula at just the right moment. To the right, on a plate, a second patty is burnt black and gives off a curl of smoke; the alien glances at it, embarrassed. Empty plain background, nothing behind the scene. Flat 2D only: no gradients, no soft shading, no glow, no rim light, no bokeh, no 3D, no depth of field, no texture detail beyond the named print process, no text, letters, numbers or logos anywhere. Neutral white balance. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "s06-cutpaper-plate"
+kind = "generate"
+prompt = "Cut-paper collage: figure and props made of flat coloured paper pieces with straight scissor-cut edges, no paper texture, no depth, one hard offset shadow, five flat colours (#E76F51, #2A9D8F, #264653, #E9C46A on #F6E7CB). Scene, one frame of a wordless how-to comic, 4:3: the same kind of small round-bodied cartoon alien with a big head puts the top bun on a burger on a round plate that has three dots on its rim as its mark; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the top bun, neatly stacked. Empty plain background, nothing behind the scene. Flat 2D only: no gradients, no soft shading, no glow, no rim light, no bokeh, no 3D, no depth of field, no texture detail beyond the named print process, no text, letters, numbers or logos anywhere. Neutral white balance. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "s07-inked-fry"
+kind = "generate"
+prompt = "Old hand-inked animation cartoon look: bold black ink lines of slightly irregular weight, noodle limbs, round dot eyes, flat cream background #F3E9D2, one spot colour red #D62828, no grey shading, no sepia, no film grain. Scene, one frame of a wordless how-to comic, 4:3: a small round-bodied cartoon alien with a big head stands at a small barbecue grill and flips a golden-brown round burger patty with a spatula at just the right moment. To the right, on a plate, a second patty is burnt black and gives off a curl of smoke; the alien glances at it, embarrassed. Empty plain background, nothing behind the scene. Flat 2D only: no gradients, no soft shading, no glow, no rim light, no bokeh, no 3D, no depth of field, no texture detail beyond the named print process, no text, letters, numbers or logos anywhere. Neutral white balance. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "s07-inked-plate"
+kind = "generate"
+prompt = "Old hand-inked animation cartoon look: bold black ink lines of slightly irregular weight, noodle limbs, round dot eyes, flat cream background #F3E9D2, one spot colour red #D62828, no grey shading, no sepia, no film grain. Scene, one frame of a wordless how-to comic, 4:3: the same kind of small round-bodied cartoon alien with a big head puts the top bun on a burger on a round plate that has three dots on its rim as its mark; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the top bun, neatly stacked. Empty plain background, nothing behind the scene. Flat 2D only: no gradients, no soft shading, no glow, no rim light, no bokeh, no 3D, no depth of field, no texture detail beyond the named print process, no text, letters, numbers or logos anywhere. Neutral white balance. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "s08-crayon-fry"
+kind = "generate"
+prompt = "Picture-book wax crayon drawing: wobbly dark outlines, colour fill scribbled in directional strokes with white paper gaps showing, flat limited colours (#3D3D3D, #F4A261, #2A9D8F, #E76F51 on #FFF6E0), very simple shapes. Scene, one frame of a wordless how-to comic, 4:3: a small round-bodied cartoon alien with a big head stands at a small barbecue grill and flips a golden-brown round burger patty with a spatula at just the right moment. To the right, on a plate, a second patty is burnt black and gives off a curl of smoke; the alien glances at it, embarrassed. Empty plain background, nothing behind the scene. Flat 2D only: no gradients, no soft shading, no glow, no rim light, no bokeh, no 3D, no depth of field, no texture detail beyond the named print process, no text, letters, numbers or logos anywhere. Neutral white balance. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "s08-crayon-plate"
+kind = "generate"
+prompt = "Picture-book wax crayon drawing: wobbly dark outlines, colour fill scribbled in directional strokes with white paper gaps showing, flat limited colours (#3D3D3D, #F4A261, #2A9D8F, #E76F51 on #FFF6E0), very simple shapes. Scene, one frame of a wordless how-to comic, 4:3: the same kind of small round-bodied cartoon alien with a big head puts the top bun on a burger on a round plate that has three dots on its rim as its mark; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the top bun, neatly stacked. Empty plain background, nothing behind the scene. Flat 2D only: no gradients, no soft shading, no glow, no rim light, no bokeh, no 3D, no depth of field, no texture detail beyond the named print process, no text, letters, numbers or logos anywhere. Neutral white balance. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "s09-pixel-fry"
+kind = "generate"
+prompt = "Pixel art, a low-resolution sprite scene about 160 by 120 pixels scaled up, 16-colour palette built on deep violet #2A2540, mint #6FF2B4, yellow #F8E16C, orange-red #E4572E and white, hard square pixels, one-pixel dark outline, no anti-aliasing, no dithering, no smooth gradients. Scene, one frame of a wordless how-to comic, 4:3: a small round-bodied cartoon alien with a big head stands at a small barbecue grill and flips a golden-brown round burger patty with a spatula at just the right moment. To the right, on a plate, a second patty is burnt black and gives off a curl of smoke; the alien glances at it, embarrassed. Empty plain background, nothing behind the scene. Flat 2D only: no gradients, no soft shading, no glow, no rim light, no bokeh, no 3D, no depth of field, no texture detail beyond the named print process, no text, letters, numbers or logos anywhere. Neutral white balance. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "s09-pixel-plate"
+kind = "generate"
+prompt = "Pixel art, a low-resolution sprite scene about 160 by 120 pixels scaled up, 16-colour palette built on deep violet #2A2540, mint #6FF2B4, yellow #F8E16C, orange-red #E4572E and white, hard square pixels, one-pixel dark outline, no anti-aliasing, no dithering, no smooth gradients. Scene, one frame of a wordless how-to comic, 4:3: the same kind of small round-bodied cartoon alien with a big head puts the top bun on a burger on a round plate that has three dots on its rim as its mark; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the top bun, neatly stacked. Empty plain background, nothing behind the scene. Flat 2D only: no gradients, no soft shading, no glow, no rim light, no bokeh, no 3D, no depth of field, no texture detail beyond the named print process, no text, letters, numbers or logos anywhere. Neutral white balance. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "s10-linocut-fry"
+kind = "generate"
+prompt = "Linocut relief print: black ink shapes #17141F with sparse bold white gouge marks, one flat mint-green block #6FF2B4 shifted slightly behind the main object, cream paper #F2EBDD, no grey tones. Scene, one frame of a wordless how-to comic, 4:3: a small round-bodied cartoon alien with a big head stands at a small barbecue grill and flips a golden-brown round burger patty with a spatula at just the right moment. To the right, on a plate, a second patty is burnt black and gives off a curl of smoke; the alien glances at it, embarrassed. Empty plain background, nothing behind the scene. Flat 2D only: no gradients, no soft shading, no glow, no rim light, no bokeh, no 3D, no depth of field, no texture detail beyond the named print process, no text, letters, numbers or logos anywhere. Neutral white balance. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "s10-linocut-plate"
+kind = "generate"
+prompt = "Linocut relief print: black ink shapes #17141F with sparse bold white gouge marks, one flat mint-green block #6FF2B4 shifted slightly behind the main object, cream paper #F2EBDD, no grey tones. Scene, one frame of a wordless how-to comic, 4:3: the same kind of small round-bodied cartoon alien with a big head puts the top bun on a burger on a round plate that has three dots on its rim as its mark; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the top bun, neatly stacked. Empty plain background, nothing behind the scene. Flat 2D only: no gradients, no soft shading, no glow, no rim light, no bokeh, no 3D, no depth of field, no texture detail beyond the named print process, no text, letters, numbers or logos anywhere. Neutral white balance. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
