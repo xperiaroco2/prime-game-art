@@ -1724,6 +1724,40 @@ same axis here (equal rows). The field, envelope-wrap and local routes were dele
 (`[fist] route`, the default). `[grips.runfist]` has its own spec entry (`body_dims/hand_grips.toml`: limits and the
 thumb's sink, 7.5 mm at most) and `test_alien_grip_solve.py` pins it and its use by Jog, Sprint and Strafe.
 
+## The first-person hands (art #136)
+
+The hands a player sees in first person (xperiaroco2/prime-game#1587): concept A, "the hand as on the character",
+the engineer's pick of 2026-11-10. `tools/blender/fp_hands_run.py --tag <tag> [--asset assets/body/fp_hands]` builds,
+checks and shoots them; the numbers are in `tools/blender/fp_hands.toml`.
+
+- **The cut** (`fp_hands_build.py`, headless Blender): the alien's arms are cut out of a character build
+  (`[source] char`): the skin from 3.5 cm inside the sleeve's cuff to the fingertips, the striped sleeve from the
+  shoulder joint out, the run fist's morph `fist` kept. The arm bones stay with their names under a new root `View` at
+  the eye, beside a `Crystal` bone that carries the node `CrystalSocket`.
+- **The camera's space**: x right, y forward, z up, the eye at the origin; the GLB maps it to Godot's camera space, so
+  the root goes under the `Camera3D` with no offset. The arms keep the character's lengths (upper arm 24.9 cm, forearm
+  22.1 cm); only the shoulder joints sit lower and further forward than the body's (`[rig] shoulder_*`), the usual
+  first-person placement, and a pose may shift them (the hits drive the shoulder forward).
+- **Poses**: a hand is a wrist point `p`, the fingers' direction `f` and the back of the hand's normal `n`; the arm is a
+  two-bone solve toward `[rig] elbow_*`, the forearm takes `twist_share` of the hand's twist. The free poses were
+  measured off concept A's frames (where the cuff, the knuckles and the fist sit on the screen at the game's 75 degree
+  lens). The crystal pose places the crystal; each held hand is given where its palm touches it (`z`, `toward`, `r`,
+  `wrap`) and `fit_hold` seats it: the hand's roll about its length and the palm's distance chosen so the palm with
+  the thumb's mound sinks at most 0.5 mm into the crystal's surface (its glowing core excepted), the thumb's turn
+  searched, then each digit's curl scaled until it stops at most 1.5 mm in. The crystal clips move only the crystal;
+  the hands ride on it.
+- **Clips** (60 fps keys; Godot drops the `_Loop` suffix and loops them): `Idle_Loop` 3 s, `Run_Loop` one Jog cycle of
+  the character (0.917 s, two steps), `Crystal_Idle_Loop`, `Crystal_Run_Loop`, and the hits, 0.5 s each (one swing each
+  0.5 s, GDD "Melee: any item hits"): `Punch` (the fist morph keyed through it, the contact at 0.15 s) and
+  `Crystal_Hit` (a diagonal two-handed swing, cap first, the contact at 0.18 s). Each hit starts and ends in its idle.
+- **Checks** (the run's exit code): glTF-Validator; in Godot (a copy of the ship package v9 with the hands and the
+  energy crystal, `godot/fp_hands/shots.gd` in the off-screen window) the socket is a `BoneAttachment3D` within 2 mm
+  of Blender's place, every clip's length and loop mode, the fist morph at 1 at the punch's contact; in Blender no
+  wrist beyond the arm's reach and no held hand more than 3 mm inside or 4 mm off the crystal in any sampled frame.
+- **Shots**: each clip's frames from the hall at eye height, a key-frame sheet per clip, MP4s and `_reel.mp4` (idle,
+  two punches, the run, then the same with the crystal), and `light_<n>.png`: the held crystal's own light at 100, 40
+  and 15 % (crystal.gd's `omni_energy`).
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
