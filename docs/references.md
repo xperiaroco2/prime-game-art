@@ -15,14 +15,17 @@ an AI image. The decision: `docs/decisions/2026-11-12-reference-first.md`; the g
    tools/run.sh refs steam <appid> <appid> ... --board <name> [--movies 3] [--every 2]
    ```
 
-   This puts each game's official store screenshots, frames from its trailers (one every 2 s) and a `sheet.jpg` into
-   `<raw>/refs/<name>/<appid>/`, with `refs.toml`. Find a game's app id with
-   `https://store.steampowered.com/api/storesearch/?term=<name>&cc=us`. Run it in the background: Blender reads the
-   trailers.
+   This puts each game's official store screenshots, frames from its trailers (one every 2 s) and contact sheets
+   (`sheet_NN.jpg`, 24 tiles of 320 px, 1280 px wide) into `<raw>/refs/<name>/<appid>/`, with `refs.toml`.
+   `refs.toml` stands in for `sources/<id>.toml` for a private reference. It holds the store URL, `licence_url`, each
+   file's sha256, `public_repo_ok = false`, `ai_prompt_ok = false` and `ai_generated = false`.
+   - Find a game's app id with `https://store.steampowered.com/api/storesearch/?term=<name>&cc=us`.
+   - Run it in the background, with its log under `tools/out/`: Blender reads the trailers for minutes.
+   - A game's folder that already has files is refused; use a new board name, or `--overwrite`.
 3. **Add real-life references** where a game shows none: stock or anatomy references, or a photo the engineer
-   sends. Record each file's source in the board's `refs.toml`.
-4. **Pick per moment.** Look at every sheet, then pick 3 to 8 frames per moment that show it clearly and copy them
-   into `<raw>/refs/<name>/picks/<moment>/`.
+   sends. They go into `<raw>/refs/<name>/real/`, with a hand-written `real/refs.toml` holding a game's fields.
+4. **Pick per moment.** Look at every sheet, then pick 3 to 8 frames per moment that show it clearly. Copy them into
+   `<raw>/refs/<name>/picks/<moment>/` as `<appid or real>_<original name>`, so each leads back to its record.
 5. **Show the board.** One private artifact page: per moment, the frames side by side with a one-line note on what
    each does (for example "thumb along the index, tip at its middle joint"), the agent's pick first. Ask through
    AskUserQuestion. The engineer picks "like this one".

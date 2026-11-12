@@ -4,8 +4,9 @@
 - Status: accepted (the engineer, 2026-11-12, in chat with the session building the first-person hand, art #136:
   "it needs fixing somewhere ... so in future we do it right", then "I give my yes to all of it" for the
   pipeline proposed here; recorded on art #136).
-- Applies to all 3D work from now on: every asset, pose, grip, hold, animation, camera framing and view-model
-  moment, and to every track (characters, clothes, props, locations, hands). It comes before Gate 0 of the asset
+- Applies from now on to anything in the 3D work that shipped games or real life already show (an asset type, a
+  pose, grip, hold, animation, camera framing or view-model moment), on every track (characters, clothes, props,
+  locations, hands). It comes before Gate 0 of the asset
   gates (`2026-10-31-asset-pipeline-gates.md`) and does not replace them, the release-quality ADR or the trust model.
 
 ## Context
@@ -77,12 +78,14 @@ picks, never from numbers or an AI image. That covers:
    - They are never committed and never shipped.
    - They are never put in an AI prompt (the AI rules in `CLAUDE.md`).
    - We copy the idea (a pose, a grip, a framing), never the art: no meshes, textures or traced images.
-   - Store screenshots and trailers are the games' official media, so fetching them falls under the standing yes
-     for free downloads from official sources; other sources still need the engineer's yes.
+   - Store screenshots and trailers are the games' official media on their store pages. The engineer's yes of
+     2026-11-12 ("I give my yes to all of it", for this pipeline, whose proposal named Steam pages and trailers)
+     covers fetching them for private reference. Any other source still needs his yes, and he can narrow this one.
 
 ## Consequences
 
-- One reference page per moment comes before any build. The engineer's picks replace the rounds in which he
+- One reference page per moment comes before any build: a look earlier than the asset gates' three
+  (`2026-10-31-asset-pipeline-gates.md`, amended to say so). The engineer's picks replace the rounds in which he
   pointed out basics; a pick is one click, a round is a rebuild.
 - `refs` (`tools/run.py refs steam <appid>... --board <name>`) fetches a game's store screenshots and trailer frames
   into a board, with `refs.toml` and a contact sheet per game. It needs nothing new to install: Blender's own decoder

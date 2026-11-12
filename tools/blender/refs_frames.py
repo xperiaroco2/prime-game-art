@@ -1,7 +1,8 @@
 """Gate R's reference board inside headless Blender (tools/runner/commands/refs.py): frames from trailers every N
-seconds (the sequencer reads the MP4 with Blender's own decoder) and a contact sheet of the screenshots and frames.
+seconds (the sequencer reads the MP4 with Blender's own decoder) and contact sheets of the screenshots and frames,
+24 tiles of 320 px each (PREFIX_00.jpg, PREFIX_01.jpg, ...; 1280 px wide, as CLAUDE.md asks of agents' sheets).
 
-    blender -b --python refs_frames.py -- --out DIR --every S --sheet sheet.jpg --images a.jpg ... --videos v.mp4 ...
+    blender -b --python refs_frames.py -- --out DIR --every S --sheet PREFIX --images a.jpg ... --videos v.mp4 ...
 
 Prints one `REFS_FRAME {"path", "video", "t"}` line per frame written (DIR/<video stem>/t0012.0.jpg)."""
 
@@ -14,7 +15,8 @@ import bpy
 import numpy as np
 
 TILE = (320, 180)
-COLS = 6
+COLS = 4
+PER_SHEET = 24
 
 
 def frames(video: Path, out: Path, every: float) -> list[Path]:
@@ -29,8 +31,12 @@ def frames(video: Path, out: Path, every: float) -> list[Path]:
     sc.render.resolution_percentage = 100
     sc.render.image_settings.file_format = "JPEG"
     sc.render.image_settings.quality = 90
+    sc.view_settings.view_transform = "Standard"   # the video's own colours, as in the store's screenshots
+    sc.view_settings.look = "None"
     fps = st.fps or 30.0
     n = st.frame_final_duration
+    if n < 1 or el is None:
+        raise RuntimeError(f"Blender cannot read {video}: {n} frames")
     sc.frame_start, sc.frame_end = 1, n
     d = out / video.stem
     d.mkdir(parents=True, exist_ok=True)
@@ -65,19 +71,23 @@ def tile(path: Path) -> np.ndarray:
     return out
 
 
-def sheet(files: list[Path], path: Path) -> None:
-    if not files:
-        return
-    tiles = [tile(f) for f in files]
-    while len(tiles) % COLS:
-        tiles.append(np.full_like(tiles[0], 0.12))
-    rows = [np.concatenate(tiles[i:i + COLS], 1) for i in range(0, len(tiles), COLS)]
-    sh = np.concatenate(rows[::-1], 0)   # Blender's rows start at the bottom: the first file on top
-    img = bpy.data.images.new("sheet", sh.shape[1], sh.shape[0])
-    img.pixels = sh.ravel()
-    img.filepath_raw = str(path)
-    img.file_format = "JPEG"
-    img.save()
+def sheets(files: list[Path], prefix: str) -> list[Path]:
+    out = []
+    for k in range(0, len(files), PER_SHEET):
+        tiles = [tile(f) for f in files[k:k + PER_SHEET]]
+        while len(tiles) % COLS:
+            tiles.append(np.full_like(tiles[0], 0.12))
+        rows = [np.concatenate(tiles[i:i + COLS], 1) for i in range(0, len(tiles), COLS)]
+        sh = np.concatenate(rows[::-1], 0)   # Blender's rows start at the bottom: the first file on top
+        path = Path(f"{prefix}_{k // PER_SHEET:02d}.jpg")
+        img = bpy.data.images.new("sheet", sh.shape[1], sh.shape[0])
+        img.pixels = sh.ravel()
+        img.filepath_raw = str(path)
+        img.file_format = "JPEG"
+        img.save()
+        bpy.data.images.remove(img)
+        out.append(path)
+    return out
 
 
 def main(argv) -> None:
@@ -92,8 +102,8 @@ def main(argv) -> None:
     files = [Path(p) for p in a.images]
     for v in a.videos:
         files += frames(Path(v), out, a.every)
-    sheet(files, Path(a.sheet))
-    print(f"REFS_SHEET {a.sheet} {len(files)}", flush=True)
+    for path in sheets(files, a.sheet):
+        print(f"REFS_SHEET {path}", flush=True)
 
 
 if __name__ == "__main__":

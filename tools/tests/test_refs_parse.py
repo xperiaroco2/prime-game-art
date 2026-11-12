@@ -41,6 +41,9 @@ class RefsParse(unittest.TestCase):
         self.assertEqual(segs, ["dash_h264/chunk-stream1-00001.m4s", "dash_h264/chunk-stream1-00002.m4s"])
         with self.assertRaises(common.Failure):
             refs.parse_media("#EXTM3U\n#EXT-X-ENDLIST\n")
+        for tag in ("#EXT-X-BYTERANGE:1000@0", '#EXT-X-KEY:METHOD=AES-128,URI="k"'):   # not read: refused
+            with self.assertRaises(common.Failure):
+                refs.parse_media(MEDIA.replace("#EXTINF:3\ndash_h264/chunk-stream1-00002", f"{tag}\n#EXTINF:3\nx", 1))
 
     def test_join_keeps_the_stamp(self):
         base = "https://v.example/t/1/hls_264_master.m3u8?t=17"
@@ -65,6 +68,8 @@ class RefsParse(unittest.TestCase):
         self.assertEqual(t["name"], 'A "game"')
         self.assertFalse(t["public_repo_ok"])
         self.assertFalse(t["ai_prompt_ok"])
+        self.assertFalse(t["ai_generated"])
+        self.assertEqual(t["licence_url"], "https://store.steampowered.com/app/2780980/")
         self.assertEqual([f["kind"] for f in t["file"]], ["screenshot", "frame"])
         self.assertEqual(t["file"][1]["t"], 2.0)
 
