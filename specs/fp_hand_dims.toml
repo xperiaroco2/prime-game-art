@@ -160,3 +160,24 @@ texture_px = 2048          # the base colour and the normal map, shared by both 
 [behaviour]
 bends = ["fingers: base, middle and last joint", "thumb: root, middle and last joint", "wrist: up to 20 deg"]
 stays = ["palm: one soft piece", "forearm: smooth, its twist spread along it"]
+
+# Gate R, reference first (docs/decisions/2026-11-12-reference-first.md, docs/references.md): the engineer's picks per
+# moment on the board <raw>/refs/fp-hands/ (2026-11-12, art#136 c6822743654). The pictures stay private; this card
+# says in words what the build copies. Percentages are of the frame, across from the left and down from the top.
+[reference]
+board = "refs/fp-hands"
+[reference.picks]
+crystal_hold = ["picks/crystal_hold/2780980_ss_05.jpg", "2780980/ss_01.jpg"]
+rest = "real/ (the engineer's own photo from the eye; to come)"
+punch = "real/ (the engineer's windup and contact photos from the eye; to come)"
+[reference.card]
+crystal_hold = """The item held low in the middle with both hands from its sides, like a box being carried: the item \
+fills about a third of the frame's width (35 to 68 %), its top at about 60 to 75 % down, its lower part cut off by the \
+frame's bottom. The two hands sit at the same height on the item's left and right flanks, mirrored, the palms flat \
+on the sides, the backs of the hands toward the eye and outward, the fingers pointing forward and wrapping round the \
+item's far corners, the thumbs up along the near faces. The forearms come in from the bottom corners, each a straight \
+line through its wrist into the hand (no bent or twisted wrist, nothing crossed). No hand covers the item's top: for \
+the crystal, the cap and its loop stay in view above the hands."""
+rest = """The engineer's photo: the hand relaxed, the fingers softly curled, the thumb along the index's side and \
+below it, nearly parallel, its tip forward at about the index's middle joint, a small gap between them."""
+punch = """The engineer's photos from the eye: the windup and the contact (to come)."""
