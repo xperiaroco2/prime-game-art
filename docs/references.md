@@ -49,7 +49,14 @@ from official sources. Any other source needs the engineer's yes.
 ## Boards
 | Board | For | Games | State |
 |---|---|---|---|
-| `fp-hands` | the first-person hands' moments (art #136) | Lockdown Protocol and others with hands in view | being collected (2026-11-12) |
+| `fp-hands` | the first-person hands' moments (art #136) | Lockdown Protocol (2780980), PEAK (3527290), Lethal Company (1966720), Content Warning (2881650), Schedule I (3164500), Half-Life: Alyx (546560), Dying Light 2 (534380), Supermarket Simulator (2670630), Mirror's Edge Catalyst (1233570) | picked 2026-11-12: the crystal with two hands from its sides (LP's big box, `picks/crystal_hold/2780980_ss_05.jpg`); a hit with an item from LP's knife (`picks/item_hit/`); rest as the engineer's photo (thumb along the index); the punch from his own photos from the eye (to come) |
+
+What the first board taught:
+- **Store trailers are mostly cinematic.** Of nine games, only Lockdown Protocol's gameplay trailer and a few
+  screenshots (Dying Light 2, Half-Life: Alyx) show first-person hands clearly.
+- **A moment the store media lacks** (the empty hand at rest, the punch) is best covered by real photos from the
+  eye: the engineer's own, kept with the board.
+- **Lockdown Protocol shows no hands when they are empty**: a hand appears only while it holds something.
 
 ## The basics
 Each line is something a reference shows and a build must not miss. A mistake the engineer had to point out goes
