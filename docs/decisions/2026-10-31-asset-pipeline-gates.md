@@ -78,7 +78,9 @@ Which tool for what:
 ## Consequences
 
 - The engineer looks three times per asset (Gate 0's design, Gate 1's spec, Gate 2's shape and motion) before his
-  final look at Gate 5; no texture or polish reaches him before the shape moves right.
+  final look at Gate 5; no texture or polish reaches him before the shape moves right. Amended 2026-11-12: for
+  anything shipped games or real life already show, his pick on the reference board (Gate R,
+  `2026-11-12-reference-first.md`) comes before Gate 0.
 - Work on a garment waits for its body to be frozen: for her dungarees, the body comes first (the Walk hop, the hand
   and wrist, the finger poses), the dungarees' spec and drawing in parallel, then the build on the frozen body.
 - Briefs get longer by one line (the spec and its tolerances) and shorter by the history they no longer paste; the

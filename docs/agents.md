@@ -100,6 +100,11 @@ The manager writes every brief for an asset's step under the gates of
   the next brief changes the route (regenerate, or build the part in code) instead of a third fix.
 - **Critics get the spec and the concept**, never an intermediate image as the target; they judge the build against
   them, with the numbers table beside it.
+- **Reference first (2026-11-12).** A brief for anything shipped games or real life already show (a pose, grip, hold,
+  hands, motion, prop type, material, framing) cites the board and the picked reference with its card (the spec's
+  `[reference]`; `docs/decisions/2026-11-12-reference-first.md`) and the domain's basics in `docs/references.md`.
+  No such brief goes out before the engineer has picked. The critic gets the picked reference and answers "what
+  differs from the reference?" first, beside our frame at a matching camera.
 
 ## Checking a workflow script (#56)
 `workflow-check <script.js>...` refuses a script, one line per refusal (`<file>:<line>: <reason>`), when:

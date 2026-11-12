@@ -12,6 +12,7 @@ below; where they differ, this section wins:
 
 | Gate | What | Where it sits in the steps below | Who says yes |
 |---|---|---|---|
+| R | The reference board (since 2026-11-12, `docs/decisions/2026-11-12-reference-first.md`): per moment 3 to 8 references from shipped games (`refs`) and real life, the agent's pick first; the picked one becomes the spec's `[reference]` card | before everything, for anything shipped games or real life already show (poses, grips, holds, hands, motion, prop types, materials, framing) | the engineer picks per moment |
 | 0 | The concept on the frozen body (gpt-image onto renders of the final body, flat light; a check that the body stayed hers) | before step 1, through its own image batch (`approval_ref`, `cost_cap_usd`); the body and skeleton are frozen first | the engineer, once |
 | 1 | The spec and its drawing: `<asset>_dims.toml`, drawn over the concept and the body | before step 2 (generation) or a code build | the engineer, once |
 | 2 | A rough build in motion: plain material, skinned, the game's clips and look; silhouette overlay, spec numbers, slip, flatness, stretch, pokes; a front close-up Walk and Jog video | after steps 3 to 7 (import, check, rig, weights): a rough export run through `frames` early, outside the step numbering; before step 8 | the engineer: shape and motion |
@@ -19,7 +20,12 @@ below; where they differ, this section wins:
 | 4 | The defect hunt: close-ups, a fresh critic given the spec and the concept, the numbers table; every sheet and video viewed | after steps 10 and 11 | its checks |
 | 5 | His look, then the PR | step 12 | the engineer |
 
-Which tool makes what: gpt-image the concepts and their translation onto the body, never measurements; Meshy the soft
+Gates 2 and 4 judge the build beside the picked reference at a matching camera, and the critic answers "what differs
+from the reference?" first; checks that pass (no tears, overlap, `problems []`) do not mean it looks right. The basics
+per domain and the boards made so far: `docs/references.md`.
+
+Which tool makes what: gpt-image the concepts and their translation onto the body, never measurements nor a pose,
+hold or motion target; Meshy the soft
 organic forms (trouser folds, soft props) or a retexture of our mesh, always on the final body; code the flat,
 structural, measured parts (bibs, straps, bands, cuffs, shoes, props from drawings). A garment is made per body, never
 refitted from another. Two steps on one kind of defect mean a change of route. The manager's brief rules are in
