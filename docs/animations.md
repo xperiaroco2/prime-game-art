@@ -1737,6 +1737,17 @@ are in `tools/blender/fp_hands.toml`, the fitted key poses in `tools/blender/fp_
 - **Target frames first**: one approved picture per key moment from the eye (batch 2026-11-11-fp-hand-frames, edits
   of concept A's frames: `idle`, `punch`, `hold`, `crystal_hit`; `[view] targets`). The 3D is fitted to them, and a
   rebuilt look is judged beside them before anything is shown.
+- **Since 2026-11-12, the reference first** (Gate R, `docs/decisions/2026-11-12-reference-first.md`): a moment that
+  shipped games or real life already show is copied from the engineer's pick on the board `<raw>/refs/fp-hands/`, its
+  card in `specs/fp_hand_dims.toml` `[reference]`; an AI frame is no longer a pose target. The crystal hold is the
+  first: an item carried with two hands from its sides (the pick, a box in a shipped game), `[poses.crystal]` set by
+  hand in `fp_hands.toml` and no longer fitted (its entry left `fp_hands_fit.json`, which keeps the fitted `idle`,
+  `fist_out` and `crystal_hit` until their own picks replace them). The pose was picked from variant grids rendered
+  from the eye beside the reference (`hold*` under `2026-11-11-fp-hands/`). With the palm on a side of the item, the
+  thumb is up, so the wrist's `bend` swaps its meaning: its second value (toward the thumb) is the vertical one
+  (`-15` on the right, `15` on the left: the forearm rises toward the wrist), its first (toward the back of the hand)
+  the horizontal one (`20`: the hand cocked back, so the forearm comes in diagonally from the frame's bottom corner,
+  as in the reference; `-20` swung both forearms inward across the eye).
 - **The fit** (`fp_hands_fit.py --raw <raw> --out <dir> --write`, headless Blender): each target's arm is what differs
   from the empty hall it was made over (`[view] background`); of it the bright cyan is the crystal, the teal the skin,
   the rest the sleeve. A pose is searched (a pattern search, about 300 renders) so its silhouette from the hands'

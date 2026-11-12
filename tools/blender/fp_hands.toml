@@ -56,7 +56,8 @@ crystal_scale = 1.3   # the held crystal drawn this much bigger in first person 
 bend_max_deg = 20.0   # the most a wrist bends from the forearm's line, up or sideways (a straight, unbroken wrist)
 # the target frame per key pose (batch 2026-11-11-fp-hand-frames, the engineer's direction of 2026-11-11), which
 # fp_hands_fit.py fits the pose to by silhouette
-targets = { idle = "2026-11-11-fp-hand-frames/idle/image-0.png", fist_out = "2026-11-11-fp-hand-frames/punch/image-0.png", crystal = "2026-11-11-fp-hand-frames/hold/image-0.png", crystal_hit = "2026-11-11-fp-hand-frames/crystal_hit/image-0.png" }
+# (the hold, 2026-11-11-fp-hand-frames/hold, is no target since 2026-11-12: [poses.crystal] copies the reference)
+targets = { idle = "2026-11-11-fp-hand-frames/idle/image-0.png", fist_out = "2026-11-11-fp-hand-frames/punch/image-0.png", crystal_hit = "2026-11-11-fp-hand-frames/crystal_hit/image-0.png" }
 # the empty hall the concept frames were made over (the ship package v9's night render), for the arm's silhouette:
 # what differs from it
 background = "2026-11-08-fp-hand-concepts/_refs/ship_hall.png"
@@ -106,18 +107,21 @@ grip_R = "rest"
 R = { p = [0.11, 0.24, -0.06], f = [-0.05, 1.0, 0.45], n = [0.3, -0.45, 1.0] }
 grip_R = "fist"
 
-[poses.crystal]   # the crystal held low in the middle with both hands: concept A's crystal frame measured (its tip at
-                  # 47 % across and 91 % down, its loop's top at 54 % and 35 %). The hands in the crystal's own space
+[poses.crystal]   # Gate R (specs/fp_hand_dims.toml [reference.card] crystal_hold; the engineer's pick 2026-11-12, an
+                  # item carried with two hands from its sides): the crystal upright in the middle, low (the hands cut by
+                  # the frame's bottom, as in the reference), tilted 15 degrees away from the eye so the cap and its
+                  # loop read; both hands on its flanks at one height (15 cm up the crystal, just under the skirt),
+                  # the backs of the hands turned up toward the eye, mirrored, the fingers round its back, the thumbs up
+                  # along the near faces; the forearms come in diagonally from the frame's bottom corners (the critic's
+                  # note on t20: the reference shows its forearm): the wrist bent 15 degrees toward the little finger
+                  # (with the palm on a side, the thumb is up: the forearm rises) and cocked 20 toward its back (the
+                  # forearm comes from outside). Picked from the grids
+                  # 2026-11-11-fp-hands/hold1..hold7 beside the reference. The hands in the crystal's own space
                   # (origin the tip, z up its length, -y its front, which faces the eye), each from where its palm
-                  # touches (Poses.on_crystal) and then seated by fit_hold. Both hands hold it as one holds a torch
-                  # with two hands: the right palm on the cap's right side (the hand's width spans the skirt, the
-                  # rim and the band), the left palm on the body's left side low down, the fingers round the back,
-                  # the thumbs up along the crystal
-crystal = { p = [-0.01, 0.37, -0.235], up = [0.08, 0.15, 1.0], front = [0.0, -1.0, 0.0] }
-R_c = { z = 0.237, toward = [1.0, -0.1, 0.0], r = 0.07, wrap = [0.0, 1.0, 0.1] }
-L_c = { z = 0.10, toward = [-1.0, -0.2, 0.0], r = 0.055, wrap = [0.1, 1.0, 0.15] }
-shoulder_R = [-0.02, 0.06, 0.10]   # the arms reach up for the crystal: the shoulder joints rise with it
-shoulder_L = [0.02, 0.06, 0.06]
+                  # touches (Poses.on_crystal) and then seated by fit_hold. Was a torch hold fitted to an AI frame
+crystal = { p = [0.0, 0.4095, -0.4458], up = [0.0, 0.2588, 0.9659], front = [0.0, -1.0, 0.0] }
+R_c = { z = 0.15, toward = [1.0, 0.0, 0.5], r = 0.054, wrap = [0.0, 1.0, 0.3], bend = [20.0, -15.0] }
+L_c = { z = 0.15, toward = [-1.0, 0.0, 0.5], r = 0.054, wrap = [0.0, 1.0, 0.3], bend = [20.0, 15.0] }
 grip_R = "cap"
 grip_L = "cap"
 
