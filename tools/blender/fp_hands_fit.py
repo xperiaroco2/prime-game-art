@@ -465,6 +465,9 @@ def main(argv) -> None:
     arm, body, top, sock, _, _ = B.cut(cfg, raw)
     rig = B.Rig(arm, cfg)
     poses = B.Poses(cfg, grips)
+    fitted_old = json.loads(B.FITTED.read_text(encoding="utf-8")) if B.FITTED.exists() else {}
+    for side, roll in fitted_old.get("hold_roll", {}).items():  # the seated hold's roll, as the build starts from it
+        poses.fit[side]["roll"] = float(roll)
     B.pose_now(rig, poses.state("crystal"))
     crystal_objs, crystal_meshes = B.load_crystal(raw / cfg["source"]["crystal"], sock)
     bpy.context.view_layer.update()
@@ -480,18 +483,22 @@ def main(argv) -> None:
             shown[name] = info.pop("render")
             report[name] = info
     if "crystal" in only or "crystal_hit" in only:
-        cr = fit_crystal_frame(sc, poses, wants["crystal"], a.evals, ("crystal",))
-        poses.cfg["poses"]["crystal"]["crystal"] = cr
-        for side in B.SIDES:
-            fit_held_hand(sc, poses, side, wants["crystal"], a.evals, bend)
         solid = B.Solid(crystal_meshes, sock)
-        report["hold_fit"] = B.fit_hold(rig, poses, body, solid, roll_span=15)
-        s = poses.state("crystal")
-        got = sc.render(s, True)
-        shown["crystal"] = got
-        pc = poses.cfg["poses"]["crystal"]
-        fitted["crystal"] = {"crystal": pc["crystal"], "R_c": pc["R_c"], "L_c": pc["L_c"]}
-        report["crystal"] = {"overlap": score(got, wants["crystal"], PARTS)[1]}
+        if "crystal" in wants:  # the hold fitted to its target frame (no target since 2026-11-12: Gate R's pick)
+            cr = fit_crystal_frame(sc, poses, wants["crystal"], a.evals, ("crystal",))
+            poses.cfg["poses"]["crystal"]["crystal"] = cr
+            for side in B.SIDES:
+                fit_held_hand(sc, poses, side, wants["crystal"], a.evals, bend)
+            report["hold_fit"] = B.fit_hold(rig, poses, body, solid, roll_span=15)
+            s = poses.state("crystal")
+            got = sc.render(s, True)
+            shown["crystal"] = got
+            pc = poses.cfg["poses"]["crystal"]
+            fitted["crystal"] = {"crystal": pc["crystal"], "R_c": pc["R_c"], "L_c": pc["L_c"]}
+            report["crystal"] = {"overlap": score(got, wants["crystal"], PARTS)[1]}
+        else:  # the hold is fp_hands.toml's own: only seated, as the build seats it
+            report["hold_fit"] = B.fit_hold(rig, poses, body, solid,
+                                            roll_span=15 if "hold_roll" in fitted_old else None)
         if "crystal_hit" in only:
             # the hit: the hold swung across the view (a turn about the view's axis, at most HIT_ACROSS_DEG
             # about the others), fitted on the crystal: the grips stay as held
