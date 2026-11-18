@@ -349,7 +349,8 @@ class Hand:
             e1 = e1 / (np.linalg.norm(e1) + 1e-9)
             e2 = np.cross(c["t"], e1)
             phi = np.arctan2(radial @ e2, radial @ e1)
-            shift = bow * np.clip(facing, 0.0, 1.0) ** 2 + wob * (np.sin(2.2 * phi + ph) + 0.4 * np.sin(4.7 * phi + 2.3 * ph))
+            shift = bow * np.clip(facing, 0.0, 1.0) ** 2
+            shift = shift + wob * (np.sin(2.2 * phi + ph) + 0.4 * np.sin(4.7 * phi + 2.3 * ph))
             g = np.exp(-((ax - shift) / (0.5 * width * c["w"])) ** 2) * np.clip((facing - c["face"]) / 0.35, 0.0, 1.0)
             g *= 0.8 + 0.2 * np.sin(3.0 * phi + 3.1 * ph)
             g *= np.exp(-np.maximum(rn - c["r"] * 1.15, 0.0) / 2.0)
