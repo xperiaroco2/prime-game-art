@@ -408,7 +408,7 @@ def cut(cfg: dict, raw: Path) -> tuple:
             run_seconds = round((act.frame_range[1] - act.frame_range[0]) / fps, 4)
     arm = next(o for o in bpy.data.objects if o.type == "ARMATURE")
     body = next(o for o in bpy.data.objects if o.type == "MESH" and o.data.shape_keys and "fist" in o.data.shape_keys.key_blocks)
-    top = bpy.data.objects["top"]
+    top = bpy.data.objects.get("top")   # the striped top: none on a build from the rig seed (fp_hand_model.py)
     if not src.get("sleeve", True) and "body_removed" in bpy.data.objects:
         # the bare arm: the skin the build took off under the clothes (body_removed, skinned to the same rig with the
         # same materials) joined back onto the body, the seam welded
@@ -430,16 +430,20 @@ def cut(cfg: dict, raw: Path) -> tuple:
             bpy.data.objects.remove(o, do_unlink=True)
     for a in list(bpy.data.actions):
         bpy.data.actions.remove(a)
-    for o in (arm, body, top):
+    for o in [x for x in (arm, body, top) if x is not None]:
         if o.animation_data:
             o.animation_data_clear()
     arm.matrix_world = Matrix.Identity(4)
     bpy.context.view_layer.update()  # the meshes' world matrices follow their armature parent before they are read
-    to_arm = {o.name: o.matrix_world.copy() for o in (body, top)}
-    tv = [to_arm["top"] @ v.co for v in top.data.vertices]
-    cuff = {s: max(abs(p.x) for p in tv if (p.x < 0) == (s == "Right")) for s in SIDES}
-    skin_from = {s: cuff[s] - float(src["skin_inside_cuff_m"]) for s in SIDES}
-    stats = {"cuff_m": {s: round(cuff[s], 4) for s in SIDES}}
+    to_arm = {o.name: o.matrix_world.copy() for o in (body, top) if o is not None}
+    stats = {}
+    if top is not None:
+        tv = [to_arm[top.name] @ v.co for v in top.data.vertices]
+        cuff = {s: max(abs(p.x) for p in tv if (p.x < 0) == (s == "Right")) for s in SIDES}
+        skin_from = {s: cuff[s] - float(src["skin_inside_cuff_m"]) for s in SIDES}
+        stats["cuff_m"] = {s: round(cuff[s], 4) for s in SIDES}
+    elif src.get("sleeve", True):
+        raise SystemExit("fp_hands.toml [source] sleeve = true needs the character's striped top, and the source has none")
     # the sleeve from a little above the elbow: a viewmodel shows no upper arm
     elbow = {sd: abs((arm.matrix_world @ arm.data.bones[f"{sd}LowerArm"].head_local).x) for sd in SIDES}
     sleeve_from = {sd: elbow[sd] - float(src["sleeve_above_elbow_m"]) for sd in SIDES}
@@ -447,7 +451,7 @@ def cut(cfg: dict, raw: Path) -> tuple:
     bare = not src.get("sleeve", True)
     if bare:  # the bare arm (the engineer, 2026-11-11): the skin from above the elbow, no garment; a sleeve comes later
         skin_from = sleeve_from   # from the worn outfit's own mesh
-    for o, edge in ((body, skin_from), (top, sleeve_from)):
+    for o, edge in [(o, e) for o, e in ((body, skin_from), (top, sleeve_from)) if o is not None]:
         bm = bmesh.new()
         bm.from_mesh(o.data)
         M = to_arm[o.name]
@@ -458,15 +462,18 @@ def cut(cfg: dict, raw: Path) -> tuple:
         bm.to_mesh(o.data)
         bm.free()
         stats[o.name] = {"verts_before": before, "verts": len(o.data.vertices), "tris": sum(len(p.vertices) - 2 for p in o.data.polygons)}
-    eye = (arm.data.bones["LeftEye"].head_local + arm.data.bones["RightEye"].head_local) / 2
+    if "View" in arm.data.bones:   # a rig from the seed has its View bone at the eye already
+        eye = arm.data.bones["View"].head_local.copy()
+    else:
+        eye = (arm.data.bones["LeftEye"].head_local + arm.data.bones["RightEye"].head_local) / 2
     eye.x = 0.0
     bpy.context.view_layer.objects.active = arm
     bpy.ops.object.mode_set(mode="EDIT")
     eb = arm.data.edit_bones
     keep = arm_bones([b.name for b in eb])
-    view = eb.new("View")
+    view = eb.get("View") or eb.new("View")
     view.head, view.tail = eye, eye + Vector((0, -0.1, 0))
-    crystal = eb.new("Crystal")
+    crystal = eb.get("Crystal") or eb.new("Crystal")
     crystal.head, crystal.tail, crystal.parent = eye, eye + Vector((0, 0, 0.1)), view
     for b in list(eb):
         if b.name not in keep:

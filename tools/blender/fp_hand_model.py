@@ -14,9 +14,10 @@ a finger pose of the rig plus the morph `fist`, the fist's own surface (FistFiel
 bones, each finger its own round surface, knuckle heads and valleys over the back, the palm wrapped round the curled
 fingers), onto which the skinned vertices are carried group by group (corrective).
 
-Writes <out>/fp_hand_char.blend: the character build (spec [hand] character) with its body meshes replaced by the two
-first-person arms (one mesh with the morph; the left the right's mirror, its UVs shared) and its hand and finger bones
-moved to the model's joints (same names; Little kept, unweighted), the striped top kept for fp_hands_build.py's cut;
+Writes <out>/fp_hand_char.blend: the rig (spec [hand] rig_seed, the character's arm rig as data: fp_rig_seed.py) with
+the two first-person arms (one mesh with the morph; the left the right's mirror, its UVs shared) and its hand and
+finger bones moved to the model's joints (same names; Little kept, unweighted), for fp_hands_build.py's cut; the skin
+colour is the spec's [skin] base_srgb (the character's, measured before its build was lost);
 <out>/textures/; <out>/model.json (counts, the spec's sizes measured, the fist's fit); --renders: <out>/renders/, the
 concept's four views rendered at its scale beside it (compare.png) with the silhouette overlap per view.
 """
@@ -40,6 +41,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(HERE))
 import alien_pose_math as PM  # noqa: E402
+import fp_rig_seed  # noqa: E402
 
 SPEC = ROOT / "specs" / "fp_hand_dims.toml"
 SIDES = ("Right", "Left")
@@ -502,43 +504,6 @@ def weights(hand: Hand, v):
 
 
 # --------------------------------------------------------------------------------------- skin and baking
-def char_skin(body, arm) -> list:
-    """The character's hand albedo (sRGB median under its right hand's vertices), from its skin texture."""
-    groups = {g.index: g.name for g in body.vertex_groups}
-    hand = set()
-    for v in body.data.vertices:
-        if v.groups:
-            g = max(v.groups, key=lambda x: x.weight)
-            n = groups[g.group]
-            if n.startswith("Right") and (n == "RightHand" or any(n.startswith("Right" + f) for f in PM.FINGERS)):
-                hand.add(v.index)
-    me = body.data
-    uv = me.uv_layers.active.data
-    samples = {}
-    for poly in me.polygons:
-        mat = me.materials[poly.material_index]
-        if mat is None or not mat.use_nodes:
-            continue
-        img = next((n.image for n in mat.node_tree.nodes if n.type == "TEX_IMAGE" and n.image and
-                    n.image.colorspace_settings.name == "sRGB"), None)
-        if img is None:
-            continue
-        for li in poly.loop_indices:
-            if me.loops[li].vertex_index in hand:
-                samples.setdefault(img.name, []).append(tuple(uv[li].uv))
-    if not samples:
-        return [0.36, 0.62, 0.60]
-    name = max(samples, key=lambda k: len(samples[k]))
-    img = bpy.data.images[name]
-    w, h = img.size
-    px = np.array(img.pixels[:], np.float32).reshape(h, w, img.channels)
-    uvs = np.array(samples[name])
-    x = np.clip((uvs[:, 0] % 1.0) * w, 0, w - 1).astype(int)
-    y = np.clip((uvs[:, 1] % 1.0) * h, 0, h - 1).astype(int)
-    rgb = px[y, x, :3]
-    return [round(float(c), 4) for c in np.median(rgb, 0)]
-
-
 def srgb_to_lin(c):
     c = np.asarray(c, float)
     return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
@@ -1456,14 +1421,15 @@ def main(argv) -> None:
     spec = tomllib.loads(SPEC.read_text(encoding="utf-8"))
     hand = Hand(spec)
     stats = {"spec": str(SPEC.relative_to(ROOT)).replace("\\", "/")}
-    bpy.ops.wm.open_mainfile(filepath=str(raw / spec["hand"]["character"]))
-    arm = next(o for o in bpy.data.objects if o.type == "ARMATURE")
-    body = bpy.data.objects["axolotl_char"]
-    base = char_skin(body, arm)
+    # the rig from its seed (the character build it came from is gone since 2026-11-18, art#136), into an empty file
+    for o in list(bpy.data.objects):
+        bpy.data.objects.remove(o, do_unlink=True)
+    seed_path = ROOT / spec["hand"]["rig_seed"]
+    seed = fp_rig_seed.load(seed_path)
+    arm = fp_rig_seed.build(seed)
+    stats["rig_seed"] = {"file": spec["hand"]["rig_seed"], "source": seed["source"], "source_sha256": seed["sha256"]}
+    base = [float(c) for c in spec["skin"]["base_srgb"]]
     stats["skin_base_srgb"] = base
-    for name in ("axolotl_char", "body_removed", "garment", "shoes"):
-        if name in bpy.data.objects:
-            bpy.data.objects.remove(bpy.data.objects[name], do_unlink=True)
     sp = Space(arm)
     log("rig read")
     # the low mesh
