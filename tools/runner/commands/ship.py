@@ -501,7 +501,7 @@ def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "
                 # light layer: the whole ship from straight above (the top view crops the stern and the pods), at night
                 # and by day; shots show the nav lamps' static glow (nav_blink off; on in game)
                 "top_full": {**TOP_FULL, "centre": _g(TOP_FULL["centre"])}, "nav_blink": False,
-                "compare": [["top", layout["plan_ref"]], *compares], "rooms": room_boxes(layout)})
+                "compare": [["top", common.resolve_ref(layout["plan_ref"])], *compares], "rooms": room_boxes(layout)})
     if prefixes:
         for key in ("top", "top_full", "day_views"):
             req.pop(key)
