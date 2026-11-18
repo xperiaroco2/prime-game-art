@@ -43,8 +43,9 @@ def build(seed: dict, name: str = "FPRig"):
     data = bpy.data.armatures.new(name)
     arm = bpy.data.objects.new(name, data)
     bpy.context.scene.collection.objects.link(arm)
-    for o in bpy.context.view_layer.objects:
-        o.select_set(False)
+    for o in bpy.context.scene.objects:
+        if o is not arm:
+            o.select_set(False)
     bpy.context.view_layer.objects.active = arm
     arm.select_set(True)
     bpy.ops.object.mode_set(mode="EDIT")

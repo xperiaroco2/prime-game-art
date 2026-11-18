@@ -16,7 +16,8 @@
 # tools/blender/fp_rig_seed.json (read from the committed hands asset t4): the character build m25 was made from was
 # lost with D: (art#136); was m25, before it the H1u character itself
 char = "2026-11-18-fp-hand-model/m26/fp_hand_char.blend"
-crystal = "energy-crystal/lit1/energy_crystal.glb"   # assets/prop/energy_crystal's GLB (the raw copy, same hash)
+crystal = "assets/prop/energy_crystal/export/energy_crystal.glb"   # the committed energy crystal (a repo path; was its
+                                                                  # raw copy energy-crystal/lit1, same hash)
 skin_inside_cuff_m = 0.035   # the skin is kept from this far inside the sleeve's cuff out to the fingertips
 sleeve = false               # the bare arm first (the engineer, 2026-11-11): the skin from above the elbow, no
                              # garment; each outfit's own sleeve is laid on later

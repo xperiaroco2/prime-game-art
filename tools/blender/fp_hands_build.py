@@ -1,7 +1,7 @@
 """The first-person hands (art#136, xperiaroco2/prime-game#1587, concept A): runs inside headless Blender.
 
     blender -b --factory-startup --python-exit-code 1 --python tools/blender/fp_hands_build.py -- \
-        --raw D:/prime-art-raw --out <dir> [--preview]
+        --raw <raw> --out <dir> [--preview]
 
 Cuts the alien's forearms and hands with the striped sleeve out of the character build (fp_hands.toml [source]),
 keeps the arm bones under one root `View` at the eye plus a `Crystal` bone with the `CrystalSocket` node (where the
@@ -483,7 +483,7 @@ def cut(cfg: dict, raw: Path) -> tuple:
     view.use_deform = crystal.use_deform = False
     bpy.ops.object.mode_set(mode="OBJECT")
     names = {b.name for b in arm.data.bones}
-    if bare:
+    if bare and top is not None:
         bpy.data.objects.remove(top, do_unlink=True)
         top = None
     for o in [x for x in (body, top) if x is not None]:
@@ -780,7 +780,7 @@ def main(argv) -> None:
     for side, roll in fitted.get("hold_roll", {}).items():
         poses.fit[side]["roll"] = float(roll)
     pose_now(rig, poses.state("crystal"))
-    crystal_objs, crystal_meshes = load_crystal(raw / cfg["source"]["crystal"], sock)
+    crystal_objs, crystal_meshes = load_crystal(HERE.parents[1] / cfg["source"]["crystal"], sock)
     bpy.context.view_layer.update()
     solid = Solid(crystal_meshes, sock)
     stats["solid_skips"] = solid.skipped

@@ -1,7 +1,7 @@
 """The detailed first-person hand (art#136, xperiaroco2/prime-game#1587, concept A): runs inside headless Blender.
 
     blender -b --factory-startup --python-exit-code 1 --python tools/blender/fp_hand_model.py -- \
-        --raw D:/prime-art-raw --out <dir> [--low-mm 3.0] [--high-mm 0.7] [--tex 2048] [--no-bake] [--renders]
+        --raw <raw> --out <dir> [--low-mm 3.0] [--high-mm 0.7] [--tex 2048] [--no-bake] [--renders]
 
 Builds the hand of specs/fp_hand_dims.toml as a signed distance field: round cones and ellipsoids per bone (forearm,
 palm, three fingers, thumb), the palm's parts blended soft, each finger webbed onto the palm and its joints blended,
