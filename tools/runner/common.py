@@ -116,7 +116,26 @@ def godot_bin() -> Path:
 
 
 def raw_dir() -> Path:
-    return Path(env(pins.RAW_ENV) or pins.RAW_DEFAULT)
+    """The raw root: ART_RAW_DIR, else prime-art-raw beside the main checkout."""
+    return Path(env(pins.RAW_ENV) or pins.beside_checkout(pins.RAW_DIRNAME))
+
+
+def design_dir() -> Path:
+    """The design repository's checkout: ART_DESIGN_DIR, else prime-game-design beside the main checkout."""
+    return Path(env(pins.DESIGN_ENV) or pins.beside_checkout(pins.DESIGN_DIRNAME))
+
+
+# A reference kept as text in a data file starts with <raw>/ or <design>/; the old absolute roots on D: (gone since
+# 2026-11-18) map the same way, so an older layout or review file still resolves.
+REF_ROOTS = {"<raw>/": raw_dir, "D:/prime-art-raw/": raw_dir, "<design>/": design_dir, "D:/prime-game-design/": design_dir}
+
+
+def resolve_ref(text: str) -> str:
+    """A data file's reference path with its root token (or old D: root) replaced by this machine's folder."""
+    for prefix, root in REF_ROOTS.items():
+        if text.startswith(prefix):
+            return (root() / text[len(prefix):]).as_posix()
+    return text
 
 
 def raw_backup_dir() -> Path | None:

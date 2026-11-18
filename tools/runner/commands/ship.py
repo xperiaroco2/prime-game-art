@@ -330,7 +330,7 @@ def shot_views(layout: dict) -> tuple[list, list]:
     inner = {v[0]: v for v in layout["shots"]["views"] if v[0].startswith("in_")}
     mine = {k: (inner[k][:5] + list(v[5:]) if k in inner else v) for k, v in mine.items()}
     views = list(mine.values()) + [v for v in layout["shots"]["views"] if v[0] not in mine]
-    compares = [[v[0], f"{ext['ref_dir'].rstrip('/')}/{v[5]}"] for v in mine.values() if len(v) > 5]
+    compares = [[v[0], common.resolve_ref(f"{ext['ref_dir'].rstrip('/')}/{v[5]}")] for v in mine.values() if len(v) > 5]
     return [v[:5] for v in views], compares
 
 
@@ -481,7 +481,7 @@ def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "
         # lens C step 2: a row whose 6th element is a string names a reference image (an absolute path) to compare
         # the shot with side by side (an A/B dict there stays the night look's switch)
         # (the gills, 2026-10-28: a dict's "ref" does the same beside its pose)
-        compares = [[v[0], v[5] if isinstance(v[5], str) else v[5]["ref"]] for v in views
+        compares = [[v[0], common.resolve_ref(v[5] if isinstance(v[5], str) else v[5]["ref"])] for v in views
                     if len(v) > 5 and (isinstance(v[5], str) or (isinstance(v[5], dict) and "ref" in v[5]))]
         views = [v[:5] if len(v) > 5 and isinstance(v[5], str) else v for v in views]
         layout = {**layout, "shots": {**layout["shots"], "day_views": []}}
@@ -857,7 +857,7 @@ def gill_anim(layout: dict, out: Path, folder: Path, demo: str = "slit") -> int:
 GILL_SET = {"concept": {"s": 2.85, "t": 1.25, "back": 2.4, "along": 0.0, "up": 0.0, "fov": 58.0},
             "close": {"s": 2.69, "t": 1.35, "back": 1.5, "along": 0.35, "up": 0.2, "fov": 55.0},
             "both": {"eye": (0.3, 1.6), "look": (4.0, 1.3), "fov": 75.0},   # step 7: as mouth_both (dy, h)
-            "ref": "D:/prime-game-design/ideas/ship-components/slits-lamps/set_plate.jpg",
+            "ref": "<design>/ideas/ship-components/slits-lamps/set_plate.jpg",
             "fps": 30, "size": (1280, 720), "max_mb": 15}
 MID = ([1, 2, 3], 4)
 GILL_VIEWS = [  # name, (s, t, back, along, up) eye, (s, t) look, fov, (open, at)
@@ -951,7 +951,7 @@ def gill_set(layout: dict, out: Path, folder: Path, grid: bool = False, only: li
         cams, views = [], [v for v in views if v[0] in only]
     req, staged = built_request(layout, out)
     req.update({"mode": "gill_set", "watchdog_s": VIDEO_TIMEOUT - 60, "nav_blink": False,
-                "anim": {"cams": cams, "views": views, "fps": a["fps"], "ref": a["ref"],
+                "anim": {"cams": cams, "views": views, "fps": a["fps"], "ref": common.resolve_ref(a["ref"]),
                          **({"grid": GILL_GRID} if grid else {}), **({} if only is not None else {"sheet": GILL_SHEET})},
                 "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
                 "rooms": room_boxes(layout)})

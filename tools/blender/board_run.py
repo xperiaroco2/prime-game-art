@@ -39,7 +39,7 @@ import board_drawing  # noqa: E402  (beside this file)
 RAW = common.raw_dir()
 BASE = RAW / "ship" / "v4" / "board"
 REF = BASE / "ref"
-DESIGN = Path("D:/prime-game-design/ideas/ship-components/stations-final")
+DESIGN = common.design_dir() / "ideas" / "ship-components" / "stations-final"
 DESIGN_COMMIT = "6b0e83e"
 REFS = {"v3-shell-final.jpg": "board-variants/v3-shell-final.jpg", "front-ortho.jpg": "board-drawing/front-ortho.jpg",
         "side-ortho.jpg": "board-drawing/side-ortho.jpg", "drawing.js": "board-drawing/drawing.js"}
