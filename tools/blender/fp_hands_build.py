@@ -627,6 +627,33 @@ def contact(body, solid: "Solid", side: str, only: tuple | None = None) -> tuple
     return round(deep * 1000, 1), round(gap * 1000, 1)
 
 
+def hold_report(poses: Poses, body, solid: "Solid", base: str = "crystal") -> dict:
+    """How a hold reads, per side, in the posed rig: `palm_touch` the share of the palm's points (PALM) within 4 mm of
+    the crystal's surface; `wrist_z_mm` the wrist's height in the camera's space (both hands at one height);
+    `back_to_eye` the cosine between the back of the hand's normal and the way to the eye (the backs up toward it);
+    in the crystal's space (y away from the eye, z up its length, mm, its first-person scale) the fingertips' mean
+    `tips_y` (above 0: round its back) and the thumb tip's `thumb_y` and `thumb_z` (on a near face, up)."""
+    inv = solid.sock.matrix_world.inverted()
+    k = CRYSTAL_SCALE[0]
+    s = poses.state(base)
+    out = {}
+    for side in SIDES:
+        near = [p for p in (inv @ q for q in hand_points(body, side, PALM))]
+        touch = 0
+        for p in near:
+            loc, nrm, _, dist = solid.tree.find_nearest(p)
+            touch += loc is not None and dist <= 0.004
+        tips = [inv @ q for q in hand_points(body, side, ("IndexDistal", "MiddleDistal", "RingDistal"))]
+        thumb = [inv @ q for q in hand_points(body, side, ("ThumbDistal",))]
+        n = s.q[side].to_matrix().col[2]
+        palm = s.p[side] + s.q[side].to_matrix().col[1] * float(poses.cfg["rig"]["reach_m"])
+        mean = lambda pts, i: round(sum(p[i] for p in pts) / max(len(pts), 1) * 1000 * k, 1)
+        out[side] = {"palm_touch": round(touch / max(len(near), 1), 3), "wrist_z_mm": round(s.p[side].z * 1000, 1),
+                     "back_to_eye": round(n.dot(-palm.normalized()), 3), "back_up": round(n.z, 3), "tips_y": mean(tips, 1),
+                     "thumb_y": mean(thumb, 1), "thumb_z": mean(thumb, 2)}
+    return out
+
+
 def pose_now(rig: Rig, s: State) -> None:
     for b, m in rig.solve(s).items():
         loc, q, _ = m.decompose()
@@ -635,7 +662,8 @@ def pose_now(rig: Rig, s: State) -> None:
     bpy.context.view_layer.update()
 
 
-def fit_hold(rig: Rig, poses: Poses, body, solid: Solid, base: str = "crystal", roll_span: float | None = None) -> dict:
+def fit_hold(rig: Rig, poses: Poses, body, solid: Solid, base: str = "crystal", roll_span: float | None = None,
+             seat: tuple = PALM) -> dict:
     """Seats each held hand on the crystal in the pose `base`: the palm moves out along the back of the hand from
     `r` until it is no more than FIT_PALM_MM inside the crystal's surface, then each digit curls (its grip's curls
     scaled) as far as it goes with at most FIT_DIGIT_MM inside: the fingers close round the crystal and stop on it."""
@@ -651,7 +679,7 @@ def fit_hold(rig: Rig, poses: Poses, body, solid: Solid, base: str = "crystal", 
             for k in range(0, 61):
                 fit["dr"] = -0.010 + 0.0015 * k
                 pose_now(rig, poses.state(base))
-                if contact(body, solid, side, PALM)[0] <= FIT_PALM_MM:
+                if contact(body, solid, side, seat)[0] <= FIT_PALM_MM:
                     break
             if seat is None or fit["dr"] < seat[0] - 1e-9:
                 seat = (fit["dr"], float(roll))
@@ -690,7 +718,59 @@ def fit_hold(rig: Rig, poses: Poses, body, solid: Solid, base: str = "crystal", 
         out[side] = {"palm_shift_mm": round(fit["dr"] * 1000, 1), "roll_deg": fit["roll"], "thumb_turn": fit["turn"],
                      "curl_scale": {f: round(v, 2) for f, v in fit["scale"].items()},
                      "deepest_mm": deep, "gap_mm": gap, "digits_mm": gaps}
+    pose_now(rig, poses.state(base))
+    for side, r in hold_report(poses, body, solid, base).items():
+        out[side]["reads"] = r
     return out
+
+
+def hold_grid(out: Path, rig: Rig, poses: Poses, body, solid: "Solid", crystal_objs, variants: list,
+              roll_span) -> None:
+    """--hold-grid: each variant's hold (keys over [poses.crystal] R_c, mirrored onto L_c: `toward` and `wrap` with x
+    negated, `bend`'s second value negated; `roll` a start roll; `grip` the grip of both), seated by fit_hold, its
+    numbers into grid/grid.json and a Workbench render from the eye into grid/<name>.png, and grid/sheet.png."""
+    base = dict(poses.cfg["poses"]["crystal"])
+    (out / "grid").mkdir(parents=True, exist_ok=True)
+    sc = bpy.context.scene
+    sc.render.engine = "BLENDER_WORKBENCH"
+    sc.display.shading.light = "STUDIO"
+    sc.display.shading.color_type = "TEXTURE"
+    sc.display.shading.show_cavity = True
+    sc.render.resolution_x, sc.render.resolution_y = 640, 360
+    cam_data = bpy.data.cameras.new("eye")
+    cam_data.sensor_fit = "VERTICAL"
+    cam_data.angle_y = math.radians(float(VIEW_FOV[0]))
+    cam_data.clip_start = 0.02
+    cam = bpy.data.objects.new("eye", cam_data)
+    sc.collection.objects.link(cam)
+    cam.rotation_euler = (math.radians(90), 0, 0)
+    sc.camera = cam
+    res, files = {}, []
+    for v in variants:
+        pose = dict(base)
+        r = dict(base["R_c"])
+        r.update({k: x for k, x in v.items() if k in ("z", "toward", "r", "wrap", "bend")})
+        l = dict(r)
+        l["toward"] = [-r["toward"][0], *r["toward"][1:]]
+        l["wrap"] = [-r["wrap"][0], *r["wrap"][1:]]
+        if "bend" in r:
+            l["bend"] = [r["bend"][0], -r["bend"][1]]
+        pose["R_c"], pose["L_c"] = r, l
+        if "grip" in v:
+            pose["grip_R"] = pose["grip_L"] = v["grip"]
+        poses.cfg["poses"]["grid"] = pose
+        for side in SIDES:
+            poses.fit[side]["roll"] = float(v.get("roll", 30.0)) * (1 if side == "Right" else -1)
+        fit = fit_hold(rig, poses, body, solid, base="grid", roll_span=v.get("roll_span", roll_span),
+                       seat=tuple(v.get("seat", PALM)))
+        res[v["name"]] = {"variant": v, "fit": fit}
+        sc.render.filepath = str(out / "grid" / f"{v['name']}.png")
+        bpy.ops.render.render(write_still=True)
+        files.append(out / "grid" / f"{v['name']}.png")
+        print("FP_GRID " + json.dumps({v["name"]: {sd: {**f["reads"], "roll": f["roll_deg"], "dr_mm": f["palm_shift_mm"],
+                                                         "deep": f["deepest_mm"]} for sd, f in fit.items()}}), flush=True)
+        (out / "grid" / "grid.json").write_text(json.dumps(res, indent=1), encoding="utf-8")   # after each: a long grid
+    sheet(out / "grid" / "sheet.png", files, cols=3, w=640, h=360)
 
 
 # ------------------------------------------------------------------------------------------ preview
@@ -754,6 +834,7 @@ def main(argv) -> None:
     ap.add_argument("--raw")
     ap.add_argument("--out")
     ap.add_argument("--preview", action="store_true")
+    ap.add_argument("--hold-grid", default="", help="a JSON list of hold variants: grid/ and stop (hold_grid)")
     ap.add_argument("--sheets", help="only compose key-frame sheets: a JSON {sheet path: [frame PNGs]}")
     a = ap.parse_args(argv)
     if a.sheets:
@@ -784,6 +865,10 @@ def main(argv) -> None:
     bpy.context.view_layer.update()
     solid = Solid(crystal_meshes, sock)
     stats["solid_skips"] = solid.skipped
+    if a.hold_grid:
+        hold_grid(out, rig, poses, body, solid, crystal_objs, json.loads(Path(a.hold_grid).read_text(encoding="utf-8")),
+                  15 if "hold_roll" in fitted else None)
+        return
     stats["hold_fit"] = fit_hold(rig, poses, body, solid, roll_span=15 if "hold_roll" in fitted else None)
     clips, plans, report = {}, {}, {}
     for name, spec in cfg["clips"].items():
