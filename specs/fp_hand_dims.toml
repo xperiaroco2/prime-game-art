@@ -146,7 +146,7 @@ rough_mm = 1.0
 move_cap_mm = 60.0
 knuckle = { r = [0.9, 1.0, 1.0], up = 12.0, along = 0.0 }   # m26 [0.9, 0.95, 0.85] up 5: the back's top was the wrist
 # the ring finger pushed out sideways in the fist (mm along v, after the pose; FistField): the folded fingers press each
-# other apart. m27's narrower palm (the ring's knuckle_v) took the fist to 150 mm wide; the concept's fist is 156 across
+# other apart. m27's narrower palm (the ring's knuckle_v) took the fist to 145 mm wide; the concept's fist is 156 across
 # its knuckles against an open palm of 131 (grid g27f)
 spread_mm = { ring = -6.0 }
 # the valleys between the knuckles over the back of the fist (a groove per pair of neighbours, `back` mm toward the
