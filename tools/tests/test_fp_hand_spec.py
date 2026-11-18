@@ -74,9 +74,6 @@ class FpHandSpecTest(unittest.TestCase):
             self.assertEqual(k.get("grip_R"), "fist", "the morph `fist` is the corrective of [grips.fist] alone")
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class FpRigSeedTest(unittest.TestCase):
     """The rig seed (tools/blender/fp_rig_seed.json, art#136): the arm rig the detailed hand is built on, read from
@@ -112,3 +109,7 @@ class FpRigSeedTest(unittest.TestCase):
         self.assertEqual(len(SPEC["skin"]["base_srgb"]), 3)
         self.assertTrue(all(0.0 <= c <= 1.0 for c in SPEC["skin"]["base_srgb"]))
         self.assertTrue((common.ROOT / FP["source"]["crystal"]).is_file(), FP["source"]["crystal"])
+
+
+if __name__ == "__main__":
+    unittest.main()
