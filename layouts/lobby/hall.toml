@@ -1,5 +1,5 @@
 # The lobby hall (art #356, docs/lobby.md): the numbers of the approved drawing
-# (D:/prime-game-design/ideas/lobby-station/hall/drawing/drawing.js, its `H` object and rows table; concepts
+# (<design>/ideas/lobby-station/hall/drawing/drawing.js, its `H` object and rows table; concepts
 # a_entrance.jpg and c_back.jpg) and the engineer's ship placement (art#356 comment 6522500716).
 # The frame is the game's levels/lobby/lobby.tscn: x east, z south, y up, the floor at y 0; every position below is in
 # it, in metres (Godot's own frame, no conversion). tools/runner/lobby_layout.py loads and checks this file; the
@@ -207,8 +207,8 @@ background = [0.02, 0.035, 0.11]   # the placeholder behind the window before st
 # the north wall's foot west of the nose, 6 m further back. C from the window's bulge at about 5 m, about 60 deg
 # across. The concepts drew the ship 4.5 m further south (step 5a).
 views = [
-  ["a_entrance", "A: from the entrance, as concept A", [-5.0, 1.7, -29.3], [0.0, 3.0, -12.0], 52.0, "D:/prime-game-design/ideas/lobby-station/hall/drawing/a_entrance.jpg"],
-  ["c_back", "C: from the window, as concept C", [0.0, 5.0, 14.0], [0.0, 2.6, -24.0], 37.0, "D:/prime-game-design/ideas/lobby-station/hall/drawing/c_back.jpg"],
+  ["a_entrance", "A: from the entrance, as concept A", [-5.0, 1.7, -29.3], [0.0, 3.0, -12.0], 52.0, "<design>/ideas/lobby-station/hall/drawing/a_entrance.jpg"],
+  ["c_back", "C: from the window, as concept C", [0.0, 5.0, 14.0], [0.0, 2.6, -24.0], 37.0, "<design>/ideas/lobby-station/hall/drawing/c_back.jpg"],
   ["corner_nw", "the whole hall from the north-west corner, eye height", [-18.5, 1.7, -28.5], [4.0, 3.5, 2.0], 75.0, ""],
   ["spawn_eye", "a spawn's eye (x 0, z 2.5) toward the window, as the spawns face", [0.0, 1.65, 2.5], [0.0, 4.0, 18.5], 75.0, ""],
   ["spawn_ship", "a spawn's eye (x -1, z 2.5) toward the ship", [-1.0, 1.65, 2.5], [0.0, 2.6, -10.5], 75.0, ""],

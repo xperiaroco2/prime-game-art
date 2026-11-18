@@ -13,7 +13,7 @@
 - profile: the lips' forward stand-off (px) beyond the line from the skin's front 4 px above the lips to 4 px below;
   divide by W of a front cell of the same camera.
 
-mp1's rest (D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mp1/, the 1536 x 1024 sheet's top-left panel): the box
+mp1's rest (<raw>/2026-10-20-alien-face-sheets-2/mp1/, the 1536 x 1024 sheet's top-left panel): the box
 180 200 360 320 in `face` mode gives W 92 px, upper / W 0.30, lower / W 0.30, corner 0.27, tip 0.47, W 3.8 nostril
 spacings, W / face 0.58.
 """

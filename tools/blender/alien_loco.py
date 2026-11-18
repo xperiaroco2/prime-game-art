@@ -6,9 +6,9 @@ character with export_glb.py's fixed options (textured, the build's morph-free e
 treadmill reels of one character (godot/alien/treadmill_reels.gd in the runner's off-screen window, MP4s with
 Blender's FFmpeg).
 
-    $PYTHON_BIN tools/blender/alien_loco.py --raw D:/prime-art-raw [--chars chameleon,axolotl]   # the GLBs
-    $PYTHON_BIN tools/blender/alien_loco.py --raw D:/prime-art-raw --reels [--only NAME,...] [--char NAME]  # reels
-    $PYTHON_BIN tools/blender/alien_loco.py --raw D:/prime-art-raw --build r2c/build --out loco/t1  # T1: new bodies
+    $PYTHON_BIN tools/blender/alien_loco.py --raw <raw> [--chars chameleon,axolotl]   # the GLBs
+    $PYTHON_BIN tools/blender/alien_loco.py --raw <raw> --reels [--only NAME,...] [--char NAME]  # reels
+    $PYTHON_BIN tools/blender/alien_loco.py --raw <raw> --build r2c/build --out loco/t1  # T1: new bodies
 
 Into <raw>/<raw_base>/<out>/build/<char>/: <char>_char.blend, <char>_char.glb, its validator report, loco.json (per
 clip the edits' reports, the numbers before and after, the rates at the game's speeds), the build's support files

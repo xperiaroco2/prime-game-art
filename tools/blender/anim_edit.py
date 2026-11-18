@@ -1083,7 +1083,7 @@ def op_lean(fr: Frames, p: dict, target: Target):
 
 
 # ------------------------------------------------------------------------------------- the relaxed idle (art #49)
-# Ported from the lab's round D (D:/prime-art-raw/research/2026-10-05-faces/lab/clay_d/clay_idle.py, README_idle.txt;
+# Ported from the lab's round D (<raw>/research/2026-10-05-faces/lab/clay_d/clay_idle.py, README_idle.txt;
 # docs/animations.md, "The relaxed idle"). Every op adds a constant to the clip's own pose on every frame, so the
 # breathing, the sway and the talk's nods keep their motion. Positions and axes are world (front -Y, left +X, up +Z):
 # the set's clips face -Y.

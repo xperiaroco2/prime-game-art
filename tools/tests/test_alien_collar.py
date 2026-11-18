@@ -11,6 +11,8 @@ import struct
 import unittest
 from pathlib import Path
 
+from runner import common
+
 ROOT = Path(__file__).resolve().parents[2]
 BLENDER = ROOT / "tools" / "blender"
 spec = importlib.util.spec_from_file_location("alien_lids_geom", BLENDER / "alien_lids_geom.py")
@@ -18,7 +20,7 @@ LG = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(LG)
 C = LG.COLLAR
 RD, RD_REF = 0.036, 0.045
-KIT_GLB = Path("D:/prime-art-raw/review/char/alien-parts-kit/M11/export/alien_character.glb")
+KIT_GLB = common.raw_dir() / Path("review/char/alien-parts-kit/M11/export/alien_character.glb")
 
 
 def read_glb(path: Path) -> tuple[dict, bytes]:

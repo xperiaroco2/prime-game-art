@@ -42,14 +42,14 @@ import charger_drawing  # noqa: E402  (beside this file)
 RAW = common.raw_dir()
 BASE = RAW / "ship" / "v4" / "charger"
 REF = BASE / "ref-legs"  # the legs pick's references (ref/ keeps the first drawing's: raw files are not overwritten)
-DESIGN = Path("D:/prime-game-design/ideas/ship-components/stations-final")
+DESIGN = common.design_dir() / "ideas" / "ship-components" / "stations-final"
 REFS = {"charger-legs.jpg": DESIGN / "charger-legs.jpg", "drawing.js": DESIGN / "charger-drawing" / "drawing.js",
         "drawing.html": DESIGN / "charger-drawing" / "drawing.html",
         "front-ortho.jpg": DESIGN / "charger-drawing" / "front-ortho.jpg",
         "top-ortho.jpg": DESIGN / "charger-drawing" / "top-ortho.jpg"}
 # lens room C (art#263, 2026-10-28): the pedestal in the wall's alcove, from the lens room's drawing and concept
 REF_LENS = BASE / "ref-lens"
-DESIGN_LENS = Path("D:/prime-game-design/ideas/ship-components/lens-room")
+DESIGN_LENS = common.design_dir() / "ideas" / "ship-components" / "lens-room"
 REFS_LENS = {"c_lounge.jpg": DESIGN_LENS / "c_lounge.jpg", "drawing.js": DESIGN_LENS / "drawing" / "drawing.js"}
 # antennas-1 (art#263, 2026-10-28): the engineer's pick for the four prongs, concept b_fins (the stack of plates), an
 # OpenAI image edit of the lens3 render (batches/2026-10-28-ship-charger-antennas.toml), already in the raw folder

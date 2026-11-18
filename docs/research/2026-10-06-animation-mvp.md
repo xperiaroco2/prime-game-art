@@ -140,7 +140,7 @@ Times are in seconds; "w" means the women only. The last column holds what is le
 | 29 | Face | none | | | none | procedural |
 | 30-34 | Gestures | none | | | none | after the MVP |
 | 35 | First-person arms | none | | | none | the game side |
-| new (art #70) | Crouch: idle and walk | `Crouch_Idle_Loop` (Crouch_Idle), `Crouch_Fwd_Loop` (Crouch_Fwd) | UAL Crouch_Idle_Loop, Crouch_Fwd_Loop | both: the relaxed idle's open hands and thumb; idle: w: arms swung forward 20 deg (hands 2.1 cm in the thighs to 0); walk: stride to 0.75 m/s at its 1.5 steps/s (scale 0.996 / 0.94), floor lift (1.4 cm), arms swung back 35 deg, w: out 12 deg (hands 7.6 / 6.4 cm in the thighs to 0 / 0; art #69's grid) | the engineer's review (D:/prime-art-raw/review/anim/70) | the game has no crouch yet: it plays the walk at its speed / 0.75; the walk's hips face 6.7 deg right of the aim |
+| new (art #70) | Crouch: idle and walk | `Crouch_Idle_Loop` (Crouch_Idle), `Crouch_Fwd_Loop` (Crouch_Fwd) | UAL Crouch_Idle_Loop, Crouch_Fwd_Loop | both: the relaxed idle's open hands and thumb; idle: w: arms swung forward 20 deg (hands 2.1 cm in the thighs to 0); walk: stride to 0.75 m/s at its 1.5 steps/s (scale 0.996 / 0.94), floor lift (1.4 cm), arms swung back 35 deg, w: out 12 deg (hands 7.6 / 6.4 cm in the thighs to 0 / 0; art #69's grid) | the engineer's review (<raw>/review/anim/70) | the game has no crouch yet: it plays the walk at its speed / 0.75; the walk's hips face 6.7 deg right of the aim |
 
 Review only: `Jog_Bwd_TTM_Loop` (Meshy's backward jog stride-warped to 4.5 m/s): **fail**, its legs split (scale 7.1
 men, 6.6 women; IK misses of 487 and 734 mm on contact).

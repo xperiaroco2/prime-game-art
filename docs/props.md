@@ -188,7 +188,7 @@ The House map (request #73) needs props where the five task chains happen (desig
 `inventory.md` §7) and a few room-defining pieces no pack has. Art #82 builds them as repo code in the House kit's
 way (`docs/kit.md`): a spec (`props/tasks.toml`), a pure-Python geometry module (`tools/blender/props_task.py`), a
 headless Blender builder (`props_task_build.py`, which reuses the kit's `kit_build.py` for objects, materials and the
-export) and the `props` command. The GLBs stay in the raw folder (`D:/prime-art-raw/props/task/v3/`: v2 with #82's
+export) and the `props` command. The GLBs stay in the raw folder (`<raw>/props/task/v3/`: v2 with #82's
 19 task-chain props rebuilt over it; v2 is v1 with #153's dining table rebuilt over it) until the
 engineer approves the look; then they come into the repo with their manifests.
 
@@ -289,7 +289,7 @@ Every value is the engineer's to change (sizes, paints, mounts), as data:
 Art #81b adds the chill zone's and the photo gazebo's props as a second spec beside `tasks.toml`, built by the same
 command: `tools/run.sh props --spec props/zones.toml [--review DIR]`. Their builders are in
 `tools/blender/props_zone.py` (registered into `props_task.BUILDERS`); the spec's `out_dir = "zones"` sends the GLBs
-to `D:/prime-art-raw/props/zones/v1/`, and its `label` heads the line-up sheet `lineup_zones.png`.
+to `<raw>/props/zones/v1/`, and its `label` heads the line-up sheet `lineup_zones.png`.
 
 - Props: `deckchair`, `fire_pit`, `bean_bag`, `cooler_box`, `photo_backdrop`, `tripod_camera`, `lantern`, and two
   string-light sets: `string_lights_set` (a 5 m strand between two weighted poles, for open ground) and
@@ -311,8 +311,8 @@ to `D:/prime-art-raw/props/zones/v1/`, and its `label` heads the line-up sheet `
 Art #87 (map request #73) makes one shared library of generic props (furniture, dressing, light fixtures, outdoor
 things) so that every room package places furniture instead of making it. Task props (#82a, #82b), the car and its
 lift (#79), vegetation (#80), the gazebo (#81b) and kit pieces are made elsewhere; `[skip]` in the mapping file names
-who makes each. The plan is `D:/prime-art-raw/research/2026-10-10-house-plan/` (`props.md`, `inventory.md` §9,
-`look.md` §5 and §6). The GLBs stay in the raw folder (`D:/prime-art-raw/props/library/v14/`: v13 with
+who makes each. The plan is `<raw>/research/2026-10-10-house-plan/` (`props.md`, `inventory.md` §9,
+`look.md` §5 and §6). The GLBs stay in the raw folder (`<raw>/props/library/v14/`: v13 with
 #79's garage; v13 v12 with
 #172's plant rooms and the darkroom's island; v12 v11 with
 #170's basement working rooms; v11 v10 with #168's attic; v10 v9 with #166's kids' room and study; v9 v8 with #164's bedroom and guest room; v8 v7 with #162's rebuilt landing runner; v7 v6 with #162's landing and bathroom built over it; v6 v5 with #158's WC, pantry and stairs; v5 v4 with #156's hallway; v4 v3 with #153's dining room; v3 is v2 with #152's
@@ -368,7 +368,7 @@ clutter of art #104 and its story pieces: `laundry_basket`, `drying_rack`, `open
 
 `tools/run.sh props-library --build [--batch 1|2] [--only id,...]` builds the props in one headless Blender run
 (`tools/blender/prop_build.py`) into the mapping file's `out`,
-`D:/prime-art-raw/props/library/v14/`: one `<id>.glb` per prop, `textures/`
+`<raw>/props/library/v14/`: one `<id>.glb` per prop, `textures/`
 (the kit's detail maps), `build.json` (what each GLB holds; batches accumulate) and `props.md` (the build table); then
 it checks every GLB: the mesh and collider nodes, UV2 and vertex colours, at most `max_materials` materials all named
 `-vcol`, glTF-Validator, the class's maximum triangles, a collider unless `none`, a fixture's light anchor. Under the

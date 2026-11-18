@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import sys
 import tomllib
 from pathlib import Path
@@ -1073,12 +1074,19 @@ def label(sc, text, w, h, path):
     return out
 
 
+def _root(env_name: str, dirname: str) -> Path:
+    """ART_RAW_DIR / ART_DESIGN_DIR, else the folder beside the main checkout (tools/runner/pins.py)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from runner import pins
+    return Path(os.environ.get(getattr(pins, env_name)) or pins.beside_checkout(getattr(pins, dirname)))
+
+
 def main():
     out = Path(arg("--out"))
     cells = out / "cells"
     cells.mkdir(parents=True, exist_ok=True)
-    crops = Path(arg("--crops", "D:/prime-art-raw/ship/v1/meshy_in"))
-    hero_2d = Path(arg("--hero", "D:/prime-game-design/ideas/ship-components/2d/hero.jpg"))
+    crops = Path(arg("--crops", str(_root("RAW_ENV", "RAW_DIRNAME") / "ship" / "v1" / "meshy_in")))
+    hero_2d = Path(arg("--hero", str(_root("DESIGN_ENV", "DESIGN_DIRNAME") / "ideas/ship-components/2d/hero.jpg")))
     names = arg("--variants", ",".join(VARIANTS)).split(",")
     scene = bpy.context.scene
     for ob in list(bpy.data.objects):

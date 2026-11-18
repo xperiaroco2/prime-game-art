@@ -1,6 +1,6 @@
 """The photo poses' Godot side (art #196): the plain-Python driver of the layers check and the review pictures.
 
-`$PYTHON_BIN tools/blender/alien_poses_run.py [--raw D:/prime-art-raw] [--step s3] --check [--chars ...]` (the
+`$PYTHON_BIN tools/blender/alien_poses_run.py [--raw <raw>] [--step s3] --check [--chars ...]` (the
 default step: the newest with both GLBs) writes per
 character the Blender-composed reference of all 48 pairs (`ref_<char>.json`: the plain-Python composition of the
 same clips, every bone's head and world turn from the rest in glTF axes; pure skinning equals Blender's evaluated pose, step 2) and runs

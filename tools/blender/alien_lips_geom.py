@@ -65,7 +65,7 @@ def mouth_mount(node: tuple, m: dict = MOUTH_MOUNT) -> tuple:
     return ((0.0, node[1] + m["dy"], node[2] + m["dz"]), m["half_w"], m["half_h"], node[1] + m["front"])
 
 
-# M12 (art #196): the red pout mouth mp1 (D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mp1/), the third mouth
+# M12 (art #196): the red pout mouth mp1 (<raw>/2026-10-20-alien-face-sheets-2/mp1/), the third mouth
 # design ("pout") on the same mount. Its sheet already draws full lips, so the profile keeps about the sheet's
 # thickness per lip (upper 0.95, lower 1.10: the lower lip the bigger cushion), tapers to fine tucked ends a little
 # rounder than the frog's (corner 0.18, pw 2.0), a soft cupid's bow (0.25; at 0.45 with corner 0.30 the upper lip
@@ -165,7 +165,7 @@ LIP_SHAPE_POUT = {
     },
 }
 
-# M13 (art #196): the fangs mouth mg2 (D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mg2/), the fourth design
+# M13 (art #196): the fangs mouth mg2 (<raw>/2026-10-20-alien-face-sheets-2/mg2/), the fourth design
 # ("fangs"), with two lower fangs (alien_fangs_geom). M13b (UPDATE 22: M13's lips read as thin flat double sticks with
 # pointed corners at 3/4, A as a flat box): soft rolled lips. The sheet's crease measures low (the upper lip about
 # 15 px, the lower 4.5 px at the centre), so the factors are against that: the upper a thin roll (0.55), the lower a

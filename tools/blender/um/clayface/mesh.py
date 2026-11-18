@@ -1,7 +1,7 @@
 """Mesh helpers of the clay face kit: the build context on the head's surface (Ctx), bmesh parts, static pieces
 (subdivide, cull inside the head, decimate, lumps), shape keys, the face materials and binding to the Head bone.
 
-Ported from the faces lab (D:/prime-art-raw/research/2026-10-05-faces/lab/clay_e/clay_face_b.py; Part, P_on, lid_rotation and lid_part from
+Ported from the faces lab (<raw>/research/2026-10-05-faces/lab/clay_e/clay_face_b.py; Part, P_on, lid_rotation and lid_part from
 lab_face_r2.py; bake and bind from clay_d/clay_lib.py).
 """
 import math

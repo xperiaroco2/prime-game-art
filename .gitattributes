@@ -3,7 +3,7 @@
 *.cmd text eol=crlf
 *.bat text eol=crlf
 
-# Binary assets go through Git LFS. Raw generations never enter git (they live in D:/prime-art-raw).
+# Binary assets go through Git LFS. Raw generations never enter git (they live in the raw root, ART_RAW_DIR).
 *.png filter=lfs diff=lfs merge=lfs -text
 *.jpg filter=lfs diff=lfs merge=lfs -text
 *.jpeg filter=lfs diff=lfs merge=lfs -text

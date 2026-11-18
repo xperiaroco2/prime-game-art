@@ -2,7 +2,7 @@
 (tools/run.py props); by hand, background only:
 
   blender -b --factory-startup --python-exit-code 1 --python tools/blender/props_task_build.py -- \
-      --spec props/tasks.toml --out D:/prime-art-raw/props/task/v1 --ambientcg D:/prime-art-raw/env/ambientcg [--only id,...]
+      --spec props/tasks.toml --out <raw>/props/task/v1 --ambientcg <raw>/env/ambientcg [--only id,...]
 
 The geometry comes from props_task.py (pure Python); the objects, detail textures, materials and the export are the
 kit's (kit_build.py), so a prop shares the kit's materials and paint encoding. The game surface's material is
