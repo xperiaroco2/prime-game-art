@@ -1,6 +1,6 @@
 """The pinned game greybox (tools/tests/_house_greybox.py, tools/tests/fixtures/house_greybox.json; art #34): the
 snapshot loads and holds what the House tests compare against, its drift rule allows additions and names removals
-and moves, and against the live checkout D:/prime-game (skipped when missing) nothing pinned was removed or moved.
+and moves, and against the live checkout prime-game beside the main checkout (skipped when missing) nothing pinned was removed or moved.
 A new room, marker or design row in the game is not drift: the art takes it with the next refresh
 (`$PYTHON_BIN tools/tests/_house_greybox.py`, docs/house.md "The game's greybox, pinned")."""
 
@@ -42,7 +42,7 @@ class PinnedGreybox(unittest.TestCase):
         self.assertIn("garage: removed", found)
         self.assertTrue(any(f.startswith("design doc: Kitchen ") for f in found), found)
 
-    @unittest.skipUnless((G.GAME / "levels" / "house" / "house.tscn").is_file(), "the game repo is not at D:/prime-game")
+    @unittest.skipUnless((G.GAME / "levels" / "house" / "house.tscn").is_file(), f"the game repo is not at {G.GAME}")
     def test_the_live_greybox_keeps_what_is_pinned(self):
         found = G.drift(G.load(), G.read())
         self.assertEqual(found, [], "the game removed or moved pinned greybox data; take it on purpose, then refresh "

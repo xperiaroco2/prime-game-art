@@ -128,7 +128,7 @@ were for art #17's recipes and tests).
 
 ## Game distance
 
-The camera comes from the game repo (read only; `D:/prime-game` at `c43c0e1`, unchanged at `d9dec50`): `client/player/player.tscn` has a
+The camera comes from the game repo (read only; `<game>` at `c43c0e1`, unchanged at `d9dec50`): `client/player/player.tscn` has a
 `Camera3D` with no `fov` set, so Godot's default 75 degrees vertical (`keep_aspect` keeps the height);
 `content/modes/base_mode.tres` sets `eye_height_m = 1.6`; `project.godot` sets no anti-aliasing (MSAA and screen-space
 AA off by default). On a 1920 x 1080 screen one metre at distance d covers 1080 / (2 d tan 37.5) pixels: 352 px at

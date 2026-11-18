@@ -221,7 +221,7 @@ Stop and ask the engineer, in one batched message with options and a recommendat
   Tightening them needs no yes.
 
 ## Manager rules (one set for every prime-game track)
-A manager session of this repo follows `D:\prime-game\docs\MANAGERS.md` (prime-game's main checkout beside this one;
+A manager session of this repo follows `C:\prime-game\docs\MANAGERS.md` (prime-game's main checkout beside this one;
 missing or unreadable: https://github.com/xperiaroco2/prime-game/blob/main/docs/MANAGERS.md). Read it whole at the
 session's start, before anything else, and again after a change to it reaches prime-game's `main`. It holds the mode
 and effort, the kickoff (no "ultracode"), the "For you:" block, the keep-alive, when to hand over and the handover

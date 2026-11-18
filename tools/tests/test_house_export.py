@@ -1,6 +1,6 @@
 """The House export (tools/runner/house_export.py, docs/house.md "The export", art #119): the room scenes carry the
 game's node names, `metadata/size_m`, the `Name` label and the Doors, Stations and Markers of the game's greybox rooms
-(D:/prime-game/levels/house/rooms/*.tscn, pinned in tools/tests/fixtures/house_greybox.json) with exactly the known
+(<game>/levels/house/rooms/*.tscn, pinned in tools/tests/fixtures/house_greybox.json) with exactly the known
 differences of the plan's mapping.md; no CSG, no GridMap, real-time lights without shadows, every path under res://assets/environment/.
 Pure Python: the scenes are built in memory, no GLB is copied."""
 

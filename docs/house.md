@@ -285,16 +285,16 @@ is flat at 0.0 under each), as the game's do; they stood at -0.06 before.
 
 ### The game's greybox, pinned (#34)
 The House tests never read the game's live checkout: a marker the game added once turned `main` red. They read
-`tools/tests/fixtures/house_greybox.json`, a snapshot of `D:/prime-game` at a recorded commit (`game_commit`): the
+`tools/tests/fixtures/house_greybox.json`, a snapshot of the game's checkout (`prime-game` beside this one) at a recorded commit (`game_commit`): the
 design doc's room table (`docs/design/house-map.md`) and per greybox room scene its root, origin, `size_m`, Doors,
 Stations and Markers (`test_house_export.py`) and the names of its `Marker3D` doors and stations
 (`test_house_layout.py`). `tools/tests/test_house_greybox.py` compares the live checkout with the snapshot (skipped
-without `D:/prime-game`) and fails only on what the game removed or moved; a new room, marker or design row is not
+without the game's checkout) and fails only on what the game removed or moved; a new room, marker or design row is not
 drift. When the art takes a game change on purpose, refresh the snapshot and update the known differences in the
 same commit:
 
 ```
-$PYTHON_BIN tools/tests/_house_greybox.py           # rewrite the snapshot from D:/prime-game (--game DIR)
+$PYTHON_BIN tools/tests/_house_greybox.py           # rewrite the snapshot from ../prime-game (--game DIR)
 $PYTHON_BIN tools/tests/_house_greybox.py --check   # list the drift, write nothing
 ```
 
