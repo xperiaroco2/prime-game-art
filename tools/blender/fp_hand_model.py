@@ -58,7 +58,7 @@ def log(msg: str) -> None:
 # ------------------------------------------------------------------------------------------------ the field
 def smin(a, b, k):
     """Polynomial smooth minimum: k the blend's width (mm); at most k/4 of swelling where a == b."""
-    if k <= 0:
+    if np.isscalar(k) and k <= 0:
         return np.minimum(a, b)
     h = np.clip(0.5 + 0.5 * (b - a) / k, 0.0, 1.0)
     return b * (1.0 - h) + a * h - k * h * (1.0 - h)
@@ -168,7 +168,8 @@ class Hand:
         fingers = spec["fingers"]
         # the thumb's mound and the little side's on the palm's side
         self.parts["mound"].append(Part("ell", "ThumbMetacarpal", 4.0, c=[40.0, 36.0, -8.0], r=[34.0, 24.0, 19.0]))
-        self.parts["mound"].append(Part("ell", "Hand", 4.0, c=[56.0, -52.0, -6.0], r=[34.0, 17.0, 15.0]))
+        little = pa.get("little_mound", {"c": [56.0, -52.0, -6.0], "r": [34.0, 17.0, 15.0]})
+        self.parts["mound"].append(Part("ell", "Hand", 4.0, c=little["c"], r=little["r"]))
         # the fingers: three round cones each (proximal, intermediate, distal), the knuckle a little fuller
         for name in DIGITS:
             f = fingers[name]
@@ -176,7 +177,9 @@ class Hand:
             s = float(f["thickness"]) / float(f["width"])
             ku, tu = float(f["knuckle_u"]), float(f["tip_u"]) - r * s ** 0.3
             v0, v1 = f["centre_v"]
-            a = np.array([ku, v0 + (v0 - v1) * (f["crotch_u"] - ku) / (tu - f["crotch_u"]), 1.0])
+            # the knuckle's centre: the spec's `knuckle_v`, or on the line through the crotch and the tip
+            kv = f.get("knuckle_v", v0 + (v0 - v1) * (f["crotch_u"] - ku) / (tu - f["crotch_u"]))
+            a = np.array([ku, float(kv), 1.0])
             b = np.array([tu, v1, -1.0])
             pts = [a]
             acc = 0.0
@@ -213,9 +216,20 @@ class Hand:
             self.joints["Thumb" + ph] = (pts[i], pts[i + 1], z)
         self.creases = self._creases()
 
+    def web_k(self, p):
+        """The thumb's blend into the palm (mm): `[fingers.thumb] web_mm` [at the mound, past apart_u], eased over
+        the 25 mm before apart_u, so the thumb stands apart from the palm's side as in view 0 (one 12 mm blend
+        filled the gap with a web out to u 98)."""
+        t = self.spec["fingers"]["thumb"]
+        k0, k1 = t.get("web_mm", [12.0, 12.0])
+        ap = float(t["apart_u"])
+        s = np.clip((p[:, 0] - (ap - 25.0)) / 25.0, 0.0, 1.0)
+        return k0 + (k1 - k0) * s * s * (3.0 - 2.0 * s)
+
     # ---------------------------------------------------------------------------------------------- evaluation
-    def fields(self, p, deltas=None):
-        """{part group: distance} at points p, each part moved by its bone's delta (hand space, 4x4 numpy) if any."""
+    def fields(self, p, deltas=None, only=None):
+        """{part group: distance} at points p, each part moved by its bone's delta (hand space, 4x4 numpy) if any;
+        `only`: that digit's alone."""
         cache = {}
 
         def ev(part):
@@ -228,7 +242,8 @@ class Hand:
             return part(p)
 
         out = {}
-        arm = None
+        if only:
+            return {only: [ev(part) for part in self.parts[only]]}
         base = np.minimum(ev(self.parts["arm"][0]), ev(self.parts["arm"][1]))
         for part in self.parts["mound"]:
             base = smin(base, ev(part), 14.0)
@@ -248,7 +263,7 @@ class Hand:
             chain = np.minimum(np.minimum(P1, I1), D1)
             soft = chain if soft is None else smin(soft, chain, 3.0)
         M, Tp, Td = F["thumb"]
-        total = np.minimum(total, smin(B, smin(M, Tp, 6.0), 12.0))
+        total = np.minimum(total, smin(B, smin(M, Tp, 6.0), self.web_k(p)))
         soft = smin(soft, np.minimum(np.minimum(M, Tp), Td), 3.0)
         total = np.minimum(total, soft)
         return (total, F) if parts else total
@@ -284,31 +299,62 @@ class Hand:
         return out
 
     def crease(self, p, n=None):
-        """The creases' depth (mm, carved inward) at points p: a soft groove per line, on its side of the hand."""
+        """The creases' depth (mm, carved inward) at points p: a soft groove per line, on its side of the hand. Each
+        groove bows toward the tip in its middle (`crease_bow_mm`) and wanders a little along its length
+        (`crease_wobble_mm`, two slow waves of its own phase), and its depth swells and fades along it, never to
+        nothing, and fades out at a palm line's ends: a straight groove of one depth read as ruled (m26's critic)."""
         spec = self.spec["skin"]
         depth, width = float(spec["crease_depth_mm"]), float(spec["crease_width_mm"])
+        bow, wob = float(spec.get("crease_bow_mm", 0.0)), float(spec.get("crease_wobble_mm", 0.0))
         out = np.zeros(len(p))
-        for c in self.creases:
+        for i, c in enumerate(self.creases):
+            ph = 1.7 * i + 0.6   # each crease its own phase
             if "line" in c:
                 ln = np.array(c["line"])
                 best = np.full(len(p), 1e9)
+                lat = np.zeros(len(p))
+                s_at = np.zeros(len(p))
+                acc = 0.0
                 for q0, q1 in zip(ln[:-1], ln[1:]):
                     d = q1 - q0
+                    L = float(np.linalg.norm(d))
                     t = np.clip(((p[:, :2] - q0) @ d) / float(d @ d), 0.0, 1.0)
-                    best = np.minimum(best, np.linalg.norm(p[:, :2] - (q0 + t[:, None] * d), axis=1))
+                    off = p[:, :2] - (q0 + t[:, None] * d)
+                    dist = np.linalg.norm(off, axis=1)
+                    near = dist < best
+                    best = np.where(near, dist, best)
+                    lat = np.where(near, (d[0] * off[:, 1] - d[1] * off[:, 0]) / L, lat)
+                    s_at = np.where(near, acc + t * L, s_at)
+                    acc += L
                 side = np.clip((p @ c["side"] + 4.0) / 10.0, 0.0, 1.0)
-                g = np.exp(-(best / (0.5 * width * c["w"])) ** 2) * side
-                # fade at the line's ends
+                # the line wanders (a signed shift across it, two slow waves along it)
+                shift = wob * (np.sin(s_at / 9.0 + ph) + 0.5 * np.sin(s_at / 4.1 + 2.3 * ph))
+                g = np.exp(-((lat - shift) / (0.5 * width * c["w"])) ** 2) * side
+                # its depth swells and fades along it, and fades out over 10 mm at each end
+                g *= 0.8 + 0.2 * np.sin(s_at / 6.0 + 3.1 * ph)
+                g *= np.clip(s_at / 10.0, 0.0, 1.0) * np.clip((acc - s_at) / 10.0, 0.0, 1.0)
                 out += depth * c["depth"] * g
                 continue
-            rel = p - c["p"]
-            ax = rel @ c["t"]
+            ax_all = (p - c["p"]) @ c["t"]
+            near = np.nonzero(np.abs(ax_all) < 1.5 * width * c["w"] + bow + 1.5 * wob + 1.0)[0]
+            if not len(near):
+                continue
+            rel = p[near] - c["p"]
+            ax = ax_all[near]
             radial = rel - ax[:, None] * c["t"]
             rn = np.linalg.norm(radial, axis=1) + 1e-9
             facing = (radial @ c["side"]) / rn
-            g = np.exp(-(ax / (0.5 * width * c["w"])) ** 2) * np.clip((facing - c["face"]) / 0.35, 0.0, 1.0)
+            # the angle round the finger from the crease's middle, for the bow and the wander
+            e1 = c["side"] - (c["side"] @ c["t"]) * c["t"]
+            e1 = e1 / (np.linalg.norm(e1) + 1e-9)
+            e2 = np.cross(c["t"], e1)
+            phi = np.arctan2(radial @ e2, radial @ e1)
+            shift = bow * np.clip(facing, 0.0, 1.0) ** 2
+            shift = shift + wob * (np.sin(2.2 * phi + ph) + 0.4 * np.sin(4.7 * phi + 2.3 * ph))
+            g = np.exp(-((ax - shift) / (0.5 * width * c["w"])) ** 2) * np.clip((facing - c["face"]) / 0.35, 0.0, 1.0)
+            g *= 0.8 + 0.2 * np.sin(3.0 * phi + 3.1 * ph)
             g *= np.exp(-np.maximum(rn - c["r"] * 1.15, 0.0) / 2.0)
-            out += depth * c["depth"] * g
+            out[near] += depth * c["depth"] * g
         return out
 
 
@@ -793,10 +839,17 @@ class FistField:
             self.valley_width = float(va.get("width", 6.0))
         cav = fs.get("cavity")
         self.cavity = Part("ell", "Hand", 1.0, c=cav["c"], r=cav["r"]) if cav else None
+        # a finger pushed out sideways in the fist (mm along v, after the pose): the folded fingers press each other
+        # apart, so the fist is wider across its knuckles than the open palm (the concept: 156 against 131 mm)
+        self.spread = {k: float(x) for k, x in fs.get("spread_mm", {}).items()}
 
     def groups(self, p, which):
         """{group: distance} at p for the groups in `which`."""
         F = self.hand.fields(p, self.D)
+        for name, dv in self.spread.items():
+            if dv and name in F:
+                q = p - np.array([0.0, dv, 0.0])
+                F[name] = self.hand.fields(q, self.D, only=name)[name]
         B = F["base"]
         for e in self.extra:
             B = smin(B, e(p), 6.0)
@@ -1122,6 +1175,10 @@ def fist_measure(ob, arm, sp: Space, spec: dict, right_n: int) -> dict:
     hp = pf[pf[:, 0] > 0]
     fs = spec["fist"]
     fing = pf[np.array([s[0] in DIGITS for s in mem])]
+    hm = [s for s, x in zip(mem, pf) if x[0] > 0]
+    for what, i in (("w max", np.argmax(hp[:, 2])), ("w min", np.argmin(hp[:, 2])), ("v max", np.argmax(hp[:, 1])),
+                    ("v min", np.argmin(hp[:, 1]))):
+        log(f"fist {what}: {hm[i][0]} at {np.round(hp[i], 1).tolist()}")
     return {"width": [fs["width"], round(float(np.ptp(hp[:, 1])), 1)],
             "thumb_low_u": [fs["thumb_low_u"], round(float(hp[:, 0].max()), 1)],
             "depth": [fs["depth"], round(float(np.ptp(hp[:, 2])), 1)],
