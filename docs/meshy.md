@@ -235,7 +235,7 @@ Meshy's queue limit, 10 tasks on Pro, would allow parallel items later.
 
 ## The raw folder
 
-`<raw>` is `common.raw_dir()` (`D:/prime-art-raw`, outside git; `ART_RAW_DIR` overrides).
+`<raw>` is `common.raw_dir()` (`../prime-art-raw` beside the main checkout, outside git; `ART_RAW_DIR` overrides).
 
 ```
 <raw>/<batch id>/log.csv
@@ -379,7 +379,7 @@ UVs, so `tools/blender/meshy_rig_input.py` (background Blender) makes the rig in
    (triangles, height, bytes, the colours per material).
 
 The palette is for the rig input only; nothing of ours changes. `render` of the GLB shows the colours from the texture
-(`D:/prime-art-raw/review/stage1/25/rig_inputs/`). `rig-input` reads the GLB's JSON chunk afterwards and refuses
+(`<raw>/review/stage1/25/rig_inputs/`). `rig-input` reads the GLB's JSON chunk afterwards and refuses
 anything but one node with one mesh. The "Icosphere" that appears beside every import of a Meshy output (and of the
 pack files) in Blender is the glTF importer's own bone display shape: neither the rig inputs (1 node, 1 mesh) nor
 Meshy's GLBs (the 24 bones, the armature node and one mesh: 26 nodes) contain one, so nothing of it reached Meshy.
@@ -466,7 +466,7 @@ from the front, side and back cut out of each head's OpenAI turnaround (batch `2
 103k triangles) and `pre_remeshed_model.glb`, the dense original **without a texture** (180k and 546k triangles, one
 closed shell): the downloads include it because the runner fetches every `model_urls` entry. Both heads came back
 as one fused shell (eyes, lips and the axolotl's gill stalks are part of the skin); the verdict and step 2's list are
-in the pilot's handoff (`D:/prime-art-raw/research/2026-10-22-roster/design/pilot3d/step1_handoff.md`).
+in the pilot's handoff (`<raw>/research/2026-10-22-roster/design/pilot3d/step1_handoff.md`).
 
 ## Batch 2026-10-21-alien-mouth-3d (art #196 M19, the AI mouth route test)
 
@@ -657,4 +657,4 @@ even false (no credits charged); the batch check now refuses it (above, the para
 kept both sockets and the dish; the 7.1 mouths keep the rolled lips and the O's hole; the lite eyes keep a lid shell
 over a ball but with a soft, faceted eyeball texture, and the closed eye comes out wrinkled. Every piece comes back
 normalised to about 1.9 units on its long side, so step 2 scales each into its recess. The sheet and the verdict:
-`D:/prime-art-raw/research/2026-10-22-roster/design/t1/` (`step1_sheet.jpg`, `step1_handoff.md`).
+`<raw>/research/2026-10-22-roster/design/t1/` (`step1_sheet.jpg`, `step1_handoff.md`).

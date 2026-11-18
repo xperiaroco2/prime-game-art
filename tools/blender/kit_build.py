@@ -2,7 +2,7 @@
 (tools/run.py kit); by hand, background only:
 
   blender -b --factory-startup --python-exit-code 1 --python tools/blender/kit_build.py -- \
-      --spec kits/house.json --out D:/prime-art-raw/kits/house/v1 --ambientcg D:/prime-art-raw/env/ambientcg [--only id,...]
+      --spec kits/house.json --out <raw>/kits/house/v1 --ambientcg <raw>/env/ambientcg [--only id,...]
 
 The geometry comes from kit_geom.py (pure Python, Godot axes); this script only turns it into Blender objects (Blender
 axes: x, -z, y), makes the detail textures and materials, and exports. Per piece: <out>/<id>.glb; for the kit:

@@ -2,7 +2,7 @@
 # modes of docs/meshy.md: a multi-view concept from text, a concept from our own mannequin renders, a body from the
 # concept's views and from one picked view, a prop, a remesh and a rig. Copy it to a new batch file, change the
 # prompts and parameters, and have the engineer approve that file. The mannequin render paths are placeholders for
-# the renders of art #11 (`raw:` is the raw folder, D:/prime-art-raw); `meshy estimate` flags inputs that are missing.
+# the renders of art #11 (`raw:` is the raw folder, <raw>); `meshy estimate` flags inputs that are missing.
 
 id = "example-image-modes"
 purpose = "EXAMPLE: every image-mode item kind with every input form; shows the schema, never runs."

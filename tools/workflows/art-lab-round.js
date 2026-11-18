@@ -3,7 +3,7 @@ export const meta = {
   description: 'One lab round of prime-game-art: an art-writer builder in steps of at most 60 calls, each ending in a handoff note, then an art-reader critic on the model the manager passes that ranks the variants from one contact sheet and recommends one; with a control model, a control critic beside it and a blind Opus judge of both critiques (the A/B of #46).',
   args: {
     brief: 'The round brief: goal, the variants to make, the acceptance checks (a few lines, no history).',
-    lab_dir: 'The lab folder the builder works in, under D:/prime-art-raw/research/.',
+    lab_dir: 'The lab folder the builder works in, under <raw>/research/.',
     out_dir: 'The folder for handoff notes, the contact sheet and the ranking (inside lab_dir or the scratchpad).',
     steps: 'The most builder steps (1 to 4, default 2); a step that reports the round done ends the build early.',
     critic_model: 'Required: the critic model, passed per launch (opus, sonnet or haiku); the script names no default (#46).',

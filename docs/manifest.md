@@ -5,7 +5,7 @@ Every asset in this repository lives in `assets/<kind>/<id>/` with a `manifest.t
 made from, which tools touched it, what licence applies, whether it may ever reach the public game repo and who approved
 it. `tools/run.py manifest-check` validates every manifest; `verify` runs it.
 
-Raw generations and downloads never enter git (they live in `D:/prime-art-raw`); the manifest records their paths
+Raw generations and downloads never enter git (they live in the raw root, `<raw>`); the manifest records their paths
 relative to that folder and their SHA-256, so a raw file can be found and checked later.
 
 ## Example
@@ -215,6 +215,6 @@ sha256 = "<64 lowercase hex digits>"
 - `tools/run.py manifest-check`: every manifest under `assets/`, every `assets/<kind>/<id>/` folder without one, and
   every source record in `sources/`.
 - `tools/run.py manifest-check --hashes`: also re-hashes each `[[raw]]` file of the manifests and source records in the
-  raw folder (`ART_RAW_DIR`, default `D:/prime-art-raw`). Only on the engineer's PC, where the raw folder exists.
+  raw folder (`ART_RAW_DIR`, default `../prime-art-raw` beside the main checkout). Only on the engineer's PC, where the raw folder exists.
 - `tools/run.py manifest-check --root <dir>`: checks another tree; the tests use the fixtures in
   `tools/tests/fixtures/manifest/` (`pass` and `fail`).

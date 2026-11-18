@@ -33,7 +33,7 @@ GODOT_ENV = "GODOT_BIN"
 
 # Raw generations and downloads: outside every repository, never in git (the engineer's choice, 2026-10-02). The raw
 # root is ART_RAW_DIR, else a folder of this name beside the main checkout (C:/prime-game-art -> C:/prime-art-raw, the
-# same from a worktree under C:/prime-game-art-wt/): the old default D:/prime-art-raw is gone since 2026-11-18 (#136).
+# same from a worktree under C:/prime-game-art-wt/): the old default <raw> is gone since 2026-11-18 (#136).
 RAW_ENV = "ART_RAW_DIR"
 RAW_DIRNAME = "prime-art-raw"
 # The design repository (xperiaroco2/prime-game-design): its drawings and photos some builds compare against.

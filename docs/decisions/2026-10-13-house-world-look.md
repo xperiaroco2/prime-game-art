@@ -4,7 +4,7 @@
 - Issue: #143; the notes: #34 [6122437565](https://github.com/xperiaroco2/prime-game-art/issues/34#issuecomment-6122437565)
   (the kitchen pilot's result) and [6124431104](https://github.com/xperiaroco2/prime-game-art/issues/34#issuecomment-6124431104)
   (his decision on round 2: "everything per the recommendations"); the presets: #140 item 4.
-- Lab (not committed): `D:/prime-art-raw/research/2026-10-12-kitchen-pilot/round2` (`out/handoff-step-1.md`,
+- Lab (not committed): `<raw>/research/2026-10-12-kitchen-pilot/round2` (`out/handoff-step-1.md`,
   `scripts/kp_r2_build.py`).
 
 ## Context

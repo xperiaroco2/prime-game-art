@@ -4,7 +4,7 @@ retarget_maps/smpl_contract.toml (FK legs: the leg solve needs no IK bones, see 
 best loop (alien_stride_math.cycle), measures it (alien_stride_math.measure and alien_ttm_math), mirrors the best
 left strafe into a right one, ranks the candidates per slot by the numbers alone and renders the sheets.
 
-    $PYTHON_BIN tools/blender/alien_ttm.py --blend <char.blend> --raw D:/prime-art-raw --out <dir> [--items a,b]
+    $PYTHON_BIN tools/blender/alien_ttm.py --blend <char.blend> --raw <raw> --out <dir> [--items a,b]
         [--no-sheets]
 
 Into <dir>: candidates.json (rest check, per candidate its numbers, faults and the ranking per slot), one sheet per

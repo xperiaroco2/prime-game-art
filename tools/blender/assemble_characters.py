@@ -2,7 +2,7 @@
 
 The runner calls it (tools/run.py assemble); by hand, background only:
   blender -b --factory-startup --python-exit-code 1 --python tools/blender/assemble_characters.py -- \
-      --recipe recipes/um_final_test.json --raw D:/prime-art-raw --out tools/out/assemble/um_final_test \
+      --recipe recipes/um_final_test.json --raw <raw> --out tools/out/assemble/um_final_test \
       [--modes chars,face,hands,lineup,crossgender,qa,ankles|none] [--ids m1_rex,w1_ivy] [--blend] [--res 100]
   ... -- --inspect <character.blend> --json <out.json>     describe a saved character file
 

@@ -431,7 +431,7 @@ frame where the retarget's floor clamp lifts them, which no resampling keeps (5 
 The engineer's notes (2026-10-07): the feet straight and the idle relaxed. UAL's Idle_Loop turns the right foot 44
 degrees out and stands tense: fists (Middle2 78 degrees), a wide staggered stance (ankles 47.7 cm apart, the right
 foot 45.7 cm behind the left: men), the head 10 to 15 degrees down. The lab worked the edit out on a copy of the set (round D:
-`D:/prime-art-raw/research/2026-10-05-faces/lab/clay_d/clay_idle.py` and `README_idle.txt`); these ops are its port.
+`<raw>/research/2026-10-05-faces/lab/clay_d/clay_idle.py` and `README_idle.txt`); these ops are its port.
 Built with the lab's values, round 1 matched the lab's relaxed set within 0.4 mm at every joint on every frame; round 2
 fixed what the reviews found in the lab's idle_ends (a creeping foot slid, a settling foot sunk, the package clips left
 out), and the set pins the women's arm offset that `auto` finds instead of the lab's
@@ -805,7 +805,7 @@ armature-space poses and turns them back into each bone's basis under its own pa
 need `[follow]` to name the foot's own parent (the lower leg). Checked on the alien: the source rest gives the target
 rest exactly (`rest_check` 0.001 mm, 0 deg), the ankles miss their goals by at most 16 mm over the ten clips.
 
-`$PYTHON_BIN tools/blender/alien_ttm.py --blend <char.blend> --raw D:/prime-art-raw --out <dir> [--items a,b]
+`$PYTHON_BIN tools/blender/alien_ttm.py --blend <char.blend> --raw <raw> --out <dir> [--items a,b]
 [--no-sheets]` bakes each FBX (`ITEMS`: the seven clips of `batches/2026-10-25-alien-locomotion-ttm.toml` and three
 baseline rows of batches 5 and 6) at the character's fps as `CharacterArmature|TM_<item>`, cuts its loop
 (`cycle`, bounds from the clip's own cadence: one cycle of two steps) as `CharacterArmature|TM_<item>_Loop`, mirrors
@@ -840,7 +840,7 @@ with `Strafe_*__s45` and `Jog_Bwd__s25` beside them for review; the shuffle stra
 (`footstep_interval`, `footstep_cadence.gd`'s), the rates at the game's speeds against its 0.25-4.0 clamp
 (`play_rows`), the stride flag (scaled over 2x either way) and the reels' plan and timelines.
 
-`$PYTHON_BIN tools/blender/alien_loco.py --raw D:/prime-art-raw [--chars chameleon,axolotl]` (about 2 min) opens each
+`$PYTHON_BIN tools/blender/alien_loco.py --raw <raw> [--chars chameleon,axolotl]` (about 2 min) opens each
 R2b character, appends step 2's loops, makes the set (`_make`: cycle, in place, stride, arms, mirror; the cut in place
 comes before the stride since step 4b, so the stride plants the feet in the frame its measure was made for), writes
 the actions,
@@ -852,7 +852,7 @@ copied beside the GLB. Then `tools/run.sh godot-check <glb> --profile alien --st
 `--build DIR --out DIR` (T1, art #196) take another character build and output under `raw_base` for one run, the
 set file unchanged (`alien_loco_math.with_paths`; a new build into the set's own `out` is refused, and so is an out
 whose character folder already holds a GLB): the new bodies' build `r2c/build` (the chameleon on M2c's body, the
-axolotl on M1f's) into `loco/t1`, `... alien_loco.py --raw D:/prime-art-raw --build r2c/build --out loco/t1`. On T1
+axolotl on M1f's) into `loco/t1`, `... alien_loco.py --raw <raw> --build r2c/build --out loco/t1`. On T1
 the chameleon's set is made (31 clips; Jog_Fwd v0 5.44 m/s, Sprint_Fwd 8.34, f3's 5.15 and 7.80 on the taller body).
 The axolotl's is not: on M1f's body her Jog_Fwd and Sprint_Fwd touch the floor for 2 frames a step (a toe within
 2 cm of its lowest), so `measure` finds no ground velocity (v0 0, c0 None) and `stride` divided by zero (since R1 the set skips such a clip instead: `SKIP <clip>: speed ... asked, but the measure found no ground velocity`, `skipped` in its `loco.json` row, and so every clip made from it; `alien_loco_math.unmeasured`). The build's
@@ -900,7 +900,7 @@ full-body clip frames of one character's builds side by side (`godot/alien/body_
 the game look of `char_shots.gd`, a floor, the camera following the Hips): a row per build, six clips (idle, walk,
 Jog_Fwd, Crouch_Fwd, Jump_Start at its take-off, Strafe_Left), `body_clips_<c>.jpg` and its `.json` (per cell the
 clip's time and the Hips' height).
-`... alien_loco.py --raw D:/prime-art-raw --reels [--only NAME,...] [--char axolotl]` runs `godot/alien/treadmill_reels.gd` in the
+`... alien_loco.py --raw <raw> --reels [--only NAME,...] [--char axolotl]` runs `godot/alien/treadmill_reels.gd` in the
 off-screen window on the chameleon (`--char`: another character, into `<out>/reels/<char>/`): the character held in place (the hips' travel per loop taken off its node), the
 floor's stripes moving at the slot's speed against the travel, the clip at rate = speed / v0, a disc under each foot
 at its contact and a timeline of the game's footstep beat (white ticks, the clip's own contacts as yellow ticks
@@ -927,7 +927,7 @@ plants the feet a loop's travel on, where the legs reached back a whole loop at 
 ### The clothed alien's two bodies (art #196, clothes step 2)
 The aliens are always clothed (the route of the engineer's yes to step 2, 2026-10-28, art #196 comment
 6469797321): our own body stays the functional base, Meshy makes only the clothes, and each garment is fitted once on
-the base body and carried to the female variant. The base is S4b's cage body (`D:/prime-art-raw/review/char/alien-parts-kit/S4b/build/alien_body.blend`,
+the base body and carried to the female variant. The base is S4b's cage body (`<raw>/review/char/alien-parts-kit/S4b/build/alien_body.blend`,
 `tools/blender/alien_cage.py --target`), the body under both characters of `loco/f3`.
 - **Four digits.** The engineer, 2026-10-28 (comment 6467823137): three fingers and a thumb, never a fifth. The cage
   body already builds that hand (`alien_cage.py`'s `FINGERS = ("Index", "Middle", "Ring")`: three finger tubes and a
@@ -962,7 +962,7 @@ the base body and carried to the female variant. The base is S4b's cage body (`D
   each clip's first and middle frame).
 - **The game build** is f3's: `alien_char_run.py --heads <c> --tag <tag>/build --no-shots --clip-edits
   tools/blender/anim_sets/alien.toml --lively <c>=<lively>/v9_r2c_n4 (axolotl: axolotl_v9_r2c_n4) [--body <female>]`,
-  then `alien_loco.py --raw D:/prime-art-raw --build ../<tag>/build --out ../<loco>` (paths under the set's
+  then `alien_loco.py --raw <raw> --build ../<tag>/build --out ../<loco>` (paths under the set's
   `raw_base`), then `godot-check <glb> --profile alien --strict-contract --textured`.
 
 ### 100STYLE onto the alien, and the orientation warp (art #196, the strafe pilot)
@@ -975,7 +975,7 @@ Chest3 unused; Collar/Shoulder/Elbow/Wrist -> Shoulder/UpperArm/LowerArm/Hand; H
 LowerLeg/Foot/Toes; fingers, Jaw and eyes at rest): the source rest gives the target rest exactly (rest check 0.001 mm,
 0 deg; both rests are T-poses facing the front, so no `[align]`).
 
-`$PYTHON_BIN tools/blender/alien_mocap.py --raw D:/prime-art-raw [--char chameleon] [--clips Neutral_BR,...]`
+`$PYTHON_BIN tools/blender/alien_mocap.py --raw <raw> [--char chameleon] [--clips Neutral_BR,...]`
 (about 2 min) imports each take with Blender's own BVH importer (bundled `io_anim_bvh`: scale 0.01, the file's +Z
 front onto -Y, quaternions; the rig lifted onto the floor for the retarget as `retarget_smpl` does), picks the
 steadiest 3 s window inside the take's `Frame_Cuts.csv` range (`pick_window`: the travel straight, the hips' facing
@@ -1343,7 +1343,7 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
 - **Data plus a solver.** `tools/blender/anim_sets/alien_poses.toml` holds the poses (authored directions, contact
   goals on landmarks, grips); `alien_pose_math.py` (no bpy) solves them per character on its own rest skeleton (two-bone
   IK, feet planted flat, the kneeling knee and the seat fitted to the floor, hands touched onto the skin). New bodies
-  on the same skeleton: re-run `$PYTHON_BIN tools/blender/alien_poses.py --raw D:/prime-art-raw --step <new> --glb
+  on the same skeleton: re-run `$PYTHON_BIN tools/blender/alien_poses.py --raw <raw> --step <new> --glb
   --masks` (background, about 25 min for both), then `alien_poses_run.py --step <new> --check --shots`.
 - **Measures and limits** (every pair, both characters, `build/<char>/poses.json`): the lowest skin point within
   0.5 cm of the floor; a planted foot without `foot_pitch` flat (its heel's and ball's lowest skin both within 1 cm
@@ -1634,7 +1634,7 @@ sides fold (H1k: 300-570 hidden vertices per hand, creases and spikes). `[fist] 
 - `metrics`: folded triangles (normal against the envelope's), the shortest edge against the median, the vertices'
   distance from the envelope (bumps), the facets' sag. `test_alien_fist_envelope_blender.py` checks them on
   synthetic tubes: merged folds, pressed does not.
-H1l's grid on the axolotl (`D:/prime-art-raw/2026-10-31-hands/h1l/e2/`): press at inflate 1.4 reads as a clean
+H1l's grid on the axolotl (`<raw>/2026-10-31-hands/h1l/e2/`): press at inflate 1.4 reads as a clean
 cartoon fist in Blender (three pressed fingers, the thumb across the front), 33-36 folded triangles per hand left
 (from 84-86 bare; the posed mesh's own shortest edge is 0.09 of the median, so the brief's 30 % bound fails before any
 move); the index's curl still shows a small dark notch from the thumb's side.
@@ -1644,9 +1644,9 @@ half-curled index met the thumb with a hole between them. `[fist] lead` (0..1, d
 run ahead inside a clip: `weight_plan` keys it full at `lead` of each ramp into the fist grip and leaves 1 only at
 `1 - lead` of each ramp out (`lead = 0.5`). It acts on grip ramps keyed inside a clip (the review's ReviewBlend); a
 crossfade between two clips in the game lerps the morph and the bones by one weight. **It does not remove the ring:**
-H1m's Blender blend grid (`D:/prime-art-raw/2026-10-31-hands/h1m/blend/`; in step, morph lead 0.5, thumb lag 0.4,
+H1m's Blender blend grid (`<raw>/2026-10-31-hands/h1m/blend/`; in step, morph lead 0.5, thumb lag 0.4,
 both) shows the ring at 0.5 and 0.65 in every schedule, because it is the index's own half curl closing on itself,
-not the thumb or the morph; the fix belongs to the grip's path (the index's joints curling in another order). H1m's fold grid (`D:/prime-art-raw/2026-10-31-hands/h1m/g1/`):
+not the thumb or the morph; the fix belongs to the grip's path (the index's joints curling in another order). H1m's fold grid (`<raw>/2026-10-31-hands/h1m/g1/`):
 `env_core` 1.0 / 1.1, `env_k_core_mm` 18 and a thumb shift of 2-3 mm all add folds (41-47 per hand against p2's
 33-36); the folds sit inside single fingers (index, middle, ring), not on the webs: a line across the inner
 crease of each finger's curl, under the surface (seen only in x-ray, `g2/folds_axolotl.png`); a local umbrella on
@@ -1658,7 +1658,7 @@ to each ramp into or out of the fist grip (`stagger_keys`): into it, the Interme
 fist grip at `tip_to`, the Proximal ones leave the old grip only at `base_from`, the thumb leaves at `from` and
 arrives at `to`; out of it, the same path backwards. Set to `curl = [0.6, 0.4]`, `thumb = [0.6, 1.0]`: at half way
 the hand is an open C with the fingers tucked, at 0.65 a closing C, at 0.8 nearly a fist. H1n's Blender grids
-(`D:/prime-art-raw/2026-10-31-hands/h1n/r1/`, `r2/`): knuckles first, or the thumb in step or early, still ring at
+(`<raw>/2026-10-31-hands/h1n/r1/`, `r2/`): knuckles first, or the thumb in step or early, still ring at
 0.5-0.65, and so does `lead` 1. **Not yet seen in Godot on the axolotl:** H1n's Godot ReviewBlend sheet
 (`h1n/sheets/blend.png`) was read as "no ring at 50 % on either character", but H1o found the axolotl's close-ups
 byte-identical across H1m, H1n and H1o although the GLBs differ (a stale `godot/import/axolotl_review.glb`, or two
@@ -1681,7 +1681,7 @@ and tip joints are curled further (about 98 and 30 degrees), which puts the tips
 - the moves are capped at `c_cap_mm`, then smoothed as a field (`c_smooth` Laplacian rounds on the moves, never on the
   positions; the rim is held).
 
-On H1i's mesh (not H1p's dense one) the morph moves at most about 3.6 mm (`D:/prime-art-raw/2026-10-31-hands/h1q/`).
+On H1i's mesh (not H1p's dense one) the morph moves at most about 3.6 mm (`<raw>/2026-10-31-hands/h1q/`).
 The morph turns over 0-3 triangles per hand. The bones' own skin has 11-18 triangles per hand that face against the
 union. The grid rejected fuller base curls (88-92 degrees) and a thumb along the index's side: both left a thumb nub
 and a wider index coil. Still open: seen from the thumb side, the index's coil stays an open loop. Filling it would
@@ -1694,7 +1694,7 @@ give the index-thumb contact zone its own cap: `c_local_r_mm` > 0 makes a mask (
 segments and the thumb's tip, falling to 0 by a smoothstep over that distance, so the palm under them is in it), and
 there the raw move comes from an envelope with `c_local_cap_mm` and `c_local_hide_mm`, optionally with the index's
 curl filled by its chord cone (`c_local_core`, over `c_local_k_core_mm`); the two moves blend by the mask before the
-smoothing. Off by default. H1r's grid (`D:/prime-art-raw/2026-10-31-hands/h1r/r1/`): a cap of 12 or 15 mm over 8 or
+smoothing. Off by default. H1r's grid (`<raw>/2026-10-31-hands/h1r/r1/`): a cap of 12 or 15 mm over 8 or
 14 mm changes nothing visible (the largest move 2.4 -> 2.6 mm on the axolotl): the cap does not bind, because the
 few raw targets over 10 mm are averaged away by the smoothing and the coil's hole has no target inside the union;
 the chord fill moves the zone up to 4.6-5.4 mm and narrows the hole without closing it, at 36-57 triangles against
@@ -1728,7 +1728,7 @@ thumb's sink, 7.5 mm at most) and `test_alien_grip_solve.py` pins it and its use
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
 [--jobs N] [--out DIR]` (default output `tools/out/anim-review`; the review of art #20 went to
-`D:/prime-art-raw/review/stage1/20/`, that of UAL2 (art #24) to `D:/prime-art-raw/review/stage1/24/`, outside git).
+`<raw>/review/stage1/20/`, that of UAL2 (art #24) to `<raw>/review/stage1/24/`, outside git).
 Steps, or `all` in this order:
 
 | Step | Makes |

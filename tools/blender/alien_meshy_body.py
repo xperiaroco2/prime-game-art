@@ -2,7 +2,7 @@
 route (`alien_cage.py`), which wraps a cage round the skeleton and projects it onto the Meshy form.
 
     blender -b --factory-startup --python-exit-code 1 --python tools/blender/alien_meshy_body.py -- \
-        --targets tools/blender/alien_meshy_targets/axolotl_m1.toml --out <dir> [--raw D:/prime-art-raw] [--hi]
+        --targets tools/blender/alien_meshy_targets/axolotl_m1.toml --out <dir> [--raw <raw>] [--hi]
 
 1. Opens the rig body (`rig_body`: its armature, clips and skinned body; H5 v1 for the axolotl) and imports the Meshy
    GLB (`meshy`, T-pose, the sole put on z 0), collapsed to about `decimate_pre` triangles.

@@ -4,7 +4,7 @@ library (tools/blender/um/).
 
 The runner calls it (tools/run.py catalogue); by hand, background only:
   blender -b --factory-startup --python-exit-code 1 --python tools/blender/catalogue.py -- \
-      --raw D:/prime-art-raw --data catalogue/ultimate_modular.json [--out DIR --modes sheets,matrices,confirm] [--res 100]
+      --raw <raw> --data catalogue/ultimate_modular.json [--out DIR --modes sheets,matrices,confirm] [--res 100]
 
 --data: where the catalogue JSON is written (sorted keys, rounded numbers: two runs give identical files). With
 --modes, renders go into --out: sheets/ (every item alone, by slot and body type), matrices/ (the pair matrices as

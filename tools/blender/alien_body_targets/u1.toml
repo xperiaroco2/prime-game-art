@@ -1,5 +1,5 @@
 # The alien body's refit targets (tools/blender/alien_body.py --targets): u1, the S1/S1c body (art #196).
-# D:/prime-art-raw/2026-10-18-alien-2d-turn2/u1, part_0 front, part_1 side, measured per pixel row; the sole is row 967
+# <raw>/2026-10-18-alien-2d-turn2/u1, part_0 front, part_1 side, measured per pixel row; the sole is row 967
 # and one pixel is 0.0019 m (1.75 m from the sole to the top of the head without the crest). These are the numbers
 # alien_body.py held before the targets moved out (S1c: <raw>/review/char/alien-parts-kit/S1c/build); S4a/S4b's cage
 # (alien_cage.py) takes S1c's skeleton, weights, clips and neck ring.

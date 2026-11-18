@@ -5,7 +5,7 @@ inventoried, every head split into what a customization menu can offer, and comp
 the assembler's own library (`tools/blender/um/`, `docs/assembly.md`). The data is `catalogue/ultimate_modular.json`;
 it is the base of the game menu's compatibility rules (a later game task) and of our parts production. Art #19 built it
 on the final character test's `catalog.py` and `fitcheck.py`
-(`D:/prime-art-raw/research/2026-10-03-art-research/final-character-test/`).
+(`<raw>/research/2026-10-03-art-research/final-character-test/`).
 
 ## The command
 
@@ -20,9 +20,9 @@ tools/run.py catalogue [--check] [--renders sheets,matrices,confirm] [--out DIR]
 | `--renders` | Also renders into `--out` (default `tools/out/catalogue/`): `sheets/`, `matrices/`, `confirm/` (below; about 10 more minutes for all three, most of it the confirmation renders) |
 | `--res` | Render size in percent (default 100) |
 
-The packs are read from the raw folder (`ART_RAW_DIR`, default `D:/prime-art-raw`, `refs/Ultimate_Modular_*_Pack/`).
+The packs are read from the raw folder (`ART_RAW_DIR`, default `../prime-art-raw` beside the main checkout, `refs/Ultimate_Modular_*_Pack/`).
 The file is written with sorted keys and every number rounded (metres to 4 decimals, millimetres to 1), so two runs
-give identical bytes; review pictures go outside git (`D:/prime-art-raw/review/...`), never into the repo.
+give identical bytes; review pictures go outside git (`<raw>/review/...`), never into the repo.
 
 Code: `tools/blender/catalogue.py` (the entry script, the file section, the summary), `catalogue_parts.py` (loading,
 the parts inventory and seam heights), `catalogue_heads.py` (heads split into items), `catalogue_rules.py` (the

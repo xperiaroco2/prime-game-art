@@ -1,6 +1,6 @@
 """The clay bake (inside Blender): every clay part of a character baked into plain glTF textures, and the per-piece
 clay library that bakes each piece once and hands it to every character that wears it (docs/assembly.md, "The clay
-look"; ported from clay_bake.py and clay_libbake.py of D:/prime-art-raw/research/2026-10-05-faces/lab/clay_d, whose
+look"; ported from clay_bake.py and clay_libbake.py of <raw>/research/2026-10-05-faces/lab/clay_d, whose
 README_bake.txt holds the measurements behind the choices).
 
 Per part: a fresh UV map 'bake' (Smart UV Project at 75 degrees, islands at one texel density, the clay islands packed
