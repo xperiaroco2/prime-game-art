@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import json
 import math
-import os
 import sys
 import unittest
 from pathlib import Path
@@ -15,8 +14,9 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools" / "blender"))
 import alien_pose_math as A  # noqa: E402
 import alien_stride_math as S  # noqa: E402
+from runner import common  # noqa: E402
 
-RAW = Path(os.environ.get("PRIME_ART_RAW", "D:/prime-art-raw"))
+RAW = common.raw_dir()
 POSES = RAW / "research/2026-10-22-roster/design/pilot3d/anim_bare/poses"
 
 
