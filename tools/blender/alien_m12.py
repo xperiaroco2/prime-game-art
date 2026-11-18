@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -39,6 +40,10 @@ from mathutils import Matrix
 from mathutils.bvhtree import BVHTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from runner import pins  # noqa: E402
+
+RAW = (os.environ.get(pins.RAW_ENV) or pins.beside_checkout(pins.RAW_DIRNAME).as_posix())  # the raw root
 import alien_eyes as AE  # noqa: E402
 import alien_eyes_geom as E  # noqa: E402
 import alien_fangs_geom as FG  # noqa: E402
@@ -49,11 +54,11 @@ import alien_mouths as AM  # noqa: E402
 import alien_tongue_geom as TG  # noqa: E402
 import export_glb  # noqa: E402
 
-SHEET = ("D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mp1/"
+SHEET = (RAW + "/2026-10-20-alien-face-sheets-2/mp1/"
          "image_to_image-image_01a15906-86c2-76fb-a3e5-4de29c5c46e8_0.png")
-SHEET_FANGS = ("D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mg2/"
+SHEET_FANGS = (RAW + "/2026-10-20-alien-face-sheets-2/mg2/"
                "image_to_image-image_01a15908-9f6b-7219-a4df-4ca6606c5c8c_0.png")
-SHEET_TONGUE = ("D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mt2/"
+SHEET_TONGUE = (RAW + "/2026-10-20-alien-face-sheets-2/mt2/"
                 "image_to_image-image_01a1590a-0530-728a-8a04-6f8ddd199946_0.png")
 # The new designs in build order; their contact channels are CONTACT_UV_MOUTH2's (u pout, v fangs) and (M14)
 # CONTACT_UV_MOUTH3's (u tongue).

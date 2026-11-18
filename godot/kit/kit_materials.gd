@@ -3,7 +3,7 @@ extends RefCounted
 ## `kit_set` (Blender's `kit_set-vcol`, a plain white stand-in) get one shared ShaderMaterial on kit_set.gdshader with
 ## the packed textures. Used by the proof and by the layout engine (#75a):
 ##   const KitMaterials := preload("res://kit/kit_materials.gd")
-##   var mat := KitMaterials.make("D:/prime-art-raw/kits/house/v2/textures", {"roughness": [...], "normal_strength": [...]})
+##   var mat := KitMaterials.make("<raw>/kits/house/v2/textures", {"roughness": [...], "normal_strength": [...]})
 ##   KitMaterials.apply(piece_root, mat)
 
 const SHADER := preload("res://kit/kit_set.gdshader")

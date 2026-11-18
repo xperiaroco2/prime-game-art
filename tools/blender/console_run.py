@@ -44,7 +44,7 @@ import console_drawing  # noqa: E402  (beside this file)
 
 RAW = common.raw_dir()
 REF = RAW / "start-console" / "ref"
-DESIGN = Path("D:/prime-game-design/ideas/ship-components/stations-final")
+DESIGN = common.design_dir() / "ideas" / "ship-components" / "stations-final"
 REFS = {"console-final.jpg": DESIGN / "console-final.jpg", "holo14-diamond-2.jpg": DESIGN / "holo14-diamond-2.jpg",
         "front-ortho.jpg": DESIGN / "console-drawing" / "front-ortho.jpg",
         "side-ortho.jpg": DESIGN / "console-drawing" / "side-ortho.jpg",

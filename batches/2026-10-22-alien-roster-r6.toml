@@ -4,7 +4,7 @@
 # PNG alone (no rf2), "keep this exact head ... change ONLY the facial expression". Part B designs four new heads
 # (m71, m72, w71, w72) whose shape itself expresses the state, by the principles of round 5's report, each an edit
 # with rf2 as the style reference only (round 4's lead, framing sentence and style tail). The source table:
-# D:/prime-art-raw/research/2026-10-22-roster/design/r6/concepts_r6.src.json (the blend column is for us; the
+# <raw>/research/2026-10-22-roster/design/r6/concepts_r6.src.json (the blend column is for us; the
 # prompts describe shapes). The stoned look is the face only: nothing smoked or held is drawn. The standing
 # permission for OpenAI images: art#196 comment 6291187194 (2026-10-20), medium for exploration, within this batch's
 # dollar cap. No game, film, studio or character names; no real people. Schema: docs/openai-images.md.

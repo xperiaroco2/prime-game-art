@@ -1,7 +1,7 @@
 """The clay face kit's entry point: build_face (every piece on the head, bound 100 % to the Head bone), the Face
 with its states (mouth, blink, look, ears), the brow and facial-hair mask UV, the one game mesh and the head-scale bake.
 
-Ported from the faces lab's round E kit (D:/prime-art-raw/research/2026-10-05-faces/lab/clay_e/clay_face_b.py).
+Ported from the faces lab's round E kit (<raw>/research/2026-10-05-faces/lab/clay_e/clay_face_b.py).
 """
 import bpy
 import numpy as np

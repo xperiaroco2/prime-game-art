@@ -47,7 +47,7 @@ the public game repo; an agent pushes to `main` here, which GitHub Free cannot p
    (a custom `core.hooksPath` switches off the hooks Git LFS installs). `doctor` sets `core.hooksPath` to
    `tools/githooks`; the setting is repository-wide, shared by every worktree. Only the engineer merges into `main`, on
    GitHub. GitHub Pro (server-side protection) is a money option, not taken.
-4. **Raw folders.** Raw generations and downloads live in `D:/prime-art-raw` (`ART_RAW_DIR`), chosen originals are
+4. **Raw folders.** Raw generations and downloads live in the raw root (`ART_RAW_DIR`, default `../prime-art-raw` beside the main checkout), chosen originals are
    copied to `%OneDrive%/prime-art-raw` (`ART_RAW_BACKUP_DIR`); never in git (`raw/` is ignored as a safety net).
 5. **Manifest.** Every asset has a `manifest.toml` (`docs/manifest.md`) with its source (service, plan, model version,
    task ids, generation date), the raw files' paths and SHA-256, the tools, the licence and its URL,

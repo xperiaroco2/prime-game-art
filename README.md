@@ -25,7 +25,7 @@ tools\run.cmd verify          # the tests and the manifest check
 
 `doctor` needs Python 3.11 or newer (`PYTHON_BIN`, else the `py` launcher), git with Git LFS, Blender 5.2.2 LTS at
 `D:/tools/blender/5.2.2` (or `BLENDER_BIN`), Khronos glTF-Validator at `D:/tools/gltf-validator/2.0.0-dev.3.10` (or
-`GLTF_VALIDATOR_BIN`), the game's Godot 4.7.2 console exe in `GODOT_BIN`, the raw folder `D:/prime-art-raw` and its
+`GLTF_VALIDATOR_BIN`), the game's Godot 4.7.2 console exe in `GODOT_BIN`, the raw root (`ART_RAW_DIR`, default `prime-art-raw` beside the main checkout) and its
 backup `%OneDrive%\prime-art-raw`, and the GitHub CLI logged in. It reports whether `MESHY_API_KEY` is set without ever
 printing it. `tools\run.cmd pins` lists the pinned versions and paths.
 

@@ -285,16 +285,16 @@ is flat at 0.0 under each), as the game's do; they stood at -0.06 before.
 
 ### The game's greybox, pinned (#34)
 The House tests never read the game's live checkout: a marker the game added once turned `main` red. They read
-`tools/tests/fixtures/house_greybox.json`, a snapshot of `D:/prime-game` at a recorded commit (`game_commit`): the
+`tools/tests/fixtures/house_greybox.json`, a snapshot of the game's checkout (`prime-game` beside this one) at a recorded commit (`game_commit`): the
 design doc's room table (`docs/design/house-map.md`) and per greybox room scene its root, origin, `size_m`, Doors,
 Stations and Markers (`test_house_export.py`) and the names of its `Marker3D` doors and stations
 (`test_house_layout.py`). `tools/tests/test_house_greybox.py` compares the live checkout with the snapshot (skipped
-without `D:/prime-game`) and fails only on what the game removed or moved; a new room, marker or design row is not
+without the game's checkout) and fails only on what the game removed or moved; a new room, marker or design row is not
 drift. When the art takes a game change on purpose, refresh the snapshot and update the known differences in the
 same commit:
 
 ```
-$PYTHON_BIN tools/tests/_house_greybox.py           # rewrite the snapshot from D:/prime-game (--game DIR)
+$PYTHON_BIN tools/tests/_house_greybox.py           # rewrite the snapshot from ../prime-game (--game DIR)
 $PYTHON_BIN tools/tests/_house_greybox.py --check   # list the drift, write nothing
 ```
 
@@ -858,7 +858,7 @@ https://forum.godotengine.org/t/is-it-possible-to-bake-lightmapgi-node-using-hea
 route without a window would be a custom engine build that exposes `bake()`, which is installing a tool: the
 engineer's yes.
 
-#83a proved the route in a raw lab project (`D:/prime-art-raw/house/83a/godot`); #83 moved it into this repo as
+#83a proved the route in a raw lab project (`<raw>/house/83a/godot`); #83 moved it into this repo as
 `house --bake` (`tools/runner/house_bake.py` the pure parts, `tools/runner/commands/_house_bake.py` the driver,
 `godot/house/zone_build.gd`, `godot/house/bake_shots.gd`, the `godot/addons/lmbake` editor plugin):
 
@@ -920,7 +920,7 @@ tools/run.sh house --bake ZONES [--preset high|low] [--grid] [--diag] [--sheen] 
 
 ### Baking with lab props (#83)
 
-A lab builds new props as GLBs outside the repo (the kitchen pilot's C2-white, `D:/prime-art-raw/research/
+A lab builds new props as GLBs outside the repo (the kitchen pilot's C2-white, `<raw>/research/
 2026-10-12-kitchen-pilot/round2/opus/C2w`). `house --bake` can bake and shoot them in place of the committed ones:
 
 ```
@@ -947,15 +947,15 @@ tools/run.sh house --bake ZONES --props-dir DIR [--props-map TOML] [--review DIR
 The C2-white review (#83, night or a daytime grant; two runs of about 3-4 minutes each, one at a time):
 
 ```
-tools/run.sh house --bake ground --review D:/prime-art-raw/review/house/83k/today
-tools/run.sh house --bake ground --props-dir D:/prime-art-raw/research/2026-10-12-kitchen-pilot/round2/opus/C2w \
-  --props-map props/bake/kitchen_c2w.toml --review D:/prime-art-raw/review/house/83k --before D:/prime-art-raw/review/house/83k/today
+tools/run.sh house --bake ground --review <raw>/review/house/83k/today
+tools/run.sh house --bake ground --props-dir <raw>/research/2026-10-12-kitchen-pilot/round2/opus/C2w \
+  --props-map props/bake/kitchen_c2w.toml --review <raw>/review/house/83k --before <raw>/review/house/83k/today
 ```
 
 ### Why the bakes looked darker (#83b)
 
 Every 83q bake was 5.1-5.9 L* darker than the real-time row. `--diag` on the ground floor (2026-10-12,
-`D:/prime-art-raw/review/house/83b`; L* of E1 living room / E1 kitchen / seam) splits the gap into three parts:
+`<raw>/review/house/83b`; L* of E1 living room / E1 kitchen / seam) splits the gap into three parts:
 
 | row | what it holds | L* |
 |---|---|---|
@@ -993,7 +993,7 @@ not the leak: a manual run (every shadow caster set double-sided by hand, as the
 
 The engineer chose (2026-10-12) the middle way between the bake alone and `hybrid`: the bake, plus real-time
 specular from the nearest lamps, plus reflection probes, shown first as shots. `--sheen` on the ground floor
-(2026-10-12, `D:/prime-art-raw/review/house/83c`: frames, `sheet.png`, `numbers.md`; per camera E1 living room / E1
+(2026-10-12, `<raw>/review/house/83c`: frames, `sheet.png`, `numbers.md`; per camera E1 living room / E1
 kitchen / seam; lights: real-time / shadowed in view, of the scene's; GPU ms: one run each on the RTX 4060 at
 1280x720, shadows cached then all redrawn):
 
@@ -1053,7 +1053,7 @@ jobs: a zone is prepared by day (`--no-bake`) and baked in the next night run.
 
 ### The numbers of #83a
 
-From `D:/prime-art-raw/review/house/83a/numbers.md` (2026-10-10, bare rooms of #75a, kit v2, RTX 4060, quality high,
+From `<raw>/review/house/83a/numbers.md` (2026-10-10, bare rooms of #75a, kit v2, RTX 4060, quality high,
 3 bounces, denoiser on, bounce energy 1.5):
 
 | zone | preset | texel/m | meshes | lights | M texels | bake s (editor run s) | lightmap MB |

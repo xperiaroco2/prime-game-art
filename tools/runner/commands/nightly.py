@@ -44,7 +44,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
 
 
 def default_worktree(main_checkout: Path) -> Path:
-    """The night worktree beside the task worktrees: D:/prime-game-art -> D:/prime-game-art-wt/nightly."""
+    """The night worktree beside the task worktrees: C:/prime-game-art -> C:/prime-game-art-wt/nightly."""
     return main_checkout.parent / f"{main_checkout.name}-wt" / WORKTREE_NAME
 
 

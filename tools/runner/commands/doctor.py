@@ -149,7 +149,7 @@ def check_godot(report: Report, quick: bool) -> None:
     path = common.tool_path(pins.GODOT_ENV, None)
     fix = (
         f"Set {pins.GODOT_ENV} to the Godot {pins.GODOT} console exe the game repo uses"
-        " (D:/prime-game: tools\\run.cmd doctor)"
+        " (C:/prime-game: tools\\run.cmd doctor)"
     )
     if not path or not path.is_file():
         report.bad(f"Godot not found ({pins.GODOT_ENV} is {str(path) if path else 'not set'})", fix)

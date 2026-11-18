@@ -2033,7 +2033,7 @@ same with the ship's lights on or off) and `e` scales them in Godot.
 Cost: about 12k triangles a pod with its lights (was about 1.6k); the ship 313k.
 
 ## Polish n2: the nose, the hall's bays, the underbody (2026-11-01)
-A fresh critic's findings on the b4 package (art #263); note `D:/prime-art-raw/ship/v5/notes/polish-n2.md`.
+A fresh critic's findings on the b4 package (art #263); note `<raw>/ship/v5/notes/polish-n2.md`.
 - **The closed nose's glare** was no leak: `test_ship_jaw` casts its seal rays and the closed jaws are shut. `ship.gd`
   `_dress` makes the glow cells' lights in the saved pose (open), so a closed view left the deck tip's cyan light
   (lights.json `(0, 0.48, -12.07)`) 0.5 m over the path in front of the shut nose. `_jaw_bind` keeps a cell lit
@@ -2064,7 +2064,7 @@ A fresh critic's findings on the b4 package (art #263); note `D:/prime-art-raw/s
 
 ## Polish n3: the stator blades, the chine lines, the oculus trim, the nose's seams (2026-11-01)
 The package v6 (`<raw>/ship/v5/export/v6`) is built from these pieces (`assets/environment/ship`).
-The n2 critic's leftovers (art #263); note `D:/prime-art-raw/ship/v5/notes/polish-n3.md`.
+The n2 critic's leftovers (art #263); note `<raw>/ship/v5/notes/polish-n3.md`.
 - **The stator blades** (`ship_hull_detail._blade`) are aerofoils (`FOIL`: a round leading edge, a fat front third, a
   thin trailing edge) swept in six sections from the hub (0.19 r) to the wall (0.57 r), the pitch 46 deg at the hub
   to 30 at the wall, 5.5 to 3 cm thick at r 1.0. The leading edge sits deep, toward the glowing floor; its bevel is
@@ -2102,7 +2102,7 @@ The n2 critic's leftovers (art #263); note `D:/prime-art-raw/ship/v5/notes/polis
 The engineer on n4's stern: "everything is great, but bring the turbine back as it was; the old one really looked
 like a spaceship. Is it a plane? Do aliens fly on propellers?" He preferred the pre-polish insides ("futuristic, a bit
 like Daft Punk"; the left column of `<raw>/ship/v5/polish/n1/compare.png`). nb puts them back inside n1's bells
-(`ship_hull_detail.nozzle_pod`/`pod_ring`); note `D:/prime-art-raw/ship/v5/notes/nozzle-back.md`.
+(`ship_hull_detail.nozzle_pod`/`pod_ring`); note `<raw>/ship/v5/notes/nozzle-back.md`.
 
 | Part | Now |
 |---|---|

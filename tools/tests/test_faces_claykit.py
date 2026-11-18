@@ -13,13 +13,14 @@ import unittest
 from unittest import mock
 from pathlib import Path
 
+from runner import common
 from runner.commands import _assembly
 
 _assembly.recipe_module()  # puts tools/blender on the path
 from um.clayface import kit as K  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
-RAW = Path("D:/prime-art-raw")
+RAW = common.raw_dir()
 
 
 def lab_data(path):

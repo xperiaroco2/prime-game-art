@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -31,6 +32,10 @@ from mathutils import Matrix
 from mathutils.bvhtree import BVHTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from runner import pins  # noqa: E402
+
+RAW = (os.environ.get(pins.RAW_ENV) or pins.beside_checkout(pins.RAW_DIRNAME).as_posix())  # the raw root
 import alien_eyes as AE  # noqa: E402
 import alien_eyes_geom as E  # noqa: E402
 import alien_lips_geom as LP  # noqa: E402
@@ -40,9 +45,9 @@ import export_glb  # noqa: E402
 
 DESIGNS = ("frog", "overbite")
 SHEET_DEFAULT = {
-    "frog": "D:/prime-art-raw/2026-10-19-alien-face-sheets/mf1/"
+    "frog": RAW + "/2026-10-19-alien-face-sheets/mf1/"
             "image_to_image-image_01a1543a-1b43-75c5-96ad-ab6f19272781_0.png",
-    "overbite": "D:/prime-art-raw/2026-10-19-alien-face-sheets/mo1/"
+    "overbite": RAW + "/2026-10-19-alien-face-sheets/mo1/"
                 "image_to_image-image_01a1543b-80fb-7599-900a-ab28da7bd48f_0.png",
 }
 

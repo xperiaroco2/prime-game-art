@@ -1,5 +1,5 @@
 # The animation review's settings (tools/run.py anim-review; docs/animations.md). Paths are relative to the raw
-# folder (ART_RAW_DIR, default D:/prime-art-raw).
+# folder (ART_RAW_DIR, default ../prime-art-raw beside the main checkout).
 
 ual = "quaternius/Universal_Animation_Library/Universal Animation Library[Standard]/Unreal-Godot/UAL1_Standard.glb"
 ual_rm = "quaternius/Universal_Animation_Library/Universal Animation Library[Standard]/Unreal-Godot/UAL1_Standard_RM.glb"

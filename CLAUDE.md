@@ -40,7 +40,9 @@ model's amendment of 2026-10-08). Agents write everything else, verify it from t
   Each record holds the licence, the licence URL, `public_repo_ok` and `ai_generated`. Never put any of these in
   anything that may go public: free-plan AI output, Mixamo, store packs (Synty, Fab, Unity Asset Store), ActorCore or
   Rokoko raw files, or non-commercial data.
-- **Raw generations and downloads live in `D:/prime-art-raw`**, copies of chosen originals in `OneDrive/prime-art-raw`;
+- **Raw generations and downloads live in the raw root** (`ART_RAW_DIR`, default `prime-art-raw` beside the main
+  checkout, e.g. `C:/prime-art-raw`; written `<raw>` in docs; `D:/prime-art-raw` is gone since 2026-11-18, #136),
+  copies of chosen originals in `OneDrive/prime-art-raw`;
   never in git (`raw/` is ignored). Manifests and source records hold their relative paths and SHA-256.
 - **Review images go to the engineer through private artifact pages**, never committed. Committed files are sources,
   approved exports, manifests and reports.
@@ -219,7 +221,7 @@ Stop and ask the engineer, in one batched message with options and a recommendat
   Tightening them needs no yes.
 
 ## Manager rules (one set for every prime-game track)
-A manager session of this repo follows `D:\prime-game\docs\MANAGERS.md` (prime-game's main checkout beside this one;
+A manager session of this repo follows `C:\prime-game\docs\MANAGERS.md` (prime-game's main checkout beside this one;
 missing or unreadable: https://github.com/xperiaroco2/prime-game/blob/main/docs/MANAGERS.md). Read it whole at the
 session's start, before anything else, and again after a change to it reaches prime-game's `main`. It holds the mode
 and effort, the kickoff (no "ultracode"), the "For you:" block, the keep-alive, when to hand over and the handover

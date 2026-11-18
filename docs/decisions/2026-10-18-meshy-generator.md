@@ -9,7 +9,7 @@
 ## Context
 
 Code-built aliens were judged ugly (art#196), and headless Blender cannot sculpt soft forms: scripted sculpting fails
-in Blender 5.2.2. The tools research of 2026-10-17 (`D:/prime-art-raw/research/2026-10-17-art-tools/recommendation.md`)
+in Blender 5.2.2. The tools research of 2026-10-17 (`<raw>/research/2026-10-17-art-tools/recommendation.md`)
 recommended its pipeline B: concept images, then an AI 3D generator, then a finish by agents. It named Meshy 7.1
 multi-image to 3D as the primary generator, Hyper3D Rodin Gen-2.5 as the challenger and Tripo for part splitting. For
 concepts it named nano-banana-pro and GPT Image, both through our Meshy client.
@@ -25,7 +25,7 @@ view only:
 Tripo's content filter refused the multi-view input on all four create calls (HTTP 400, code 2008, "violation of
 content policy"; no credits charged), with the views on transparent and on white backgrounds alike. The likely trigger
 is an unclothed full-body figure; a head-only input had passed the day before
-(`D:/prime-art-raw/research/2026-10-18-alien-tripo/record.md`).
+(`<raw>/research/2026-10-18-alien-tripo/record.md`).
 
 ## Decision
 
@@ -69,6 +69,6 @@ is an unclothed full-body figure; a head-only input had passed the day before
   `docs/meshy.md` asks when the plan changes.
 - **Provenance.** Every asset made this way records `ai_generated = true`, `source.service = "meshy"`, the model
   versions (the concept model and `meshy-7.1`) and the task ids (`docs/manifest.md`). Raw generations stay in
-  `D:/prime-art-raw`, never in git; `public_repo_ok` follows the paid plan's licence for finished exports, as in
+  `<raw>`, never in git; `public_repo_ok` follows the paid plan's licence for finished exports, as in
   `docs/manifest.md`'s example.
 - The Tripo and Rodin files of the showcase stay in the raw folder as records; no client for either is added.

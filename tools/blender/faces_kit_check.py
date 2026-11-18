@@ -3,7 +3,7 @@ on the recipe's heads under random hair items, measured (um/clayface/survey.py);
 
 The runner calls it; by hand, background only:
   blender -b --factory-startup --python-exit-code 1 --python tools/blender/faces_kit_check.py -- \
-      --recipe recipes/clay_round_d.json --raw D:/prime-art-raw --out tools/out/faces_kit --n 320 [--bodies M,W]
+      --recipe recipes/clay_round_d.json --raw <raw> --out tools/out/faces_kit --n 320 [--bodies M,W]
 """
 
 import argparse

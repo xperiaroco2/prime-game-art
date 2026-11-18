@@ -4,10 +4,10 @@ The Ultimate Modular pack's own actions against Quaternius' Universal Animation 
 our skeleton, every clip played on an unmodified pack character of each body type (men: `Business Man.glb`, women:
 `Suit.glb`), measured, and looked at as 12-frame front and side strips, looping clips and side-by-side pairs. The
 method and the commands are in [../animations.md](../animations.md); the pictures and clips are outside git in
-`D:/prime-art-raw/review/stage1/20/` (`strips/`, `clips/`, `pairs/`, `rates/`, `sheets/`, `metrics.json`,
+`<raw>/review/stage1/20/` (`strips/`, `clips/`, `pairs/`, `rates/`, `sheets/`, `metrics.json`,
 `inventory.json`). The numbers below are from the run after the review fixes of the PR (the hips anchor, the hand
 measures, the game's speeds). The second library, **UAL2 Standard**, was judged with the same tools in art #24: see
-"UAL2 Standard (art #24)" below; its pictures and clips are in `D:/prime-art-raw/review/stage1/24/`. The needs table, the
+"UAL2 Standard (art #24)" below; its pictures and clips are in `<raw>/review/stage1/24/`. The needs table, the
 gaps and the recommendation below include it.
 
 ## Summary
@@ -180,7 +180,7 @@ The free Universal Animation Library 2 Standard (Quaternius, CC0 1.0; record
 [`sources/quaternius_ual2_standard.toml`](../../sources/quaternius_ual2_standard.toml)) through the same retarget and
 review, as one more source (`tools/run.py retarget --library ual2`, `anim-review <step> --sources ual2`; the method in
 [../animations.md](../animations.md#sources-clip-keys-and-layers-art-24)). Outputs in
-`D:/prime-art-raw/review/stage1/24/`: `inventory.json`, `metrics.json` and `metrics.md`, `strips/` and `clips/` (88:
+`<raw>/review/stage1/24/`: `inventory.json`, `metrics.json` and `metrics.md`, `strips/` and `clips/` (88:
 43 clips per body type and the layered carry idle), `pairs/` (10 per body type), `rates/` (the carry at the game's
 walk), `sheets/` (15) and `mannequins/` (the Female Mannequin check).
 
@@ -407,7 +407,7 @@ days, side-steps and backpedal 2 days, against $9.99 one-off). UAL2 Source does 
 ```
 tools/run.py retarget --body men --floor
 tools/run.py retarget --body women --floor
-tools/run.py anim-review all --out D:/prime-art-raw/review/stage1/20 --jobs 4
+tools/run.py anim-review all --out <raw>/review/stage1/20 --jobs 4
 ```
 In art #20 the full review made 134 measured clips (strips and MP4s), 28 side-by-side pairs, 4 treadmill rows (2 per
 body type) and 23 review sheets with 8 Blender processes; `stage1/20/` is that snapshot. Since art #24 a full run also
@@ -418,7 +418,7 @@ pair names (the pack clip names) and `clips --clips` with its keys do. UAL2 alon
 ```
 tools/run.py retarget --library ual2 --body men --floor
 tools/run.py retarget --library ual2 --body women --floor
-tools/run.py anim-review all --sources ual2 --out D:/prime-art-raw/review/stage1/24 --jobs 4
+tools/run.py anim-review all --sources ual2 --out <raw>/review/stage1/24 --jobs 4
 ```
 86 UAL2 clips and 2 layered carry idles measured (strips and MP4s; the carry idle is a `[layer] clips` entry, so the
 source run measures it), 20 pairs, 2 treadmill rows and 15 sheets.

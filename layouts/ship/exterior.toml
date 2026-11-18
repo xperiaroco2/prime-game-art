@@ -692,7 +692,7 @@ outside = true
 # in ref_dir it is compared with side by side]. They replace ship.toml's views of the same name; ship.toml's other
 # views (the interior lane's) are shot too.
 [shots]
-ref_dir = "D:/prime-game-design/ideas/ship-components/2d/"
+ref_dir = "<design>/ideas/ship-components/2d/"
 views = [
   ["out_front", "outside: front, ramp down (turnaround front)", [0.0, -31.0, 6.8], [0.0, 0.0, 1.8], 58.0, "turnaround.jpg"],  # rebuild B: back and wider for J's 30 m span
   ["out_hero", "outside: three-quarter at night (hero)", [-21.0, -24.0, 9.0], [0.8, 1.0, 1.8], 52.0, "hero.jpg"],

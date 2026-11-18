@@ -3,7 +3,7 @@ tools/out/
 __pycache__/
 *.pyc
 
-# Raw generations live outside the repository (D:/prime-art-raw); a stray copy never enters git.
+# Raw generations live outside the repository (the raw root, ART_RAW_DIR, default ../prime-art-raw); a stray copy never enters git.
 raw/
 *.part
 

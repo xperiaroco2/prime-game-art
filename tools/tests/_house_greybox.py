@@ -1,14 +1,14 @@
 """The game's House greybox, pinned (art #34): what the tests compare the art's House against, read once from the
 game's checkout and committed as tools/tests/fixtures/house_greybox.json, so the tests stay green when the game adds
-a marker and when D:/prime-game is missing (docs/house.md "The game's greybox, pinned").
+a marker and when the game's checkout is missing (docs/house.md "The game's greybox, pinned").
 
 The snapshot holds the game commit it was read at, the design doc's room table (docs/design/house-map.md: title ->
 [x, y, w, d]) and per greybox room scene (levels/house/rooms/*.tscn, placed by levels/house/house.tscn) its root,
 origin, `metadata/size_m`, the Doors, Stations and Markers (name -> [x, h, z, groups]) and the names of its Marker3D
 doors and stations. Refresh it after the art takes a game change on purpose:
 
-    $PYTHON_BIN tools/tests/_house_greybox.py [--game D:/prime-game]          # rewrite the snapshot
-    $PYTHON_BIN tools/tests/_house_greybox.py --check [--game D:/prime-game]  # list the drift, write nothing
+    $PYTHON_BIN tools/tests/_house_greybox.py [--game C:/prime-game]          # rewrite the snapshot
+    $PYTHON_BIN tools/tests/_house_greybox.py --check [--game C:/prime-game]  # list the drift, write nothing
 
 test_house_greybox.py fails when the live checkout removed or moved what the snapshot holds (new rooms, markers and
 rows are allowed: the art takes them with the next refresh)."""
@@ -22,7 +22,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-GAME = Path("D:/prime-game")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from runner import pins  # noqa: E402
+
+# The game's checkout: prime-game beside the main checkout (C:/prime-game-art -> C:/prime-game).
+GAME = pins.beside_checkout("prime-game")
 SNAPSHOT = Path(__file__).resolve().parent / "fixtures" / "house_greybox.json"
 NODE = re.compile(r'\[node name="(\w+)" type="(\w+)" parent="(\w+)"((?:[^\]\[]|\[[^\]]*\])*)\]\n'
                   r'(?:transform = Transform3D\(([^)]*)\))?')
@@ -111,7 +115,7 @@ def drift(pinned: dict, live: dict) -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--game", type=Path, default=GAME, help="the game's checkout (default D:/prime-game)")
+    ap.add_argument("--game", type=Path, default=GAME, help="the game's checkout (default: prime-game beside the main checkout)")
     ap.add_argument("--check", action="store_true", help="list the drift against the snapshot, write nothing")
     args = ap.parse_args(argv)
     if not (args.game / "levels" / "house" / "house.tscn").is_file():

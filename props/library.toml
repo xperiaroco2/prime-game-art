@@ -1,13 +1,13 @@
 # The House dressing library (art #87, map request #73): one GLB per generic prop (furniture, dressing, fixtures,
 # outdoor) in the kit's materials, painted by role as vertex colour. docs/props.md explains every field; the plan is
-# D:/prime-art-raw/research/2026-10-10-house-plan (props.md, inventory.md section 9). Sizes are the engineer's
+# <raw>/research/2026-10-10-house-plan (props.md, inventory.md section 9). Sizes are the engineer's
 # inventory draft (L along X, W along Z, H up, metres); a size that does not work is reported, never changed silently.
 # Paints and shapes are taste data: changing a hex or a prop's roles needs no code change.
 
 library = "house"
 version = 14
 kit_spec = "kits/house.json"
-# the build goes under the raw folder: D:/prime-art-raw/props/library/v14/<id>.glb (v14, #79: v13 with the
+# the build goes under the raw folder: <raw>/props/library/v14/<id>.glb (v14, #79: v13 with the
 # garage's car, lift and dressing laid over it; v13, #172: v12 with the
 # basement's plant rooms' pieces and the darkroom's island laid over it; v12, #170: v11 with the
 # basement's working-room pieces laid over it; v11, #168: v10 with the attic's
