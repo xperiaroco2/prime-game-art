@@ -3,7 +3,7 @@ review heads of faces/review.json, built with the assembler (tools/blender/um/),
 
 The runner calls it (tools/run.py faces); by hand, background only:
   blender -b --factory-startup --python-exit-code 1 --python tools/blender/faces_render.py -- \
-      --styles faces/styles.json --review faces/review.json --raw D:/prime-art-raw --out tools/out/faces \
+      --styles faces/styles.json --review faces/review.json --raw <raw> --out tools/out/faces \
       [--families f1_dots,f3_almond] [--expressions neutral,closed]
       [--sheets close,distance,overview,strip,spacing,beards|none] [--res 100] [--pack-weights]
 

@@ -40,7 +40,7 @@ import socket_drawing  # noqa: E402  (beside this file)
 RAW = common.raw_dir()
 HOME = RAW / "ship" / "v4" / "socket"
 REF = HOME / "ref"
-DESIGN = Path("D:/prime-game-design/ideas/ship-components/stations-final")
+DESIGN = common.design_dir() / "ideas" / "ship-components" / "stations-final"
 REFS = {"socket.jpg": DESIGN / "socket.jpg", "front-ortho.jpg": DESIGN / "socket-drawing" / "front-ortho.jpg",
         "side-ortho.jpg": DESIGN / "socket-drawing" / "side-ortho.jpg",
         "drawing.js": DESIGN / "socket-drawing" / "drawing.js"}

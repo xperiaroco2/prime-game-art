@@ -210,7 +210,7 @@ the coral lid rims, the two nostril slits, the pale muzzle and the glossy red li
 rendering, all six heads consistent. The six shapes read in order (rest, M, small, A with teeth and tongue, E, a
 round O kiss). Unlike Meshy's sheet it frames the heads larger and cuts them at the neck (Meshy kept the reference's
 whole bust), and its rest panel shows a slight gap between the lips. Saved in
-`D:/prime-art-raw/2026-10-20-openai-edits-test/mp1/image-0.png`.
+`<raw>/2026-10-20-openai-edits-test/mp1/image-0.png`.
 
 ## Batch 2026-10-21-alien-mouth-views (art #196 M19)
 
@@ -221,7 +221,7 @@ Meshy). Measured: medium, n = 3, two references: 894 to 945 text and 6,144 image
 one crop as references: 298 to 315 text and 2,560 image input tokens, 1,372 output tokens, **$0.063**, about 33 s. The
 batch: **$0.2956** of its $3 cap (`req_85f6e47a...`, `req_bfbca41c...`, `req_e5cc1b93...`, `req_26ad9708...`). All
 six medium sheets were clean and close to mp1's lips; the high redraws kept the picks almost exactly, a little
-crisper. The images: `D:/prime-art-raw/2026-10-21-alien-mouth-views/`.
+crisper. The images: `<raw>/2026-10-21-alien-mouth-views/`.
 
 ## Batch 2026-10-21-alien-mouth-views-2 (art #196 M20)
 
@@ -243,49 +243,49 @@ ten present-day outfits; **c1** the strongest head (a crop of l2) in eight skin 
 and a 3,000-character prompt, 3,088 text and 12,416 image input tokens; 1,911 output tokens for four 2560x1440 images
 (about 478 each, 1.4 times a medium 1536x1024); $0.086 to $0.172 a request, 26 to 33 s. **$0.4884** of the $6 cap.
 The styles held from the first request (smooth toy look, one body); an edit of one picked image (l2) gives four near
-copies, so variety comes from the generation before it. Images: `D:/prime-art-raw/2026-10-22-alien-roster-r1/`;
-sheets and handoff: `D:/prime-art-raw/research/2026-10-22-roster/`.
+copies, so variety comes from the generation before it. Images: `<raw>/2026-10-22-alien-roster-r1/`;
+sheets and handoff: `<raw>/research/2026-10-22-roster/`.
 
 ## Batch 2026-10-22-alien-roster-r2 (art #196, roster round 2)
 
-The ten head concepts of the design research (`D:/prime-art-raw/research/2026-10-22-roster/design/`), one edit per
+The ten head concepts of the design research (`<raw>/research/2026-10-22-roster/design/`), one edit per
 head at medium, 1024x1280, n = 3, under the standing permission: heads 1 and 3 from their round-1 crops plus rf2, the
 eight new heads with rf2 as a style reference only (the prompt says what the reference is for). Measured: one
 reference and a 1,900-character prompt, 1,400 to 1,590 text and 3,072 image input tokens, 1,133 output tokens for
 three 1024x1280 images (about 378 each); $0.066 a request, $0.085 with two references, 21 to 24 s. **$0.6999** of the
 $5 cap. A style reference used only for finish and light held the look without copying its face; framing (one bust
-edge) did not follow the prompt reliably. Images: `D:/prime-art-raw/2026-10-22-alien-roster-r2/`; JPEGs, overview and
-handoff: `D:/prime-art-raw/research/2026-10-22-roster/design/`.
+edge) did not follow the prompt reliably. Images: `<raw>/2026-10-22-alien-roster-r2/`; JPEGs, overview and
+handoff: `<raw>/research/2026-10-22-roster/design/`.
 
 ## Batch 2026-10-22-alien-roster-r3 (art #196, roster round 3)
 
 Two new candidates for each of round 2's four rejected heads and redraws of h06 (wrap-around eyes) and h08 (the real
 axolotl's feathery gills and bead eyes), medium, 1024x1280, n = 3, under the standing permission; the batch file is
-generated from `D:/prime-art-raw/research/2026-10-22-roster/design/r3/concepts_r3.src.json`. 12 requests (two revised
+generated from `<raw>/research/2026-10-22-roster/design/r3/concepts_r3.src.json`. 12 requests (two revised
 prompts after the first look): $0.066 to $0.068 with one reference, $0.097 to $0.098 with two; **$0.8645** of the $5 cap. Unless
 the prompt says "solid dark, no whites" and describes a non-human mouth, the model gives every head the same human
-eye and small lips. Images: `D:/prime-art-raw/2026-10-22-alien-roster-r3/`; JPEGs, overview and handoff: `.../design/r3/`.
+eye and small lips. Images: `<raw>/2026-10-22-alien-roster-r3/`; JPEGs, overview and handoff: `.../design/r3/`.
 
 ## Batch 2026-10-22-alien-roster-r3b (art #196, roster round 3b)
 
 Four new alien women for the slots W7 and W10, each prompt writing the eye (solid glossy dark, no white) and the
 mouth (beak, lipless slit, crease, seam) as non-human, two revised after a look, and h08b (round 2's h08-2 with only its
 gills made feathery), medium, 1024x1280, n = 3, under the standing permission; the batch file is generated from
-`D:/prime-art-raw/research/2026-10-22-roster/design/r3b/concepts_r3b.src.json`. 7 requests: $0.067 to $0.068 with one
+`<raw>/research/2026-10-22-roster/design/r3b/concepts_r3b.src.json`. 7 requests: $0.067 to $0.068 with one
 reference, $0.097 with two; **$0.5044** of the $3 cap. No head came out the stock alien-woman face; "no lips" alone
 still gave a small round mouth pouting human lips, while "flat, flush with the face, nothing pushed forward, no pout"
-held. Images: `D:/prime-art-raw/2026-10-22-alien-roster-r3b/`; JPEGs, overview and handoff: `.../design/r3b/`.
+held. Images: `<raw>/2026-10-22-alien-roster-r3b/`; JPEGs, overview and handoff: `.../design/r3b/`.
 
 ## Batch 2026-10-22-alien-roster-r4 (art #196, roster round 4)
 
 A new ten heads (five men, five women), each built from one real animal read up first (shoebill, humphead wrasse, stag
 beetle, triceratops, gharial; moth, eyelash viper, seahorse, cassowary, lionfish), medium, 1024x1280, n = 3, rf2 as
 the style reference, round 3's lead, framing sentence and style tail; the batch file is generated from
-`D:/prime-art-raw/research/2026-10-22-roster/design/r4/concepts_r4.src.json`. 13 requests (three revised prompts after
+`<raw>/research/2026-10-22-roster/design/r4/concepts_r4.src.json`. 13 requests (three revised prompts after
 the first look), $0.067 to $0.069 each; **$0.8782** of the $5 cap. Writing the animal's own eye and mouth into the prompt held for most heads, but
 the model still slides back to a human face where the animal's feature can sit on one: a forehead hump becomes a quiff
 over pouting lips, a beetle's shell a visor over a human chin, a moth the classic big black alien eyes. Images:
-`D:/prime-art-raw/2026-10-22-alien-roster-r4/`; JPEGs, overview and handoff: `.../design/r4/`.
+`<raw>/2026-10-22-alien-roster-r4/`; JPEGs, overview and handoff: `.../design/r4/`.
 
 ## Batch 2026-10-22-alien-roster-r5 (art #196, roster round 5)
 
@@ -295,12 +295,12 @@ keratin, horn or beak; one silhouette; one alien eye idea under heavy lids; a bi
 signal). Medium, 1024x1280, n = 3, and **two references** per edit: rf2 for the style (round 4's lead, framing sentence
 and style tail) and one kept head (h01, m5a, w42 or w10a) for the face language only, with "never its head shape or
 features" and a list of its shapes not to copy. The batch file is generated from
-`D:/prime-art-raw/research/2026-10-22-roster/design/r5/concepts_r5.src.json`. 17 requests (five revised prompts after
+`<raw>/research/2026-10-22-roster/design/r5/concepts_r5.src.json`. 17 requests (five revised prompts after
 the first look), $0.098 to $0.100 each (the second image adds about $0.03); **$1.6857** of the $5 cap. The face
 reference carries the eyes, lids and lips well, but it also drags its head along: every man given h01 took its frog
 mouth, m67 copied m5a's flat head, and the women all share one face. Ideas behind or beside the head (a streamer, a
 nape coil, brow fins) slid into hair (a ponytail, a bun, one crest). Images:
-`D:/prime-art-raw/2026-10-22-alien-roster-r5/`; JPEGs, overview and handoff: `.../design/r5/`.
+`<raw>/2026-10-22-alien-roster-r5/`; JPEGs, overview and handoff: `.../design/r5/`.
 
 ## Batch 2026-10-22-alien-roster-r6 (art #196, roster round 6, inner states)
 
@@ -310,12 +310,12 @@ each an edit of the kept head's own raw PNG alone, no rf2, led by "keep this exa
 finish, framing and light; change ONLY the facial expression and what the lids, eyes, mouth and soft parts do".
 **B**: four new heads whose shape carries the state (m71 stoned, m72 sleepy, w71 angry, w72 scared), rf2 as the style
 reference only, round 4's lead, framing sentence and style tail. Medium, 1024x1280, n = 3; the batch file is
-generated from `D:/prime-art-raw/research/2026-10-22-roster/design/r6/concepts_r6.src.json`. 13 requests (two
+generated from `<raw>/research/2026-10-22-roster/design/r6/concepts_r6.src.json`. 13 requests (two
 revised prompts, h02r and w71r, after the first look), $0.068 to $0.070 each; **$0.8931** of the $4 cap. An edit of
 the kept image alone keeps the head, colour, finish and framing every time; strong states read in one second, but
 the model only nudges a kept look unless the prompt asks for an extreme, and mixed states (offended, smitten) come out
 as the nearest simple one. Soft parts act best (limp whiskers, drooping gills, pinned ears, raised spines). Images:
-`D:/prime-art-raw/2026-10-22-alien-roster-r6/`; JPEGs, overview and handoff: `.../design/r6/`.
+`<raw>/2026-10-22-alien-roster-r6/`; JPEGs, overview and handoff: `.../design/r6/`.
 
 ## Batch 2026-10-22-alien-roster-r7 (art #196, roster round 7, ten men by character type)
 
@@ -326,11 +326,11 @@ a serene monk and a butler, each carried by the head and face shapes alone (no c
 principles. rf2 as the style reference only, round 5's lead, framing sentence and style tail; the prompt names the type
 in plain words, then forbids anything worn or held and any visible emotion. Medium, 1024x1280, **n = 1** (three
 variants came out nearly alike); a concept that missed got one revised item instead (m82r, m85r, m87r, m89r, m90r).
-The batch file is generated from `D:/prime-art-raw/research/2026-10-22-roster/design/r7/concepts_r7.src.json`. 15
+The batch file is generated from `<raw>/research/2026-10-22-roster/design/r7/concepts_r7.src.json`. 15
 requests, $0.0231 to $0.0236 each; **$0.3495** of the $3 cap. Eight of ten types read in a second; the giant and the
 butler only half. Full lips, eyeliner or a mass hanging at the sides of the head turned two men into women (m85, m89);
 the types pull the faces toward human, so the alien lives in the head shape. Images:
-`D:/prime-art-raw/2026-10-22-alien-roster-r7/`; JPEGs, overview and handoff: `.../design/r7/`.
+`<raw>/2026-10-22-alien-roster-r7/`; JPEGs, overview and handoff: `.../design/r7/`.
 
 ## Batch 2026-10-22-alien-roster-r8 (art #196, roster round 8, three men reworked)
 
@@ -342,8 +342,8 @@ marks or sacred iconography). 7 requests, $0.032597 to $0.032967 each (two input
 request than round 7's one); **$0.2292** of the $2 cap. The jock is solved (m87b: golden slit-pupil eyes, level lids,
 no smirk); the giant reads as one only with a bull neck and shoulders (m82b), which breaks the shared body; the serene
 man is closer (m89c's nose pad, thin lips and lobes behind the jaw) but still slightly androgynous. Lobes beside the
-cheeks read as hair whatever the prompt says. Images: `D:/prime-art-raw/2026-10-22-alien-roster-r8/`; JPEGs, overview
-and handoff: `D:/prime-art-raw/research/2026-10-22-roster/design/r8/`.
+cheeks read as hair whatever the prompt says. Images: `<raw>/2026-10-22-alien-roster-r8/`; JPEGs, overview
+and handoff: `<raw>/research/2026-10-22-roster/design/r8/`.
 
 ## Batch 2026-10-22-openai-quality-compare (art #276, medium vs high for one image)
 
@@ -356,7 +356,7 @@ asks better (the rectangular slit pupils and the thin pencil-moustache line, whi
 the lip) and has crisper lid and brow edges and a finer sheen, a gap that shows mostly at 1:1. At 1024x1280 both
 paid more output tokens than the 1536x1024 measurements scaled by pixels predict (286 and 1,143), within the
 estimate's margin. Recommendation: explore at medium, n = 1; high for the picked concept's edits and final sheets.
-Sheets and notes: `D:/prime-art-raw/research/2026-10-22-roster/design/quality/` (`m83_medium_vs_high.jpg`,
+Sheets and notes: `<raw>/research/2026-10-22-roster/design/quality/` (`m83_medium_vs_high.jpg`,
 `m83_face_crop_1to1.jpg`, `compare.md`).
 
 ## Batches 2026-10-22-alien-mantis-dots and 2026-10-22-alien-shark (art #196, two small asks)
@@ -369,8 +369,8 @@ ordinary shark beside the hammerhead, an aggressive man, perhaps with gills on t
 an edit with rf2 for style only, sh1 with three gill slits a side and sh2 without; **$0.0462** of the $0.50 cap
 (about $0.023 each). Both read at once (a conical snout, a dorsal fin on the head, flat black eyes, a down-turned
 mouth with a tooth tip at its near corner, a pale belly line); both came out with a scowl (angled, frowning brows)
-though the prompts asked for no visible emotion, kept as the aggressive type he asked for. Images: `D:/prime-art-raw/2026-10-22-alien-mantis-dots/`,
-`D:/prime-art-raw/2026-10-22-alien-shark/`; sheets: `D:/prime-art-raw/research/2026-10-22-roster/design/mantis/`,
+though the prompts asked for no visible emotion, kept as the aggressive type he asked for. Images: `<raw>/2026-10-22-alien-mantis-dots/`,
+`<raw>/2026-10-22-alien-shark/`; sheets: `<raw>/research/2026-10-22-roster/design/mantis/`,
 `.../design/shark/`.
 
 ## Batch 2026-10-22-alien-roster-r9 (art #196, roster round 9, ten women by character type)
@@ -382,12 +382,12 @@ tough biker, each carried by the head and face shapes alone, each with a growth 
 set curl, pigtails, ponytail, braids) as a smooth part of the skull. rf2 as the style reference only, round 7's lead,
 framing sentence and style tail; medium, 1024x1280, **n = 1**; a concept that missed got one revised item (w92r,
 w93r, w98r). The batch file is generated from
-`D:/prime-art-raw/research/2026-10-22-roster/design/r9/concepts_r9.src.json`. 13 requests, $0.023017 to $0.023457
+`<raw>/research/2026-10-22-roster/design/r9/concepts_r9.src.json`. 13 requests, $0.023017 to $0.023457
 each; **$0.3012** of the $2 cap. Six of ten types read in a second (matriarch, diva, fortune-teller, goth, girl next door,
 biker); the tomboy and the hippie mostly (the hippie's lids lean stoned); the nerd and the executive only half. "Lashes" and "full lips" pull every woman toward
 glamour unless the prompt says no make-up look; a darker crown tone with a hard edge reads as a swim cap or helmet
-(w92, w98). Images: `D:/prime-art-raw/2026-10-22-alien-roster-r9/`; JPEGs, overview and handoff:
-`D:/prime-art-raw/research/2026-10-22-roster/design/r9/`.
+(w92, w98). Images: `<raw>/2026-10-22-alien-roster-r9/`; JPEGs, overview and handoff:
+`<raw>/research/2026-10-22-roster/design/r9/`.
 
 ## Batches 2026-10-22-alien-rockgirl-hair, -orchid-cactus, -goth and -goth-bob (art #196, the roster's last picks)
 
@@ -398,8 +398,8 @@ uploaded); he picked **ug3**; 9 requests, $0.02259 to $0.02287 each, **$0.2043**
 backs for the kept orchid (he picked **or1**) and two cactus men (rejected); $0.0899. **Goth**: three reworks of round
 9's w96 ($0.0675), then w96's face with three new head growths and a new woman with g2's bob shape and three faces; he
 picked **gh2** and **b2** ($0.1367); orchid-cactus 4, goth 3 and goth-bob 6 requests at $0.022367 to $0.022865 each. Images under
-`D:/prime-art-raw/2026-10-22-alien-<rockgirl-hair|orchid-cactus|goth|goth-bob>/`; sheets under
-`D:/prime-art-raw/research/2026-10-22-roster/design/<rockgirl|orchid-cactus|goth>/`; the roster line-up in `.../final/`.
+`<raw>/2026-10-22-alien-<rockgirl-hair|orchid-cactus|goth|goth-bob>/`; sheets under
+`<raw>/research/2026-10-22-roster/design/<rockgirl|orchid-cactus|goth>/`; the roster line-up in `.../final/`.
 
 ## Batch 2026-10-22-alien-pilot-2d (art #196, the 3D pilot's 2D reference)
 
@@ -407,7 +407,7 @@ The engineer picked the chameleon man and the axolotl woman for the 3D pilot. Pe
 profile, back in one row) and an expression sheet (neutral, happy, sad, angry, surprised, talking in a 3 x 2 grid),
 **high** (work inside a picked concept), 1536x1024, n = 1, edits of each head's kept image (the chameleon from its
 mirrored copy). 4 requests, **$0.2097** of the $1 cap. All four held the character; the axolotl's back view and the
-gill count stay consistent across views. Images: `D:/prime-art-raw/2026-10-22-alien-pilot-2d/`.
+gill count stay consistent across views. Images: `<raw>/2026-10-22-alien-pilot-2d/`.
 
 ## Batch 2026-10-22-alien-h1-mouthless (art #196, hypothesis H1: a mouthless head and a fitted mouth module)
 
@@ -420,9 +420,9 @@ this batch's own images with `from`/`pick`). The first module sheet missed (smil
 human pouty lips, a glowing patch), so `mouth_module_r` is its one revised item, and the composites use it. 6 requests,
 $0.0237 to $0.0448 each, **$0.2098** of the $3 cap. On the chameleon the module reads as his own mouth; on the
 axolotl it reads small and stuck on, a pout where her approved mouth is a wide thin smile across the muzzle, so a shared
-module would need a per-head variant (width, thickness). Images: `D:/prime-art-raw/2026-10-22-alien-h1-mouthless/`;
+module would need a per-head variant (width, thickness). Images: `<raw>/2026-10-22-alien-h1-mouthless/`;
 JPEG copies and the sheet (with the approved expression sheets as the before row):
-`D:/prime-art-raw/research/2026-10-22-roster/design/h1/`.
+`<raw>/research/2026-10-22-roster/design/h1/`.
 
 ## Batch 2026-10-22-alien-h2-clayparts (art #196, hypothesis H2: clay with separate face pieces)
 
@@ -436,8 +436,8 @@ n = 1 (one image per concept); the style in words only (real modelling clay, fin
 shallow sockets, a rolled mouth with a soft seam). 5 requests, $0.0186 to $0.0367 each; **$0.1394** of the $3 cap;
 no item needed a revision. All five kept both characters; the pressed-on mouths and lids read as intentional pieces
 and the swap-only expressions read clearly; the surface reads more as smooth soft clay than as rough hand-worked
-plasticine (fingerprints faint). Images: `D:/prime-art-raw/2026-10-22-alien-h2-clayparts/`; JPEGs and the labelled
-sheet `h2_sheet.jpg`: `D:/prime-art-raw/research/2026-10-22-roster/design/h2/`.
+plasticine (fingerprints faint). Images: `<raw>/2026-10-22-alien-h2-clayparts/`; JPEGs and the labelled
+sheet `h2_sheet.jpg`: `<raw>/research/2026-10-22-roster/design/h2/`.
 
 ## Batch 2026-10-22-alien-t2-partsbuilt (art #196, test T2: aliens built of parts, from scratch)
 
@@ -455,9 +455,9 @@ where the ball on a stalk does not. Each got a 3 x 2 swap sheet, 1536x1536, an e
 surprised, angry, and the swapped pieces laid out on the table (`x1_stick_m`, `x2_bean_f`). 15 requests (one refused),
 **$0.2092** of the $1.50 cap. Both sheets kept the head and swapped only the pieces. The stick man's sheet drifted to a
 front view, and his smile is weak. The bean woman's smile cell winks (one lid closed). The palette came out a muted
-sage-teal, duller than the roster's teal. Images: `D:/prime-art-raw/2026-10-22-alien-t2-partsbuilt/`; one JPEG per
+sage-teal, duller than the roster's teal. Images: `<raw>/2026-10-22-alien-t2-partsbuilt/`; one JPEG per
 image and the labelled sheet `t2_sheet.jpg` (the six revised concepts, then both swap sheets):
-`D:/prime-art-raw/research/2026-10-22-roster/design/t2/`.
+`<raw>/research/2026-10-22-roster/design/t2/`.
 
 ## Batch 2026-10-22-alien-t1-sockets-2d (art #196, test T1: a socketed head and its separate pieces)
 
@@ -471,5 +471,5 @@ requests, $0.0553 for the turnaround and $0.0784 to $0.0786 per piece (two 1536 
 $2 cap; no item needed a revision. The turnaround kept the head, crest, bands, nostrils, neck and colours and shows
 clean round sockets and a lens-shaped mouth dish (deeper than "shallow" in the profile, an open lip-shaped hollow);
 the pieces match the H2 kit's teal clay (the rest mouth has a slight human bow; the O carries a mint skin back).
-Images: `D:/prime-art-raw/2026-10-22-alien-t1-sockets-2d/`; the views cut for Meshy are in batch
+Images: `<raw>/2026-10-22-alien-t1-sockets-2d/`; the views cut for Meshy are in batch
 2026-10-22-alien-t1-sockets-3d (`docs/meshy.md`).

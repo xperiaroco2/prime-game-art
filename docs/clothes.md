@@ -47,7 +47,7 @@ to 9). One piece at a time: C2 runs the tracksuit through the same steps.
 
 Each script runs in headless Blender (`blender -b --factory-startup --python <script> -- <args>`); the pure maths is
 `tools/blender/clothes_geom.py`, tested by `tools/tests/test_clothes_geom.py`. Raw output goes under
-`D:/prime-art-raw/2026-10-28-alien-clothes-m1/` (`views/`, the Meshy items, `cloth/<item>/`).
+`<raw>/2026-10-28-alien-clothes-m1/` (`views/`, the Meshy items, `cloth/<item>/`).
 
 ## The fit and the dressed characters (C1)
 6. **The female body.** `tools/blender/alien_body_female.py --target tools/blender/alien_female_targets/f2.toml`:
@@ -387,7 +387,7 @@ before.
     foot's clearance (each foot vertex's signed distance to the shoe along its normal: those over the rim, the
     ankle, count as outside).
 
-S1's raw output is under `D:/prime-art-raw/2026-10-28-alien-clothes-m1/s1/` (`r<n>/dress`, `proof`, `godot`,
+S1's raw output is under `<raw>/2026-10-28-alien-clothes-m1/s1/` (`r<n>/dress`, `proof`, `godot`,
 `render`).
 
 ### The sneaker as on the concept (E1j)
@@ -538,7 +538,7 @@ final); drivers `tools/out/dress/e1k/`.
 Raw output: `2026-10-30-alien-dress-e1/d38/` (the specks and the region) and `d39/` (the final); drivers and probes
 `tools/out/dress/e1l/`.
 
-C1's raw output is under `D:/prime-art-raw/2026-10-28-alien-clothes-m1/c1/` (`cloth/`, `body_f2/`, `fit/`, `dress/`,
+C1's raw output is under `<raw>/2026-10-28-alien-clothes-m1/c1/` (`cloth/`, `body_f2/`, `fit/`, `dress/`,
 `proof/`).
 
 ## Bodies by drawing (D2, art #196)

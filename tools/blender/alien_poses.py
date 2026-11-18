@@ -3,8 +3,8 @@ character's own rest skeleton and skin (alien_pose_math), written as held clips 
 and CharacterArmature|PoseArms_<Name>_Loop, every pair measured, and a quick workbench sheet of the starting pairs
 from the four facings with their outlines.
 
-    $PYTHON_BIN tools/blender/alien_poses.py --raw D:/prime-art-raw --step s1 [--chars chameleon,axolotl] [--sheet]
-    $PYTHON_BIN tools/blender/alien_poses.py --raw D:/prime-art-raw --step s1 --dump      # skeleton and skin only
+    $PYTHON_BIN tools/blender/alien_poses.py --raw <raw> --step s1 [--chars chameleon,axolotl] [--sheet]
+    $PYTHON_BIN tools/blender/alien_poses.py --raw <raw> --step s1 --dump      # skeleton and skin only
     $PYTHON_BIN tools/blender/alien_poses.py --solve <dump.json> --out <dir> [--pairs starting|all]  # plain Python
 
 Into <raw>/<raw_base>/<out>/<step>/: build/<char>/<char>_char.blend (the f3 build plus the pose clips),

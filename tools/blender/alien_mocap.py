@@ -5,7 +5,7 @@ its planted level on the floor, turns it to face the front (-Y), cuts one loop t
 (alien_stride_math.cycle) and takes it in place (alien_loco_math.in_place), and renders the check sheet: per clip the
 100STYLE skeleton (sticks on its bones) above the retargeted alien, the same moments of the window.
 
-    $PYTHON_BIN tools/blender/alien_mocap.py --raw D:/prime-art-raw [--char chameleon] [--clips Neutral_BR,...]
+    $PYTHON_BIN tools/blender/alien_mocap.py --raw <raw> [--char chameleon] [--clips Neutral_BR,...]
         [--out <dir>] [--no-sheet]
 
 Into <dir> (default <raw>/research/2026-10-22-roster/design/pilot3d/anim_bare/loco/p1): mocap.json (per clip the

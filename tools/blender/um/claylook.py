@@ -2,7 +2,7 @@
 budgets and lump amplitudes per part kind, the texel densities and texture sizes of the bake, the bake margin in
 colour-map pixels, and the content key of a baked piece in the clay library (docs/assembly.md, "The clay look").
 
-Ported from the faces lab's round D (D:/prime-art-raw/research/2026-10-05-faces/lab/clay_d: clay_parts.py,
+Ported from the faces lab's round D (<raw>/research/2026-10-05-faces/lab/clay_d: clay_parts.py,
 clay_bake.py, clay_libbake.py; README_bake.txt holds the measurements behind every number here). The runner imports
 this module to validate a recipe before Blender starts; the Blender modules um/clay.py and um/claybake.py read the
 same constants.

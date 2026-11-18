@@ -2,7 +2,7 @@
 mouths, facial hair) and the pick rules from faces/clay_kit.json, the per-hair flags from faces/clay_hair.json, the
 builder's tuning constants, and the picks, colours and ear states (docs/faces.md, "The clay face kit").
 
-Ported from the faces lab's round E kit (D:/prime-art-raw/research/2026-10-05-faces/lab/clay_e/clay_face_b.py, the data section and its helpers).
+Ported from the faces lab's round E kit (<raw>/research/2026-10-05-faces/lab/clay_e/clay_face_b.py, the data section and its helpers).
 The runner and the tests import this module; the Blender modules of this package read the same names.
 """
 import hashlib

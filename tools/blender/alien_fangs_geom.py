@@ -1,5 +1,5 @@
 """M13 (art #196): the fangs mouth's two lower fangs (the mg2 sheet,
-D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mg2/). Plain Python (no Blender): the fang's shape and its spine in
+<raw>/2026-10-20-alien-face-sheets-2/mg2/). Plain Python (no Blender): the fang's shape and its spine in
 front of the lips, used by alien_mouths.build_fangs and tested in tools/tests/test_alien_fangs_geom.py.
 
 A fang is short, blunt, ivory and slightly curved, cute-tough and never gory: a rounded cone that rises from behind

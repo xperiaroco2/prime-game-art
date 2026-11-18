@@ -10,13 +10,14 @@
 # the back of the hand's normal. Grips are alien_hands.toml's (relaxed, runfist) or this file's [grips].
 
 [source]
-# the character build the arms are cut from: the axolotl of H1u, the hands merged in #373 (art#196), the
-# striped top on her; rebuilt from the frozen body when there is one
-char = "2026-11-11-fp-hand-model/m25/fp_hand_char.blend"
-# since 2026-11-11 the detailed first-person hand (concept A refined, specs/fp_hand_dims.toml): fp_hand_model.py's
-# build of the axolotl H1u character with its body replaced by the two first-person arms (the rig's hand and finger
-# bones moved to the model's joints, the morph `fist` its corrective); was the H1u character itself
-crystal = "energy-crystal/lit1/energy_crystal.glb"   # assets/prop/energy_crystal's GLB (the raw copy, same hash)
+# the build the arms come from: the detailed first-person hand (concept A refined, specs/fp_hand_dims.toml),
+# fp_hand_model.py's build of the two first-person arms on the axolotl H1u character's arm rig (the rig's hand and
+# finger bones moved to the model's joints, the morph `fist` its corrective). Since 2026-11-18 the rig comes from
+# tools/blender/fp_rig_seed.json (read from the committed hands asset t4): the character build m25 was made from was
+# lost with D: (art#136); was m25, before it the H1u character itself
+char = "2026-11-18-fp-hand-model/m26/fp_hand_char.blend"
+crystal = "assets/prop/energy_crystal/export/energy_crystal.glb"   # the committed energy crystal (a repo path; was its
+                                                                  # raw copy energy-crystal/lit1, same hash)
 skin_inside_cuff_m = 0.035   # the skin is kept from this far inside the sleeve's cuff out to the fingertips
 sleeve = false               # the bare arm first (the engineer, 2026-11-11): the skin from above the elbow, no
                              # garment; each outfit's own sleeve is laid on later
@@ -132,7 +133,8 @@ sway = { pos = [0.0025, 0.0015, 0.004], rot = [1.0, 0.6, 0.8], cycles = [1, 1, 1
 
 [clips.Run_Loop]            # the run: the hand bobs with each step (two per loop) and swings once a loop
 pose = "idle"
-seconds = 0.70              # replaced by the character's Jog_Fwd_Loop length when the build finds it
+seconds = 0.9167            # the character's Jog_Fwd_Loop (55 frames at 60 fps, as t4); a source with that action
+                            # replaces it with the action's length (the rig seed has none)
 run = { bob = 0.022, side = 0.020, fwd = 0.010, roll = 5.0, pitch = 3.0, yaw = 2.0, lift = [0.0, -0.01, 0.01] }
 
 [clips.Crystal_Idle_Loop]
@@ -142,7 +144,7 @@ sway = { pos = [0.002, 0.0015, 0.004], rot = [0.8, 0.6, 0.6], cycles = [1, 1, 1]
 
 [clips.Crystal_Run_Loop]
 pose = "crystal"
-seconds = 0.70
+seconds = 0.9167
 run = { bob = 0.020, side = 0.016, fwd = 0.008, roll = 4.0, pitch = 3.0, yaw = 2.0, lift = [0.0, -0.01, 0.0] }
 
 # The hits: at most one each 0.5 s (GDD "Melee: any item hits"), so each clip is 0.5 s and ends in its hold pose.

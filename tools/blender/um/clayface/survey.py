@@ -1,7 +1,7 @@
 """The clay face kit's many-face check (faces --kit-check, docs/faces.md): n random faces per body type on a repo
 head (the recipe's first character of that body type, built by the assembler with the kit), each under a random hair
 item of faces/clay_hair.json, measured in the rest pose at head scale 1. Ported from the faces lab's stage_check
-(D:/prime-art-raw/research/2026-10-05-faces/lab/clay_e/face_sheets.py, round E5: the visible-poke test, a seed per
+(<raw>/research/2026-10-05-faces/lab/clay_e/face_sheets.py, round E5: the visible-poke test, a seed per
 body type, the updo list).
 
 Per body type: collisions (BAD_PAIRS, every mouth state and blink step), brows in the visible white, visible pokes

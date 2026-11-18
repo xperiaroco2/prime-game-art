@@ -44,8 +44,8 @@ shows their cost: in the measured scene (a small meeting ring) neither saved any
 
 ## The measurement
 
-`tools/run.py bench --proxy-from D:/prime-art-raw/review/char/alien-base-3d/finish1b/alien_base.blend --copies 10,20
---out D:/prime-art-raw/review/char/bench-212` (docs/godot.md, "Bench"). The stand-in: finish step 1b's alien base
+`tools/run.py bench --proxy-from <raw>/review/char/alien-base-3d/finish1b/alien_base.blend --copies 10,20
+--out <raw>/review/char/bench-212` (docs/godot.md, "Bench"). The stand-in: finish step 1b's alien base
 subdivided and decimated to 40,000 triangles (body 20,618, head 17,660 with 8,922 vertices, eyes 1,722), a 7,000
 triangle shadow copy, the 2,048 bakes, and 0, 32 or 64 head morphs (GLB 7.5, 18.6 and 29.6 MB). Its body with
 the head (20,618 + 17,660 = 38,278 triangles) is over the new body cap (30,000), and its head (17,660) over the head

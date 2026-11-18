@@ -48,7 +48,7 @@ class Lift(unittest.TestCase):
 
 
 # B1 (art #196, the Walk hop): body B13's Walk_Loop after the leg fit, the lowest skin point per frame (mm; the last
-# frame is the first again), from D:/prime-art-raw/2026-10-31-hop/stages.json
+# frame is the first again), from <raw>/2026-10-31-hop/stages.json
 WALK_LEG_FIT_MM = [-3.7, -8.1, -22.1, -30.3, -29.4, -13.2, 0.5, 2.2, 2.7, 2.1, 1.7, 1.4, 1.1, 0.3, -0.5, -1.3, -5.2,
                    -8.1, -21.9, -29.6, -29.6, -13.3, -2.2, -0.6, 0.7, 1.2, 1.5, 1.8, 2.1, 1.8, 1.2, -0.2, -3.7]
 

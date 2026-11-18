@@ -89,7 +89,7 @@
    1.6,
    1.632
   ],
-  "sampler": "D:/prime-art-raw/clay-bean/lab/jaw_profile.py"
+  "sampler": "<raw>/clay-bean/lab/jaw_profile.py"
  },
  "jaw_morph": {
   "band_dz": [
@@ -196,7 +196,7 @@
    "object": "head_clay",
    "head_sha256": "92ff0baa89fdc3aea59936d4eb6adbfe23a52bfacea6e8979ded1efd0315ed3d",
    "face_frame": "research/2026-10-07-clay-c/library/head.json",
-   "sampler": "D:/prime-art-raw/clay-bean/lab/neck_profile.py"
+   "sampler": "<raw>/clay-bean/lab/neck_profile.py"
   }
  },
  "scalp_lift": {

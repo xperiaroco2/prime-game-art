@@ -19,7 +19,10 @@ fist's width and length, view 3 for its depth."""
 engineer_words = """2026-11-11: four digits (three thick rounded fingers and a thumb), soft rounded knuckles, gentle
 creases so each finger reads in the fist, smooth teal skin with a faint vinyl sheen, a lighter palm and fingertips;
 bare forearm (a garment's sleeve comes later from each worn outfit)."""
-character = "2026-10-31-hands/h1u/p/axolotl/axolotl_char.blend"   # the rig and the skin colour come from here
+# the rig: the axolotl character's arm rig (art#196 H1u) as data, read from the committed hands asset t4 by
+# tools/blender/fp_rig_seed.py (the character build itself was lost with D: on 2026-11-18; the engineer's choice the
+# same day: go on from assets/body/fp_hands/source/fp_hands.blend)
+rig_seed = "tools/blender/fp_rig_seed.json"
 # the scale: the character's hand, wrist to fingertip (RightHand head to the middle finger's tip), and its forearm
 # (RightLowerArm), so the viewmodel's arm lengths stay the character's
 hand_len_mm = 208.4
@@ -141,6 +144,8 @@ cavity = { c = [96.0, 15.0, -36.0], r = [26.0, 55.0, 17.0] }
 # fingers' palm side at each joint, two palm lines, the wrist), faint wrinkles over the back of the middle knuckles,
 # all in the normal map.
 [skin]
+base_srgb = [0.40, 0.79, 0.79]   # the character's hand teal (the median of its skin texture under the hand, measured by
+                                 # the m25 build; docs/animations.md); the game sets the player's own colour at runtime
 palm_lighter = 0.12        # the palm's value over the base (HSV value, 0-1)
 palm_paler = 0.10          # and its saturation under the base's (a share of it)
 tip_lighter = 0.08         # the fingertips' value over the base, from the last crease to the tip

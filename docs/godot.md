@@ -343,7 +343,7 @@ at its feet, front +Z; only the direction counts, so the game turns the set with
 The alien proofs' stage (`second_test.gd` and the scripts on it, `face_proof.gd`) reads these lights from
 `look_presets.json` through `godot/showroom/look_lights.gd`, so every later proof renders under the approved lights.
 The showroom's own ladder and grids keep their measured variants (key 1.05 to 3.0, no rim). Light D's tuning grid
-toward the paintover rf2's thinner, crisper rim (`D:/prime-art-raw/review/char/alien-parts-kit/lightD/grid.png` with
+toward the paintover rf2's thinner, crisper rim (`<raw>/review/char/alien-parts-kit/lightD/grid.png` with
 `zoom.png`, `final.png`) tried the skin shader's fresnel glow sharper, Godot's rim term, the rim light further behind
 and stronger, and its specular up: a rim specular of 1.0 laid a white sheen on the crest's top that rf2 does not have,
 so the lights stay exactly D and only the skin's own rim changed (`alien.gd` `SKIN`: `rim_value` 0.2 to 0.6,
@@ -368,7 +368,7 @@ No preset uses TAA. TAA on top of High's and Ultra's MSAA 4x is a proposal, not 
 
 **Measured** (2026-10-13, the ladder with step 3's recommendation and exposure 0.9, slice_m1 at Idle 0.00 s, NVIDIA
 GeForce RTX 4060, vulkan forward_plus, Godot 4.7.2; the GPU time of the whole frame with one character, the floor and
-the sky; `D:/prime-art-raw/review/char/140c/ladder-exposure/`):
+the sky; `<raw>/review/char/140c/ladder-exposure/`):
 
 | Variant | Effects | GPU ms (1920x1080) | Step ms |
 |---|---|---:|---:|
@@ -403,7 +403,7 @@ more: not the grey background, the eye whites or the olive shirt) split into hai
 over 18) and skin; the skin's mean L* and chroma, its shading (L* p90 - p10: how much the key light models the face),
 the hair's mean L*, averaged over front and 3/4, and the distance (the sum of the absolute differences from the
 approved Blender crops). A guide beside the eye: framing and pose differ a little. Sheets and tables:
-`D:/prime-art-raw/review/char/140b/tune/` (the approved sheet's copy beside it, `approved_r4_noses_cast.png`).
+`<raw>/review/char/140b/tune/` (the approved sheet's copy beside it, `approved_r4_noses_cast.png`).
 
 | Shots | skin L* | skin C* | shade (L* p90-p10) | hair L* | distance | GPU ms |
 |---|---:|---:|---:|---:|---:|---:|
@@ -451,7 +451,7 @@ skin), in the body shot over all. A variant whose face skin changes under 0.5 % 
 the face**: "the body only" when the body shot changes, else **a no-op**; either is reported as such, not as a finding
 (step 2's T2 was a no-op). The shots are reported apart because the body shot's floor and background change with
 settings that miss the face (W2 below: 89 % of the body shot, 0.1 % of the face's skin). Sheets and tables:
-`D:/prime-art-raw/review/char/140c/warm/`; the ladder rerun with W3 and W4: `.../140c/ladder/`.
+`<raw>/review/char/140c/warm/`; the ladder rerun with W3 and W4: `.../140c/ladder/`.
 
 | Shots | skin L* | skin C* | shade | hair L* | distance | face skin changed (front, 3/4) vs parent | GPU ms |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -501,7 +501,7 @@ key's colour alone at the key's energy 2.0; that key with exposure 0.8 and 0.7; 
 reach the face (`change.md`: 70 to 100 % of the face's skin). `look.md` measures them twice: by the tone split as
 before, and on X1's skin pixels (the same camera and pose), which the warm key's floor and the darker exposures'
 shaded skin cannot move between the skin and the floor or hair. Sheets and tables:
-`D:/prime-art-raw/review/char/140c/expose/`.
+`<raw>/review/char/140c/expose/`.
 
 | Shots | skin L* | skin C* | shade | hair L* | distance | on X1's skin: L*, C*, shade | skin distance |
 |---|---:|---:|---:|---:|---:|---|---:|
@@ -529,7 +529,7 @@ What it shows:
   2.5) adds 2 L* and a little shading. The hair is closest under it (26 to 27 L*), which points at the hair's own
   colour rather than the light.
 - **Recommended: X2, exposure 0.9**, now in the ladder (variants 3 to 6) and the presets (`tonemap_exposure`). The
-  ladder rerun with it (`D:/prime-art-raw/review/char/140c/ladder-exposure/look.md`):
+  ladder rerun with it (`<raw>/review/char/140c/ladder-exposure/look.md`):
 
 | Ladder variant | skin L* | skin C* | shade | hair L* | distance | GPU ms |
 |---|---:|---:|---:|---:|---:|---:|
@@ -1720,7 +1720,7 @@ a time, by visibility.
   - The shaders do not sample the map yet: that is M5 (Godot) and the three.js page.
 - **M3a, the authored 4K texture set** (`tools/blender/alien_texture.py`; the formulas and settings in
   `alien_texture_geom.py`, test `tools/tests/test_alien_texture_geom.py`; output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M3a/`). Four headless stages, each reading the one before:
+  `<raw>/review/char/alien-parts-kit/M3a/`). Four headless stages, each reading the one before:
   - `--stage cage` (from M2's `high/alien_high.blend`): the explicit bake cage of PR #231's minor 6. Body's copy,
     each vertex moved out along its normal by `cage_offset()`: 40 % of the distance to the low mesh's next surface
     along that normal, within 0.3 to 2 mm and never past half that distance (M2's uniform 2 mm started rays inside the next finger in the webs). It
@@ -1784,7 +1784,7 @@ a time, by visibility.
     key missing from an older `settings.json` counts as its M3A value). So M3a's recipe can no longer write M3c's
     look into `M3a/`.
 - **M3c, the texture set tuned toward rf2** (the same scripts; output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M3c/`, M3a's files untouched). Beside rf2 (showroom v26) M3a's face
+  `<raw>/review/char/alien-parts-kit/M3c/`, M3a's files untouched). Beside rf2 (showroom v26) M3a's face
   read yellow-olive, a dark ring sat round the eye sockets, its roughness of about 0.5 drew M2's pores as a glossy
   orange peel at 0.6 m, and the knee and knuckle spots were crisp coral discs (stickers).
   - `alien_texture_geom.M3A` keeps the shipped M3a settings; `TEX` is M3A with `M3C`'s changes over it (the reasons
@@ -1812,7 +1812,7 @@ a time, by visibility.
     --before-normal <M3a/bake/normal.png> --labels m3a,m3c` puts M3a on the left of the sheets instead of M2's look;
     its shots gained `near` (the face at 3/4 from 0.6 m, 70 mm) and `knee`. About 30 s, 20 s, 10 s and 10 s.
 - **M2b, the sculpt softened toward rf2** (the engineer on v27: "under the neck something like a scar"; output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M2b/`, M2/M3a/M3c untouched).
+  `<raw>/review/char/alien-parts-kit/M2b/`, M2/M3a/M3c untouched).
   - The scar: where the jaw's underside folds into the throat, the low mesh (an irregular triangulation) subdivides
     into a crumpled crease in the high copy. The normal map draws it faintly; M3c's cavity tint from the curvature bake
     draws it as a ragged dark double line (`tools/out`'s diagnosis: present with the normal map off, absent on a plain
@@ -1838,7 +1838,7 @@ a time, by visibility.
     --before-normal <M3a/bake_cage_r2/normal.png> --labels m3c,m2b` adds `compare.png` (rf2 | M3c | M2b: face34,
     chin, close04, neck_back34, body). A sculpt grid: `alien_detail.py --stage grid --variants <json> --vout <dir>`,
     then `alien_texture_review.py --grid <dir>` (a variant folder with `normal.png` alone swaps only the normal map).
-- **M4, the modern eyes** (output under `D:/prime-art-raw/review/char/alien-parts-kit/M4/`). The designs, the lid
+- **M4, the modern eyes** (output under `<raw>/review/char/alien-parts-kit/M4/`). The designs, the lid
   shells and the blink by lid rotation are unchanged; what is new is per pixel in Godot, plus one small strip per lid:
   - `alien_eye.gdshader` (`cornea` 1; 0 keeps S9's painted eye for before/after sheets) draws a **cornea**: a sphere
     through the limbus ring (`limbus_deg`, bored 27, manic 21) rising `bulge` 0.12 radii above the ball. It is
@@ -1901,7 +1901,7 @@ a time, by visibility.
     res = _godot.stage(glb, "alien_m4")  # res://import/alien_m4/...glb
     _godot.import_project()
     spec = {"scenes": {"hero": res}, "out": OUT, "bg": [0.5, 0.505, 0.525],
-            "hdri": "D:/prime-art-raw/env/polyhaven/studio_small_09/studio_small_09_2k.hdr",
+            "hdri": "<raw>/env/polyhaven/studio_small_09/studio_small_09_2k.hdr",
             "rf2": RF2_PNG, "rf2_eye": [0.17, 0.26, 0.67, 0.76], "before": BEFORE_DIR_OR_EMPTY,
             "variants": [], "grid_name": "tune", "grid_lids": "rest", "grid_yaw": 18.0}
     # spec.json written to OUT
@@ -1910,7 +1910,7 @@ a time, by visibility.
     ```
 
     A full run takes about 2 minutes (one Godot run at a time).
-- **M5, the skin shader on its texture set** (output under `D:/prime-art-raw/review/char/alien-parts-kit/M5/`):
+- **M5, the skin shader on its texture set** (output under `<raw>/review/char/alien-parts-kit/M5/`):
   - **The kit:** `alien_eyes.py --kit <M3c/export> --out <M5> --eye-images <S9/parts/export> --sss-orm`: M4's eyes
     on M3c's kit, so one GLB carries M3c's albedo and ORM, the capped cage's normal map and the M4 eyes.
     - `--sss-orm` writes `M5/textures/orm_sss.png`: M3c's ORM with R (occlusion) and G (roughness) unchanged
@@ -2000,13 +2000,13 @@ a time, by visibility.
     `"room,taa,clips"` with `EXTRA = {"bg": [0.5, 0.505, 0.525], "taa": true}`; the watchdog is 280 s, so two runs):
 
     ```python
-    K = Path("D:/prime-art-raw/review/char/alien-parts-kit")
+    K = Path("<raw>/review/char/alien-parts-kit")
     _godot.clear_staged({"alien_m5", "alien_s9d"})
     hero = _godot.stage(K / "M5/export/alien_character.glb", "alien_m5")
     before = _godot.stage(K / "S9d/export/cage/alien_character.glb", "alien_s9d")
     _godot.import_project()
     spec = {"scenes": {"hero": hero, "before": before}, "out": OUT.as_posix(), "modes": MODES.split(","),
-            "hdri": "D:/prime-art-raw/env/polyhaven/studio_small_09/studio_small_09_2k.hdr",
+            "hdri": "<raw>/env/polyhaven/studio_small_09/studio_small_09_2k.hdr",
             "beside": RF2_PNG, "body_ref": U1_PNG, "face": {"dist": 1.1, "dy": 0.03}, "bg": [0.5, 0.505, 0.525]}
     spec.update(EXTRA)
     # spec.json written to OUT
@@ -2029,7 +2029,7 @@ a time, by visibility.
     - `pack_floor`: 56 bones and 10 clips against the UM rig's 62 and 24.
 
 - **M6, the eyes and lips sized, rounded and integrated** (output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M6/`). The engineer on M5 (2026-10-19): the eyes too big, their
+  `<raw>/review/char/alien-parts-kit/M6/`). The engineer on M5 (2026-10-19): the eyes too big, their
   corners very sharp from the front, and the lids and lips "from another universe" (they stood out from the head).
   The parts stay overlaid parts (no mesh deformation); the skeleton and the blink by lid rotation are unchanged.
   - **The build:** `tools/blender/alien_m6.py --kit <M5/export> --out <M6> --skin-tex <a set's textures/>
@@ -2101,7 +2101,7 @@ a time, by visibility.
     `texcoord_4` (`TEXCOORD_4`): `diffuseColor.rgb *= mix(vec3(1), vec3(0.80, 0.66, 0.62), texcoord_4.x)`. M6c splits it per
     design (below).
 - **M6c, the grain back and one contact channel per design** (output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M6c/`). The engineer on v28's release candidate (`M6/export_m2b`):
+  `<raw>/review/char/alien-parts-kit/M6c/`). The engineer on v28's release candidate (`M6/export_m2b`):
   the skin "smooth again, without any texture" beside v27's "M3c + M4"; with the overbite mouth black shades where
   the frog lips sit; the manic eyes without their "shell".
   - **What flattened the grain:** M2b's normal map. Measured on the face (the face field of the fields, eroded; the
@@ -2137,7 +2137,7 @@ a time, by visibility.
   - **For three.js:** GLTFLoader keeps the two layers as the attributes `texcoord_4` (bored, manic) and `texcoord_5`
     (frog, overbite); the shade's field is `max(max(t4.x * pick.x, t4.y * pick.y), max(t5.x * pick.z, t5.y *
     pick.w))` with `pick` 1 on the shown eye design's and mouth's channels (`CONTACT_CHANNEL`).
-- **M8, the lips shaped like lips** (output under `D:/prime-art-raw/review/char/alien-parts-kit/M8/`). The engineer
+- **M8, the lips shaped like lips** (output under `<raw>/review/char/alien-parts-kit/M8/`). The engineer
   (2026-10-20): the lips were "two sausages, the same thickness end to end"; the sheets (mf1, mo1) and rf2 show each
   lip narrow at the corners, full in the middle and narrow again.
   - **The profile** (`tools/blender/alien_lips_geom.py`, plain Python, `LIP_SHAPE`; `LIP_SHAPE_M6C` = `{"w": 0}` is the
@@ -2204,7 +2204,7 @@ a time, by visibility.
     than wide, closer to an "oh"); a per-shape width weight (as `ring`) would widen A and E again if wanted.
 
 - **M7, the mouth's black strip and the longer, slimmer digits** (output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M7/`). The engineer on v29: a black wedge beside and above the
+  `<raw>/review/char/alien-parts-kit/M7/`). The engineer on v29: a black wedge beside and above the
   overlaid mouth pieces (frog A and O, overbite rest's far corner, A and O), and fingers and toes "like sausages".
   - **The cause of the strip:** the Body has no mouth slit (a front-ray height field round the `Mouth` socket: the
     deepest groove is 1.7 mm, the soft groove under the mouth). The skin's AO was baked with the default face shown,
@@ -2240,8 +2240,8 @@ a time, by visibility.
     regenerated (no dark band under the mouth in `COLOR_0` either), so the page takes the M7 kit folder as it took
     M6c's.
 - **M9, one standard eye mount: smaller eyes nested in the sockets** (output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M9/`). The engineer (2026-10-20): the eyes too big, bulging out
-  "like a crab's"; in the liked 2D part sheet e2 (`D:/prime-art-raw/2026-10-17-alien-2d-parts1/e2/`, 8 eye designs
+  `<raw>/review/char/alien-parts-kit/M9/`). The engineer (2026-10-20): the eyes too big, bulging out
+  "like a crab's"; in the liked 2D part sheet e2 (`<raw>/2026-10-17-alien-2d-parts1/e2/`, 8 eye designs
   on our head) the ball's front sits about flush with the face, the eyes stay inside the head's front silhouette, the
   lids are slim shells and a soft rim surrounds each socket. The skin must not depend on any eye design.
   - **Measured on M7's kit:** S9's ball radius 42.4 mm (M7 drew it at 0.95), the lid shells reach 1.23 r; the ball
@@ -2275,7 +2275,7 @@ a time, by visibility.
     as the first row), `socket` (the left socket close: front, outer side, above, below), `blink`, and m6c's and
     m7's `designs`, `contact`, `body`; spec `eye_views` replaces the four eye views (M9b's lid grid).
 - **M9b, the eyes finished on the merged lips** (brief UPDATE 11; output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M9/`: the kit `export/`, the intermediates `b/`, M9's first kit kept
+  `<raw>/review/char/alien-parts-kit/M9/`: the kit `export/`, the intermediates `b/`, M9's first kit kept
   in `export_m9a/`). Three changes, then the chain once on M8b's lips.
   - **Slim lid shells** (`alien_lids_geom.LIDS`, `slim`, `set_lids`): a lid keeps its inner radius (the ball's
     clearance, the wet strip, the blink: the closed upper lid still slides over the lower, its inner radius above the
@@ -2320,7 +2320,7 @@ a time, by visibility.
     on the socket's outer side, which faces away, a teal crescent stays (the facing rule keeps the head's sides teal);
     the closed manic lids keep a faint darker patch at the upper inner corner (as on M9's kit).
 - **M10, smaller eyes and plumper lips on M8b's unchanged skull** (brief UPDATE 12; output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M10/`). **M9's and M9b's socket stage is rejected:** on v30 the
+  `<raw>/review/char/alien-parts-kit/M10/`). **M9's and M9b's socket stage is rejected:** on v30 the
   engineer found the re-sculpted skull looked as if "half the head was removed", with giant dents. He had only asked
   for the eyes a little smaller and the lips a little plumper.
   - **The socket stage is off.** `alien_socket.py` refuses to run without `--opt-in-rejected-m9`, and so does
@@ -2375,7 +2375,7 @@ a time, by visibility.
     (`FLARE_SIL` width 80 to 100). If that is not enough, a separate socket collar part per side, or the flare
     faded toward the hinge poles.
 - **M10b, the engineer's numbers, the socket collar and the thumb** (brief UPDATE 13 to 15; output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M10b/`). The skull stays M8b's: the pick's Body against `M8/export`
+  `<raw>/review/char/alien-parts-kit/M10b/`). The skull stays M8b's: the pick's Body against `M8/export`
   moves 0.0 mm (`M10b/export/cmp_m8b.json`).
   - **The thumb at rest read swollen** (`alien_thumb.py`, its docstring has the measurements). The mesh's thumb points
     forward along the hand, 5 to 7 cm off its bones, which run down from the wrist; the cage weighted its rings by
@@ -2416,7 +2416,7 @@ a time, by visibility.
   - **Open:** at 0.4 m the collar still shows a small tab below the eye from 3/4 and from below, and the crater
     behind its top shows from above (`M10b/godot/socket/`).
 - **M10c, the socket collar as skin** (brief UPDATE 16 and 18; output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M10c/`). On M10b's sheets the 90 and 80 % eyes did not read smaller:
+  `<raw>/review/char/alien-parts-kit/M10c/`). On M10b's sheets the 90 and 80 % eyes did not read smaller:
   the coral collar filled the gap with more coral, so the coral round each eye stayed as large as at 100 %, and from
   3/4 it read as a stacked ring with a tab under the eye. The skull and the skin mesh are unchanged (the gate below).
   - **The skin collar** (`alien_m6.py --collar skin`, the default; `--collar on` keeps M10b's coral ring;
@@ -2457,8 +2457,8 @@ a time, by visibility.
     temple side (`M10c/godot/socket/`, third column); from 3/4 at 0.4 m the far eye's nose side shows the skin
     bridge to the nose where M8b's dome sat.
 - **M12, the red pout mouth mp1** (brief UPDATE 16 and 17; output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M12/`): a third mouth design, `pout`, beside frog and overbite, from
-  the sheet `D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mp1/` (six shapes, the panel order rest, M, small, A, E,
+  `<raw>/review/char/alien-parts-kit/M12/`): a third mouth design, `pout`, beside frog and overbite, from
+  the sheet `<raw>/2026-10-20-alien-face-sheets-2/mp1/` (six shapes, the panel order rest, M, small, A, E,
   O). Built on M10b's pick (`M10b/export`); the Body, the skull, the eyes and the other mouths are untouched.
   - **Measuring (`alien_mouths.py`):** the same panels, stations and sheet-to-head mapping as frog and overbite, with
     a design's own pixel classes and scales. mp1's red lips have blue about green, which the coral lip class half
@@ -2511,7 +2511,7 @@ a time, by visibility.
     `M12/export/cmp_m8b.json`.
   - **Open after M12** (fixed by M12b below): O kept a small slit, not the sheet's round hole; A's lips were a little
     crumpled at 3/4 with a small dark notch at the far corner; the flipbook test has no pout atlas.
-- **M12b, the pout's open shapes** (brief UPDATE 19; output under `D:/prime-art-raw/review/char/alien-parts-kit/M12b/`):
+- **M12b, the pout's open shapes** (brief UPDATE 19; output under `<raw>/review/char/alien-parts-kit/M12b/`):
   A and E looked crumpled and torn (rims waving round the opening, the roll's thickness changing along it, a ragged
   inner edge, the far side folding at 3/4), E's corners were sharp spikes, O a puckered slit, and the upper lip's bow
   read as two balls. The pout only; frog and overbite build exactly as before (every new key is in
@@ -2544,8 +2544,8 @@ a time, by visibility.
     the sheet's mouth, then the first kit's pout above the hero's, front / 3/4 / profile at 0.4 m and 3/4 at 1.2 m).
   - **The talk style** (`alien_talk.gd`) is unchanged; the MP4s are re-rendered on the new pieces.
 - **M13, the fangs mouth mg2 and the pout's talk fixes** (brief UPDATE 20 and 21; output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M13/`): a fourth mouth design, `fangs`, from the sheet
-  `D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mg2/` (rest, M, small, A, E, O), and PR #246's review minors.
+  `<raw>/review/char/alien-parts-kit/M13/`): a fourth mouth design, `fangs`, from the sheet
+  `<raw>/2026-10-20-alien-face-sheets-2/mg2/` (rest, M, small, A, E, O), and PR #246's review minors.
   Built on M10c's pick (`M10c/export`); the Body, the skull, the eyes and the frog and overbite are untouched.
   - **One mouth step (`alien_m12.py`):** one run adds every new mouth onto a kit (`--designs pout,fangs`, the
     default), so the chain is eyes -> mouths: `run_script("alien_m12.py", ["--kit", <eyes kit>/export, "--out", <dir>,
@@ -2584,8 +2584,8 @@ a time, by visibility.
     `tools/tests/test_alien_talk_godot.py` checks each rule (heavy: it needs Godot).
   - **`m12_shots.gd`:** spec `design` (the design every mode shows), `talk_also`, `hero_label`.
 - **M11, the lashes eyes el2 and the collar minors** (brief UPDATE 21; output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M11/`). The female look of the sheet
-  `D:/prime-art-raw/2026-10-20-alien-face-sheets-2/el2/`: black, glossy, curled upper lashes, bolder and longer toward
+  `<raw>/review/char/alien-parts-kit/M11/`). The female look of the sheet
+  `<raw>/2026-10-20-alien-face-sheets-2/el2/`: black, glossy, curled upper lashes, bolder and longer toward
   the temple, the outer ones winging out past the corner, a dark lash line; none on the lower lid.
   - **The collar minors (PR #247's review):** the skin collar's section starts on the skin the ray hit (`h_hit`; a hit
     over 4 mm from the smoothed `h_edge` keeps the smoothed start, `far_bins` in the report), so it no longer floats or
@@ -2671,7 +2671,7 @@ a time, by visibility.
     off, 0.01125 on (M11: 0.0121); Idle alone 0.00726 / 0.00765, the line's own crawl +5 %. Closed, the curled lashes
     point up from the lid's line (blink frames), where el2's hang down: open.
 - **M13b, the fangs mouth mg2 brought to the sheet** (brief UPDATE 22; output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M13b/`): M13's lips read as thin flat double sticks with pointed
+  `<raw>/review/char/alien-parts-kit/M13b/`): M13's lips read as thin flat double sticks with pointed
   corners at 3/4, its fangs as small pins hanging in front of the lip (floating on the cheeks in O, jumping sideways
   between shapes), A as a flat box. Built on M10c's pick like M13; the frog, overbite and pout pieces are unchanged.
   - **The lips (`alien_lips_geom.LIP_SHAPE_FANGS`):** soft rolled lips: the sheet's crease measures low (the upper lip
@@ -2708,8 +2708,8 @@ a time, by visibility.
   - **Tests:** `godot/alien/parse_check.gd` + `tools/tests/test_alien_parse_godot.py` (heavy, area `alien_parse`):
     every `godot/alien` shader parses in the dummy renderer (a broken one logs `SHADER ERROR` and lists no uniforms)
     and `alien.gd`/`alien_talk.gd` reload (minor 7). `m12_shots.gd` vgrid views take an optional distance.
-- **M14, the tongue mouth mt2** (brief UPDATE 25; output under `D:/prime-art-raw/review/char/alien-parts-kit/M14/`): a
-  fifth mouth design, `tongue`, from the sheet `D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mt2/` (rest with the
+- **M14, the tongue mouth mt2** (brief UPDATE 25; output under `<raw>/review/char/alien-parts-kit/M14/`): a
+  fifth mouth design, `tongue`, from the sheet `<raw>/2026-10-20-alien-face-sheets-2/mt2/` (rest with the
   tongue out at one corner, M with its tip between pressed lips, small resting on the lower lip, A lolling out of the
   dropped jaw, E out of one corner, O with its tip out of the round opening). Built on M10c's pick by the same mouth
   step (`alien_m12.py`, `--designs pout,fangs,tongue`, the default); the Body, the skull, the eyes and the other
@@ -2781,7 +2781,7 @@ a time, by visibility.
     (`test_jaw_weight_check`), and `test_alien_m12.py` checks the tongue's contact wiring (`CONTACT_CHANNEL3`,
     `contact_pick3`, `CUSTOM2.zw`).
 - **M16, the pout at rest, mirrored and relaxed** (brief UPDATE 29, the engineer on showroom v35: the red pout looked
-  asymmetric and squeezed at rest; output under `D:/prime-art-raw/review/char/alien-parts-kit/M16/`, the kit on M10c's
+  asymmetric and squeezed at rest; output under `<raw>/review/char/alien-parts-kit/M16/`, the kit on M10c's
   pick with every mouth). Only the pout's closed pieces (rest, M, small) change; A, E, O, the talk, the frog, fangs and
   tongue are as before.
   - **The cause:** the closed pieces are traced per column off the mp1 sheet. The sheet's darkest row per column (the
@@ -2811,7 +2811,7 @@ a time, by visibility.
     `alien_pout` in `areas.toml`.
 
 - **M16b, the pout's bow and tucked corners back** (brief UPDATE 30, PR #252's review: M16's front read as a smooth
-  oval with round corners; output under `D:/prime-art-raw/review/char/alien-parts-kit/M16b/`, the kit on M10c's pick
+  oval with round corners; output under `<raw>/review/char/alien-parts-kit/M16b/`, the kit on M10c's pick
   with every mouth). M16's mirrored, relaxed rest is kept; the closed pieces (rest, M, small) take the pick together.
   - **The bow:** `bow` 0.30 over a narrower `bow_w` 0.12, side peaks `bow_peak` 0.40 at `bow_at` 0.22 (M16: 0.14,
     0.16, 0.10, 0.24), so the upper lip's top draws mp1's double-peaked M. It notches the outline only (`bow_flat` 1).
@@ -2832,7 +2832,7 @@ a time, by visibility.
     rings' own bow); `test_alien_pout_rest_blender.py` also checks A, E, O centred within 0.1 mm, and both heavy pout
     tests read the M16b kit. Area `alien_pout` also covers `alien_m12.py`, `alien_m6.py`, `alien.gd`, `alien_talk.gd`.
 - **M16c, the pout's fixes** (brief UPDATE 36, PR #254's review minors 1, 3, 5; output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M16c/`, the kit on M15's head: the chain's `mouthsk` and `lashes`
+  `<raw>/review/char/alien-parts-kit/M16c/`, the kit on M15's head: the chain's `mouthsk` and `lashes`
   stages on `M15/b/lips`, `handoff-M15.md`).
   - **The validator error:** M16b's and M15's kits failed glTF-Validator (`ACCESSOR_VECTOR3_NON_UNIT`, a zero tangent
     on `mouth_pout_O`'s dark cup): one fan triangle of 0.006 mm^2, two rim points 0.06 mm apart where the skin's
@@ -2854,7 +2854,7 @@ a time, by visibility.
     thinned the whole lip; share 0.30 shortened the full part). The open rings read their own `ring_param` and do not
     change (A 76.2 x 73.9, E 89.2 x 58.5, O 66.4 x 60.7 mm).
 - **M16d, the pout's rest slimmed to mp1's measured proportions** (brief UPDATE 37 and 39; output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M16d/`, the kit on M15's head as M16c). The engineer: the rest looked
+  `<raw>/review/char/alien-parts-kit/M16d/`, the kit on M15's head as M16c). The engineer: the rest looked
   "stung by a wasp", swollen; mp1's sheet reads slim and elegant.
   - **Measured** (`tools/blender/alien_mouth_measure.py`, plain Python, mp1's box documented there: the red lip
     mask of a front image; per column the lips' top and bottom,
@@ -2880,7 +2880,7 @@ a time, by visibility.
     tuck, share); g3 the heights round it (upper 1.10 / 1.15, lower 0.95, plump 1.05, `depth_l`); g4 the pick on rest,
     M and small; g5 depth 0.5 / 0.6, `depth_l` 0.70 / 0.75, the ends' `min_b` and `corner_over`.
 - **M16e, the pout's profile and the open shapes** (brief UPDATE 41, PR #258's review; output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M16d/`, the kit on M17's head, sheets in `M16d/godot/m16e/`, grids
+  `<raw>/review/char/alien-parts-kit/M16d/`, the kit on M17's head, sheets in `M16d/godot/m16e/`, grids
   `M16d/godot/e1..e3/vgrid.png`, M16d's kit kept in `M16d/export_old/`).
   - **Major 1, the profile:** M16d's shallow tubes (`depth` 0.5, `depth_l` 0.75 at the same height) were flat blades
     in profile: the upper lip curled to a point, the lower hung as a narrow tongue with a sharp downward tip. Two new
@@ -2905,7 +2905,7 @@ a time, by visibility.
     over the first 3 px of the gap (`alien_lips_geom.parted`'s `overlap`; the slit's ends stepped 3 px, minor 5);
     `corner_tuck` bounded 0.5-1.2 in `test_alien_m12.py` (minor 7).
 - **M15, the eye socket rebuilt for the 80 % eye** (brief UPDATE 26; output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M15/`). The engineer's pick `e80_p85_w80` showed "weird things" in the
+  `<raw>/review/char/alien-parts-kit/M15/`). The engineer's pick `e80_p85_w80` showed "weird things" in the
   sockets (M10c's skin collar filling the gap between the 80 % eye and the socket sculpted for S9's big eye) and eyes
   "squeezed out of the skull, like a crab's"; he wants them deeper in the head, symmetric, as in e2 / el2.
   - **Measured on M11's kit:** the ball's front stood 30 mm before the face beside it and 17 mm before the nose
@@ -3009,7 +3009,7 @@ a time, by visibility.
       `fill_masks` runs `FIT["fill_iters"]` iterations.
 
 - **M21, the eyes' last flaws at game distance** (brief UPDATE 45, PR #259's review; output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M21/`, kit `M21/export/` = M17c's with the closed lashes). Each flaw was
+  `<raw>/review/char/alien-parts-kit/M21/`, kit `M21/export/` = M17c's with the closed lashes). Each flaw was
   isolated first in the off-screen window (`godot/alien/m21_shots.gd` "diag": per variant hidden parts, face-material
   or skin uniforms, a per-mesh LOD bias or the viewport's LOD threshold, at 3.5 m and 0.4 m; `M21/diag/d1` to `d11`):
   - **The blotchy upper lids at 3.5 m: Godot's automatic mesh LODs.** A LOD keeps the mesh's vertex data and drops
@@ -3046,7 +3046,7 @@ a time, by visibility.
       fades its specular and clear coat out between `gloss_fade`'s 2 and 3 m, as the tubes fade.
 
 - **M19, the AI mouth route test** (brief UPDATE 38; output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M19/`): GPT Image views of mp1's lips (`batches/2026-10-21-alien-mouth-views.toml`)
+  `<raw>/review/char/alien-parts-kit/M19/`): GPT Image views of mp1's lips (`batches/2026-10-21-alien-mouth-views.toml`)
   -> Meshy multi-image 3D (`batches/2026-10-21-alien-mouth-3d.toml`) -> `tools/blender/alien_mouth_fit.py`, which
   writes a grid kit (`M19/kit/`, M15's head) with `lipvar_aia_pout_<shape>` and `lipvar_aib_pout_<shape>` beside our
   pieces (and `--also m16c=<blend>`'s as `lipvar_m16c_*`), shown by `m12_shots.gd`'s `vgrid`
@@ -3066,7 +3066,7 @@ a time, by visibility.
   - The variants keep the Body's contact layers, which come from our `mouth_pout_rest`; a route that ships an AI form
     must rebuild them from it (M20 does).
 - **M20, the hybrid pout** (brief UPDATE 42, the engineer's pick: art#196 comment 6319459349; output under
-  `D:/prime-art-raw/review/char/alien-parts-kit/M20/`): the pout's **closed shapes rest, M and small are AI forms**
+  `<raw>/review/char/alien-parts-kit/M20/`): the pout's **closed shapes rest, M and small are AI forms**
   (M19's route (a)), the open shapes A, E, O ours. M and small came from `batches/2026-10-21-alien-mouth-views-2.toml`
   (edits of M19's rest sheet with mp1's M or small panel, so the three closed pieces share the lips, light and scale)
   and `batches/2026-10-21-alien-mouth-3d-2.toml`; rest is M19's `rest3d`. The kit is the chain's `mouthsk` and
@@ -3150,7 +3150,7 @@ a time, by visibility.
   - the heavy pout tests read `M20d/export`: the contact (`full` >= 140, `touched` >= 329), the dimple from
     `fit.json`, and the open rings' lip depth at the centre (`alien_pout_check.py` `rolls`, M20b's depth 1.0: A
     19.4, E 17.1, O 20.1 mm; at least A 23, E 20.5, O 24).
-- **Test D, one material** (brief UPDATE 53; output `D:/prime-art-raw/review/char/alien-parts-kit/TD/`, handoff
+- **Test D, one material** (brief UPDATE 53; output `<raw>/review/char/alien-parts-kit/TD/`, handoff
   `handoff-TD.md`): can today's parts kit read as one painted head by material and light alone? No geometry changed.
   - `alien_hue.gdshader` gained `pale_value` and `pale_mul` (linear), both mixed in by the light mask on both paths, so
     the face, throat and belly darken and tint while the dome's teal stays; identity at the defaults (1.0, (1, 1, 1)),
@@ -3262,7 +3262,7 @@ a time, by visibility.
     0.056; M1f 0.889 / 0.075 / 0.932 / 0.094, the same 10 % larger head and 70 % gills). The loco set on them:
     `docs/animations.md` (`alien_loco.py --build r2c/build --out loco/t1`; the axolotl's is not made yet).
 - **Bodies A, H1 to H5: the chameleon's and the axolotl's hybrid bodies** (art #196; output under
-  `D:/prime-art-raw/research/2026-10-22-roster/design/pilot3d/bodies_a/`, a `HANDOFF.md` per step):
+  `<raw>/research/2026-10-22-roster/design/pilot3d/bodies_a/`, a `HANDOFF.md` per step):
   - `alien_cage.py --targets <toml>` sets any constant in `CAGE_KEYS` from a file in
     `tools/blender/alien_cage_targets/`; a file's `include` (a file beside it) is applied first. Without a file every
     H1/H2/H3 path is off and S4b's numbers stay.

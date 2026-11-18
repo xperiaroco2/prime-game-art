@@ -1,6 +1,6 @@
 """M14 (art #196): the tongue mouth mt2's tongue and teeth as plain geometry (no Blender, so it is unit-tested).
 
-The mt2 sheet (`D:/prime-art-raw/2026-10-20-alien-face-sheets-2/mt2/`): soft coral lips, a few small gappy blunt
+The mt2 sheet (`<raw>/2026-10-20-alien-face-sheets-2/mt2/`): soft coral lips, a few small gappy blunt
 teeth and a soft pink tongue with a centre groove that pokes out over the lower lip in every shape (rest: out at one
 corner; M: the tip between pressed lips; small: resting on the lower lip; A: lolling out of the dropped jaw; E: out of
 one corner; O: the tip out of the round opening). The tongue is the same size in every shape; each shape only places

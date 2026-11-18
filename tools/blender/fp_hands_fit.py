@@ -1,7 +1,7 @@
 """Fits the first-person hands' key poses to their target frames (art#136): runs inside headless Blender.
 
     blender -b --factory-startup --python-exit-code 1 --python tools/blender/fp_hands_fit.py -- \
-        --raw D:/prime-art-raw --out <dir> [--masks-only] [--only POSE ...] [--evals N]
+        --raw <raw> --out <dir> [--masks-only] [--only POSE ...] [--evals N]
 
 The engineer rejected the first build (art PR #378, 2026-11-11: a broken, twisted wrist, the crystal burning the hands
 white, a strange hold) and picked the way games make first-person hands: the hands on their own camera ([view]
@@ -469,7 +469,7 @@ def main(argv) -> None:
     for side, roll in fitted_old.get("hold_roll", {}).items():  # the seated hold's roll, as the build starts from it
         poses.fit[side]["roll"] = float(roll)
     B.pose_now(rig, poses.state("crystal"))
-    crystal_objs, crystal_meshes = B.load_crystal(raw / cfg["source"]["crystal"], sock)
+    crystal_objs, crystal_meshes = B.load_crystal(B.HERE.parents[1] / cfg["source"]["crystal"], sock)
     bpy.context.view_layer.update()
     sc = Scene(rig, body, top, crystal_meshes, sock, Eye(float(view["fov_deg"])))
     SCENE.append(sc)
