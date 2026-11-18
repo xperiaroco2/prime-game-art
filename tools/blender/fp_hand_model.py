@@ -298,31 +298,61 @@ class Hand:
         return out
 
     def crease(self, p, n=None):
-        """The creases' depth (mm, carved inward) at points p: a soft groove per line, on its side of the hand."""
+        """The creases' depth (mm, carved inward) at points p: a soft groove per line, on its side of the hand. Each
+        groove bows toward the tip in its middle (`crease_bow_mm`) and wanders a little along its length
+        (`crease_wobble_mm`, two slow waves of its own phase), and its depth swells and fades along it, never to
+        nothing, and fades out at a palm line's ends: a straight groove of one depth read as ruled (m26's critic)."""
         spec = self.spec["skin"]
         depth, width = float(spec["crease_depth_mm"]), float(spec["crease_width_mm"])
+        bow, wob = float(spec.get("crease_bow_mm", 0.0)), float(spec.get("crease_wobble_mm", 0.0))
         out = np.zeros(len(p))
-        for c in self.creases:
+        for i, c in enumerate(self.creases):
+            ph = 1.7 * i + 0.6   # each crease its own phase
             if "line" in c:
                 ln = np.array(c["line"])
                 best = np.full(len(p), 1e9)
+                lat = np.zeros(len(p))
+                s_at = np.zeros(len(p))
+                acc = 0.0
                 for q0, q1 in zip(ln[:-1], ln[1:]):
                     d = q1 - q0
+                    L = float(np.linalg.norm(d))
                     t = np.clip(((p[:, :2] - q0) @ d) / float(d @ d), 0.0, 1.0)
-                    best = np.minimum(best, np.linalg.norm(p[:, :2] - (q0 + t[:, None] * d), axis=1))
+                    off = p[:, :2] - (q0 + t[:, None] * d)
+                    dist = np.linalg.norm(off, axis=1)
+                    near = dist < best
+                    best = np.where(near, dist, best)
+                    lat = np.where(near, (d[0] * off[:, 1] - d[1] * off[:, 0]) / L, lat)
+                    s_at = np.where(near, acc + t * L, s_at)
+                    acc += L
                 side = np.clip((p @ c["side"] + 4.0) / 10.0, 0.0, 1.0)
-                g = np.exp(-(best / (0.5 * width * c["w"])) ** 2) * side
-                # fade at the line's ends
+                # the line wanders (a signed shift across it, two slow waves along it)
+                shift = wob * (np.sin(s_at / 9.0 + ph) + 0.5 * np.sin(s_at / 4.1 + 2.3 * ph))
+                g = np.exp(-((lat - shift) / (0.5 * width * c["w"])) ** 2) * side
+                # its depth swells and fades along it, and fades out over 10 mm at each end
+                g *= 0.8 + 0.2 * np.sin(s_at / 6.0 + 3.1 * ph)
+                g *= np.clip(s_at / 10.0, 0.0, 1.0) * np.clip((acc - s_at) / 10.0, 0.0, 1.0)
                 out += depth * c["depth"] * g
                 continue
-            rel = p - c["p"]
-            ax = rel @ c["t"]
+            ax_all = (p - c["p"]) @ c["t"]
+            near = np.nonzero(np.abs(ax_all) < 1.5 * width * c["w"] + bow + 1.5 * wob + 1.0)[0]
+            if not len(near):
+                continue
+            rel = p[near] - c["p"]
+            ax = ax_all[near]
             radial = rel - ax[:, None] * c["t"]
             rn = np.linalg.norm(radial, axis=1) + 1e-9
             facing = (radial @ c["side"]) / rn
-            g = np.exp(-(ax / (0.5 * width * c["w"])) ** 2) * np.clip((facing - c["face"]) / 0.35, 0.0, 1.0)
+            # the angle round the finger from the crease's middle, for the bow and the wander
+            e1 = c["side"] - (c["side"] @ c["t"]) * c["t"]
+            e1 = e1 / (np.linalg.norm(e1) + 1e-9)
+            e2 = np.cross(c["t"], e1)
+            phi = np.arctan2(radial @ e2, radial @ e1)
+            shift = bow * np.clip(facing, 0.0, 1.0) ** 2 + wob * (np.sin(2.2 * phi + ph) + 0.4 * np.sin(4.7 * phi + 2.3 * ph))
+            g = np.exp(-((ax - shift) / (0.5 * width * c["w"])) ** 2) * np.clip((facing - c["face"]) / 0.35, 0.0, 1.0)
+            g *= 0.8 + 0.2 * np.sin(3.0 * phi + 3.1 * ph)
             g *= np.exp(-np.maximum(rn - c["r"] * 1.15, 0.0) / 2.0)
-            out += depth * c["depth"] * g
+            out[near] += depth * c["depth"] * g
         return out
 
 

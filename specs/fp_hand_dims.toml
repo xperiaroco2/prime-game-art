@@ -162,8 +162,14 @@ palm_paler = 0.10          # and its saturation under the base's (a share of it)
 tip_lighter = 0.08         # the fingertips' value over the base, from the last crease to the tip
 knuckle_deeper = 0.04      # the knuckles' tops: value under the base
 roughness = 0.42
+# the creases' groove (fp_hand_model.Hand.crease): m26's, 2.6 mm wide, straight and of one depth, "looked ruled" (its
+# critic, 2026-11-18); since m27 4 mm wide, bowed toward the tip in the middle of the palm side by `crease_bow_mm`,
+# wandering by `crease_wobble_mm` along their length, their depth swelling and fading by a fifth (crease grid c27a:
+# 2.6 / 0 / 0 ruled, 5 / 2 / 0.8 blurred into folds, 4 mm at 0.4 deep barely read)
 crease_depth_mm = 0.5
-crease_width_mm = 2.6
+crease_width_mm = 4.0
+crease_bow_mm = 1.5
+crease_wobble_mm = 0.6
 
 # The budget: one arm (forearm, hand, the upper arm's stub); two in view.
 [budget]
