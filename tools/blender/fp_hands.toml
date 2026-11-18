@@ -88,14 +88,16 @@ ThumbTurn = [30, 25]
 
 [grips.fist]      # the punch's fist on the detailed hand (fp_hand_model.py's fit, specs/fp_hand_dims.toml [fist]):
                   # the first phalanges half bent, the middle phalanges the fist's front, the thumb tucked down
-                  # the index's side; the morph `fist` (weight 1 with it) is the fist's own surface
-Index = [55, 90, 50]
-Middle = [57, 90, 50]
-Ring = [60, 90, 50]
+                  # the index's side; the morph `fist` (weight 1 with it) is the fist's own surface. Since m27 (fist
+                  # grids g27a-f, 2026-11-18) the middle joints 65 degrees and the thumb swung 50: the fist
+                  # 123 mm deep (m26's 90-degree middle joints, 108)
+Index = [60, 65, 60]
+Middle = [62, 65, 60]
+Ring = [65, 65, 60]
 Little = [0, 0, 0]
 mirror = true
 Thumb = [25, 30, 40]
-ThumbTurn = [-20, 35]
+ThumbTurn = [-20, 50]
 
 [poses.idle]      # the right hand low in the lower right corner, the back of the hand to the eye, relaxed: concept A's
                   # idle frame measured (the cuff at 78 % across and 88 % down, the knuckles at 70 % and 75 %, the

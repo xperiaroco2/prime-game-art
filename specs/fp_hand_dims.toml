@@ -117,12 +117,17 @@ depth = 125.0
 # (variant grids g6-g8 and g19, 2026-11-12: an 80-degree knuckle bend hid the fingers end-on from the back and made
 # the fist too short; a 15-degree one with a 120-degree middle joint folded the middle phalanx back over the first in
 # a torn flap on the thumb's side)
-curl_deg = { index = [55, 90, 50], middle = [57, 90, 50], ring = [60, 90, 50] }
+# m26's [55-60, 90, 50] made a fist 108 mm deep: its front is the thumb lying on the middle phalanges, its back the
+# knuckle heads, and the 90-degree middle joints folded the middle phalanges back up toward the palm. m27 (fist grids
+# g27a-g27f, 2026-11-18): the knuckles bent a little more and the middle joints less, the middle phalanges hanging
+# lower; with the thumb swung to 50, `swell_mm` 5, the knuckle heads raised and `spread_mm`, the fist is 123 mm deep
+curl_deg = { index = [60, 65, 60], middle = [62, 65, 60], ring = [65, 65, 60] }
 # the thumb tucked down the side of the index's curled finger, its tip by the index's middle phalanx: picked by eye
 # from variant grids (g4 `tuck` 2026-11-11, g15 and g16 2026-11-12, the vertices coloured by group). The search
 # (`fit = true`, fp_hand_model.fit_thumb, steered by `thumb_target`) sent the thumb out in front of the fist or, turned
 # across it, up and away
-thumb = { turn = [-20.0, 35.0], curl = [25.0, 30.0, 40.0], fit = false }
+# (m27: swung 50 instead of 35 toward the palm, down onto the lower middle phalanges; grids g27d-g27f)
+thumb = { turn = [-20.0, 50.0], curl = [25.0, 30.0, 40.0], fit = false }
 # the fist's own surface (fp_hand_model.FistField and corrective): each finger keeps its own round surface (a crease
 # where neighbours press together), a little fuller than open (`swell_mm`), blended into the palm only near its root
 # (`root_blend_mm`); a knuckle head per finger on the back (an ellipsoid at the knuckle joint, radii as shares of the
@@ -131,7 +136,7 @@ thumb = { turn = [-20.0, 35.0], curl = [25.0, 30.0, 40.0], fit = false }
 # vertex goes out along a ray from its phalanx's axis; a web or root shared by groups follows its neighbours as a
 # membrane; then `untangle` rounds of relaxing on the surface and `smooth_rounds` of smoothing where it is still
 # rough (more than `rough_mm` off its neighbours' mean); a vertex moves at most `move_cap_mm`
-swell_mm = 1.5
+swell_mm = 5.0            # m26 1.5; 5 since m27 (grids g27c-g27f): the fist's chunky fingers, wider and deeper
 root_blend_mm = 12.0
 tip_blend_mm = 8.0
 web_blend_mm = 8.0
@@ -139,7 +144,11 @@ untangle = 8
 smooth_rounds = 10
 rough_mm = 1.0
 move_cap_mm = 60.0
-knuckle = { r = [0.9, 0.95, 0.85], up = 5.0, along = 0.0 }
+knuckle = { r = [0.9, 1.0, 1.0], up = 12.0, along = 0.0 }   # m26 [0.9, 0.95, 0.85] up 5: the back's top was the wrist
+# the ring finger pushed out sideways in the fist (mm along v, after the pose; FistField): the folded fingers press each
+# other apart. m27's narrower palm (the ring's knuckle_v) took the fist to 150 mm wide; the concept's fist is 156 across
+# its knuckles against an open palm of 131 (grid g27f)
+spread_mm = { ring = -6.0 }
 # the valleys between the knuckles over the back of the fist (a groove per pair of neighbours, `back` mm toward the
 # wrist and `front` mm past the knuckle row, `depth` deep, a Gaussian `width` wide): with the knuckle heads what makes
 # each finger read from behind (grid g20, 2026-11-12; without them the back read as one smooth slab)

@@ -242,7 +242,8 @@ class Hand:
             return part(p)
 
         out = {}
-        arm = None
+        if only:
+            return {only: [ev(part) for part in self.parts[only]]}
         base = np.minimum(ev(self.parts["arm"][0]), ev(self.parts["arm"][1]))
         for part in self.parts["mound"]:
             base = smin(base, ev(part), 14.0)
@@ -837,10 +838,17 @@ class FistField:
             self.valley_width = float(va.get("width", 6.0))
         cav = fs.get("cavity")
         self.cavity = Part("ell", "Hand", 1.0, c=cav["c"], r=cav["r"]) if cav else None
+        # a finger pushed out sideways in the fist (mm along v, after the pose): the folded fingers press each other
+        # apart, so the fist is wider across its knuckles than the open palm (the concept: 156 against 131 mm)
+        self.spread = {k: float(x) for k, x in fs.get("spread_mm", {}).items()}
 
     def groups(self, p, which):
         """{group: distance} at p for the groups in `which`."""
         F = self.hand.fields(p, self.D)
+        for name, dv in self.spread.items():
+            if dv and name in F:
+                q = p - np.array([0.0, dv, 0.0])
+                F[name] = self.hand.fields(q, self.D, only=name)[name]
         B = F["base"]
         for e in self.extra:
             B = smin(B, e(p), 6.0)
@@ -1166,6 +1174,10 @@ def fist_measure(ob, arm, sp: Space, spec: dict, right_n: int) -> dict:
     hp = pf[pf[:, 0] > 0]
     fs = spec["fist"]
     fing = pf[np.array([s[0] in DIGITS for s in mem])]
+    hm = [s for s, x in zip(mem, pf) if x[0] > 0]
+    for what, i in (("w max", np.argmax(hp[:, 2])), ("w min", np.argmin(hp[:, 2])), ("v max", np.argmax(hp[:, 1])),
+                    ("v min", np.argmin(hp[:, 1]))):
+        log(f"fist {what}: {hm[i][0]} at {np.round(hp[i], 1).tolist()}")
     return {"width": [fs["width"], round(float(np.ptp(hp[:, 1])), 1)],
             "thumb_low_u": [fs["thumb_low_u"], round(float(hp[:, 0].max()), 1)],
             "depth": [fs["depth"], round(float(np.ptp(hp[:, 2])), 1)],
