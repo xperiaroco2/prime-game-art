@@ -1797,7 +1797,25 @@ hand: concept A refined (four digits: three thick rounded fingers and a thumb; b
 2026-11-11-fp-hand-model-concepts, the engineer's pick), its spec `specs/fp_hand_dims.toml` (Gate 1: every size
 measured off the concept's back view at 2 px/mm, the hand 20.84 cm long as the character's, the forearm 22.05 cm),
 built by `tools/blender/fp_hand_model.py --raw <raw> --out <dir> [--renders] [--fist-grid <json>]` (headless
-Blender, about 2.5 minutes with the bake). `fp_hands.toml [source] char` names its output.
+Blender, about 3.5 minutes with the bake on the laptop). `fp_hands.toml [source] char` names its output (m26 since
+2026-11-18).
+
+**Its inputs are in git** since 2026-11-18 (art #136): the axolotl character build it took its rig and skin colour
+from lived only on D: and is gone. The engineer's choice the same day: go on from the committed hands asset t4.
+- **The rig**: `tools/blender/fp_rig_seed.json`, the 40 bones of t4's `FPRig` (the character's arm, hand and finger
+  bones as the character had them, with `View` at the eye and `Crystal`), read once by
+  `tools/blender/fp_rig_seed.py --blend assets/body/fp_hands/source/fp_hands.blend --out tools/blender/fp_rig_seed.json`
+  (a rig rebuilt from the JSON matches within 1 micrometre); `specs/fp_hand_dims.toml [hand] rig_seed` names it.
+- **The skin colour**: `[skin] base_srgb`, the value m25 measured (t4's own body texture pointed at D: too).
+- **The energy crystal**: its committed GLB, `assets/prop/energy_crystal/export/energy_crystal.glb`.
+- **The shots' world**: the ship package v9, rebuilt by `ship --build` and `ship --export <raw>/ship/v5/export/v9
+  --no-compare` (about 10 minutes).
+
+m26, the first build on the seed, matches m25 by every number m25's PR recorded: 23 794 quads an arm (Euler 2), the
+fist morph's move p50 0.15 / p99 14.5 mm, the fist 154 / 142.4 / 107.7 mm. The hands' run `s2` on it passes every
+check, the Godot shots included. The concept (`[hand] concept`) and the target frames are AI generations lost with
+D:: `--renders` and `fp_hands_fit.py` cannot run until they come back from the review pages' copies or anew;
+`fp_hands_fit.json` keeps the fitted poses.
 
 - **The shape is a signed distance field**: one smoothed profile from the upper arm's stub through the wrist to the
   knuckles (the forearm's stations, then the palm's outline and thickness; a rounded ellipse, a flatter superellipse
@@ -1815,7 +1833,7 @@ Blender, about 2.5 minutes with the bake). `fp_hands.toml [source] char` names i
   teal (the median of its skin texture under the hand, sRGB 0.40 0.79 0.79), the palm and fingertips lighter and paler,
   the knuckles' tops a touch deeper, the creases and the field's own occlusion a little darker. Roughness 0.42, no
   metal.
-- **The rig**: the character's armature with the hand and finger bones moved to the model's joints (same names; the
+- **The rig**: the seed's armature with the hand and finger bones moved to the model's joints (same names; the
   ring finger is `Ring`, `Little` stays and carries nothing); the fingers' bone z points to the palm, so a grip's
   positive curl closes the hand as on the character. Weights from the parts: each part's bone through
   exp(-distance / sigma), four kept.
