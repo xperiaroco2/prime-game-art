@@ -165,7 +165,13 @@ cavity = { c = [96.0, 15.0, -36.0], r = [26.0, 55.0, 17.0] }
 # all in the normal map.
 [skin]
 base_srgb = [0.40, 0.79, 0.79]   # the character's hand teal (the median of its skin texture under the hand, measured by
-                                 # the m25 build; docs/animations.md); the game sets the player's own colour at runtime
+                                 # the m25 build; docs/animations.md): since m28 only the reference the pattern's
+                                 # lightness is measured against. The base colour texture is neutral grey (each texel's
+                                 # luminance over this colour's, the brightest 1.0; the back of the hand 0.72 linear,
+                                 # 0.86 sRGB) and the material's factor white: the game multiplies it by the player's
+                                 # body colour (prime-game's CharacterRig.set_tint), fp_hands.toml [look] body_srgb
+                                 # the default. The palm's paleness (palm_paler) cannot survive a multiply: only its
+                                 # lightness stays
 palm_lighter = 0.12        # the palm's value over the base (HSV value, 0-1)
 palm_paler = 0.10          # and its saturation under the base's (a share of it)
 tip_lighter = 0.08         # the fingertips' value over the base, from the last crease to the tip

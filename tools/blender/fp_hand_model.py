@@ -8,16 +8,17 @@ palm, three fingers, thumb), the palm's parts blended soft, each finger webbed o
 neighbouring digits joined by a tight crease where they touch (the fist). The arm mesh is the field's surface (surface
 nets on a `--low-mm` grid, relaxed and projected back onto it); its normal map is baked from a `--high-mm` surface of
 the same field with the creases carved in; its base colour is computed per texel from the baked positions and normals
-(the character's hand teal, the palm and fingertips lighter, the knuckles a touch deeper, the creases and the field's
-own occlusion a little darker). Weights come from the same parts (each part's bone, blended by distance). The fist is
+as a neutral grey pattern since m28 (the palm and fingertips lighter, the knuckles a touch deeper, the creases and
+the field's own occlusion a little darker; the game multiplies it by the player's body colour). Weights come from the same parts (each part's bone, blended by distance). The fist is
 a finger pose of the rig plus the morph `fist`, the fist's own surface (FistField: the parts posed with the same
 bones, each finger its own round surface, knuckle heads and valleys over the back, the palm wrapped round the curled
 fingers), onto which the skinned vertices are carried group by group (corrective).
 
 Writes <out>/fp_hand_char.blend: the rig (spec [hand] rig_seed, the character's arm rig as data: fp_rig_seed.py) with
 the two first-person arms (one mesh with the morph; the left the right's mirror, its UVs shared) and its hand and
-finger bones moved to the model's joints (same names; Little kept, unweighted), for fp_hands_build.py's cut; the skin
-colour is the spec's [skin] base_srgb (the character's, measured before its build was lost);
+finger bones moved to the model's joints (same names; Little kept, unweighted), for fp_hands_build.py's cut; the
+pattern's lightness is measured against the spec's [skin] base_srgb (the character's teal, measured before its build
+was lost);
 <out>/textures/; <out>/model.json (counts, the spec's sizes measured, the fist's fit); --renders: <out>/renders/, the
 concept's four views rendered at its scale beside it (compare.png) with the silhouette overlap per view.
 """
@@ -687,13 +688,23 @@ def bake_maps(hand: Hand, low, out: Path, tex: int, high_mm: float, base_srgb):
             d[s:s + 400_000] = fn(P[s:s + 400_000] + N[s:s + 400_000] * hstep)
         occ += (hstep - np.clip(d, 0.0, hstep)) / hstep * (0.5 ** i)
     ao = 1.0 - 0.32 * np.clip(occ / 1.75, 0.0, 1.0)
-    lin = srgb_to_lin(col) * (ao * (1.0 - 0.10 * groove))[:, None]
+    # neutral since m28 (art#136): the game colours the player at runtime, albedo_color = the material's colour x the
+    # body colour (prime-game's CharacterRig.set_tint), so the texture holds only the pattern's lightness, grey: each
+    # texel's luminance over the base's, the brightest texel 1.0, and the material's base colour factor stays white
+    lum = np.array([0.2126, 0.7152, 0.0722])
+    g = (srgb_to_lin(col) @ lum) / float(srgb_to_lin(base) @ lum) * ao * (1.0 - 0.10 * groove)
+    top = float(g.max())
+    g = g / top
+    back = 1.0 / top   # the back of the hand (the base, no occlusion): the share of the body colour it shows
     out_rgb = np.zeros((tex, tex, 4), np.float32)
     out_rgb[..., 3] = 1.0
-    out_rgb[..., :3] = base
-    out_rgb[cover, :3] = lin_to_srgb(lin)
+    out_rgb[..., :3] = float(lin_to_srgb(back))
+    out_rgb[cover, :3] = lin_to_srgb(g)[:, None]
     stats["colours_srgb"] = {"base": [round(float(x), 3) for x in base], "palm": [round(float(x), 3) for x in c_palm],
                              "tip": [round(float(x), 3) for x in c_tip], "knuckle": [round(float(x), 3) for x in c_knk]}
+    stats["texture"] = {"kind": "neutral grey: lightness over the body colour", "max_linear": round(float(g.max()), 4),
+                        "back_ratio_linear": round(back, 4), "back_ratio_srgb": round(float(lin_to_srgb(back)), 4),
+                        "p10_p50_p90_linear": [round(float(x), 4) for x in np.percentile(g, [10, 50, 90])]}
     stats["occlusion_min"] = round(float(ao.min()), 3)
     (out / "textures").mkdir(parents=True, exist_ok=True)
     col_img = bpy.data.images.new("fp_hand_basecolor", tex, tex, alpha=False)
@@ -740,12 +751,14 @@ def bake_maps(hand: Hand, low, out: Path, tex: int, high_mm: float, base_srgb):
 
 
 def skin_material(base_srgb, col_img=None, nrm_img=None, roughness=0.42):
+    """The skin: with its maps, the neutral base colour texture straight into Base Color (the glTF factor white, the
+    game's colour slot); without them (a quick build), the base colour itself."""
     mat = bpy.data.materials.new("fp_hand_skin")
     mat.use_nodes = True
     nt = mat.node_tree
     bsdf = next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED")
     bsdf.inputs["Roughness"].default_value = roughness
-    bsdf.inputs["Base Color"].default_value = (*srgb_to_lin(base_srgb), 1.0)
+    bsdf.inputs["Base Color"].default_value = (*srgb_to_lin(base_srgb), 1.0) if col_img is None else (1.0, 1.0, 1.0, 1.0)
     if col_img is not None:
         t = nt.nodes.new("ShaderNodeTexImage")
         t.image = col_img
