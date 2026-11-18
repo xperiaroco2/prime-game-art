@@ -1797,7 +1797,7 @@ hand: concept A refined (four digits: three thick rounded fingers and a thumb; b
 2026-11-11-fp-hand-model-concepts, the engineer's pick), its spec `specs/fp_hand_dims.toml` (Gate 1: every size
 measured off the concept's back view at 2 px/mm, the hand 20.84 cm long as the character's, the forearm 22.05 cm),
 built by `tools/blender/fp_hand_model.py --raw <raw> --out <dir> [--renders] [--fist-grid <json>]` (headless
-Blender, about 3.5 minutes with the bake on the laptop). `fp_hands.toml [source] char` names its output (m26 since
+Blender, about 3.5 minutes with the bake on the laptop). `fp_hands.toml [source] char` names its output (m27 since
 2026-11-18).
 
 **Its inputs are in git** since 2026-11-18 (art #136): the axolotl character build it took its rig and skin colour
@@ -1817,6 +1817,30 @@ check, the Godot shots included. The concept (`[hand] concept`) and the target f
 D:: `--renders` and `fp_hands_fit.py` cannot run until they come back from the review pages' copies or anew;
 `fp_hands_fit.json` keeps the fitted poses.
 
+m27 (2026-11-18) is m26 with the engineer's three fixes, each found by a variant grid (all under
+`<raw>/2026-11-18-fp-hand-model/`):
+- **The palm narrower at the knuckles** (palm grids `p27/p1`, `p2`: the open hand's measures and which part makes
+  each station's edge): m26's ring finger, on the line through its crotch and tip, stood 9 mm out of view 0's outline
+  at u 88 and 98, and one 12 mm blend of the thumb into the palm filled the gap past `apart_u` with a web 13 mm out of
+  the palm's thumb side. Now `[fingers.ring] knuckle_v` -61 (the ring splays out from a knuckle nearer the middle),
+  `[palm] little_mound` moved in and deeper, and `[fingers.thumb] web_mm` [12, 5] (eased to 5 mm by `apart_u`; 3 or
+  4 mm pinch the surface, Euler 1). The palm at u 88: -85.7 to 54.2 mm (m26 -91.2 to 62.5, spec -82 to 49); u 98:
+  -86.8 to 50.7 (m26 -91.6 to 59.8); u 28 and 58 at spec. The finger widths unchanged.
+- **Softer creases** (crease grid `c27a`, four bakes, the palm and the back of the fingers close): m26's 2.6 mm
+  straight grooves of one depth looked ruled. Now 4 mm wide, bowed 1.5 mm toward the tip in the middle of the palm
+  side, wandering 0.6 mm along their length, their depth swelling and fading by a fifth, the palm lines fading out
+  at their ends (`[skin] crease_*`). 5 mm with 2 mm of bow blurred them into folds; 4 mm at 0.4 deep barely read.
+- **A deeper fist** (fist grids `g27a`-`g27f`): the fist's front is the thumb lying on the middle phalanges and its
+  back the knuckle heads (`fist_measure` logs both). The cavity, the knuckle heads alone and looser middle joints
+  alone moved neither; the middle joints at 65 degrees (was 90) with the knuckles at 60-65, the thumb swung 50 (was
+  35), `swell_mm` 5 and the knuckle heads 12 mm up made it 123 mm deep. The narrower palm took the fist to 145 mm wide;
+  `[fist] spread_mm` (the ring pushed 6 mm out sideways in the fist only: folded fingers press each other apart)
+  brings it back to 155.
+- **m27's numbers**: 23 790 quads an arm (Euler 2); the fist 155.2 wide / 142.6 long / 123.2 deep, `thumb_low_u`
+  142.6 (m26 154 / 142.4 / 107.7, 142.4; spec 156 / 140 / 125, 157); the fist morph's move p50 0.14 / p99 14.6 mm.
+  Off the spec's tolerance: the palm's thumb side at u 88 (54.2, spec 49: the thumb's own surface weighted to the
+  hand, the web 5 mm can leave) and `thumb_low_u` (as m26).
+
 - **The shape is a signed distance field**: one smoothed profile from the upper arm's stub through the wrist to the
   knuckles (the forearm's stations, then the palm's outline and thickness; a rounded ellipse, a flatter superellipse
   in the palm; its end domed under the fingers' roots), with the thumb's and the little side's mounds blended on. A
@@ -1828,8 +1852,8 @@ D:: `--renders` and `fp_hands_fit.py` cannot run until they come back from the r
   is checked, 2), relaxed along the surface and projected back onto it: about 24 400 quads (48 800 triangles) an arm.
   Smart UV projection; the left arm is the right mirrored with the same UVs.
 - **The maps** (2048 px): the normal map is baked in Cycles from a 0.7 mm surface of the same field with the creases
-  carved in (each finger's palm side at its joints, faint wrinkles over the middle knuckles, two palm lines, the
-  wrist); the base colour is computed per texel from the low mesh's baked positions and normals: the character's hand
+  carved in as soft, bowed, wandering grooves (each finger's palm side at its joints, faint wrinkles over the middle
+  knuckles, two palm lines, the wrist); the base colour is computed per texel from the low mesh's baked positions and normals: the character's hand
   teal (the median of its skin texture under the hand, sRGB 0.40 0.79 0.79), the palm and fingertips lighter and paler,
   the knuckles' tops a touch deeper, the creases and the field's own occlusion a little darker. Roughness 0.42, no
   metal.
@@ -1837,8 +1861,8 @@ D:: `--renders` and `fp_hands_fit.py` cannot run until they come back from the r
   ring finger is `Ring`, `Little` stays and carries nothing); the fingers' bone z points to the palm, so a grip's
   positive curl closes the hand as on the character. Weights from the parts: each part's bone through
   exp(-distance / sigma), four kept.
-- **The fist** is the grip `[grips.fist]` (fingers 55-60 / 90 / 50 degrees, the thumb tucked down the index's side,
-  picked by eye) plus the morph `fist`, the fist's own surface (`FistField`, 2026-11-12, the engineer's pick of route
+- **The fist** is the grip `[grips.fist]` (fingers 60-65 / 65 / 60 degrees since m27, the thumb tucked down the
+  index's side, picked by eye) plus the morph `fist`, the fist's own surface (`FistField`, 2026-11-12, the engineer's pick of route
   over more tuning of a corrective). The field is the hand's parts posed with the grip's bones, but each finger keeps
   its own round surface, a little fuller (`swell_mm`), blended into the palm only at its root. The back has a big
   knuckle head per finger and a valley between neighbours, without which the back read as one smooth slab. The
