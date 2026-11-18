@@ -58,7 +58,7 @@ def log(msg: str) -> None:
 # ------------------------------------------------------------------------------------------------ the field
 def smin(a, b, k):
     """Polynomial smooth minimum: k the blend's width (mm); at most k/4 of swelling where a == b."""
-    if k <= 0:
+    if np.isscalar(k) and k <= 0:
         return np.minimum(a, b)
     h = np.clip(0.5 + 0.5 * (b - a) / k, 0.0, 1.0)
     return b * (1.0 - h) + a * h - k * h * (1.0 - h)
@@ -168,7 +168,8 @@ class Hand:
         fingers = spec["fingers"]
         # the thumb's mound and the little side's on the palm's side
         self.parts["mound"].append(Part("ell", "ThumbMetacarpal", 4.0, c=[40.0, 36.0, -8.0], r=[34.0, 24.0, 19.0]))
-        self.parts["mound"].append(Part("ell", "Hand", 4.0, c=[56.0, -52.0, -6.0], r=[34.0, 17.0, 15.0]))
+        little = pa.get("little_mound", {"c": [56.0, -52.0, -6.0], "r": [34.0, 17.0, 15.0]})
+        self.parts["mound"].append(Part("ell", "Hand", 4.0, c=little["c"], r=little["r"]))
         # the fingers: three round cones each (proximal, intermediate, distal), the knuckle a little fuller
         for name in DIGITS:
             f = fingers[name]
@@ -176,7 +177,9 @@ class Hand:
             s = float(f["thickness"]) / float(f["width"])
             ku, tu = float(f["knuckle_u"]), float(f["tip_u"]) - r * s ** 0.3
             v0, v1 = f["centre_v"]
-            a = np.array([ku, v0 + (v0 - v1) * (f["crotch_u"] - ku) / (tu - f["crotch_u"]), 1.0])
+            # the knuckle's centre: the spec's `knuckle_v`, or on the line through the crotch and the tip
+            kv = f.get("knuckle_v", v0 + (v0 - v1) * (f["crotch_u"] - ku) / (tu - f["crotch_u"]))
+            a = np.array([ku, float(kv), 1.0])
             b = np.array([tu, v1, -1.0])
             pts = [a]
             acc = 0.0
@@ -213,9 +216,20 @@ class Hand:
             self.joints["Thumb" + ph] = (pts[i], pts[i + 1], z)
         self.creases = self._creases()
 
+    def web_k(self, p):
+        """The thumb's blend into the palm (mm): `[fingers.thumb] web_mm` [at the mound, past apart_u], eased over
+        the 25 mm before apart_u, so the thumb stands apart from the palm's side as in view 0 (one 12 mm blend
+        filled the gap with a web out to u 98)."""
+        t = self.spec["fingers"]["thumb"]
+        k0, k1 = t.get("web_mm", [12.0, 12.0])
+        ap = float(t["apart_u"])
+        s = np.clip((p[:, 0] - (ap - 25.0)) / 25.0, 0.0, 1.0)
+        return k0 + (k1 - k0) * s * s * (3.0 - 2.0 * s)
+
     # ---------------------------------------------------------------------------------------------- evaluation
-    def fields(self, p, deltas=None):
-        """{part group: distance} at points p, each part moved by its bone's delta (hand space, 4x4 numpy) if any."""
+    def fields(self, p, deltas=None, only=None):
+        """{part group: distance} at points p, each part moved by its bone's delta (hand space, 4x4 numpy) if any;
+        `only`: that digit's alone."""
         cache = {}
 
         def ev(part):
@@ -248,7 +262,7 @@ class Hand:
             chain = np.minimum(np.minimum(P1, I1), D1)
             soft = chain if soft is None else smin(soft, chain, 3.0)
         M, Tp, Td = F["thumb"]
-        total = np.minimum(total, smin(B, smin(M, Tp, 6.0), 12.0))
+        total = np.minimum(total, smin(B, smin(M, Tp, 6.0), self.web_k(p)))
         soft = smin(soft, np.minimum(np.minimum(M, Tp), Td), 3.0)
         total = np.minimum(total, soft)
         return (total, F) if parts else total

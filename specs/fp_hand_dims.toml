@@ -52,6 +52,10 @@ v_min = [-40.0, -57.0, -70.0, -82.0, -84.0]
 v_max = [46.5, 68.5, 82.0, 49.0, 47.5]
 thickness = [52.0, 48.0, 44.0, 40.0, 38.0]
 cupping_mm = 4.0        # the palm's middle sits this far in from its sides (a soft hollow, view 1)
+# the little side's mound on the palm's side (an ellipsoid, mm): m26's (c [56, -52, -6], r [34, 17, 15]) stood out of
+# the outline by 5 to 8 mm at u 28 and 58; moved in and made deeper, it bulges on the palm's face instead (m27, palm
+# grid p1-p2 of 2026-11-18)
+little_mound = { c = [64.0, -42.0, -8.0], r = [30.0, 13.0, 17.0] }
 
 # The three fingers and the thumb (view 0). `knuckle_u`: the base joint (the knuckle bump on the back); `crotch_u`: where
 # the finger leaves its neighbour on the back; `tip_u` and `centre_v`: the tip and the line along the finger; `width`
@@ -79,6 +83,9 @@ knuckle_u = 88.0
 crotch_u = 106.0
 tip_u = 165.0
 centre_v = [-70.5, -73.0]
+# the centre at the knuckle (default: on the line through the crotch and the tip): m26's ring, on that line, made the
+# palm 9 mm wider than view 0 at u 88 and 98; from -61 it splays out to its tip (m27, palm grid p1-p2)
+knuckle_v = -61.0
 width = 39.0
 thickness = 34.5
 phalanx = [0.42, 0.32, 0.26]
@@ -90,6 +97,10 @@ centre_v = [36.0, 71.0]     # at its root and from the middle to its tip
 palmar_w = -16.0            # the thumb's line sits this far toward the palm from the hand's middle plane
 width = 36.0
 phalanx = [0.50, 0.27, 0.23] # metacarpal (in the mound, to where it stands apart), proximal, distal
+# the thumb's blend into the palm (mm): 12 on the mound, eased to 5 by apart_u (fp_hand_model.Hand.web_k). One 12 mm
+# blend filled the gap past apart_u with a web 13 mm out of the palm's side at u 88 (m26); 3 or 4 mm pinch the
+# surface (Euler 1), 5 keeps it whole (palm grid p2, 2026-11-18)
+web_mm = [12.0, 5.0]
 
 # The fist (views 2 and 3): a real finger pose in the rig, every finger seen from the back as its own rounded
 # knuckle and first phalanx with a crease between neighbours, the thumb across the first two fingers' middle
