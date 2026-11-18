@@ -1809,7 +1809,7 @@ from lived only on D: and is gone. The engineer's choice the same day: go on fro
 - **The skin colour**: `[skin] base_srgb`, the value m25 measured (t4's own body texture pointed at D: too).
 - **The energy crystal**: its committed GLB, `assets/prop/energy_crystal/export/energy_crystal.glb`.
 - **The shots' world**: the ship package v9, rebuilt by `ship --build` and `ship --export <raw>/ship/v5/export/v9
-  --no-compare` (about 10 minutes).
+  --no-compare`.
 
 m26, the first build on the seed, matches m25 by every number m25's PR recorded: 23 794 quads an arm (Euler 2), the
 fist morph's move p50 0.15 / p99 14.5 mm, the fist 154 / 142.4 / 107.7 mm. The hands' run `s2` on it passes every
