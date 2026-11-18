@@ -663,7 +663,7 @@ def pose_now(rig: Rig, s: State) -> None:
 
 
 def fit_hold(rig: Rig, poses: Poses, body, solid: Solid, base: str = "crystal", roll_span: float | None = None,
-             seat: tuple = PALM) -> dict:
+             seat_by: tuple = PALM) -> dict:
     """Seats each held hand on the crystal in the pose `base`: the palm moves out along the back of the hand from
     `r` until it is no more than FIT_PALM_MM inside the crystal's surface, then each digit curls (its grip's curls
     scaled) as far as it goes with at most FIT_DIGIT_MM inside: the fingers close round the crystal and stop on it."""
@@ -679,7 +679,7 @@ def fit_hold(rig: Rig, poses: Poses, body, solid: Solid, base: str = "crystal", 
             for k in range(0, 61):
                 fit["dr"] = -0.010 + 0.0015 * k
                 pose_now(rig, poses.state(base))
-                if contact(body, solid, side, seat)[0] <= FIT_PALM_MM:
+                if contact(body, solid, side, seat_by)[0] <= FIT_PALM_MM:
                     break
             if seat is None or fit["dr"] < seat[0] - 1e-9:
                 seat = (fit["dr"], float(roll))
@@ -762,7 +762,7 @@ def hold_grid(out: Path, rig: Rig, poses: Poses, body, solid: "Solid", crystal_o
         for side in SIDES:
             poses.fit[side]["roll"] = float(v.get("roll", 30.0)) * (1 if side == "Right" else -1)
         fit = fit_hold(rig, poses, body, solid, base="grid", roll_span=v.get("roll_span", roll_span),
-                       seat=tuple(v.get("seat", PALM)))
+                       seat_by=tuple(v.get("seat", PALM)))
         res[v["name"]] = {"variant": v, "fit": fit}
         sc.render.filepath = str(out / "grid" / f"{v['name']}.png")
         bpy.ops.render.render(write_still=True)
