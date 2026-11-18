@@ -23,6 +23,10 @@ var _player: AnimationPlayer
 var _arms: MeshInstance3D
 var _socket: Node3D
 var _vcam: Camera3D
+var _fill: DirectionalLight3D
+var _skin: Array = []   # [material, its imported albedo_color] per FPArms surface: the body colour's slot
+var _env: Environment
+var _ambient: float = 1.0
 const VM_LAYER := 20   # the viewmodel's render layer (1-based), left out of the world camera's cull mask
 
 
@@ -83,14 +87,13 @@ func _run() -> void:
 		env.fog_enabled = false
 		env.volumetric_fog_enabled = false
 		_vcam.environment = env
-	var fill := DirectionalLight3D.new()   # the hands' own soft light, on their layer only
-	fill.light_cull_mask = bit
-	fill.layers = bit
-	fill.light_energy = float(_req.get("fill_energy", 0.35))
-	fill.light_color = Color(1.0, 0.93, 0.85)
-	fill.shadow_enabled = false
-	_vcam.add_child(fill)
-	fill.rotation_degrees = Vector3(-35.0, -25.0, 0.0)
+		_env = env
+		_ambient = env.ambient_light_energy
+	_fill = DirectionalLight3D.new()   # the hands' own soft light, on their layer only
+	_fill.light_cull_mask = bit
+	_fill.layers = bit
+	_fill.shadow_enabled = false
+	_vcam.add_child(_fill)
 	var over := TextureRect.new()
 	over.texture = vm.get_texture()
 	over.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -105,6 +108,11 @@ func _run() -> void:
 	if _player == null or _socket == null or _arms == null:
 		_fail("the hands lack AnimationPlayer %s, CrystalSocket %s or FPArms %s" % [_player, _socket, _arms])
 		return
+	for i: int in _arms.mesh.get_surface_count():   # the skin's own copy, tinted as the game does
+		var m: StandardMaterial3D = (_arms.get_active_material(i) as StandardMaterial3D).duplicate() as StandardMaterial3D
+		_arms.set_surface_override_material(i, m)
+		_skin.append([m, m.albedo_color])
+	_look(_req.get("look", {}))
 	var crystal: Node3D = (load(_req["crystal"]) as PackedScene).instantiate()
 	_socket.add_child(crystal)
 	var look: Dictionary = Crystal.apply(crystal)
@@ -116,6 +124,12 @@ func _run() -> void:
 		(n as VisualInstance3D).layers = bit
 		if n is GeometryInstance3D:
 			(n as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if _req.has("variants"):   # the look's variant grid: each variant's shots, then stop
+		for w: int in 60:
+			await process_frame
+		await _variants(crystal)
+		quit(0)
+		return
 	var check: Dictionary = {"socket_parent": _socket.get_parent().get_class(), "animations": Array(_player.get_animation_list()), "clips": {}}
 	var vp: RID = root.get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp, true)
@@ -216,6 +230,49 @@ func _run() -> void:
 	f.store_string(JSON.stringify(check, " "))
 	f.close()
 	quit(0)
+
+
+## The hands' look: the body colour as the game sets it (prime-game's CharacterRig.set_tint: albedo_color = the
+## imported albedo_color x the body colour, sRGB), the fill light (energy, colour, rotation in degrees under the
+## hands' camera), the skin's roughness, and the hands' camera's share of the world's ambient light.
+func _look(l: Dictionary) -> void:
+	var tint: Color = _c(l.get("body_srgb", [1.0, 1.0, 1.0]))
+	for e: Array in _skin:
+		var m: StandardMaterial3D = e[0]
+		m.albedo_color = (e[1] as Color) * tint
+		if l.has("roughness"):
+			m.roughness = float(l["roughness"])
+	var f: Dictionary = l.get("fill", {})
+	_fill.light_energy = float(f.get("energy", 0.35))
+	_fill.light_color = _c(f.get("color", [1.0, 0.93, 0.85]))
+	_fill.rotation_degrees = _v(f.get("rot", [-35.0, -25.0, 0.0]))
+	if _env != null:
+		_env.ambient_light_energy = _ambient * float(l.get("ambient", 1.0))
+
+
+func _variants(crystal: Node3D) -> void:
+	var dir: String = String(_req["out"]).path_join("variants")
+	DirAccess.make_dir_recursive_absolute(dir)
+	for v: Dictionary in _req["variants"]:
+		var l: Dictionary = (_req.get("look", {}) as Dictionary).duplicate(true)
+		l.merge(v, true)
+		_look(l)
+		for s: Dictionary in _req["variant_shots"]:
+			crystal.visible = bool(s.get("crystal", false))
+			_player.play(String(s["clip"]))
+			_player.seek(float(s["t"]), true)
+			_player.pause()
+			for w: int in 8:
+				await process_frame
+			await RenderingServer.frame_post_draw
+			var img: Image = root.get_texture().get_image()
+			img.convert(Image.FORMAT_RGB8)
+			img.save_png(dir.path_join("%s_%s.png" % [String(v["name"]), String(s["name"])]))
+		print("FPHANDS variant %s" % v["name"])
+
+
+func _c(a: Variant) -> Color:
+	return Color(float(a[0]), float(a[1]), float(a[2]))
 
 
 func _xf(t: Transform3D) -> Dictionary:

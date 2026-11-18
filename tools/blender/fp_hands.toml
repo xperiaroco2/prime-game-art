@@ -15,7 +15,7 @@
 # finger bones moved to the model's joints, the morph `fist` its corrective). Since 2026-11-18 the rig comes from
 # tools/blender/fp_rig_seed.json (read from the committed hands asset t4): the character build m25 was made from was
 # lost with D: (art#136); was m25, before it the H1u character itself
-char = "2026-11-18-fp-hand-model/m27/fp_hand_char.blend"
+char = "2026-11-18-fp-hand-model/m28/fp_hand_char.blend"
 crystal = "assets/prop/energy_crystal/export/energy_crystal.glb"   # the committed energy crystal (a repo path; was its
                                                                   # raw copy energy-crystal/lit1, same hash)
 skin_inside_cuff_m = 0.035   # the skin is kept from this far inside the sleeve's cuff out to the fingertips
@@ -179,3 +179,13 @@ keys = [
   { t = 0.24, crystal = { mix = ["crystal", "crystal_hit", 1.12] }, ease = "out" },
   { t = 0.5, ease = "inout" },
 ]
+
+[look]
+# the hands' look in the shots, which the game copies (assets/body/fp_hands/HANDOFF.md): the skin's texture is a
+# neutral grey pattern since m28 and the game colours it as it colours the player (prime-game's CharacterRig.set_tint:
+# albedo_color = the imported albedo_color, white, x the body colour); body_srgb is the default body colour, when no
+# colour is picked. fill: the hands' own directional light on their layer alone (energy, colour, rotation in degrees
+# under the hands' camera); ambient: the share of the world's ambient light on the hands' camera
+body_srgb = [0.40, 0.86, 0.80]
+ambient = 0.8
+fill = { energy = 0.3, color = [1.0, 0.93, 0.85], rot = [-50.0, -90.0, 0.0] }

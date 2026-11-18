@@ -1,7 +1,7 @@
 """The first-person hands (art#136, xperiaroco2/prime-game#1587, concept A): build, check, shoot. Plain Python.
 
     $PYTHON_BIN tools/blender/fp_hands_run.py --tag <tag> [--no-build] [--preview] [--no-shots] [--fps 30]
-        [--asset assets/body/fp_hands]
+        [--asset assets/body/fp_hands] [--look-grid <variants.json>]
 
 1. fp_hands_build.py in headless Blender: <raw>/2026-11-11-fp-hands/<tag>/fp_hands.{blend,glb}, build.json.
 2. glTF-Validator: validator.json (no errors).
@@ -12,6 +12,8 @@
    the crystal), and a key-frame sheet per clip.
 5. With --asset, and only when every check passed: the GLB and the .blend copied into the asset folder (its manifest
    and HANDOFF are written by hand).
+--look-grid: only the look's variant grid on the tag's build (no build, no checks): each variant of the JSON list (a
+name and any of fp_hands.toml [look]'s keys over it) shot at LOOK_SHOTS into <tag>/frames/variants/<name>_<shot>.png.
 Prints one JSON line `FP_RUN {...}`; exit 0 only when every check passes. Long: run it in the background.
 """
 from __future__ import annotations
@@ -21,6 +23,7 @@ import json
 import math
 import shutil
 import sys
+import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -41,6 +44,9 @@ LIGHT_LEVELS = [1.0, 0.4, 0.15]   # the held crystal's own light on the hands: a
 # close-ups of the right hand from beside the eye with a long lens, for judging the hand itself (closeup_<name>.png)
 CLOSEUPS = [{"name": "open", "clip": "Idle", "t": 0.0}, {"name": "fist", "clip": "Punch", "t": 0.15},
             {"name": "windup", "clip": "Punch", "t": 0.06}, {"name": "run", "clip": "Run", "t": 0.25}]
+# the look grid's shots: the fist at the punch's contact, the open hand, the crystal held
+LOOK_SHOTS = [{"name": "fist", "clip": "Punch", "t": 0.15}, {"name": "open", "clip": "Idle", "t": 0.0},
+              {"name": "hold", "clip": "Crystal_Idle", "t": 0.0, "crystal": True}]
 # the reel: (clip, times) in order; the hits between idles, as a player sees them
 REEL = [("Idle_Loop", 1), ("Punch", 1), ("Punch", 1), ("Run_Loop", 2),
         ("Crystal_Idle_Loop", 1), ("Crystal_Hit", 1), ("Crystal_Hit", 1), ("Crystal_Run_Loop", 2)]
@@ -63,7 +69,12 @@ def stage(tag: str, glb: Path) -> Path:
     return proj
 
 
-def shoot(proj: Path, out: Path, build: dict, fps: int) -> dict:
+def look() -> dict:
+    """fp_hands.toml [look]: the body colour the shots tint the skin with and the hands' fill light."""
+    return tomllib.loads((ROOT / "tools" / "blender" / "fp_hands.toml").read_text(encoding="utf-8"))["look"]
+
+
+def shoot(proj: Path, out: Path, build: dict, fps: int, variants: list | None = None) -> dict:
     code, text = _godot.godot(["--headless", "--path", str(proj), "--import"], 900)
     if code != 0:
         raise common.Failure("the Godot import failed:\n" + "\n".join(text.splitlines()[-15:]))
@@ -74,14 +85,18 @@ def shoot(proj: Path, out: Path, build: dict, fps: int) -> dict:
              for n, c in build["clips"].items()]
     req = {"scene": "res://levels/ship/ship.tscn", "hands": "res://fp/fp_hands.glb",
            "crystal": "res://fp/energy_crystal.glb", "eye": EYE, "look": LOOK, "fov": FOV, "vm_fov": build["vm_fov"], "size": list(SIZE), "fps": fps,
-           "out": str(frames).replace("\\", "/"), "clips": clips, "light_levels": LIGHT_LEVELS, "closeups": CLOSEUPS}
+           "out": str(frames).replace("\\", "/"), "clips": clips, "light_levels": LIGHT_LEVELS, "closeups": CLOSEUPS, "look": look()}
+    if variants:
+        req.update({"variants": variants, "variant_shots": LOOK_SHOTS})
     frames.mkdir(parents=True)
     rq = out / "shots_request.json"
     rq.write_text(json.dumps(req, indent=1), encoding="utf-8")
     code, text = _godot.window(["--path", str(proj), "-s", "res://fp/shots.gd", "--", str(rq)], SIZE, 1500,
                                log=out / "shots.log")
     (out / "shots.log").write_text(text, encoding="utf-8")
-    if code != 0:
+    if code != 0 or variants:
+        if variants and code == 0:
+            return {}
         raise common.Failure(f"shots.gd failed (exit {code}):\n" + "\n".join(text.splitlines()[-15:]))
     return json.loads((frames / "check.json").read_text(encoding="utf-8"))
 
@@ -164,9 +179,16 @@ def main() -> int:
     ap.add_argument("--no-shots", action="store_true")
     ap.add_argument("--fps", type=int, default=30)
     ap.add_argument("--asset", default="")
+    ap.add_argument("--look-grid", default="")
     a = ap.parse_args()
     out = OUT / a.tag
     glb = out / "fp_hands.glb"
+    if a.look_grid:
+        build = json.loads((out / "build.json").read_text(encoding="utf-8"))
+        variants = json.loads(Path(a.look_grid).read_text(encoding="utf-8"))
+        shoot(stage(a.tag, glb), out, build, a.fps, variants)
+        print("FP_RUN " + json.dumps({"tag": a.tag, "look_grid": str(out / "frames" / "variants")}))
+        return 0
     if not a.no_build:
         if glb.exists():
             print(f"{out} holds a build: pick a new --tag", file=sys.stderr)
