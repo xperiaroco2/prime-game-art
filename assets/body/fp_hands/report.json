@@ -1,10 +1,10 @@
 {
- "uri": "../../../../prime-art-raw/2026-11-11-fp-hands/t4/fp_hands.glb",
+ "uri": "../../prime-art-raw/2026-11-11-fp-hands/n2/fp_hands.glb",
  "mimeType": "model/gltf-binary",
  "validatorVersion": "2.0.0-dev.3.10",
  "issues": {
   "numErrors": 0,
-  "numWarnings": 2,
+  "numWarnings": 1,
   "numInfos": 1,
   "numHints": 0,
   "messages": [
@@ -19,12 +19,6 @@
     "message": "Node with a skinned mesh is not root. Parent transforms will not affect a skinned mesh.",
     "severity": 1,
     "pointer": "/nodes/41"
-   },
-   {
-    "code": "NODE_SKINNED_MESH_NON_ROOT",
-    "message": "Node with a skinned mesh is not root. Parent transforms will not affect a skinned mesh.",
-    "severity": 1,
-    "pointer": "/nodes/42"
    }
   ],
   "truncated": false
@@ -32,24 +26,21 @@
  "info": {
   "version": "2.0",
   "generator": "Khronos glTF Blender I/O v5.2.40",
-  "extensionsUsed": [
-   "KHR_materials_specular"
-  ],
   "resources": [
    {
     "pointer": "/buffers/0",
     "mimeType": "application/gltf-buffer",
     "storage": "glb",
-    "byteLength": 1620852
+    "byteLength": 6914808
    },
    {
     "pointer": "/images/0",
     "mimeType": "image/png",
     "storage": "buffer-view",
     "image": {
-     "width": 256,
-     "height": 256,
-     "format": "rgb",
+     "width": 2048,
+     "height": 2048,
+     "format": "rgba",
      "primaries": "srgb",
      "transfer": "srgb",
      "bits": 8
@@ -60,34 +51,8 @@
     "mimeType": "image/png",
     "storage": "buffer-view",
     "image": {
-     "width": 1024,
-     "height": 1024,
-     "format": "rgb",
-     "primaries": "srgb",
-     "transfer": "srgb",
-     "bits": 8
-    }
-   },
-   {
-    "pointer": "/images/2",
-    "mimeType": "image/png",
-    "storage": "buffer-view",
-    "image": {
      "width": 2048,
-     "height": 1024,
-     "format": "rgb",
-     "primaries": "srgb",
-     "transfer": "srgb",
-     "bits": 8
-    }
-   },
-   {
-    "pointer": "/images/3",
-    "mimeType": "image/png",
-    "storage": "buffer-view",
-    "image": {
-     "width": 2048,
-     "height": 1024,
+     "height": 2048,
      "format": "rgb",
      "primaries": "srgb",
      "transfer": "srgb",
@@ -96,14 +61,14 @@
    }
   ],
   "animationCount": 6,
-  "materialCount": 2,
+  "materialCount": 1,
   "hasMorphTargets": true,
   "hasSkins": true,
   "hasTextures": true,
   "hasDefaultScene": true,
-  "drawCallCount": 2,
-  "totalVertexCount": 6037,
-  "totalTriangleCount": 8926,
+  "drawCallCount": 1,
+  "totalVertexCount": 51156,
+  "totalTriangleCount": 95160,
   "maxUVs": 1,
   "maxInfluences": 4,
   "maxAttributes": 6
