@@ -627,13 +627,6 @@ def contact(body, solid: "Solid", side: str, only: tuple | None = None) -> tuple
     return round(deep * 1000, 1), round(gap * 1000, 1)
 
 
-def tip_y(body, solid: "Solid", side: str) -> float:
-    """The thumb tip's mean y in the crystal's (the socket's) space: below 0 in front of its axis, toward the eye."""
-    inv = solid.sock.matrix_world.inverted()
-    pts = [(inv @ q).y for q in hand_points(body, side, ("ThumbDistal",))]
-    return sum(pts) / max(len(pts), 1)
-
-
 def hold_report(poses: Poses, body, solid: "Solid", base: str = "crystal") -> dict:
     """How a hold reads, per side, in the posed rig: `palm_touch` the share of the palm's points (PALM) within 4 mm of
     the crystal's surface; `wrist_z_mm` the wrist's height in the camera's space (both hands at one height);
@@ -669,26 +662,6 @@ def pose_now(rig: Rig, s: State) -> None:
     bpy.context.view_layer.update()
 
 
-def thumb_turn(rig: Rig, poses: Poses, body, solid: "Solid", side: str, base: str, front: bool):
-    """The thumb's turn (roll about its length, swing toward the palm) that lies on the crystal without entering it,
-    at half its grip's curl: the nearest to the surface of those within FIT_DIGIT_MM. `front` (the pose's R_c
-    `thumb_front`): the thumb's tip must end in front of the crystal's axis (toward the eye), up a near face, as in the
-    carried-box reference; m28's free search laid it round the back (+53 mm)."""
-    fit = poses.fit[side]
-    fit["scale"]["Thumb"] = 0.5
-    best_turn = None
-    for roll in range(-30, 91, 15):
-        for swing in range(-60, 91, 10) if front else range(-40, 61, 10):
-            fit["turn"] = [roll, swing]
-            pose_now(rig, poses.state(base))
-            deep, gap = contact(body, solid, side, ("ThumbMetacarpal",) + THUMB)  # its base turns with it
-            if front and tip_y(body, solid, side) > -0.005:
-                continue
-            if deep <= FIT_DIGIT_MM and (best_turn is None or gap < best_turn[0]):
-                best_turn = (gap, [roll, swing])
-    return best_turn[1] if best_turn else None
-
-
 def fit_hold(rig: Rig, poses: Poses, body, solid: Solid, base: str = "crystal", roll_span: float | None = None,
              seat_by: tuple = PALM) -> dict:
     """Seats each held hand on the crystal in the pose `base`: the palm moves out along the back of the hand from
@@ -699,7 +672,6 @@ def fit_hold(rig: Rig, poses: Poses, body, solid: Solid, base: str = "crystal", 
         fit = poses.fit[side]
         fit["scale"] = {f: 0.0 for f in PM.FINGERS}
         seat = None
-        front = bool(poses.cfg["poses"][base]["R_c"].get("thumb_front", False))
         r0 = fit["roll"]
         rolls = range(-45, 46, 9) if roll_span is None else [r0 + d for d in range(-int(roll_span), int(roll_span) + 1, 5)]
         for roll in rolls:  # the roll about the hand's length that lets the palm sit closest (about the fitted one)
@@ -712,17 +684,19 @@ def fit_hold(rig: Rig, poses: Poses, body, solid: Solid, base: str = "crystal", 
             if seat is None or fit["dr"] < seat[0] - 1e-9:
                 seat = (fit["dr"], float(roll))
         fit["dr"], fit["roll"] = seat
-        if front:
-            # the palm's points next to the thumb's root move with the thumb's turn: with the thumb sent to the front,
-            # the palm is seated again with the turn found (else the seat depends on whatever turn was set before)
-            fit["turn"] = thumb_turn(rig, poses, body, solid, side, base, front)
-            for k in range(0, 61):
-                fit["dr"] = -0.010 + 0.0015 * k
-                pose_now(rig, poses.state(base))
-                if contact(body, solid, side, seat_by)[0] <= FIT_PALM_MM:
-                    break
         gaps = {}
-        fit["turn"] = thumb_turn(rig, poses, body, solid, side, base, front)
+        # the thumb first finds a turn (roll about its length, swing toward the palm) that lies on the crystal
+        # without entering it, at half its grip's curl: the nearest to the surface of those within FIT_DIGIT_MM
+        fit["scale"]["Thumb"] = 0.5
+        best_turn = None
+        for roll in range(-30, 91, 15):
+            for swing in range(-40, 61, 10):
+                fit["turn"] = [roll, swing]
+                pose_now(rig, poses.state(base))
+                deep, gap = contact(body, solid, side, ("ThumbMetacarpal",) + THUMB)  # its base turns with it
+                if deep <= FIT_DIGIT_MM and (best_turn is None or gap < best_turn[0]):
+                    best_turn = (gap, [roll, swing])
+        fit["turn"] = best_turn[1] if best_turn else None
         for f in PM.FINGERS:
             # from opened (negative: the digit straightened back past its rest) to curled 2.5 times the grip: the
             # most curl that stays within FIT_DIGIT_MM of the surface
@@ -731,8 +705,6 @@ def fit_hold(rig: Rig, poses: Poses, body, solid: Solid, base: str = "crystal", 
                 fit["scale"][f] = 0.05 * j
                 pose_now(rig, poses.state(base))
                 deep = contact(body, solid, side, THUMB if f == "Thumb" else (f,))[0]
-                if f == "Thumb" and front and tip_y(body, solid, side) > 0.0:
-                    deep = 1e9   # curled round behind the axis: off the near face
                 if deep > FIT_DIGIT_MM:
                     if best is not None:
                         break
@@ -777,7 +749,7 @@ def hold_grid(out: Path, rig: Rig, poses: Poses, body, solid: "Solid", crystal_o
     for v in variants:
         pose = dict(base)
         r = dict(base["R_c"])
-        r.update({k: x for k, x in v.items() if k in ("z", "toward", "r", "wrap", "bend", "thumb_front")})
+        r.update({k: x for k, x in v.items() if k in ("z", "toward", "r", "wrap", "bend")})
         l = dict(r)
         l["toward"] = [-r["toward"][0], *r["toward"][1:]]
         l["wrap"] = [-r["wrap"][0], *r["wrap"][1:]]
@@ -897,12 +869,7 @@ def main(argv) -> None:
         hold_grid(out, rig, poses, body, solid, crystal_objs, json.loads(Path(a.hold_grid).read_text(encoding="utf-8")),
                   15 if "hold_roll" in fitted else None)
         return
-    rc = cfg["poses"]["crystal"]["R_c"]
-    if "roll" in rc:   # the hold's own roll (fp_hands.toml) over the fitted hold_roll: the start and its span
-        for side in SIDES:
-            poses.fit[side]["roll"] = float(rc["roll"]) * (1 if side == "Right" else -1)
-    span = rc.get("roll_span", 15 if ("hold_roll" in fitted or "roll" in rc) else None)
-    stats["hold_fit"] = fit_hold(rig, poses, body, solid, roll_span=span, seat_by=tuple(rc.get("seat", PALM)))
+    stats["hold_fit"] = fit_hold(rig, poses, body, solid, roll_span=15 if "hold_roll" in fitted else None)
     clips, plans, report = {}, {}, {}
     for name, spec in cfg["clips"].items():
         clip = Clip(name, spec, poses, run_seconds)

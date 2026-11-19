@@ -123,12 +123,8 @@ grip_R = "fist"
                   # (origin the tip, z up its length, -y its front, which faces the eye), each from where its palm
                   # touches (Poses.on_crystal) and then seated by fit_hold. Was a torch hold fitted to an AI frame
 crystal = { p = [0.0, 0.4095, -0.4458], up = [0.0, 0.2588, 0.9659], front = [0.0, -1.0, 0.0] }
-# On the detailed hand m28 (2026-11-19, hold grids under tools/out/night/h1-h3 of the night run): seated by the palm
-# alone (`seat`: the thumb's mound held the palm 44 mm off), no roll (`roll`, `roll_span` over fp_hands_fit.json's
-# hold_roll: a positive roll turns the back of the hand down, and the free search went to its edge, 45), and the
-# thumb's tip required in front of the crystal's axis (`thumb_front`; free, it lay round the back)
-R_c = { z = 0.15, toward = [1.0, 0.0, 0.5], r = 0.054, wrap = [0.0, 1.0, 0.3], bend = [20.0, -15.0], seat = ["Hand"], roll = 0.0, roll_span = 0, thumb_front = true }
-L_c = { z = 0.15, toward = [-1.0, 0.0, 0.5], r = 0.054, wrap = [0.0, 1.0, 0.3], bend = [20.0, 15.0], seat = ["Hand"], roll = 0.0, roll_span = 0, thumb_front = true }
+R_c = { z = 0.15, toward = [1.0, 0.0, 0.5], r = 0.054, wrap = [0.0, 1.0, 0.3], bend = [20.0, -15.0] }
+L_c = { z = 0.15, toward = [-1.0, 0.0, 0.5], r = 0.054, wrap = [0.0, 1.0, 0.3], bend = [20.0, 15.0] }
 grip_R = "cap"
 grip_L = "cap"
 
