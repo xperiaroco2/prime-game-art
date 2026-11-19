@@ -103,6 +103,27 @@ assets/body/fp_hands` (2026-11-19, on the detailed hand m28) from `tools/blender
   degrees down, the fingers toward the upper left), `[grips.rest]` a curl cascade 5/10/15. The corner place stays in
   the toml as a comment for the engineer's choice.
 
+## Five digits (runs q1a, q1b on the hand m33, 2026-11-20; not in this asset yet)
+- The engineer's amendment of 2026-11-20: four fingers and a thumb, all weighted
+  (`docs/decisions/2026-10-19-alien-overlaid-face-four-fingers.md`). `specs/fp_hand_dims.toml`: index, middle, ring,
+  little 33 / 34 / 32 / 27 mm wide (m30's three: 47.5 / 45 / 39), the middle the longest (to u 208), index and ring
+  99 and 100 mm knuckle to tip, the little 78 mm (78 % of the ring); the thumb's phalanges 5 mm further out
+  (`apart_out_mm`), so the palm at u 88 measures 49.9 mm (spec 49; m30 54.2, the thumb's web). Off spec still: the
+  fist's thumb reaches u 137 (spec 157; m30 143). The model: `<raw>/2026-11-18-fp-hand-model/m33/` (m31: the
+  fingers, palm 55.8 at u 88; m32: the whole thumb out, its mound 8 mm past the outline at u 58).
+- The Little bones carry weight: `[grips.fist]` Little 70/68/62 (the ring's, a little more closed), `[grips.rest]` 20
+  (one step on in the cascade), `[grips.cap]` already had the ring's.
+- The camera question of round 2 was a pose bug: `fp_hands_fit.json`'s fitted idle (the corner) replaced
+  `[poses.idle]` in every build, so Godot drew the hand lower right while the Blender grid drew the chosen place.
+  `keep = true` lets the toml win. Checked with one pose shot in both: the forearm's crossing of the bottom edge at
+  62.8-88.2 % across in Godot against 61.9-87.7 % in Blender (the corner; at most 12 px of 1280).
+- New from that fix: with the idle at the reference's lower centre the punch's mixes leave the arm's reach (Punch
+  45.6 mm, Run 7.0 mm; the corner, Punch 7.5 mm): the punch's keys need refitting once the engineer picks the place.
+- The golden check fails by design (the hand changed): hold 7.5 % of its box (mean 6.8), punch_hit 5.0 % (3.4),
+  against 1 %. New golden frames only after the engineer's yes.
+- Next: the crystal hold refitted to five digits (its palm roll on the search's edge, 45 degrees), the palm side's
+  creases softened on the slimmer fingers (they read as sharp teeth in the palm close-up), the place picked.
+
 ## What the game side builds (not done here)
 - Instance `fp_hands.glb` under the camera; switch clips by state (idle or run, crystal held or not), blend the
   switches (about 0.15 s) and play the hits on the left mouse button.
