@@ -207,6 +207,8 @@ board = "refs/fp-hands"
 crystal_hold = ["picks/crystal_hold/2780980_ss_05.jpg", "2780980/ss_01.jpg"]
 rest = "real/ (the engineer's own photo from the eye; to come)"
 punch = "real/ (the engineer's windup and contact photos from the eye; to come)"
+# the crystal hit (the engineer's pick 2026-11-19, "as you recommend", art#136): its own board, a raw-root path
+crystal_hit = ["refs/fp-hands-crystal-hit/picks/crystal_hit/239140_ss_07.jpg", "refs/fp-hands-crystal-hit/picks/crystal_hit/239140_ss_00.jpg", "refs/fp-hands-crystal-hit/picks/crystal_hit/2780980_ss_01.jpg"]
 [reference.card]
 crystal_hold = """The item held low in the middle with both hands from its sides, like a box being carried: the item \
 fills about a third of the frame's width (35 to 68 %), its top at about 60 to 75 % down, its lower part cut off by the \
@@ -218,3 +220,4 @@ the crystal, the cap and its loop stay in view above the hands."""
 rest = """The engineer's photo: the hand relaxed, the fingers softly curled, the thumb along the index's side and \
 below it, nearly parallel, its tip forward at about the index's middle joint, a small gap between them."""
 punch = """The engineer's photos from the eye: the windup and the contact (to come)."""
+crystal_hit = """A two-handed diagonal swing, the item's head first (Dying Light 239140_ss_07 for the windup and the \npath, 239140_ss_00 for the contact; the grip from the sides as Lockdown Protocol 2780980_ss_01 and the hold). Both hands \nstay on the item, low in the frame, the forearms from the bottom corners. The path runs from the lower left to the \nupper right: the windup draws the item down and to the left, its head low by the left hand; the swing carries it \nacross and up, the head leading all the way. At the contact the head, for the crystal its cap and loop, is in the \nupper right third near the frame's middle (where a target's head would be), the item crossing the frame on the \ndiagonal, the hands still in the lower quarter; the target in the middle stays visible. The references' items are \nlong (a bat, a sword): take the direction, the hands' place and the leading head, and shorten the reach to the \ncrystal's length; the hands never leave its flanks."""
