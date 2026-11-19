@@ -4,7 +4,7 @@
         --raw <raw> --out <dir> [--low-mm 3.0] [--high-mm 0.7] [--tex 2048] [--no-bake] [--renders]
 
 Builds the hand of specs/fp_hand_dims.toml as a signed distance field: round cones and ellipsoids per bone (forearm,
-palm, three fingers, thumb), the palm's parts blended soft, each finger webbed onto the palm and its joints blended,
+palm, four fingers, thumb), the palm's parts blended soft, each finger webbed onto the palm and its joints blended,
 neighbouring digits joined by a tight crease where they touch (the fist). The arm mesh is the field's surface (surface
 nets on a `--low-mm` grid, relaxed and projected back onto it); its normal map is baked from a `--high-mm` surface of
 the same field with the creases carved in; its base colour is computed per texel from the baked positions and normals
@@ -16,7 +16,7 @@ fingers), onto which the skinned vertices are carried group by group (corrective
 
 Writes <out>/fp_hand_char.blend: the rig (spec [hand] rig_seed, the character's arm rig as data: fp_rig_seed.py) with
 the two first-person arms (one mesh with the morph; the left the right's mirror, its UVs shared) and its hand and
-finger bones moved to the model's joints (same names; Little kept, unweighted), for fp_hands_build.py's cut; the
+finger bones moved to the model's joints (same names; every finger weighted since m31), for fp_hands_build.py's cut; the
 pattern's lightness is measured against the spec's [skin] base_srgb (the character's teal, measured before its build
 was lost);
 <out>/textures/; <out>/model.json (counts, the spec's sizes measured, the fist's fit); --renders: <out>/renders/, the
@@ -46,8 +46,8 @@ import fp_rig_seed  # noqa: E402
 
 SPEC = ROOT / "specs" / "fp_hand_dims.toml"
 SIDES = ("Right", "Left")
-DIGITS = ("index", "middle", "ring")
-RIG = {"index": "Index", "middle": "Middle", "ring": "Ring", "thumb": "Thumb"}
+DIGITS = ("index", "middle", "ring", "little")   # five digits since m31 (the engineer, 2026-11-20)
+RIG = {"index": "Index", "middle": "Middle", "ring": "Ring", "little": "Little", "thumb": "Thumb"}
 PHAL = {"finger": ("Proximal", "Intermediate", "Distal"), "thumb": ("Metacarpal", "Proximal", "Distal")}
 T0 = time.time()
 
@@ -206,6 +206,8 @@ class Hand:
             p = a + (b - a) * acc
             if acc < 0.999:
                 p[1] = t["centre_v"][1] - 5.0 * (1.0 - acc) / 0.6   # the thumb out at the side by its middle
+            if len(pts) >= 2:   # the phalanges (past the metacarpal) further from the index's side (m33)
+                p[1] += float(t.get("apart_out_mm", 0.0))
             pts.append(p)
         radii = [r * 1.12, r * 1.02, r * 1.0, r * 0.98]
         self.parts["thumb"] = []
@@ -851,7 +853,7 @@ def skin_material(base_srgb, col_img=None, nrm_img=None, roughness=0.42):
 # ------------------------------------------------------------------------------------------------ the fist
 def fist_grip(spec: dict) -> dict:
     f = spec["fist"]
-    g = {"mirror": True, "Little": [0.0, 0.0, 0.0]}
+    g = {"mirror": True}
     for name in DIGITS:
         g[RIG[name]] = list(f["curl_deg"][name])
     g["Thumb"] = [float(x) for x in f["thumb"]["curl"]]
@@ -1420,8 +1422,8 @@ def renders(out: Path, arm, ob, sp: Space, spec: dict, concept: Path, samples: i
 
 def debug_colours(ob, right_n: int, by_bone: bool = False) -> None:
     """The arm's material swapped for one coloured per vertex by its top bone's group (palm grey, index red, middle
-    green, ring blue, thumb yellow; a thumb's metacarpal orange)."""
-    col = {"base": (0.6, 0.6, 0.6), "index": (0.9, 0.15, 0.1), "middle": (0.1, 0.8, 0.2), "ring": (0.15, 0.3, 0.95),
+    green, ring blue, little violet, thumb yellow; a thumb's metacarpal orange)."""
+    col = {"base": (0.6, 0.6, 0.6), "index": (0.9, 0.15, 0.1), "middle": (0.1, 0.8, 0.2), "ring": (0.15, 0.3, 0.95), "little": (0.8, 0.2, 0.9),
            "thumb": (0.95, 0.85, 0.1)}
     names = {g.index: g.name for g in ob.vertex_groups}
     attr = ob.data.color_attributes.new("dbg", "FLOAT_COLOR", "POINT")

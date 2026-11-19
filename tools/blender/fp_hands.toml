@@ -15,7 +15,7 @@
 # finger bones moved to the model's joints, the morph `fist` its corrective). Since 2026-11-18 the rig comes from
 # tools/blender/fp_rig_seed.json (read from the committed hands asset t4): the character build m25 was made from was
 # lost with D: (art#136); was m25, before it the H1u character itself
-char = "2026-11-18-fp-hand-model/m30/fp_hand_char.blend"
+char = "2026-11-18-fp-hand-model/m33/fp_hand_char.blend"   # m31-m33: five digits (the engineer, 2026-11-20); was m30
 crystal = "assets/prop/energy_crystal/export/energy_crystal.glb"   # the committed energy crystal (a repo path; was its
                                                                   # raw copy energy-crystal/lit1, same hash)
 skin_inside_cuff_m = 0.035   # the skin is kept from this far inside the sleeve's cuff out to the fingertips
@@ -86,7 +86,8 @@ background = "2026-11-08-fp-hand-concepts/_refs/ship_hall.png"
 Index = [5, 5, 5]
 Middle = [10, 10, 10]
 Ring = [15, 15, 15]
-Little = [15, 15, 15]
+Little = [20, 20, 20]   # m31 (five digits, 2026-11-20): the little weighted for the first time; its old 15 (the ring's,
+                        # never seen) one step on in the cascade, a little more closed than the ring
 mirror = true
 spread = 12
 Thumb = [-40, 2.0, 6.9]
@@ -112,7 +113,7 @@ ThumbTurn = [30, 25]
 Index = [60, 65, 60]
 Middle = [62, 65, 60]
 Ring = [65, 65, 60]
-Little = [0, 0, 0]
+Little = [70, 68, 62]   # m31: the ring's curl a little more closed (specs/fp_hand_dims.toml [fist] curl_deg); was 0, unweighted
 mirror = true
 Thumb = [25, 30, 40]
 ThumbTurn = [-20, 50]
@@ -128,6 +129,8 @@ R = { p = [0.0332, 0.4, -0.1791], f = [-0.7793, -0.1162, 0.6158], n = [0.5612, -
 # bottom edge, the fingertips at 62 % / 76 %, the same view tilt
 # R = { p = [0.1791, 0.36, -0.1679], f = [-0.4286, 0.8717, 0.2376], n = [-0.2575, -0.3699, 0.8927] }
 grip_R = "rest"
+keep = true       # this R wins over fp_hands_fit.json's idle (concept A's corner, fitted to its frame): without it every
+                  # build since p2 put the hand back in the corner (art#136 m31: the "Godot lands lower right" of round 2)
 
 [poses.fist_out]  # the punch's contact: concept A's fist frame measured (the fist's middle at 62 % across and 54 %
                   # down, about a fifth of the frame's height), the arm long from the lower right corner

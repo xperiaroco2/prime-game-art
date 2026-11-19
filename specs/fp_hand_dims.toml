@@ -18,7 +18,17 @@ round under it at the lower right); 3 the fist from the thumb's side. View 0 win
 fist's width and length, view 3 for its depth."""
 engineer_words = """2026-11-11: four digits (three thick rounded fingers and a thumb), soft rounded knuckles, gentle
 creases so each finger reads in the fist, smooth teal skin with a faint vinyl sheen, a lighter palm and fingertips;
-bare forearm (a garment's sleeve comes later from each worn outfit)."""
+bare forearm (a garment's sleeve comes later from each worn outfit).
+2026-11-20 (art#196 c7024609467; the amendment of 2026-11-20 in docs/decisions/2026-10-19-alien-overlaid-face-four-fingers.md):
+"five": four fingers and a thumb, all weighted. From the eye three thick fingers merge into a mitten beside the rest
+reference; the soft knuckles, gentle creases and the skin above stay."""
+# m31 (2026-11-20, five digits) changed, and why: [fingers] index, middle and ring slimmed from 47.5 / 45 / 39 mm wide
+# to 33 / 34 / 32 so four fit the same palm and read apart from the eye; the little finger added (27 mm wide, 78 % of
+# the ring's length); the middle the longest (208 to its tip, hand_len_mm), index and ring about equal (99 and 100 mm
+# knuckle to tip); the fingers' centres spread over the knuckle row so the index's edge stays inside the palm's v_max
+# (m30's 47.5 mm index made the palm 54.2 mm at u 88 against 49); [fist] the little's curl (the ring's, a little more
+# closed) and the spread shared by ring and little; m33: the thumb's phalanges 5 mm out (apart_out_mm) so the
+# palm's outline at u 88 is the palm's, not the thumb's web. Unchanged: the forearm, the palm's outline, the skin
 # the rig: the axolotl character's arm rig (art#196 H1u) as data, read from the committed hands asset t4 by
 # tools/blender/fp_rig_seed.py (the character build itself was lost with D: on 2026-11-18; the engineer's choice the
 # same day: go on from assets/body/fp_hands/source/fp_hands.blend)
@@ -28,7 +38,8 @@ rig_seed = "tools/blender/fp_rig_seed.json"
 hand_len_mm = 208.4
 forearm_len_mm = 220.5
 upper_stub_mm = 80.0     # the upper arm kept past the elbow (never in the frame: the viewmodel keeps it behind)
-px_per_mm = 2.0          # view 0: the wrist (row 375) to the index's tip (row 793) is 418 px for 208.4 mm (2.006)
+px_per_mm = 2.0          # view 0: the wrist (row 375) to the longest tip (row 793) is 418 px for 208.4 mm (2.006); the
+                         # longest digit was read as the index until m30, the middle since m31
 wrist_row = 375
 centre_col = [210, 609, 1010, 1375]   # each view's forearm centre line at row 111
 tol_mm = 4.0             # the most a build's measured size may differ from this file (or tol_pct of it, the larger)
@@ -57,43 +68,63 @@ cupping_mm = 4.0        # the palm's middle sits this far in from its sides (a s
 # grid p1-p2 of 2026-11-18)
 little_mound = { c = [64.0, -42.0, -8.0], r = [30.0, 13.0, 17.0] }
 
-# The three fingers and the thumb (view 0). `knuckle_u`: the base joint (the knuckle bump on the back); `crotch_u`: where
+# The four fingers and the thumb (view 0). `knuckle_u`: the base joint (the knuckle bump on the back); `crotch_u`: where
 # the finger leaves its neighbour on the back; `tip_u` and `centre_v`: the tip and the line along the finger; `width`
-# across, `thickness` along w (not drawn in any view: 0.88 of the width, the soft sausage of view 1's fingers);
-# `phalanx` the three bones' share of knuckle-to-tip (the creases of view 1 at about 0.42 and 0.74 of it).
-# The rig's names: index (next to the thumb), middle, ring; the character's Little bones stay and carry nothing.
+# across, `thickness` along w (0.88 of the width, the soft sausage of view 1's fingers); `knuckle_v` the centre at the
+# knuckle (default: on the line through the crotch and the tip); `phalanx` the three bones' share of knuckle-to-tip
+# (the creases of view 1 at about 0.42 and 0.74 of it).
+# The rig's names: index (next to the thumb), middle, ring, little; every finger weighted (since m31, 2026-11-20).
+# m31: four slimmer fingers on the same palm (its knuckle row v -84 to 47.5 at u 98): index, middle, ring, little side
+# by side, touching at their crotches and a few mm apart at their tips (each tip a little further out than its
+# crotch), so they read as four from the eye. Lengths knuckle to tip: middle 110 (the longest; its tip is hand_len_mm),
+# index 99, ring 100, little 78 (78 % of the ring). Was (m26-m30, three fingers): index 47.5 wide to u 210, middle 45
+# to u 205, ring 39 to u 165 (knuckle_v -61)
 [fingers.index]
 knuckle_u = 97.0
-crotch_u = 115.0
-tip_u = 210.0
-centre_v = [25.0, 35.0]     # at the crotch and at the tip
-width = 47.5
-thickness = 41.0
+crotch_u = 114.0
+tip_u = 196.0
+centre_v = [29.0, 33.0]     # at the crotch and at the tip
+knuckle_v = 28.0
+width = 33.0
+thickness = 29.0
 phalanx = [0.42, 0.32, 0.26]
 [fingers.middle]
-knuckle_u = 95.0
-crotch_u = 112.0
-tip_u = 205.0
-centre_v = [-23.0, -26.0]
-width = 45.0
-thickness = 39.5
+knuckle_u = 98.0
+crotch_u = 116.0
+tip_u = 208.0
+centre_v = [-4.0, -4.5]
+knuckle_v = -4.0
+width = 34.0
+thickness = 30.0
 phalanx = [0.42, 0.32, 0.26]
 [fingers.ring]
-knuckle_u = 88.0
-crotch_u = 106.0
-tip_u = 165.0
-centre_v = [-70.5, -73.0]
-# the centre at the knuckle (default: on the line through the crotch and the tip): m26's ring, on that line, made the
-# palm 9 mm wider than view 0 at u 88 and 98; from -61 it splays out to its tip (m27, palm grid p1-p2)
-knuckle_v = -61.0
-width = 39.0
-thickness = 34.5
+knuckle_u = 94.0
+crotch_u = 112.0
+tip_u = 194.0
+centre_v = [-37.0, -42.0]
+knuckle_v = -36.0
+width = 32.0
+thickness = 28.0
 phalanx = [0.42, 0.32, 0.26]
+[fingers.little]
+knuckle_u = 86.0
+crotch_u = 104.0
+tip_u = 164.0
+centre_v = [-68.0, -76.0]
+knuckle_v = -66.0
+width = 27.0
+thickness = 24.0
+phalanx = [0.40, 0.32, 0.28]
 [fingers.thumb]
 base_u = 20.0               # the thumb's root joint, inside the mound (near the wrist)
 apart_u = 75.0              # where the thumb stands apart from the palm's side in view 0
 tip_u = 135.0
 centre_v = [36.0, 71.0]     # at its root and from the middle to its tip
+# m33: the thumb's two phalanges 5 mm further from the index's side (its root and metacarpal stay, so the mound at u 58
+# keeps its outline): m31's palm measured 55.8 mm at u 88 against 49, the thumb's inner side 1 mm off the palm's edge
+# there, webbed onto it (its vertices the Hand's after the thumb's easing); m32 moved the whole thumb 6 mm out and its
+# mound went 8 mm past the outline at u 58
+apart_out_mm = 5.0
 palmar_w = -16.0            # the thumb's line sits this far toward the palm from the hand's middle plane
 width = 36.0
 phalanx = [0.50, 0.27, 0.23] # metacarpal (in the mound, to where it stands apart), proximal, distal
@@ -124,7 +155,8 @@ depth = 125.0
 # knuckle heads, and the 90-degree middle joints folded the middle phalanges back up toward the palm. m27 (fist grids
 # g27a-g27f, 2026-11-18): the knuckles bent a little more and the middle joints less, the middle phalanges hanging
 # lower; with the thumb swung to 50, `swell_mm` 5, the knuckle heads raised and `spread_mm`, the fist is 123 mm deep
-curl_deg = { index = [60, 65, 60], middle = [62, 65, 60], ring = [65, 65, 60] }
+# m31: the little's curl is the ring's, a little more closed (a fist closes tighter toward the little finger)
+curl_deg = { index = [60, 65, 60], middle = [62, 65, 60], ring = [65, 65, 60], little = [70, 68, 62] }
 # the thumb tucked down the side of the index's curled finger, its tip by the index's middle phalanx: picked by eye
 # from variant grids (g4 `tuck` 2026-11-11, g15 and g16 2026-11-12, the vertices coloured by group). The search
 # (`fit = true`, fp_hand_model.fit_thumb, steered by `thumb_target`) sent the thumb out in front of the fist or, turned
@@ -151,7 +183,8 @@ knuckle = { r = [0.9, 1.0, 1.0], up = 12.0, along = 0.0 }   # m26 [0.9, 0.95, 0.
 # the ring finger pushed out sideways in the fist (mm along v, after the pose; FistField): the folded fingers press each
 # other apart. m27's narrower palm (the ring's knuckle_v) took the fist to 145 mm wide; the concept's fist is 156 across
 # its knuckles against an open palm of 131 (grid g27f)
-spread_mm = { ring = -6.0 }
+# m31: four fingers share the push (m30's ring -6)
+spread_mm = { ring = -3.0, little = -6.0 }
 # the valleys between the knuckles over the back of the fist (a groove per pair of neighbours, `back` mm toward the
 # wrist and `front` mm past the knuckle row, `depth` deep, a Gaussian `width` wide): with the knuckle heads what makes
 # each finger read from behind (grid g20, 2026-11-12; without them the back read as one smooth slab)

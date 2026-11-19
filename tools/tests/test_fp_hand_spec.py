@@ -17,7 +17,7 @@ from runner import common
 
 SPEC = tomllib.loads((common.ROOT / "specs" / "fp_hand_dims.toml").read_text(encoding="utf-8"))
 FP = tomllib.loads((common.ROOT / "tools" / "blender" / "fp_hands.toml").read_text(encoding="utf-8"))
-DIGITS = ("index", "middle", "ring")
+DIGITS = ("index", "middle", "ring", "little")   # five digits since 2026-11-20
 SEED = json.loads((common.ROOT / SPEC["hand"]["rig_seed"]).read_text(encoding="utf-8"))
 
 
@@ -58,12 +58,30 @@ class FpHandSpecTest(unittest.TestCase):
         self.assertAlmostEqual(sum(t["phalanx"]), 1.0, places=6)
         self.assertGreater(f["index"]["centre_v"][0], f["middle"]["centre_v"][0])
         self.assertGreater(f["middle"]["centre_v"][0], f["ring"]["centre_v"][0])
+        self.assertGreater(f["ring"]["centre_v"][0], f["little"]["centre_v"][0])
+
+    def test_five_digits(self):
+        """The engineer, 2026-11-20: four fingers and a thumb; the middle the longest, index and ring about equal,
+        the little 75 to 80 % of the ring (knuckle to tip), each finger narrower than m30's three (39 mm and up)."""
+        f = SPEC["fingers"]
+        length = {n: f[n]["tip_u"] - f[n]["knuckle_u"] for n in DIGITS}
+        self.assertEqual(max(length, key=length.get), "middle")
+        self.assertLess(abs(length["index"] - length["ring"]), 0.05 * length["ring"])
+        self.assertTrue(0.75 <= length["little"] / length["ring"] <= 0.80, length)
+        for n in DIGITS:
+            self.assertLess(f[n]["width"], 39.0, n)
+        pa = SPEC["palm"]
+        for n in DIGITS:   # each finger's knuckle inside the palm's outline at the knuckle row
+            v = f[n].get("knuckle_v", f[n]["centre_v"][0])
+            self.assertLessEqual(v + f[n]["width"] / 2, pa["v_max"][-1], n)
+            self.assertGreaterEqual(v - f[n]["width"] / 2, pa["v_min"][-1], n)
 
     def test_concept_scale(self):
         h = SPEC["hand"]
-        tip_row = h["wrist_row"] + SPEC["fingers"]["index"]["tip_u"] * h["px_per_mm"]
-        self.assertAlmostEqual(tip_row, 793.0, delta=6.0, msg="the index's tip row in view 0")
-        self.assertAlmostEqual(SPEC["fingers"]["index"]["tip_u"], h["hand_len_mm"], delta=h["tol_mm"])
+        top = max(SPEC["fingers"][n]["tip_u"] for n in DIGITS)   # the middle's since m31 (the index's until m30)
+        tip_row = h["wrist_row"] + top * h["px_per_mm"]
+        self.assertAlmostEqual(tip_row, 793.0, delta=6.0, msg="the longest tip's row in view 0")
+        self.assertAlmostEqual(SPEC["fingers"]["middle"]["tip_u"], h["hand_len_mm"], delta=h["tol_mm"])
 
     def test_fist_in_the_clips(self):
         g = FP["grips"]["fist"]
