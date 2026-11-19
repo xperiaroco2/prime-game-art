@@ -900,9 +900,28 @@ def thumb_reads(rig: Rig, body, side: str = "Right") -> dict:
         kd.insert(v, k)
     kd.balance()
     gap = min(kd.find(v)[2] for v in hand_points(body, side, ("ThumbProximal", "ThumbDistal")))
+    tip_pts = hand_points(body, side, ("ThumbDistal",))
+    tip_gap = min(kd.find(v)[2] for v in tip_pts)
+    # the thumb tip's gap to the palm and the other fingers (the Hand group and Middle..Little): a gap near 0 is a
+    # thumb pressed into them (an unsigned distance: through reads as touching too)
+    rest = hand_points(body, side, ("Hand", "Middle", "Ring", "Little"))
+    kr = KDTree(len(rest))
+    for k, v in enumerate(rest):
+        kr.insert(v, k)
+    kr.balance()
+    palm_gap = min(kr.find(v)[2] for v in tip_pts)
+    # the thumb's swing out from the index's line: the thumb (its proximal's head to its tip) against the index's
+    # proximal phalanx, in the fingers' plane (fwd, across), and its rise off that plane (+ along `normal`)
+    th = tip - w @ pb[f"{side}ThumbProximal"].head
+    ix = (w @ pb[f"{side}IndexIntermediate"].head) - (w @ pb[f"{side}IndexProximal"].head)
+    def ang(a):
+        return math.degrees(math.atan2(a.dot(across), a.dot(fwd)))
+    rise = math.degrees(math.asin(max(-1.0, min(1.0, th.normalized().dot(normal)))))
     return {"tip_vs_index_joint_mm": {"fwd": round(d.dot(fwd) * 1000, 1), "out": round(d.dot(across) * 1000, 1),
                                       "normal": round(d.dot(normal) * 1000, 1)},
-            "thumb_index_gap_mm": round(gap * 1000, 1)}
+            "thumb_index_gap_mm": round(gap * 1000, 1), "thumb_tip_index_gap_mm": round(tip_gap * 1000, 1),
+            "thumb_tip_palm_gap_mm": round(palm_gap * 1000, 1),
+            "thumb_swing_deg": round(ang(th) - ang(ix), 1), "thumb_rise_deg": round(rise, 1)}
 
 
 def hit_grid(out: Path, rig: Rig, poses: Poses, body, solid: "Solid", variants: list, crystal_objs=()) -> None:
@@ -962,9 +981,13 @@ def hit_grid(out: Path, rig: Rig, poses: Poses, body, solid: "Solid", variants: 
             pb, w = rig.arm.pose.bones, rig.arm.matrix_world
             mid = (w @ pb["RightIndexProximal"].head).lerp(w @ pb["RightThumbDistal"].tail, 0.5)
             out_dir = (w @ pb["RightIndexProximal"].head) - (w @ pb["RightLittleProximal"].head)
-            # from the eye, magnified (the eye's place, a 14-degree view on the hand), then from the thumb's side
+            fwd = ((w @ pb["RightIndexIntermediate"].head) - (w @ pb["RightHand"].head)).normalized()
+            palm = fwd.cross((out_dir - fwd * out_dir.dot(fwd)).normalized())   # thumb_reads' `normal`: the palm side
+            # from the eye magnified, from the thumb's side, and from in front of the fingertips and below them, on
+            # the palm's side (the gap between the thumb and the index seen across)
             for tag, place, ang in (("zoom", Vector(), 14.0), ("thumb", mid + out_dir.normalized() * 0.35
-                                                              + Vector((0.0, -0.08, 0.06)), 35.0)):
+                                                              + Vector((0.0, -0.08, 0.06)), 35.0),
+                                    ("front", mid + fwd * 0.25 + palm * 0.2, 30.0)):
                 side_cam.location = place
                 side_data.angle_y = math.radians(ang)
                 side_cam.rotation_euler = (mid - place).to_track_quat("-Z", "Z").to_euler()
