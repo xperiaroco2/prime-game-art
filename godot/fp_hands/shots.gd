@@ -112,7 +112,7 @@ func _run() -> void:
 		var m: StandardMaterial3D = (_arms.get_active_material(i) as StandardMaterial3D).duplicate() as StandardMaterial3D
 		_arms.set_surface_override_material(i, m)
 		_skin.append([m, m.albedo_color])
-	_look(_req.get("look", {}))
+	_look(_req.get("skin", {}))
 	var crystal: Node3D = (load(_req["crystal"]) as PackedScene).instantiate()
 	_socket.add_child(crystal)
 	var look: Dictionary = Crystal.apply(crystal)
@@ -254,7 +254,7 @@ func _variants(crystal: Node3D) -> void:
 	var dir: String = String(_req["out"]).path_join("variants")
 	DirAccess.make_dir_recursive_absolute(dir)
 	for v: Dictionary in _req["variants"]:
-		var l: Dictionary = (_req.get("look", {}) as Dictionary).duplicate(true)
+		var l: Dictionary = (_req.get("skin", {}) as Dictionary).duplicate(true)
 		l.merge(v, true)
 		_look(l)
 		for s: Dictionary in _req["variant_shots"]:
