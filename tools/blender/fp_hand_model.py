@@ -803,8 +803,13 @@ def bake_maps(hand: Hand, low, out: Path, tex: int, high_mm: float, base_srgb):
     low.select_set(True)
     bpy.context.view_layer.objects.active = low
     sc.render.bake.use_selected_to_active = True
-    sc.render.bake.cage_extrusion = 2.0
-    sc.render.bake.max_ray_distance = 5.0
+    # the cage tight to the low surface (art#136 round 2): at 2 mm out (5 mm rays) the cage's points in the narrow
+    # crotch between the thumb and the index stood inside the index, whose surface the rays hit first: a jagged dark
+    # notch in the web in Godot (gone with the normal map off, not with back faces drawn). The creases are 0.5 mm
+    # deep and the low is projected onto the field, so 1 mm out and 2 mm of ray reach every detail; a texel with no
+    # hit keeps the image's flat normal
+    sc.render.bake.cage_extrusion = 1.0
+    sc.render.bake.max_ray_distance = 2.0
     sc.render.bake.normal_space = "TANGENT"
     bake_to(low, nrm_img, "NORMAL")
     sc.render.bake.use_selected_to_active = False

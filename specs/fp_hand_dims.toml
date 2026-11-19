@@ -100,8 +100,10 @@ phalanx = [0.50, 0.27, 0.23] # metacarpal (in the mound, to where it stands apar
 # the thumb's blend into the palm (mm): 12 on the mound, eased to 5 by apart_u (fp_hand_model.Hand.web_k). One 12 mm
 # blend filled the gap past apart_u with a web 13 mm out of the palm's side at u 88 (m26); 3 or 4 mm pinch the
 # surface (Euler 1), 5 keeps it whole (palm grid p2, 2026-11-18) but leaves a notch at the crotch that a thumb swung
-# out at rest opened into a dimple (n6's Idle close-up); 7 rounds it (m29, art#136 run p1)
-web_mm = [12.0, 7.0]
+# out at rest opened into a dimple (n6's Idle close-up); 7 (m29, art#136 run p1) left the dark notch in Godot as it
+# was and the palm 54.3 mm wide at u 98: the notch was the normal map's bake (fp_hand_model.bake_maps' cage, m30),
+# so back to 5
+web_mm = [12.0, 5.0]
 
 # The fist (views 2 and 3): a real finger pose in the rig, every finger seen from the back as its own rounded
 # knuckle and first phalanx with a crease between neighbours, the thumb across the first two fingers' middle
