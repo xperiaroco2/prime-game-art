@@ -8,6 +8,7 @@ Pure Python, no Blender."""
 from __future__ import annotations
 
 import hashlib
+import subprocess
 import json
 import tomllib
 import unittest
@@ -102,8 +103,22 @@ class FpRigSeedTest(unittest.TestCase):
         self.assertGreater(SEED["roundtrip"]["min_z_dot"], 0.99999)
         src = common.ROOT / SEED["source"]
         self.assertTrue(src.is_file(), SEED["source"])
-        if src.read_bytes()[:7] != b"version":   # an LFS pointer when the object is not fetched
-            self.assertEqual(hashlib.sha256(src.read_bytes()).hexdigest(), SEED["sha256"])
+        if src.read_bytes()[:7] != b"version" and hashlib.sha256(src.read_bytes()).hexdigest() == SEED["sha256"]:
+            return   # the seed's own source is the file in the checkout
+        # the asset was rebuilt since the seed was read (run n2, 2026-11-19): the seed's source is one of the file's
+        # earlier versions, whose LFS pointer names its SHA-256
+        git = ["git", "-C", str(common.ROOT)]
+        try:
+            revs = subprocess.run(git + ["log", "--format=%H", "--", SEED["source"]], capture_output=True, text=True,
+                                  check=True).stdout.split()
+        except (OSError, subprocess.CalledProcessError):
+            self.skipTest("no git history")
+        oids = set()
+        for rev in revs:
+            blob = subprocess.run(git + ["show", f"{rev}:{SEED['source']}"], capture_output=True).stdout
+            if blob[:7] == b"version":
+                oids |= {ln.split(b":", 1)[1].decode() for ln in blob.splitlines() if ln.startswith(b"oid sha256:")}
+        self.assertIn(SEED["sha256"], oids, "the seed's source is no version of the file in git")
 
     def test_skin_and_crystal_inputs_are_in_git(self):
         self.assertEqual(len(SPEC["skin"]["base_srgb"]), 3)

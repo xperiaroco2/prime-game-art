@@ -48,7 +48,8 @@ class FpHandsSpec(unittest.TestCase):
                 self.assertIn("L_c", pose, f"pose {name}: both hands on the crystal")
                 for k in ("R_c", "L_c"):
                     self.assertLessEqual({"z", "toward", "r", "wrap"}, set(pose[k]), f"pose {name} {k}")
-                    self.assertLessEqual(set(pose[k]), {"z", "toward", "r", "wrap", "bend"}, f"pose {name} {k}")
+                    self.assertLessEqual(set(pose[k]), {"z", "toward", "r", "wrap", "bend", "seat", "roll", "roll_span",
+                                                        "thumb_front"}, f"pose {name} {k}")
         for name, clip in SPEC["clips"].items():
             self.assertIn(clip["pose"], POSES, name)
 
