@@ -14,6 +14,8 @@
    and HANDOFF are written by hand).
 --look-grid: only the look's variant grid on the tag's build (no build, no checks): each variant of the JSON list (a
 name and any of fp_hands.toml [look]'s keys over it) shot at LOOK_SHOTS into <tag>/frames/variants/<name>_<shot>.png.
+The hold's fit lists its fallbacks per hand (fit_hold: a default taken or a search's edge); the run prints each as a
+`warning (not failing): ...` line and in FP_RUN's `hold_fallback`, without failing.
 Prints one JSON line `FP_RUN {...}`; exit 0 only when every check passes. Long: run it in the background.
 """
 from __future__ import annotations
@@ -200,6 +202,11 @@ def main() -> int:
     ok, why = _export.verdict(report)
     problems = ([] if ok else ["glTF-Validator reports errors"]) + build_checks(build)
     result = {"tag": a.tag, "validator": why}
+    fallback = {side: f.get("fallback", []) for side, f in build.get("hold_fit", {}).items()}
+    for side, items in fallback.items():
+        for item in items:
+            print(f"warning (not failing): the {side} hold's fit fell back: {item}")
+    result["hold_fallback"] = fallback
     if not a.no_shots:
         proj = stage(a.tag, glb)
         check = shoot(proj, out, build, a.fps)

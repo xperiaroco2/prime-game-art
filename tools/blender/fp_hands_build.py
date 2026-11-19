@@ -41,6 +41,9 @@ FIT_PALM_MM = 0.5    # a held palm may sink this far into the crystal's surface 
 FIT_DIGIT_MM = 1.5   # and a curled digit this far
 VIEW_FOV = [50.0]   # [view] fov_deg, set by main
 CRYSTAL_SCALE = [1.0]   # [view] crystal_scale, set by main: the held crystal's size in first person
+THUMB_ROLLS = range(-30, 91, 15)   # fit_hold's thumb search: the thumb's roll about its length
+THUMB_SWINGS = range(-40, 61, 10)  # and its swing toward the palm
+CURLS = [0.05 * j for j in range(-30, 51)]   # fit_hold's curl scales per digit: opened back 1.5 to curled 2.5
 EASES = {"linear": lambda u: u, "in": lambda u: u * u * u, "out": lambda u: 1.0 - (1.0 - u) ** 3,
          "inout": lambda u: u * u * (3.0 - 2.0 * u)}
 
@@ -666,7 +669,9 @@ def fit_hold(rig: Rig, poses: Poses, body, solid: Solid, base: str = "crystal", 
              seat_by: tuple = PALM) -> dict:
     """Seats each held hand on the crystal in the pose `base`: the palm moves out along the back of the hand from
     `r` until it is no more than FIT_PALM_MM inside the crystal's surface, then each digit curls (its grip's curls
-    scaled) as far as it goes with at most FIT_DIGIT_MM inside: the fingers close round the crystal and stop on it."""
+    scaled) as far as it goes with at most FIT_DIGIT_MM inside: the fingers close round the crystal and stop on it.
+    Per side `fallback` lists where the fit did not find its answer and took a default or stopped on its search's
+    edge (the hold is still built: the run prints them as warnings without failing)."""
     out = {}
     for side in SIDES:
         fit = poses.fit[side]
@@ -684,25 +689,33 @@ def fit_hold(rig: Rig, poses: Poses, body, solid: Solid, base: str = "crystal", 
             if seat is None or fit["dr"] < seat[0] - 1e-9:
                 seat = (fit["dr"], float(roll))
         fit["dr"], fit["roll"] = seat
+        fallback = []
+        if len(rolls) > 1 and fit["roll"] in (float(min(rolls)), float(max(rolls))):
+            fallback.append(f"roll {fit['roll']:g} on its search's edge ({min(rolls):g} to {max(rolls):g})")
         gaps = {}
         # the thumb first finds a turn (roll about its length, swing toward the palm) that lies on the crystal
         # without entering it, at half its grip's curl: the nearest to the surface of those within FIT_DIGIT_MM
         fit["scale"]["Thumb"] = 0.5
         best_turn = None
-        for roll in range(-30, 91, 15):
-            for swing in range(-40, 61, 10):
+        for roll in THUMB_ROLLS:
+            for swing in THUMB_SWINGS:
                 fit["turn"] = [roll, swing]
                 pose_now(rig, poses.state(base))
                 deep, gap = contact(body, solid, side, ("ThumbMetacarpal",) + THUMB)  # its base turns with it
                 if deep <= FIT_DIGIT_MM and (best_turn is None or gap < best_turn[0]):
                     best_turn = (gap, [roll, swing])
         fit["turn"] = best_turn[1] if best_turn else None
+        if fit["turn"] is None:
+            fallback.append(f"thumb turn: none within {FIT_DIGIT_MM} mm, the grip's own")
+        elif fit["turn"][0] in (THUMB_ROLLS[0], THUMB_ROLLS[-1]) or fit["turn"][1] in (THUMB_SWINGS[0], THUMB_SWINGS[-1]):
+            fallback.append(f"thumb turn {fit['turn']} on its search's edge (roll {THUMB_ROLLS[0]} to "
+                            f"{THUMB_ROLLS[-1]}, swing {THUMB_SWINGS[0]} to {THUMB_SWINGS[-1]})")
         for f in PM.FINGERS:
             # from opened (negative: the digit straightened back past its rest) to curled 2.5 times the grip: the
             # most curl that stays within FIT_DIGIT_MM of the surface
             best = None
-            for j in range(-30, 51):
-                fit["scale"][f] = 0.05 * j
+            for c in CURLS:
+                fit["scale"][f] = c
                 pose_now(rig, poses.state(base))
                 deep = contact(body, solid, side, THUMB if f == "Thumb" else (f,))[0]
                 if deep > FIT_DIGIT_MM:
@@ -711,12 +724,18 @@ def fit_hold(rig: Rig, poses: Poses, body, solid: Solid, base: str = "crystal", 
                     continue
                 best = fit["scale"][f]
             fit["scale"][f] = best if best is not None else -1.5
+            if best is None:
+                fallback.append(f"{f}: no curl within {FIT_DIGIT_MM} mm, opened to the default -1.5")
+            elif abs(best - CURLS[0]) < 1e-9 or abs(best - CURLS[-1]) < 1e-9:
+                fallback.append(f"{f}: curl {best:.2f} on its search's edge ({CURLS[0]:.2f} to {CURLS[-1]:.2f})")
             pose_now(rig, poses.state(base))
             gaps[f] = contact(body, solid, side, THUMB if f == "Thumb" else (f,))
         pose_now(rig, poses.state(base))
         deep, gap = contact(body, solid, side)
+        if contact(body, solid, side, seat_by)[0] > FIT_PALM_MM:
+            fallback.append(f"palm not seated within {FIT_PALM_MM} mm: {fit['dr'] * 1000:.1f} mm out, the search's end")
         out[side] = {"palm_shift_mm": round(fit["dr"] * 1000, 1), "roll_deg": fit["roll"], "thumb_turn": fit["turn"],
-                     "curl_scale": {f: round(v, 2) for f, v in fit["scale"].items()},
+                     "fallback": fallback, "curl_scale": {f: round(v, 2) for f, v in fit["scale"].items()},
                      "deepest_mm": deep, "gap_mm": gap, "digits_mm": gaps}
     pose_now(rig, poses.state(base))
     for side, r in hold_report(poses, body, solid, base).items():
