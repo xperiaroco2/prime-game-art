@@ -4,7 +4,9 @@ alien_hands.toml's), every key's fields are known with its times rising from 0 t
 most 0.5 s (GDD "Melee: any item hits": one swing each 0.5 s) with the contact inside, the loops are named _Loop and
 have no keys, and the reel of fp_hands_run.py plays only clips that exist. Since the viewmodel rebuild (the
 engineer's direction of 2026-11-11): every key pose has a target frame, its fitted values (fp_hands_fit.json) bend no
-wrist past [view] bend_max_deg, and every mix in a key names poses that exist. Pure Python, no Blender."""
+wrist past [view] bend_max_deg, and every mix in a key names poses that exist. Since 2026-11-19 a crystal pose set from
+the eye (the crystal hit's, Gate R's card) has its cap in the frame and only the known fields, and Crystal_Hit's
+contact key is such a pose (its target frame was lost with D:). Pure Python, no Blender."""
 
 from __future__ import annotations
 
@@ -63,6 +65,23 @@ class FpHandsSpec(unittest.TestCase):
                     self.assertIn("bend", pose[k], f"{name} {k}: a viewmodel pose sets its wrist's bend")
                     for b in pose[k]["bend"]:
                         self.assertLessEqual(abs(b), bend + 1e-6, f"{name} {k}: the wrist bent past {bend} degrees")
+
+    def test_crystal_from_eye(self):
+        seen = 0
+        for name, pose in POSES.items():
+            c = pose.get("crystal")
+            if not isinstance(c, dict) or "cap" not in c:
+                continue
+            seen += 1
+            self.assertLessEqual({"cap", "dist", "tilt"}, set(c), name)
+            self.assertLessEqual(set(c), {"cap", "dist", "tilt", "lean", "yaw"}, name)
+            self.assertTrue(all(0.0 <= x <= 100.0 for x in c["cap"]), f"{name}: the cap in the frame")
+            self.assertTrue(0.2 <= c["dist"] <= 0.8, f"{name}: the cap's distance from the eye")
+        self.assertGreaterEqual(seen, 2, "the crystal hit's windup and contact are set from the eye")
+        hit = {k["t"]: k for k in SPEC["clips"]["Crystal_Hit"]["keys"]}
+        contact = hit[SPEC["clips"]["Crystal_Hit"]["hit"]].get("crystal")
+        self.assertIn("cap", POSES[contact]["crystal"], "the contact key is a pose from the eye")
+        self.assertNotIn("crystal_hit", SPEC["view"]["targets"], "the lost AI frame is no target")
 
     def test_keys(self):
         for name, clip in SPEC["clips"].items():

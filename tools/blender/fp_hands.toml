@@ -55,10 +55,13 @@ fov_deg = 50.0
 crystal_scale = 1.3   # the held crystal drawn this much bigger in first person (CrystalSocket's own scale), the usual
                       # viewmodel cheat: at true size the hands read too big for it (the engineer's pick, 2026-11-11)
 bend_max_deg = 20.0   # the most a wrist bends from the forearm's line, up or sideways (a straight, unbroken wrist)
+cap_z_m = 0.30        # the crystal's cap point above its tip, unscaled (crystal_dims.toml: the top disc under the loop,
+                      # between the cap's dome and the loop): what a crystal pose from the eye places in the frame
 # the target frame per key pose (batch 2026-11-11-fp-hand-frames, the engineer's direction of 2026-11-11), which
 # fp_hands_fit.py fits the pose to by silhouette
-# (the hold, 2026-11-11-fp-hand-frames/hold, is no target since 2026-11-12: [poses.crystal] copies the reference)
-targets = { idle = "2026-11-11-fp-hand-frames/idle/image-0.png", fist_out = "2026-11-11-fp-hand-frames/punch/image-0.png", crystal_hit = "2026-11-11-fp-hand-frames/crystal_hit/image-0.png" }
+# (the hold, 2026-11-11-fp-hand-frames/hold, is no target since 2026-11-12: [poses.crystal] copies the reference; the
+# crystal hit's frame, lost with D:, none since 2026-11-19: [poses.crystal_hit] is set from the eye by Gate R's card)
+targets = { idle = "2026-11-11-fp-hand-frames/idle/image-0.png", fist_out = "2026-11-11-fp-hand-frames/punch/image-0.png" }
 # the empty hall the concept frames were made over (the ship package v9's night render), for the arm's silhouette:
 # what differs from it
 background = "2026-11-08-fp-hand-concepts/_refs/ship_hall.png"
@@ -128,6 +131,22 @@ L_c = { z = 0.15, toward = [-1.0, 0.0, 0.5], r = 0.054, wrap = [0.0, 1.0, 0.3], 
 grip_R = "cap"
 grip_L = "cap"
 
+# The crystal hit's key poses, set from the eye (Gate R: specs/fp_hand_dims.toml [reference.card] crystal_hit, the
+# engineer's pick 2026-11-19): a crystal pose by where its cap point ([view] cap_z_m) lands in the hands' frame, `cap` =
+# [% across, % down], `dist` m ahead of the eye; from upright, its front to the eye, its top `tilt` degrees toward the
+# right (about the view's axis: it rolls the hands' flanks too), then `lean` degrees away from the eye, then `yaw`
+# degrees toward the right about the vertical (fp_hands_build.py crystal_in_view). The hands ride on the crystal in the
+# hold's seat, so they never leave its flanks.
+[poses.crystal_windup]   # drawn down and to the left: the cap low, by the left hand, the axis leaning left
+crystal = { cap = [30.0, 80.0], dist = 0.40, tilt = -35.0, lean = 0.0, yaw = -25.0 }   # grid n5grid2 v3
+
+[poses.crystal_hit]      # the contact: the cap and loop in the upper right third near the frame's middle, the crystal
+                         # on the diagonal, the hands low, the frame's middle clear. Picked from the eye in the
+                         # contact grids n5grid/n5grid2 (h6): more tilt or lean raised the left hand to 55-65 % down
+                         # with its forearm flat across the frame from the left, a yaw past 25 brought the right
+                         # upper arm into the eye
+crystal = { cap = [74.0, 46.0], dist = 0.42, tilt = 20.0, lean = 10.0, yaw = -10.0 }
+
 [clips.Idle_Loop]           # breathing: a slow drift of the hand, a few millimetres and about a degree
 pose = "idle"
 seconds = 3.0
@@ -167,16 +186,17 @@ keys = [
   { t = 0.5, fist = 0.0, ease = "inout" },
 ]
 
-[clips.Crystal_Hit]         # a two-handed swing to the hit frame (crystal_hit, fitted): the crystal drawn back past the
-                            # hold, brought across to the contact, a short follow-through and back; the hands stay on it
+[clips.Crystal_Hit]         # Gate R's card: a two-handed diagonal swing, the cap first: drawn down and to the left
+                            # (crystal_windup), carried across and up to the contact at the upper right (crystal_hit),
+                            # a short follow-through past it and back to the hold; the hands ride on the crystal
 pose = "crystal"
 seconds = 0.5
 hit = 0.18
 keys = [
   { t = 0.0 },
-  { t = 0.10, crystal = { mix = ["crystal", "crystal_hit", -0.45], dp = [0.0, -0.02, 0.0] }, ease = "inout" },
+  { t = 0.09, crystal = "crystal_windup", ease = "inout" },
   { t = 0.18, crystal = "crystal_hit", ease = "in" },
-  { t = 0.24, crystal = { mix = ["crystal", "crystal_hit", 1.12] }, ease = "out" },
+  { t = 0.25, crystal = { mix = ["crystal", "crystal_hit", 1.12] }, ease = "out" },
   { t = 0.5, ease = "inout" },
 ]
 

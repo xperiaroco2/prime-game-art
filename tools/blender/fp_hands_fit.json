@@ -1,5 +1,5 @@
 {
- "source": "fp_hands_fit.py: the target frames of [view] targets, the hands' camera at [view] fov_deg; the crystal hold is fp_hands.toml's own since 2026-11-12 (Gate R, the reference's pick), not fitted",
+ "source": "fp_hands_fit.py: the target frames of [view] targets, the hands' camera at [view] fov_deg; the crystal hold is fp_hands.toml's own since 2026-11-12 (Gate R, the reference's pick), not fitted; the crystal hit's contact neither since 2026-11-19 (its target frame was lost with D:; fp_hands.toml [poses.crystal_hit] is set from the eye)",
  "poses": {
   "idle": {
    "R": {
@@ -44,25 +44,6 @@
     "bend": [
      -16.0,
      -1.0
-    ]
-   }
-  },
-  "crystal_hit": {
-   "crystal": {
-    "p": [
-     -0.2492,
-     0.6242,
-     -0.2093
-    ],
-    "up": [
-     0.6635,
-     -0.5498,
-     0.5074
-    ],
-    "front": [
-     -0.2909,
-     -0.692,
-     -0.6607
     ]
    }
   }

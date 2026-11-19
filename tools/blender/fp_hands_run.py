@@ -1,7 +1,7 @@
 """The first-person hands (art#136, xperiaroco2/prime-game#1587, concept A): build, check, shoot. Plain Python.
 
     $PYTHON_BIN tools/blender/fp_hands_run.py --tag <tag> [--no-build] [--preview] [--no-shots] [--fps 30]
-        [--asset assets/body/fp_hands] [--look-grid <variants.json>]
+        [--asset assets/body/fp_hands] [--look-grid <variants.json>] [--hit-grid <poses.json>]
 
 1. fp_hands_build.py in headless Blender: <raw>/2026-11-11-fp-hands/<tag>/fp_hands.{blend,glb}, build.json.
 2. glTF-Validator: validator.json (no errors).
@@ -14,6 +14,8 @@
    and HANDOFF are written by hand).
 --look-grid: only the look's variant grid on the tag's build (no build, no checks): each variant of the JSON list (a
 name and any of fp_hands.toml [look]'s keys over it) shot at LOOK_SHOTS into <tag>/frames/variants/<name>_<shot>.png.
+--hit-grid: only the crystal hit's contact grid (fp_hands_build.py --hit-grid: crystal poses from the eye, the hold
+carried to each, their numbers and renders from the eye) into <tag>/hitgrid/, no export, no checks.
 The hold's fit lists its fallbacks per hand (fit_hold: a default taken or a search's edge); the run prints each as a
 `warning (not failing): ...` line and in FP_RUN's `hold_fallback`, without failing.
 Prints one JSON line `FP_RUN {...}`; exit 0 only when every check passes. Long: run it in the background.
@@ -182,6 +184,7 @@ def main() -> int:
     ap.add_argument("--fps", type=int, default=30)
     ap.add_argument("--asset", default="")
     ap.add_argument("--look-grid", default="")
+    ap.add_argument("--hit-grid", default="")
     a = ap.parse_args()
     out = OUT / a.tag
     glb = out / "fp_hands.glb"
@@ -190,6 +193,12 @@ def main() -> int:
         variants = json.loads(Path(a.look_grid).read_text(encoding="utf-8"))
         shoot(stage(a.tag, glb), out, build, a.fps, variants)
         print("FP_RUN " + json.dumps({"tag": a.tag, "look_grid": str(out / "frames" / "variants")}))
+        return 0
+    if a.hit_grid:
+        out.mkdir(parents=True, exist_ok=True)
+        blender.run_script("fp_hands_build.py", ["--raw", str(RAW), "--out", str(out), "--hit-grid",
+                                                 str(Path(a.hit_grid).resolve())], timeout=1200)
+        print("FP_RUN " + json.dumps({"tag": a.tag, "hit_grid": str(out / "hitgrid")}))
         return 0
     if not a.no_build:
         if glb.exists():

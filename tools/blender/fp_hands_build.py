@@ -40,7 +40,11 @@ CHAIN = ("Shoulder", "UpperArm", "LowerArm", "Hand")
 FIT_PALM_MM = 0.5    # a held palm may sink this far into the crystal's surface (a soft hand on a hard crystal)
 FIT_DIGIT_MM = 1.5   # and a curled digit this far
 VIEW_FOV = [50.0]   # [view] fov_deg, set by main
+BEND_MAX = [20.0]   # [view] bend_max_deg, set by main
 CRYSTAL_SCALE = [1.0]   # [view] crystal_scale, set by main: the held crystal's size in first person
+CAP_Z = [0.30]          # [view] cap_z_m, set by main: the crystal's cap point (the top disc under the loop) above its tip
+CRYSTAL_R_M = 0.065     # the crystal's half-width in the frame's measures (the cap 13.5 cm across flats, unscaled)
+ASPECT = 16.0 / 9.0     # the shots' frame (1280 x 720)
 THUMB_ROLLS = range(-30, 91, 15)   # fit_hold's thumb search: the thumb's roll about its length
 THUMB_SWINGS = range(-40, 61, 10)  # and its swing toward the palm
 CURLS = [0.05 * j for j in range(-30, 51)]   # fit_hold's curl scales per digit: opened back 1.5 to curled 2.5
@@ -71,6 +75,7 @@ class State:
     def __init__(self):
         self.p, self.q, self.grip, self.shoulder = {}, {}, {}, {}
         self.fore = {}  # per side the forearm's direction (elbow to wrist) when the pose sets the wrist's bend
+        self.home = {}  # a held pose's: per side the hold's own forearm direction, which a moved crystal keeps (seat_fore)
         self.fist = 0.0
         self.crystal: Matrix | None = None
 
@@ -85,6 +90,26 @@ def fore_dir(q: Quaternion, bend) -> Vector:
     return (Matrix.Rotation(math.radians(-float(bend[1])), 3, n) @ d).normalized()
 
 
+def wrist_bend(fore: Vector, q: Quaternion) -> tuple[float, float]:
+    """fore_dir's inverse: the [up, side] bend (degrees) that gives the forearm direction `fore` for a hand q."""
+    m = q.to_matrix()
+    a, b, c = fore.dot(m.col[0]), fore.dot(m.col[1]), fore.dot(m.col[2])
+    return math.degrees(math.atan2(-c, math.hypot(a, b))), math.degrees(math.atan2(a, b))
+
+
+def seat_fore(home: Vector, q: Quaternion) -> Vector:
+    """A held hand carried by the crystal to the turn q keeps the hold's forearm line `home` in the view as far as its
+    wrist allows: the turn about the forearm is its twist (the forearm takes it, [rig] twist_share), and the wrist bends
+    toward `home` by at most [view] bend_max_deg up and sideways. A crystal rolled across the view so leaves the
+    forearms coming from the frame's bottom corners instead of swinging them with the hands (the first hit grid laid
+    the left forearm flat across the frame)."""
+    up, side = wrist_bend(home, q)
+    lim = BEND_MAX[0]
+    return fore_dir(q, [max(-lim, min(lim, up)), max(-lim, min(lim, side))])
+
+
+
+
 def turn_mix(qa: Quaternion, qb: Quaternion, w: float) -> Quaternion:
     """qa turned toward qb by the share w of the way (w below 0 or above 1 goes past either end)."""
     d = qa.rotation_difference(qb)
@@ -92,6 +117,59 @@ def turn_mix(qa: Quaternion, qb: Quaternion, w: float) -> Quaternion:
         d.negate()
     axis, ang = d.to_axis_angle()
     return Quaternion(axis, ang * w) @ qa
+
+
+def frame_pct(p: Vector) -> tuple[float, float]:
+    """Where a point of the camera's space lands in the hands' camera's frame: % across from the left, % down from
+    the top ([view] fov_deg vertical, the shots' 16:9)."""
+    t = math.tan(math.radians(VIEW_FOV[0]) / 2.0)
+    d = max(p.y, 1e-6)
+    return 50.0 + 50.0 * p.x / (d * t * ASPECT), 50.0 - 50.0 * p.z / (d * t)
+
+
+def crystal_in_view(c: dict) -> dict:
+    """A crystal pose set from the eye (the crystal hit's keys, Gate R's card): its cap point (CAP_Z up its axis) at
+    `cap` = [% across, % down] of the hands' frame and `dist` m ahead of the eye; from upright with its front to the
+    eye, its top turned `tilt` degrees toward the frame's right (about the view's axis; negative: to the left), then
+    `lean` degrees away from the eye, then `yaw` degrees toward the right about the vertical (a yaw keeps the hands'
+    flanks level, a tilt rolls them). Returns the {p (the tip), up, front} of crystal_matrix."""
+    t = math.tan(math.radians(VIEW_FOV[0]) / 2.0)
+    d = float(c["dist"])
+    cap = Vector(((float(c["cap"][0]) / 50.0 - 1.0) * d * t * ASPECT, d, (1.0 - float(c["cap"][1]) / 50.0) * d * t))
+    r = math.radians
+    m = (Matrix.Rotation(-r(float(c.get("yaw", 0.0))), 3, "Z") @ Matrix.Rotation(-r(float(c.get("lean", 0.0))), 3, "X")
+         @ Matrix.Rotation(r(float(c["tilt"])), 3, "Y"))
+    up = m.col[2].normalized()
+    tip = cap - up * (CAP_Z[0] * CRYSTAL_SCALE[0])
+    return {"p": list(tip), "up": list(up), "front": list(-m.col[1])}
+
+
+def view_reads(s: "State", reach: float) -> dict:
+    """How a held moment reads from the eye: the cap's and the tip's place in the frame (%), the axis's tilt in the
+    frame (degrees from upright, + toward the right), each palm's place (%) and depth (m), and `centre_clear`: how far
+    the crystal's outline stays from the frame's middle, in % of the frame's height (below 0: it covers the middle)."""
+    k = CRYSTAL_SCALE[0]
+    cap, tip = s.crystal @ Vector((0.0, 0.0, CAP_Z[0] * k)), s.crystal @ Vector((0.0, 0.0, 0.0))
+    (cu, cv), (tu, tv) = frame_pct(cap), frame_pct(tip)
+    a = Vector(((tu - 50.0) * ASPECT, tv - 50.0))
+    b = Vector(((cu - 50.0) * ASPECT, cv - 50.0))
+    ab = b - a
+    w = max(0.0, min(1.0, (-a).dot(ab) / max(ab.length_squared, 1e-9)))
+    near = a + ab * w   # the axis's point nearest the middle, in % of the height from it
+    depth = (tip.lerp(cap, w)).y
+    r_pct = 100.0 * CRYSTAL_R_M * k / (2.0 * depth * math.tan(math.radians(VIEW_FOV[0]) / 2.0))
+    out = {"cap_pct": [round(cu, 1), round(cv, 1)], "tip_pct": [round(tu, 1), round(tv, 1)],
+           "tilt_deg": round(math.degrees(math.atan2((cu - tu) * ASPECT, tv - cv)), 1),
+           "centre_clear_pct": round(near.length - r_pct, 1)}
+    for side in SIDES:
+        palm = s.p[side] + s.q[side].to_matrix().col[1] * reach
+        u, v = frame_pct(palm)
+        out[f"palm_{side[0]}"] = [round(u, 1), round(v, 1), round(palm.y, 3)]
+        if side in s.fore:
+            out[f"bend_{side[0]}"] = [round(x, 1) for x in wrist_bend(s.fore[side], s.q[side])]
+    return out
+
+
 
 
 def crystal_matrix(c: dict) -> Matrix:
@@ -136,7 +214,9 @@ class Poses:
 
     def crystal_spec(self, spec) -> dict:
         if isinstance(spec, str):
-            return self.cfg["poses"][spec]["crystal"]
+            return self.crystal_spec(self.cfg["poses"][spec]["crystal"])
+        if "cap" in spec:   # set from the eye (crystal_in_view)
+            return crystal_in_view(spec)
         if "mix" in spec:
             a, b, w = self.crystal_spec(spec["mix"][0]), self.crystal_spec(spec["mix"][1]), float(spec["mix"][2])
             ma, mb = crystal_matrix(a), crystal_matrix(b)
@@ -189,7 +269,12 @@ class Poses:
                 s.p[side] = s.crystal @ p
                 s.q[side] = (s.crystal.to_3x3() @ frame(f, n)).to_quaternion()
                 if "bend" in pose[key]:
-                    s.fore[side] = fore_dir(s.q[side], pose[key]["bend"])
+                    s.fore[side] = s.home[side] = fore_dir(s.q[side], pose[key]["bend"])
+            if over and "crystal" in over and s.home:   # moved off the hold: the forearms keep the hold's line
+                home = self.state(base)
+                for side in s.home:
+                    s.home[side] = home.home[side]
+                    s.fore[side] = seat_fore(s.home[side], s.q[side])
         if "R" in pose:
             s.p["Right"], s.q["Right"] = self.hand(pose["R"])
             spec = self.resolve(pose["R"])
@@ -217,7 +302,10 @@ def mix(a: State, b: State, w: float, base: dict) -> State:
         for side in SIDES:
             s.p[side] = moved @ a.p[side]
             s.q[side] = moved.to_quaternion() @ a.q[side]
-            if side in a.fore:
+            if side in a.home:
+                s.home[side] = a.home[side]
+                s.fore[side] = seat_fore(a.home[side], s.q[side])
+            elif side in a.fore:
                 s.fore[side] = (moved.to_3x3() @ a.fore[side]).normalized()
     return s
 
@@ -792,6 +880,107 @@ def hold_grid(out: Path, rig: Rig, poses: Poses, body, solid: "Solid", crystal_o
     sheet(out / "grid" / "sheet.png", files, cols=3, w=640, h=360)
 
 
+def thumb_reads(rig: Rig, body, side: str = "Right") -> dict:
+    """The free hand's thumb against its index (the rest card: the thumb along the index's side and below it, its tip
+    forward at about the index's middle joint, a small gap): the thumb tip's offset from the index's middle joint in
+    the hand's frame (mm: `fwd` along the fingers, `out` past the index's side, `normal` off the fingers' plane), and the
+    nearest gap between the thumb's skin (proximal, distal) and the index's (mm; about 0: touching or through)."""
+    from mathutils.kdtree import KDTree
+    pb = rig.arm.pose.bones
+    w = rig.arm.matrix_world
+    tip, joint = w @ pb[f"{side}ThumbDistal"].tail, w @ pb[f"{side}IndexIntermediate"].head
+    fwd = (joint - w @ pb[f"{side}Hand"].head).normalized()
+    across = (w @ pb[f"{side}IndexProximal"].head - w @ pb[f"{side}LittleProximal"].head)
+    across = (across - fwd * across.dot(fwd)).normalized()   # toward the index's side
+    normal = fwd.cross(across).normalized()   # off the fingers' plane (its sign read from the side view)
+    d = tip - joint
+    idx = hand_points(body, side, ("Index",))
+    kd = KDTree(len(idx))
+    for k, v in enumerate(idx):
+        kd.insert(v, k)
+    kd.balance()
+    gap = min(kd.find(v)[2] for v in hand_points(body, side, ("ThumbProximal", "ThumbDistal")))
+    return {"tip_vs_index_joint_mm": {"fwd": round(d.dot(fwd) * 1000, 1), "out": round(d.dot(across) * 1000, 1),
+                                      "normal": round(d.dot(normal) * 1000, 1)},
+            "thumb_index_gap_mm": round(gap * 1000, 1)}
+
+
+def hit_grid(out: Path, rig: Rig, poses: Poses, body, solid: "Solid", variants: list, crystal_objs=()) -> None:
+    """--hit-grid: each variant is one moment rendered from the eye (Workbench, hitgrid/<name>.png and sheet.png) with
+    its numbers in hitgrid/grid.json. A variant: `name`; `pose` (default "crystal"); a crystal pose from the eye
+    (`cap`, `dist`, `tilt`, `lean`, `yaw`: crystal_in_view), the hold carried to it as Crystal_Hit's keys carry it,
+    read from the eye (view_reads) with each hand's deepest point inside the crystal and the wrists out of reach;
+    `grips` = {grip: {field: value}} over [grips] for this moment (the rest grip's thumb grid); `thumb_view`: a second
+    render from the eye magnified on the right hand, hitgrid/<name>_zoom.png, one from its thumb's side,
+    hitgrid/<name>_thumb.png, and the thumb's reads against its index
+    (thumb_reads). A pose without the crystal hides it."""
+    sc = bpy.context.scene
+    sc.render.engine = "BLENDER_WORKBENCH"
+    sc.display.shading.light = "STUDIO"
+    sc.display.shading.color_type = "TEXTURE"
+    sc.display.shading.show_cavity = True
+    sc.render.resolution_x, sc.render.resolution_y = 640, 360
+    cam_data = bpy.data.cameras.new("eye")
+    cam_data.sensor_fit = "VERTICAL"
+    cam_data.angle_y = math.radians(float(VIEW_FOV[0]))
+    cam_data.clip_start = 0.02
+    cam = bpy.data.objects.new("eye", cam_data)
+    sc.collection.objects.link(cam)
+    side_data = bpy.data.cameras.new("thumb_side")
+    side_data.sensor_fit = "VERTICAL"
+    side_data.angle_y = math.radians(35.0)
+    side_data.clip_start = 0.01
+    side_cam = bpy.data.objects.new("thumb_side", side_data)
+    sc.collection.objects.link(side_cam)
+    cam.rotation_euler = (math.radians(90), 0, 0)
+    d = out / "hitgrid"
+    d.mkdir(parents=True, exist_ok=True)
+    reach = float(poses.cfg["rig"]["reach_m"])
+    keep = {k: dict(v) for k, v in poses.grips.items()}
+    res, files = {}, []
+    for v in variants:
+        base = v.get("pose", "crystal")
+        for g, fields in v.get("grips", {}).items():
+            poses.grips[g] = {**keep[g], **fields}
+        spec = {k: x for k, x in v.items() if k in ("cap", "dist", "tilt", "lean", "yaw")}
+        s = poses.state(base, {"crystal": spec} if spec else None)
+        held = "R_c" in poses.cfg["poses"][base]
+        for o in crystal_objs:
+            o.hide_render = not held
+        rig.short = {}
+        pose_now(rig, s)
+        r = view_reads(s, reach) if held else {}
+        if held:
+            r["deepest_mm"] = {sd: contact(body, solid, sd)[0] for sd in SIDES}
+        r["out_of_reach_mm"] = {k: round(max(x, 0.0) * 1000, 1) for k, x in rig.short.items()}
+        sc.camera = cam
+        sc.render.filepath = str(d / f"{v['name']}.png")
+        bpy.ops.render.render(write_still=True)
+        files.append(d / f"{v['name']}.png")
+        if v.get("thumb_view"):
+            r.update(thumb_reads(rig, body))
+            pb, w = rig.arm.pose.bones, rig.arm.matrix_world
+            mid = (w @ pb["RightIndexProximal"].head).lerp(w @ pb["RightThumbDistal"].tail, 0.5)
+            out_dir = (w @ pb["RightIndexProximal"].head) - (w @ pb["RightLittleProximal"].head)
+            # from the eye, magnified (the eye's place, a 14-degree view on the hand), then from the thumb's side
+            for tag, place, ang in (("zoom", Vector(), 14.0), ("thumb", mid + out_dir.normalized() * 0.35
+                                                              + Vector((0.0, -0.08, 0.06)), 35.0)):
+                side_cam.location = place
+                side_data.angle_y = math.radians(ang)
+                side_cam.rotation_euler = (mid - place).to_track_quat("-Z", "Z").to_euler()
+                sc.camera = side_cam
+                sc.render.filepath = str(d / f"{v['name']}_{tag}.png")
+                bpy.ops.render.render(write_still=True)
+                files.append(d / f"{v['name']}_{tag}.png")
+        poses.grips.update({k: dict(x) for k, x in keep.items()})
+        res[v["name"]] = {"variant": v, "reads": r}
+        print("FP_HIT " + json.dumps({v["name"]: r}), flush=True)
+        (d / "grid.json").write_text(json.dumps(res, indent=1), encoding="utf-8")
+    for o in crystal_objs:
+        o.hide_render = False
+    sheet(d / "sheet.png", files, cols=3, w=640, h=360)
+
+
 # ------------------------------------------------------------------------------------------ preview
 def preview(out: Path, arm, body, clips, crystal_objs, held) -> None:
     sc = bpy.context.scene
@@ -854,6 +1043,7 @@ def main(argv) -> None:
     ap.add_argument("--out")
     ap.add_argument("--preview", action="store_true")
     ap.add_argument("--hold-grid", default="", help="a JSON list of hold variants: grid/ and stop (hold_grid)")
+    ap.add_argument("--hit-grid", default="", help="a JSON list of crystal poses from the eye: hitgrid/ and stop")
     ap.add_argument("--sheets", help="only compose key-frame sheets: a JSON {sheet path: [frame PNGs]}")
     a = ap.parse_args(argv)
     if a.sheets:
@@ -868,6 +1058,8 @@ def main(argv) -> None:
     grips.update(cfg.get("grips", {}))
     VIEW_FOV[0] = float(cfg["view"]["fov_deg"])
     CRYSTAL_SCALE[0] = float(cfg["view"].get("crystal_scale", 1.0))
+    CAP_Z[0] = float(cfg["view"].get("cap_z_m", CAP_Z[0]))
+    BEND_MAX[0] = float(cfg["view"]["bend_max_deg"])
     fitted = json.loads(FITTED.read_text(encoding="utf-8")) if FITTED.exists() else {}
     for name, fields in fitted.get("poses", {}).items():
         cfg["poses"].setdefault(name, {}).update(fields)
@@ -889,6 +1081,9 @@ def main(argv) -> None:
                   15 if "hold_roll" in fitted else None)
         return
     stats["hold_fit"] = fit_hold(rig, poses, body, solid, roll_span=15 if "hold_roll" in fitted else None)
+    if a.hit_grid:
+        hit_grid(out, rig, poses, body, solid, json.loads(Path(a.hit_grid).read_text(encoding="utf-8")), crystal_objs)
+        return
     clips, plans, report = {}, {}, {}
     for name, spec in cfg["clips"].items():
         clip = Clip(name, spec, poses, run_seconds)
@@ -899,6 +1094,9 @@ def main(argv) -> None:
         report[name] = {"seconds": round(clip.seconds, 4), "frames": n + 1, "loop": clip.loop,
                         "hit_s": spec.get("hit"), "holds_crystal": clip.held,
                         "out_of_reach_mm": {k: round(max(v, 0.0) * 1000, 1) for k, v in rig.short.items()}}
+        if clip.held and clip.keys:   # a held hit's keys as read from the eye (view_reads)
+            report[name]["keys_from_eye"] = {f"{t:g}": view_reads(st, float(cfg["rig"]["reach_m"]))
+                                             for t, _, st in clip.keys}
     held = {n for n, r in report.items() if r["holds_crystal"]}
     socket = {}
     for name, (act, n, fist) in clips.items():
