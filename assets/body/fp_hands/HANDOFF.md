@@ -62,7 +62,7 @@ assets/body/fp_hands` (2026-11-19, on the detailed hand m28) from `tools/blender
 | `Punch` | 0.5 s | no | a straight right punch; contact at **0.15 s** (the target frame `punch`); starts and ends in `Idle`'s pose |
 | `Crystal_Idle` | 3.0 s | yes | the crystal carried with both hands from its sides, like a box (the engineer's pick of 2026-11-12): both palms on its flanks at one height under the skirt, the fingers round its back (see "The hold") |
 | `Crystal_Run` | 0.917 s | yes | the same, with the run's bob and swing |
-| `Crystal_Hit` | 0.5 s | no | a two-handed swing across, the point leading; contact at **0.18 s** (the target frame `crystal_hit`); starts and ends in `Crystal_Idle`'s pose |
+| `Crystal_Hit` | 0.5 s | no | a two-handed diagonal swing, the cap leading: drawn down to the lower left (0.09 s), across and up to the contact at **0.18 s** with the cap and loop at the upper right (74 % across, 46 % down; the frame's middle clear), a short follow-through and back; starts and ends in `Crystal_Idle`'s pose (since run n5) |
 
 - The hits last 0.5 s, the GDD's rate (one swing each 0.5 s), so a held button can chain them.
 - The left arm rests below the frame in the clips without the crystal.

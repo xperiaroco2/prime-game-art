@@ -1785,6 +1785,23 @@ are in `tools/blender/fp_hands.toml`, the fitted key poses in `tools/blender/fp_
   0.5 s, GDD "Melee: any item hits"): `Punch` (the fist morph keyed through it, the contact at 0.15 s) and
   `Crystal_Hit` (the contact at 0.18 s). The hits' keys are mixes of the fitted frames (`{ mix = [a, b, w] }`: w below
   0 a wind-up, above 1 a follow-through). Each hit starts and ends in its idle.
+- **The crystal hit** (since run n5, 2026-11-19; the card `crystal_hit` in `specs/fp_hand_dims.toml [reference]`): a
+  two-handed diagonal swing, the cap first. Its key poses are set from the eye (`[poses.crystal_windup]`,
+  `[poses.crystal_hit]`: `crystal = { cap = [% across, % down], dist, tilt, lean, yaw }`, `crystal_in_view`; the cap
+  point is `[view] cap_z_m` up the crystal): the windup at 0.09 s (the cap at 30/80 %), the contact at 0.18 s (74/46 %),
+  a follow-through 12 % past it, the hold at 0.5 s. The hands ride on the crystal in the hold's seat; a moved crystal
+  keeps each forearm on the hold's line as far as the wrist allows (`seat_fore`, the bend clamped to `bend_max_deg`).
+  `build.json`'s `keys_from_eye` reads each key (cap and tip in the frame, tilt, the middle's clearance, the palms,
+  the wrists' bend). `fp_hands_run.py --tag <tag> --hit-grid <json>` renders a list of moments from the eye (Workbench)
+  with those numbers, no build or checks; a moment may name another pose, override grips (`grips`) and, with
+  `thumb_view`, add a magnified eye view and a thumb-side view with the free thumb's reads against its index. What the
+  grids showed: the hands hold the crystal's flanks, so a tilt toward the reference's 45 degrees lifts the left hand to
+  55-65 % down with its forearm flat across the frame from the left, and a yaw past about 25 degrees brings the right
+  upper arm into the eye; the contact keeps a 14-degree tilt with both hands low. The rest grip's thumb (Idle, Run)
+  lies along the index, 1.5 mm off it (the card `rest`).
+- **The hold's fallbacks**: `fit_hold` lists per hand where it took a default or stopped on a search's edge (no thumb
+  turn, a digit opened to -1.5, a curl, roll or thumb turn on its range's edge, a palm not seated); the run prints each
+  as `warning (not failing): ...` and in `FP_RUN`'s `hold_fallback`.
 - **Godot** (`godot/fp_hands/shots.gd`, what the game repeats; `HANDOFF.md`): the hands and the crystal on their own
   render layer (20), drawn by a second camera with `[view] fov_deg` (50 degrees) in a transparent `SubViewport` over
   the player's camera (75), which leaves that layer out; the level's lights are put on that layer too (a camera draws
