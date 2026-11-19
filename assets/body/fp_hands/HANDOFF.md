@@ -60,7 +60,7 @@ assets/body/fp_hands` (2026-11-19, on the detailed hand m28) from `tools/blender
 | `Idle` | 3.0 s | yes | the right hand low in the lower right corner, breathing (the target frame `idle`) |
 | `Run` | 0.917 s | yes | the run's bob and swing, two steps a loop (the character's Jog cycle); the hand open and relaxed as in `Idle` (no fist) |
 | `Punch` | 0.5 s | no | a straight right punch; contact at **0.15 s** (the target frame `punch`); starts and ends in `Idle`'s pose |
-| `Crystal_Idle` | 3.0 s | yes | the crystal carried with both hands from its sides, like a box (the engineer's pick of 2026-11-12): both palms on its flanks at one height under the skirt, the backs of the hands up toward the eye, the fingers round its back, the thumbs up the near faces |
+| `Crystal_Idle` | 3.0 s | yes | the crystal carried with both hands from its sides, like a box (the engineer's pick of 2026-11-12): both palms on its flanks at one height under the skirt, the backs of the hands turned up (not yet toward the eye), the index and middle fingers round its back, the thumbs at its front (see "The hold") |
 | `Crystal_Run` | 0.917 s | yes | the same, with the run's bob and swing |
 | `Crystal_Hit` | 0.5 s | no | a two-handed swing across, the point leading; contact at **0.18 s** (the target frame `crystal_hit`); starts and ends in `Crystal_Idle`'s pose |
 
@@ -79,6 +79,10 @@ assets/body/fp_hands` (2026-11-19, on the detailed hand m28) from `tools/blender
 - Still open: only 6 % of the palm lies within 4 mm of the crystal (the palm's middle stands off the faceted flank),
   and from the eye the thumbs read as standing up beside the cap rather than lying along the near faces; both wait
   for the engineer's look at the next review.
+- Also open (the fresh review of PR #384): the hold's search ends at its limits. The thumb's turn is [75, -60],
+  -60 the swing range's edge; the ring and little fingers' curl is at its top (2.5), the ring still 13.8 mm off the
+  crystal and the little finger finding no surface; the backs of the hands face up (0.43) but slightly away from the
+  eye (-0.09). The fit does not yet flag such a fallback; the next hold step does.
 
 ## What the game side builds (not done here)
 - Instance `fp_hands.glb` under the camera; switch clips by state (idle or run, crystal held or not), blend the
