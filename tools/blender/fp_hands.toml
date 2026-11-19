@@ -66,20 +66,28 @@ targets = { idle = "2026-11-11-fp-hand-frames/idle/image-0.png", fist_out = "202
 # what differs from it
 background = "2026-11-08-fp-hand-concepts/_refs/ship_hall.png"
 
-[grips.rest]      # the free hand at rest in the view: alien_hands.toml's relaxed curled a little more, so the
-                  # fingers read soft and slightly curled, as in concept A, never a pointing index
-Index = [18, 22, 8]
-Middle = [26, 28, 10]
-Ring = [32, 32, 12]
-Little = [36, 34, 12]
+[grips.rest]      # the free hand at rest in the view (art#136 run p1, reference first): the engineer's pick, a right hand
+                  # from the eye with long, nearly straight fingers, a soft curl, slightly spread, the thumb swung
+                  # clearly out from the index and the lowest digit (refs/fp-hands-empty/picks/rest, private).
+                  # The start: Quaternius UAL1 Standard's Idle_Loop (CC0, sources/quaternius_ual1_standard.toml),
+                  # its right hand read in headless Blender (each joint's flex about the hand's side axis, frame 0 = 30):
+                  # index 77/77/77, middle 78/77/77, ring 78/77/77, pinky 82/78/77 (a loose fist); the side angles
+                  # index -0.7, ring -2.8 (rest -2.4, -4.5: no spread beyond its rest); thumb MCP 25, IP 87, its
+                  # proximal 47 degrees out from the index's. Our hand has three fingers: index, middle and ring take
+                  # UAL's own, the pinky is left out (our rig's Little is unweighted). UAL's thumb_01 turns about a
+                  # base frame of its own, so our metacarpal and ThumbTurn kept n6's as the start (21 out).
+                  # Fitted by eye beside the reference (grids p1grid, p1gridb, fp_hands_build.py --hit-grid with `R`):
+                  # UAL's curls x 1, 0.35, 0.18, 0.12 and 0.08, spread 0, 8 and 12, the metacarpal -21 and -40, at the
+                  # current place and two nearer the reference's; picked c3s12t40: UAL x 0.08 (a soft curl), spread 12,
+                  # the thumb swung out by its metacarpal to -40 with UAL's MCP and IP x 0.08
+Index = [6.2, 6.2, 6.2]
+Middle = [6.3, 6.2, 6.2]
+Ring = [6.2, 6.2, 6.2]
+Little = [6.6, 6.2, 6.2]
 mirror = true
-spread = 5
-Thumb = [-21, 6, 8]    # the rest card (specs/fp_hand_dims.toml [reference.card] rest): the thumb relaxed, away from
-ThumbTurn = [30, -10]  # the index: n5's [0, 6, 4] / [10, 0] lay 1.5 mm off it, which reads pressed (the engineer,
-                       # n5's Idle and Run). Grids n6grid, n6gridb, n6gridc (fp_hands_build.py --hit-grid,
-                       # thumb_reads) from the eye and from below the fingertips: c4, the tip 25 mm off the index,
-                       # the thumb swung 21 degrees out from the index's line and risen 22 toward the palm side,
-                       # its joints softly bent; [6, 14, 10] curled it in over the palm (n4)
+spread = 12
+Thumb = [-40, 2.0, 6.9]
+ThumbTurn = [30, -10]
 
 [grips.cap]       # a hand round the crystal (the cap 13.5 cm across flats, the body 11 across corners): the
                   # fingers round its back, the thumb along it; fit_hold scales each digit's curl to the surface

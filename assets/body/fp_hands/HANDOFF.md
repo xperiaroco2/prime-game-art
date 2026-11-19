@@ -78,6 +78,16 @@ assets/body/fp_hands` (2026-11-19, on the detailed hand m28) from `tools/blender
   from the eye the fingers twisted into a knot (the engineer, 2026-11-19: the hold looked better before).
 - Still open, waiting for the engineer: the palm stands a little off the faceted flank.
 
+## The free hand at rest (run p1, 2026-11-19; not in this asset yet)
+- The engineer's reference for `Idle` and `Run` (specs/fp_hand_dims.toml `[reference.card] rest`): long, nearly
+  straight fingers with a soft curl, a little spread, the thumb swung clearly out from the index and the lowest digit.
+- Run p1 starts the grip from Quaternius UAL1's Idle (CC0) and fits it by eye beside the reference
+  (`fp_hands.toml [grips.rest]`), on the hand m29: the thumb's weights eased (the crease at its joints gone) and its
+  web to the palm rounded (the dimple softer in Blender, still a dark notch in Godot's close-up). Open on m29: the
+  hold's thumb fit went to its search's edge (curl x2.5, n6 x0.6) and the thumbs stand out from the crystal's flanks
+  in Crystal_Idle; until that is fixed the asset's files here stay run n6's, and the engineer picks the hand's place
+  in the frame (the current lower right, or lower centre nearer the reference) on p1's page.
+
 ## What the game side builds (not done here)
 - Instance `fp_hands.glb` under the camera; switch clips by state (idle or run, crystal held or not), blend the
   switches (about 0.15 s) and play the hits on the left mouse button.
