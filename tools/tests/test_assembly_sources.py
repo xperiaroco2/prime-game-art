@@ -35,6 +35,15 @@ def run_cli(*argv: str) -> tuple[int, str]:
     return code, out.getvalue()
 
 
+def _packs_present() -> bool:
+    """Every raw file the pack records name is in the raw root (the hashes test needs them)."""
+    for stem in ("quaternius_ultimate_modular_men", "quaternius_ultimate_modular_women"):
+        data, _ = _manifest.load(common.ROOT / "sources" / f"{stem}.toml")
+        if not data or not all((common.raw_dir() / r["file"]).exists() for r in data.get("raw", [])):
+            return False
+    return True
+
+
 class SourceRulesTest(unittest.TestCase):
     def parse(self, text: str) -> dict:
         import tomllib
@@ -122,7 +131,8 @@ class RepoSourcesTest(unittest.TestCase):
             self.assertEqual(len([f for f in files if f.endswith(".glb")]), count)
             self.assertEqual(len([f for f in files if f.endswith(".zip")]), 1)
 
-    @unittest.skipUnless((common.raw_dir() / "refs").is_dir(), f"no raw folder at {common.raw_dir().as_posix()}")
+    # the packs' own files, not just <raw>/refs: a board under refs/ (refs, art#136) is no pack
+    @unittest.skipUnless(_packs_present(), f"the packs' files are not in {common.raw_dir().as_posix()}")
     def test_the_pack_hashes_match_the_raw_files(self) -> None:
         for stem in self.PACKS:
             data, _ = _manifest.load(common.ROOT / "sources" / f"{stem}.toml")
