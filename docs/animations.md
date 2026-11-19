@@ -1830,12 +1830,13 @@ are in `tools/blender/fp_hands.toml`, the fitted key poses in `tools/blender/fp_
 ### The detailed first-person hand (art #136, 2026-11-11)
 
 Up close the character's own hand read as a shapeless lump (the bare-arm close-ups, t12), so the viewmodel has its own
-hand: concept A refined (four digits: three thick rounded fingers and a thumb; batch
-2026-11-11-fp-hand-model-concepts, the engineer's pick), its spec `specs/fp_hand_dims.toml` (Gate 1: every size
+hand: concept A refined (batch 2026-11-11-fp-hand-model-concepts, the engineer's pick; five digits since m31: four
+fingers and a thumb, all weighted, the engineer's amendment of 2026-11-20 in
+`docs/decisions/2026-10-19-alien-overlaid-face-four-fingers.md`; m26-m30 had three thick fingers and a thumb), its spec `specs/fp_hand_dims.toml` (Gate 1: every size
 measured off the concept's back view at 2 px/mm, the hand 20.84 cm long as the character's, the forearm 22.05 cm),
 built by `tools/blender/fp_hand_model.py --raw <raw> --out <dir> [--renders] [--fist-grid <json>]` (headless
-Blender, about 3.5 minutes with the bake on the laptop). `fp_hands.toml [source] char` names its output (m27 since
-2026-11-18).
+Blender, about 3.5 minutes with the bake on the laptop). `fp_hands.toml [source] char` names its output (m33 since
+2026-11-20).
 
 **Its inputs are in git** since 2026-11-18 (art #136): the axolotl character build it took its rig and skin colour
 from lived only on D: and is gone. The engineer's choice the same day: go on from the committed hands asset t4.
@@ -1852,7 +1853,11 @@ m26, the first build on the seed, matches m25 by every number m25's PR recorded:
 fist morph's move p50 0.15 / p99 14.5 mm, the fist 154 / 142.4 / 107.7 mm. The hands' run `s2` on it passes every
 check, the Godot shots included. The concept (`[hand] concept`) and the target frames are AI generations lost with
 D:: `--renders` and `fp_hands_fit.py` cannot run until they come back from the review pages' copies or anew;
-`fp_hands_fit.json` keeps the fitted poses.
+`fp_hands_fit.json` keeps the fitted poses; a toml pose with `keep = true` (`[poses.idle]` since 2026-11-20) wins
+over its fitted entry: without it every build from p2 on drew the rest hand at the fitted corner, not at the place
+set from the eye. `fp_hands_run.py --override <json>` builds a review variant (e.g. the rest hand's other place)
+with the JSON merged over the toml's tables, never the asset; the close-ups `back` and `palm` look at the open hand
+from the eye's side and from beyond it (`side`, `dist` in `shots.gd`).
 
 m27 (2026-11-18) is m26 with the engineer's three fixes, each found by a variant grid (all under
 `<raw>/2026-11-18-fp-hand-model/`):
@@ -1897,7 +1902,7 @@ m27 (2026-11-18) is m26 with the engineer's three fixes, each found by a variant
   slot. Roughness 0.42, no
   metal.
 - **The rig**: the seed's armature with the hand and finger bones moved to the model's joints (same names; the
-  ring finger is `Ring`, `Little` stays and carries nothing); the fingers' bone z points to the palm, so a grip's
+  little finger is `Little`, weighted since m31); the fingers' bone z points to the palm, so a grip's
   positive curl closes the hand as on the character. Weights from the parts: each part's bone through
   exp(-distance / sigma), four kept.
 - **The fist** is the grip `[grips.fist]` (fingers 60-65 / 65 / 60 degrees since m27, the thumb tucked down the
