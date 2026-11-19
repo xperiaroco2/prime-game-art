@@ -15,7 +15,7 @@
 # finger bones moved to the model's joints, the morph `fist` its corrective). Since 2026-11-18 the rig comes from
 # tools/blender/fp_rig_seed.json (read from the committed hands asset t4): the character build m25 was made from was
 # lost with D: (art#136); was m25, before it the H1u character itself
-char = "2026-11-18-fp-hand-model/m29/fp_hand_char.blend"
+char = "2026-11-18-fp-hand-model/m30/fp_hand_char.blend"
 crystal = "assets/prop/energy_crystal/export/energy_crystal.glb"   # the committed energy crystal (a repo path; was its
                                                                   # raw copy energy-crystal/lit1, same hash)
 skin_inside_cuff_m = 0.035   # the skin is kept from this far inside the sleeve's cuff out to the fingertips
@@ -79,11 +79,14 @@ background = "2026-11-08-fp-hand-concepts/_refs/ship_hall.png"
                   # Fitted by eye beside the reference (grids p1grid, p1gridb, fp_hands_build.py --hit-grid with `R`):
                   # UAL's curls x 1, 0.35, 0.18, 0.12 and 0.08, spread 0, 8 and 12, the metacarpal -21 and -40, at the
                   # current place and two nearer the reference's; picked c3s12t40: UAL x 0.08 (a soft curl), spread 12,
-                  # the thumb swung out by its metacarpal to -40 with UAL's MCP and IP x 0.08
-Index = [6.2, 6.2, 6.2]
-Middle = [6.3, 6.2, 6.2]
-Ring = [6.2, 6.2, 6.2]
-Little = [6.6, 6.2, 6.2]
+                  # the thumb swung out by its metacarpal to -40 with UAL's MCP and IP x 0.08. Round 2 (grids
+                  # p2grida-d, the wrist's turn first: [poses.idle]): p1's even curl read as three fused, parallel
+                  # fingers, so the curl cascades, index least: 5, 10 and 15 degrees at each joint (8/14/20 bunched
+                  # them in the level views); spread 18 and the thumb at -55 showed no difference from the eye
+Index = [5, 5, 5]
+Middle = [10, 10, 10]
+Ring = [15, 15, 15]
+Little = [15, 15, 15]
 mirror = true
 spread = 12
 Thumb = [-40, 2.0, 6.9]
@@ -114,10 +117,16 @@ mirror = true
 Thumb = [25, 30, 40]
 ThumbTurn = [-20, 50]
 
-[poses.idle]      # the right hand low in the lower right corner, the back of the hand to the eye, relaxed: concept A's
-                  # idle frame measured (the cuff at 78 % across and 88 % down, the knuckles at 70 % and 75 %, the
-                  # hand about a quarter of the frame's height)
-R = { p = [0.26, 0.33, -0.165], f = [-0.35, 0.75, 0.55], n = [0.35, -0.75, 0.55] }
+[poses.idle]      # the free hand at rest, placed after the engineer's rest reference (art#136 round 2, grids p2grida-d):
+                  # low and a little right of the middle, the forearm out through the bottom edge (the wrist at 55 %
+                  # across on it), the fingers toward the upper left (their tips solved to about 30 % / 68 %), the back
+                  # turned to the eye as if the player looked 50 degrees down (the reference's view looks at the floor;
+                  # ours looks level, so a level hand showed only its edge: grids p2grida-c), rolled 20 degrees
+                  # thumb side up. Picked v50br20 (yaw 63, pitch 29 before the tilt). Was concept A's lower right corner
+R = { p = [0.0332, 0.4, -0.1791], f = [-0.7793, -0.1162, 0.6158], n = [0.5612, -0.5667, 0.6033] }
+# the engineer's other choice, today's lower right corner (grid p2gridd cornv50): the wrist at 80 % across on the
+# bottom edge, the fingertips at 62 % / 76 %, the same view tilt
+# R = { p = [0.1791, 0.36, -0.1679], f = [-0.4286, 0.8717, 0.2376], n = [-0.2575, -0.3699, 0.8927] }
 grip_R = "rest"
 
 [poses.fist_out]  # the punch's contact: concept A's fist frame measured (the fist's middle at 62 % across and 54 %
@@ -142,6 +151,9 @@ R_c = { z = 0.15, toward = [1.0, 0.0, 0.5], r = 0.054, wrap = [0.0, 1.0, 0.3], b
 L_c = { z = 0.15, toward = [-1.0, 0.0, 0.5], r = 0.054, wrap = [0.0, 1.0, 0.3], bend = [20.0, 15.0] }
 grip_R = "cap"
 grip_L = "cap"
+thumb_pin = { turn = [-15, 10], curl = 0.6 }   # the thumbs as fitted on n6 (approved): on m29 the fit's own search
+                                              # went to turn [75, 30] and curl x2.5, the thumbs off the flanks
+                                              # (art#136 round 2; fp_hands.toml [golden] holds the hold to n6)
 
 # The crystal hit's key poses, set from the eye (Gate R: specs/fp_hand_dims.toml [reference.card] crystal_hit, the
 # engineer's pick 2026-11-19): a crystal pose by where its cap point ([view] cap_z_m) lands in the hands' frame, `cap` =
@@ -221,3 +233,19 @@ keys = [
 body_srgb = [0.40, 0.86, 0.80]
 ambient = 0.8
 fill = { energy = 0.3, color = [1.0, 0.93, 0.85], rot = [-50.0, -90.0, 0.0] }
+
+[golden]          # the golden-frame check (art#136 round 2; fp_hands_run.py golden(), tools/blender/fp_golden.py): the
+                  # approved hold and the punch's contact from the eye, shot from run n6's GLB (the last good asset run)
+                  # by run p2gridgold, against every run's own stills, inside each frame's hand box ([x0, y0, x1, y1],
+                  # fractions from the top left); a gated frame past max_share fails the run. A pixel counts as changed
+                  # when one channel moves more than `changed` (0..1). idle and run are reported, never gated (the
+                  # rest pose is what changes)
+dir = "2026-11-11-fp-hands/golden/n6"
+changed = 0.10
+max_share = 0.01
+frames = [
+  { name = "hold", frame = "stills/hold.png", box = [0.25, 0.72, 0.76, 1.0], sha256 = "7f0f190bf0824d23faeaacec233988326fbe0407884a5a4206effd017d929ca3" },
+  { name = "punch_hit", frame = "stills/punch_hit.png", box = [0.40, 0.30, 1.0, 1.0], sha256 = "9eefeae6ab34dfc2ad469e4a28d9e3ae15819c37aed7583293d322be1bd77b32" },
+  { name = "idle", frame = "stills/idle.png", box = [0.50, 0.50, 1.0, 1.0], gate = false, sha256 = "ae6d1de1db05d0150b2f792940fa8976e09d802394e425e748252dda91b9b125" },
+  { name = "run", frame = "stills/run.png", box = [0.50, 0.50, 1.0, 1.0], gate = false, sha256 = "6f37e4b510a9c9cf4f54ddb25c78fdd802bdc196af46af5b3503c4de8af41102" },
+]

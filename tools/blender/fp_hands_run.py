@@ -10,7 +10,10 @@
    then shot in an off-screen window (the runner's _godot.window()): each clip's frames, check.json.
 4. The videos (Blender's FFmpeg, encode_clips.py): one per clip and reel.mp4 (idle, punch, run, then the same with
    the crystal), and a key-frame sheet per clip.
-5. With --asset, and only when every check passed: the GLB and the .blend copied into the asset folder (its manifest
+5. The golden-frame check (fp_hands.toml [golden], tools/blender/fp_golden.py in headless Blender): the eye stills
+   of the approved hold and the punch's contact against the golden run's, inside each frame's hand box; a gated
+   frame past its threshold fails the run (a guard for the approved poses while another pose changes).
+6. With --asset, and only when every check passed: the GLB and the .blend copied into the asset folder (its manifest
    and HANDOFF are written by hand).
 --look-grid: only the look's variant grid on the tag's build (no build, no checks): each variant of the JSON list (a
 name and any of fp_hands.toml [look]'s keys over it) shot at LOOK_SHOTS into <tag>/frames/variants/<name>_<shot>.png.
@@ -18,11 +21,15 @@ name and any of fp_hands.toml [look]'s keys over it) shot at LOOK_SHOTS into <ta
 carried to each, their numbers and renders from the eye) into <tag>/hitgrid/, no export, no checks.
 The hold's fit lists its fallbacks per hand (fit_hold: a default taken or a search's edge); the run prints each as a
 `warning (not failing): ...` line and in FP_RUN's `hold_fallback`, without failing.
+--golden-only: only the golden check on the tag's frames (--golden-dir another golden folder, e.g. a run's frames
+to measure the noise floor); --make-golden: copy the tag's frames named in [golden] into its golden folder and print
+their SHA-256 for fp_hands.toml.
 Prints one JSON line `FP_RUN {...}`; exit 0 only when every check passes. Long: run it in the background.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import shutil
@@ -47,10 +54,17 @@ SOCKET_TOL_M = 0.002
 LIGHT_LEVELS = [1.0, 0.4, 0.15]   # the held crystal's own light on the hands: as built, and two lower (a question)
 # close-ups of the right hand from beside the eye with a long lens, for judging the hand itself (closeup_<name>.png)
 CLOSEUPS = [{"name": "open", "clip": "Idle", "t": 0.0}, {"name": "fist", "clip": "Punch", "t": 0.15},
-            {"name": "windup", "clip": "Punch", "t": 0.06}, {"name": "run", "clip": "Run", "t": 0.25}]
+            {"name": "windup", "clip": "Punch", "t": 0.06}, {"name": "run", "clip": "Run", "t": 0.25},
+            # the thumb's web (art#136 round 2): as drawn, without the normal map, with the back faces drawn
+            {"name": "web", "clip": "Idle", "t": 0.0, "bone": "RightThumbProximal", "fov": 9.0},
+            {"name": "web_nonormal", "clip": "Idle", "t": 0.0, "bone": "RightThumbProximal", "fov": 9.0, "no_normal": True},
+            {"name": "web_nocull", "clip": "Idle", "t": 0.0, "bone": "RightThumbProximal", "fov": 9.0, "no_cull": True}]
 # the look grid's shots: the fist at the punch's contact, the open hand, the crystal held
 LOOK_SHOTS = [{"name": "fist", "clip": "Punch", "t": 0.15}, {"name": "open", "clip": "Idle", "t": 0.0},
               {"name": "hold", "clip": "Crystal_Idle", "t": 0.0, "crystal": True}]
+# stills from the eye at moments no frame lands on (frames/stills/<name>.png): the golden check's
+STILLS = [{"name": "punch_hit", "clip": "Punch", "t": 0.15}, {"name": "hold", "clip": "Crystal_Idle", "t": 0.0, "crystal": True},
+          {"name": "idle", "clip": "Idle", "t": 0.0}, {"name": "run", "clip": "Run", "t": 0.0}]
 # the reel: (clip, times) in order; the hits between idles, as a player sees them
 REEL = [("Idle_Loop", 1), ("Punch", 1), ("Punch", 1), ("Run_Loop", 2),
         ("Crystal_Idle_Loop", 1), ("Crystal_Hit", 1), ("Crystal_Hit", 1), ("Crystal_Run_Loop", 2)]
@@ -89,7 +103,7 @@ def shoot(proj: Path, out: Path, build: dict, fps: int, variants: list | None = 
              for n, c in build["clips"].items()]
     req = {"scene": "res://levels/ship/ship.tscn", "hands": "res://fp/fp_hands.glb",
            "crystal": "res://fp/energy_crystal.glb", "eye": EYE, "look": LOOK, "fov": FOV, "vm_fov": build["vm_fov"], "size": list(SIZE), "fps": fps,
-           "out": str(frames).replace("\\", "/"), "clips": clips, "light_levels": LIGHT_LEVELS, "closeups": CLOSEUPS, "skin": look()}
+           "out": str(frames).replace("\\", "/"), "clips": clips, "light_levels": LIGHT_LEVELS, "closeups": CLOSEUPS, "stills": STILLS, "skin": look()}
     if variants:
         req.update({"variants": variants, "variant_shots": LOOK_SHOTS})
     frames.mkdir(parents=True)
@@ -103,6 +117,44 @@ def shoot(proj: Path, out: Path, build: dict, fps: int, variants: list | None = 
             return {}
         raise common.Failure(f"shots.gd failed (exit {code}):\n" + "\n".join(text.splitlines()[-15:]))
     return json.loads((frames / "check.json").read_text(encoding="utf-8"))
+
+
+def sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def golden(out: Path, gdir: Path | None = None) -> dict:
+    """The golden-frame check: fp_hands.toml [golden]'s frames of this run (frames/<frame>) against the golden ones
+    (<raw>/[golden] dir/<name>.png, their SHA-256 checked first), each inside its hand box, in headless Blender
+    (fp_golden.py). Returns its golden.json: ok, and per frame the changed share and mean difference."""
+    g = tomllib.loads((ROOT / "tools" / "blender" / "fp_hands.toml").read_text(encoding="utf-8"))["golden"]
+    rows = []
+    for f in g["frames"]:
+        gold = (gdir / f["frame"]) if gdir else (RAW / g["dir"] / f"{f['name']}.png")
+        if gdir is None and sha256(gold) != f["sha256"]:
+            raise common.Failure(f"the golden frame {gold} does not match its SHA-256 in fp_hands.toml [golden]")
+        rows.append({"name": f["name"], "golden": str(gold), "run": str(out / "frames" / f["frame"]),
+                     "box": f["box"], "gate": f.get("gate", True)})
+    spec = out / "golden_spec.json"
+    spec.write_text(json.dumps({"changed": g["changed"], "max_share": g["max_share"], "frames": rows}, indent=1),
+                    encoding="utf-8")
+    res = out / "golden.json"
+    blender.run_script("fp_golden.py", ["--spec", str(spec), "--out", str(res)], timeout=300)
+    return json.loads(res.read_text(encoding="utf-8"))
+
+
+def make_golden(out: Path) -> dict:
+    g = tomllib.loads((ROOT / "tools" / "blender" / "fp_hands.toml").read_text(encoding="utf-8"))["golden"]
+    gdir = RAW / g["dir"]
+    gdir.mkdir(parents=True, exist_ok=True)
+    hashes = {}
+    for f in g["frames"]:
+        dst = gdir / f"{f['name']}.png"
+        if dst.exists():
+            raise common.Failure(f"{dst} exists: the golden frames are never overwritten")
+        shutil.copyfile(out / "frames" / f["frame"], dst)
+        hashes[f["name"]] = sha256(dst)
+    return hashes
 
 
 def build_checks(build: dict) -> list[str]:
@@ -185,9 +237,19 @@ def main() -> int:
     ap.add_argument("--asset", default="")
     ap.add_argument("--look-grid", default="")
     ap.add_argument("--hit-grid", default="")
+    ap.add_argument("--golden-only", action="store_true")
+    ap.add_argument("--golden-dir", default="")
+    ap.add_argument("--make-golden", action="store_true")
     a = ap.parse_args()
     out = OUT / a.tag
     glb = out / "fp_hands.glb"
+    if a.make_golden:
+        print("FP_RUN " + json.dumps({"tag": a.tag, "golden_sha256": make_golden(out)}))
+        return 0
+    if a.golden_only:
+        res = golden(out, Path(a.golden_dir) if a.golden_dir else None)
+        print("FP_RUN " + json.dumps({"tag": a.tag, "golden": res}))
+        return 0 if res["ok"] else 1
     if a.look_grid:
         build = json.loads((out / "build.json").read_text(encoding="utf-8"))
         variants = json.loads(Path(a.look_grid).read_text(encoding="utf-8"))
@@ -221,6 +283,10 @@ def main() -> int:
         check = shoot(proj, out, build, a.fps)
         videos(out, build, a.fps)
         problems += checks(build, check)
+        res = golden(out)
+        result["golden"] = {r["name"]: {k: r.get(k) for k in ("share", "mean", "pass", "gate")} for r in res["frames"]}
+        problems += [f"golden {r['name']}: {r.get('why') or str(r['share']) + ' of its box changed'} (max "
+                     f"{res['max_share']})" for r in res["frames"] if r["gate"] and not r["pass"]]
         result["gpu_ms"] = {n: c["gpu_ms"] for n, c in check["clips"].items()}
     result["problems"] = problems
     if a.asset and not problems:

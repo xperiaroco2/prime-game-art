@@ -785,20 +785,30 @@ def fit_hold(rig: Rig, poses: Poses, body, solid: Solid, base: str = "crystal", 
         # without entering it, at half its grip's curl: the nearest to the surface of those within FIT_DIGIT_MM
         fit["scale"]["Thumb"] = 0.5
         best_turn = None
-        for roll in THUMB_ROLLS:
+        # a pinned thumb (the pose's thumb_pin = {turn, curl}, art#136 round 2): the approved hold's own fit, kept
+        # while the hand's model changes under it (m29's eased thumb weights moved the search to curl x2.5)
+        pin = poses.cfg["poses"][base].get("thumb_pin")
+        for roll in ([] if pin else THUMB_ROLLS):
             for swing in THUMB_SWINGS:
                 fit["turn"] = [roll, swing]
                 pose_now(rig, poses.state(base))
                 deep, gap = contact(body, solid, side, ("ThumbMetacarpal",) + THUMB)  # its base turns with it
                 if deep <= FIT_DIGIT_MM and (best_turn is None or gap < best_turn[0]):
                     best_turn = (gap, [roll, swing])
-        fit["turn"] = best_turn[1] if best_turn else None
-        if fit["turn"] is None:
+        fit["turn"] = list(pin["turn"]) if pin else (best_turn[1] if best_turn else None)
+        if pin:
+            pass
+        elif fit["turn"] is None:
             fallback.append(f"thumb turn: none within {FIT_DIGIT_MM} mm, the grip's own")
         elif fit["turn"][0] in (THUMB_ROLLS[0], THUMB_ROLLS[-1]) or fit["turn"][1] in (THUMB_SWINGS[0], THUMB_SWINGS[-1]):
             fallback.append(f"thumb turn {fit['turn']} on its search's edge (roll {THUMB_ROLLS[0]} to "
                             f"{THUMB_ROLLS[-1]}, swing {THUMB_SWINGS[0]} to {THUMB_SWINGS[-1]})")
         for f in PM.FINGERS:
+            if pin and f == "Thumb":
+                fit["scale"][f] = float(pin["curl"])
+                pose_now(rig, poses.state(base))
+                gaps[f] = contact(body, solid, side, THUMB)
+                continue
             # from opened (negative: the digit straightened back past its rest) to curled 2.5 times the grip: the
             # most curl that stays within FIT_DIGIT_MM of the surface
             best = None
@@ -1075,6 +1085,10 @@ def main(argv) -> None:
     a = ap.parse_args(argv)
     if a.sheets:
         for path, files in json.loads(Path(a.sheets).read_text(encoding="utf-8")).items():
+            if isinstance(files, dict):   # {files, cols, w, h}: a grid sheet (the rest grid's, the reference first)
+                sheet(Path(path), [Path(f) for f in files["files"]], cols=int(files.get("cols", 3)),
+                      w=int(files.get("w", 640)), h=int(files.get("h", 360)))
+                continue
             sheet(Path(path), [Path(f) for f in files], w=640, h=360)
         return
     raw, out = Path(a.raw), Path(a.out)

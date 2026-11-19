@@ -88,6 +88,21 @@ assets/body/fp_hands` (2026-11-19, on the detailed hand m28) from `tools/blender
   in Crystal_Idle; until that is fixed the asset's files here stay run n6's, and the engineer picks the hand's place
   in the frame (the current lower right, or lower centre nearer the reference) on p1's page.
 
+## Round 2 (run p2, 2026-11-19; not in this asset yet)
+- The golden-frame check (`fp_hands.toml [golden]`, `tools/blender/fp_golden.py`): every run shoots eye stills
+  (`frames/stills/`: the hold, the punch's contact at 0.15 s, idle, run) and diffs them against run n6's, shot again
+  from n6's GLB (`<raw>/2026-11-11-fp-hands/golden/n6/`, SHA-256 in the toml), inside each frame's hand box; the hold
+  and the punch's contact fail the run past 1 % of the box changed by more than 0.1. n6's own frames against the
+  re-shoot: 0.0. p1's hold: 6.1 % (mean 6.9 of 255), a fail: the hold's thumbs moved.
+- The hold restored: `[poses.crystal] thumb_pin` keeps n6's thumb fit (turn [-15, 10], curl x0.6); m29's eased
+  weights had moved the fit's own search to [75, 30] and x2.5.
+- The dark notch in the thumb's web was the normal map's bake: the cage stood 2 mm out with 5 mm rays, and in the
+  narrow crotch its points lay inside the index, whose surface the rays hit (gone with the normal map off in Godot,
+  not with back faces drawn: `frames/closeup_web*.png`). m30 bakes 1 mm out with 2 mm rays; `web_mm` back to 5.
+- The free hand's place and turn from the reference: `[poses.idle]` (the back turned to the eye as if looking 50
+  degrees down, the fingers toward the upper left), `[grips.rest]` a curl cascade 5/10/15. The corner place stays in
+  the toml as a comment for the engineer's choice.
+
 ## What the game side builds (not done here)
 - Instance `fp_hands.glb` under the camera; switch clips by state (idle or run, crystal held or not), blend the
   switches (about 0.15 s) and play the hits on the left mouse button.

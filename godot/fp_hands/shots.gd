@@ -173,6 +173,22 @@ func _run() -> void:
 		info["gpu_ms"] = snappedf(gpu / maxf(k, 1), 0.01)
 		check["clips"][name] = info
 		print("FPHANDS %s %d frames" % [name, k])
+	# stills from the eye at a clip's moment that no frame of the fps lands on (the punch's contact at 0.15 s), for
+	# the golden-frame check (fp_hands_run.py golden()): OUT/stills/<name>.png
+	if _req.has("stills"):
+		var sdir: String = out.path_join("stills")
+		DirAccess.make_dir_recursive_absolute(sdir)
+		for s: Dictionary in _req["stills"]:
+			crystal.visible = bool(s.get("crystal", false))
+			_player.play(String(s["clip"]))
+			_player.seek(float(s["t"]), true)
+			_player.pause()
+			for w: int in 8:
+				await process_frame
+			await RenderingServer.frame_post_draw
+			var simg: Image = root.get_texture().get_image()
+			simg.convert(Image.FORMAT_RGB8)
+			simg.save_png(sdir.path_join("%s.png" % String(s["name"])))
 	# the crystal's own light on the hands (crystal.gd's omni, a holder may lower it): Crystal_Idle's first frame
 	# at each level of the request, for the look question
 	if _req.has("light_levels"):
@@ -215,8 +231,14 @@ func _run() -> void:
 			cc.global_transform = _vcam.global_transform
 			cc.look_at(at + off, _vcam.global_transform.basis.y)
 			cc.make_current()
+			cc.fov = float(c.get("fov", _req.get("closeup_fov", 22.0)))
 			_cam.fov = cc.fov * keep_fov / _vcam.fov
 			_cam.global_transform = cc.global_transform
+			# the web's hypotheses (art#136 round 2): the skin's normal map off, its back faces drawn
+			for e: Array in _skin:
+				var sm: StandardMaterial3D = e[0]
+				sm.normal_enabled = not bool(c.get("no_normal", false))
+				sm.cull_mode = BaseMaterial3D.CULL_DISABLED if bool(c.get("no_cull", false)) else BaseMaterial3D.CULL_BACK
 			for w: int in 8:
 				await process_frame
 			await RenderingServer.frame_post_draw
