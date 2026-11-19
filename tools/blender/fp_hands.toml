@@ -74,9 +74,12 @@ Ring = [32, 32, 12]
 Little = [36, 34, 12]
 mirror = true
 spread = 5
-Thumb = [0, 6, 4]      # the rest card (specs/fp_hand_dims.toml [reference.card] rest): the thumb relaxed along the
-ThumbTurn = [10, 0]    # index's side below it, its tip forward; [6, 14, 10] curled it in over the palm (n4's Idle,
-                       # Run). Grid n5grid2 u0-u6 from the eye magnified: u1, the thumb 1.5 mm off the index
+Thumb = [-21, 6, 8]    # the rest card (specs/fp_hand_dims.toml [reference.card] rest): the thumb relaxed, away from
+ThumbTurn = [30, -10]  # the index: n5's [0, 6, 4] / [10, 0] lay 1.5 mm off it, which reads pressed (the engineer,
+                       # n5's Idle and Run). Grids n6grid, n6gridb, n6gridc (fp_hands_build.py --hit-grid,
+                       # thumb_reads) from the eye and from below the fingertips: c4, the tip 25 mm off the index,
+                       # the thumb swung 21 degrees out from the index's line and risen 22 toward the palm side,
+                       # its joints softly bent; [6, 14, 10] curled it in over the palm (n4)
 
 [grips.cap]       # a hand round the crystal (the cap 13.5 cm across flats, the body 11 across corners): the
                   # fingers round its back, the thumb along it; fit_hold scales each digit's curl to the surface
