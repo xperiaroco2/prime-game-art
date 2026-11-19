@@ -74,8 +74,9 @@ Ring = [32, 32, 12]
 Little = [36, 34, 12]
 mirror = true
 spread = 5
-Thumb = [6, 14, 10]
-ThumbTurn = [10, 0]
+Thumb = [0, 6, 4]      # the rest card (specs/fp_hand_dims.toml [reference.card] rest): the thumb relaxed along the
+ThumbTurn = [10, 0]    # index's side below it, its tip forward; [6, 14, 10] curled it in over the palm (n4's Idle,
+                       # Run). Grid n5grid2 u0-u6 from the eye magnified: u1, the thumb 1.5 mm off the index
 
 [grips.cap]       # a hand round the crystal (the cap 13.5 cm across flats, the body 11 across corners): the
                   # fingers round its back, the thumb along it; fit_hold scales each digit's curl to the surface
