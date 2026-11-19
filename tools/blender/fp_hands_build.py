@@ -1081,6 +1081,7 @@ def main(argv) -> None:
     ap.add_argument("--preview", action="store_true")
     ap.add_argument("--hold-grid", default="", help="a JSON list of hold variants: grid/ and stop (hold_grid)")
     ap.add_argument("--hit-grid", default="", help="a JSON list of crystal poses from the eye: hitgrid/ and stop")
+    ap.add_argument("--override", default="", help="a JSON object merged over fp_hands.toml's tables (a review variant)")
     ap.add_argument("--sheets", help="only compose key-frame sheets: a JSON {sheet path: [frame PNGs]}")
     a = ap.parse_args(argv)
     if a.sheets:
@@ -1094,6 +1095,13 @@ def main(argv) -> None:
     raw, out = Path(a.raw), Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     cfg = tomllib.loads(CFG.read_text(encoding="utf-8"))
+    if a.override:   # a review variant: each table's keys replaced by the JSON's (two levels: [poses.idle] R, ...)
+        for top, tables in json.loads(Path(a.override).read_text(encoding="utf-8")).items():
+            for name, fields in tables.items():
+                if isinstance(fields, dict) and isinstance(cfg.get(top, {}).get(name), dict):
+                    cfg[top][name].update(fields)
+                else:
+                    cfg.setdefault(top, {})[name] = fields
     hands = tomllib.loads(HANDS.read_text(encoding="utf-8"))
     grips = dict(hands.get("grips", {}))
     grips.update(cfg.get("grips", {}))
@@ -1103,6 +1111,8 @@ def main(argv) -> None:
     BEND_MAX[0] = float(cfg["view"]["bend_max_deg"])
     fitted = json.loads(FITTED.read_text(encoding="utf-8")) if FITTED.exists() else {}
     for name, fields in fitted.get("poses", {}).items():
+        if cfg["poses"].get(name, {}).get("keep"):   # set from the eye in the toml: the old fit never replaces it
+            continue
         cfg["poses"].setdefault(name, {}).update(fields)
     arm, body, top, sock, run_seconds, stats = cut(cfg, raw)
     fps = int(cfg["rig"]["fps"])

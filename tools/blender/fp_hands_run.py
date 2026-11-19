@@ -58,7 +58,11 @@ CLOSEUPS = [{"name": "open", "clip": "Idle", "t": 0.0}, {"name": "fist", "clip":
             # the thumb's web (art#136 round 2): as drawn, without the normal map, with the back faces drawn
             {"name": "web", "clip": "Idle", "t": 0.0, "bone": "RightThumbProximal", "fov": 9.0},
             {"name": "web_nonormal", "clip": "Idle", "t": 0.0, "bone": "RightThumbProximal", "fov": 9.0, "no_normal": True},
-            {"name": "web_nocull", "clip": "Idle", "t": 0.0, "bone": "RightThumbProximal", "fov": 9.0, "no_cull": True}]
+            {"name": "web_nocull", "clip": "Idle", "t": 0.0, "bone": "RightThumbProximal", "fov": 9.0, "no_cull": True},
+            # neutral close-ups of the open hand at rest (art#136 m31, five digits): its back from the eye's side and
+            # its palm from beyond it, 35 cm off the hand's middle (the middle finger's root)
+            {"name": "back", "clip": "Idle", "t": 0.0, "bone": "RightMiddleProximal", "side": "back", "dist": 0.35, "fov": 40.0},
+            {"name": "palm", "clip": "Idle", "t": 0.0, "bone": "RightMiddleProximal", "side": "palm", "dist": 0.35, "fov": 40.0}]
 # the look grid's shots: the fist at the punch's contact, the open hand, the crystal held
 LOOK_SHOTS = [{"name": "fist", "clip": "Punch", "t": 0.15}, {"name": "open", "clip": "Idle", "t": 0.0},
               {"name": "hold", "clip": "Crystal_Idle", "t": 0.0, "crystal": True}]
@@ -240,6 +244,8 @@ def main() -> int:
     ap.add_argument("--golden-only", action="store_true")
     ap.add_argument("--golden-dir", default="")
     ap.add_argument("--make-golden", action="store_true")
+    ap.add_argument("--override", default="", help="a JSON object merged over fp_hands.toml's tables for this build "
+                    "(a review variant: e.g. {\"poses\": {\"idle\": {\"R\": ...}}}); never for an --asset run")
     a = ap.parse_args()
     out = OUT / a.tag
     glb = out / "fp_hands.glb"
@@ -266,7 +272,11 @@ def main() -> int:
         if glb.exists():
             print(f"{out} holds a build: pick a new --tag", file=sys.stderr)
             return 2
+        if a.override and a.asset:
+            print("--override builds a review variant, never the asset", file=sys.stderr)
+            return 2
         args = ["--raw", str(RAW), "--out", str(out)] + (["--preview"] if a.preview else [])
+        args += ["--override", str(Path(a.override).resolve())] if a.override else []
         blender.run_script("fp_hands_build.py", args, timeout=1200)
     build = json.loads((out / "build.json").read_text(encoding="utf-8"))
     report = _export.validate(glb, out / "validator.json")

@@ -229,6 +229,13 @@ func _run() -> void:
 			var at: Vector3 = (skel.global_transform * skel.get_bone_global_pose(bone)).origin
 			var off: Vector3 = _vcam.global_transform.basis * _v(c.get("offset", [0.0, 0.0, 0.0]))
 			cc.global_transform = _vcam.global_transform
+			# `side` (art#136, m31): a neutral close-up from `dist` m on the line from the eye through the bone, on
+			# the eye's side ("back": the back of a hand turned to the eye) or beyond it ("palm": turned round)
+			var side: String = String(c.get("side", ""))
+			if side != "":
+				var ray: Vector3 = (at - _vcam.global_transform.origin).normalized()
+				var dist: float = float(c.get("dist", 0.35))
+				cc.global_position = at + off - ray * dist if side == "back" else at + off + ray * dist
 			cc.look_at(at + off, _vcam.global_transform.basis.y)
 			cc.make_current()
 			cc.fov = float(c.get("fov", _req.get("closeup_fov", 22.0)))
