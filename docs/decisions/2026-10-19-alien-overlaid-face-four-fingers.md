@@ -1,7 +1,8 @@
 # The alien's overlaid face and four fingers
 
 - Status: accepted (the engineer, 2026-10-19, in chat with the art manager, restated in art#196 comments); decision 2
-  superseded on 2026-10-24 (see "Amendment of 2026-10-24")
+  superseded on 2026-10-24 (see "Amendment of 2026-10-24"), restored on 2026-10-28, superseded again on 2026-11-20
+  (five digits: "Amendment of 2026-11-20")
 - Issue: [#221](https://github.com/xperiaroco2/prime-game-art/issues/221); the stage: art#196
 - Changes: the character contract for the alien (`docs/contract.md`; `contract/contract.toml` follows, see
   "Consequences"). Supersedes the face part of `2026-10-18-faces-as-morphs.md` for the alien.
@@ -91,6 +92,23 @@ weights'; it was not a wish for five visible fingers. Four is the rule from now 
 - **The shared body** (`tools/blender/alien_cage.py`, S4b and the bodies built on it) already has four digits with the
   Little groups empty; the Meshy body route that showed five (#340) is rejected.
 - The 2026-10-24 amendment's character budget (40,000 / 60,000) stands, and so do decisions 1 and 3.
+
+## Amendment of 2026-11-20: five digits
+
+The engineer, 2026-11-20, in chat, recorded in art#196
+[comment 7024609467](https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-7024609467). Asked "how many
+fingers does the alien's hand have?", he answered "five", as recommended.
+- **Five digits: four fingers and a thumb** (Index, Middle, Ring, Little, Thumb), all weighted. The 2026-10-28 rule
+  (three fingers and a thumb) is superseded. Concept A draws five digits.
+- **Why now.** The rest-hand pilot on art#136: from the eye, three thick fingers merge into a mitten beside the
+  reference the engineer picked, and no pose fixes it.
+- **Order.** The first-person hands first (`assets/body/fp_hands`, `specs/fp_hand_dims.toml`): a model with the little
+  finger, the crystal hold refitted and shown to him again, the golden frames re-taken after his yes. The alien body
+  (`tools/blender/alien_cage.py` and the bodies on it) gets its fifth digit as its own step. That step drops
+  `fingers_unweighted = ["Little"]` from `[kinds.alien]` in `contract/contract.toml`, so `check --kind alien` never
+  fails the current four-digit body first.
+- The skeleton and the clips are unchanged: the Little bones are already in the contract skeleton. The character
+  budget, decision 1 and decision 3 stand.
 
 ## Links
 
