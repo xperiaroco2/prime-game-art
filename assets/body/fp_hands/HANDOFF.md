@@ -60,7 +60,7 @@ assets/body/fp_hands` (2026-11-19, on the detailed hand m28) from `tools/blender
 | `Idle` | 3.0 s | yes | the right hand low in the lower right corner, breathing (the target frame `idle`) |
 | `Run` | 0.917 s | yes | the run's bob and swing, two steps a loop (the character's Jog cycle); the hand open and relaxed as in `Idle` (no fist) |
 | `Punch` | 0.5 s | no | a straight right punch; contact at **0.15 s** (the target frame `punch`); starts and ends in `Idle`'s pose |
-| `Crystal_Idle` | 3.0 s | yes | the crystal carried with both hands from its sides, like a box (the engineer's pick of 2026-11-12): both palms on its flanks at one height under the skirt, the backs of the hands turned up (not yet toward the eye), the index and middle fingers round its back, the thumbs at its front (see "The hold") |
+| `Crystal_Idle` | 3.0 s | yes | the crystal carried with both hands from its sides, like a box (the engineer's pick of 2026-11-12): both palms on its flanks at one height under the skirt, the fingers round its back (see "The hold") |
 | `Crystal_Run` | 0.917 s | yes | the same, with the run's bob and swing |
 | `Crystal_Hit` | 0.5 s | no | a two-handed swing across, the point leading; contact at **0.18 s** (the target frame `crystal_hit`); starts and ends in `Crystal_Idle`'s pose |
 
@@ -70,19 +70,13 @@ assets/body/fp_hands` (2026-11-19, on the detailed hand m28) from `tools/blender
   at 0.5 s; every other clip holds 0. Godot plays it with the clip.
 - The run's speed: the clip is one character Jog cycle; scale its speed by the player's speed if the steps should match.
 
-## The hold (since run n2, 2026-11-19)
-- Both palms on the crystal's flanks at one height (the wrists 211 mm under the eye), seated by the palm alone 14 mm
-  out from the planned surface (the first m28 build: 44 mm, held off by the thumb's mound), no roll, so the backs of
-  the hands turn up (their normal 0.43 up; the free roll had turned them flat, 0.01); the fingers round the crystal's
-  back (their tips 68 mm behind its axis); the thumbs turned to the front (their tips 1 mm in front of the axis,
-  touching the surface; before, 53 mm behind). No point of a hand more than 2.0 mm inside the crystal in any frame.
-- Still open: only 6 % of the palm lies within 4 mm of the crystal (the palm's middle stands off the faceted flank),
-  and from the eye the thumbs read as standing up beside the cap rather than lying along the near faces; both wait
-  for the engineer's look at the next review.
-- Also open (the fresh review of PR #384): the hold's search ends at its limits. The thumb's turn is [75, -60],
-  -60 the swing range's edge; the ring and little fingers' curl is at its top (2.5), the ring still 13.8 mm off the
-  crystal and the little finger finding no surface; the backs of the hands face up (0.43) but slightly away from the
-  eye (-0.09). The fit does not yet flag such a fallback; the next hold step does.
+## The hold (run n4, 2026-11-19)
+- The hold the engineer approved on the detailed hand m27 (run s3), unchanged on m28: both hands on the crystal's
+  flanks at one height, the fingers round its back, the cap and its loop in view above the hands.
+- Tried and reverted (run n2): seating the palm closer and turning the thumb to the crystal's front read better by
+  the numbers, but the thumb's turn went to its range's edge and the ring and little fingers to their curl limit, and
+  from the eye the fingers twisted into a knot (the engineer, 2026-11-19: the hold looked better before).
+- Still open, waiting for the engineer: the palm stands a little off the faceted flank.
 
 ## What the game side builds (not done here)
 - Instance `fp_hands.glb` under the camera; switch clips by state (idle or run, crystal held or not), blend the

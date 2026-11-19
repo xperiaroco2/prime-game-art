@@ -1770,16 +1770,14 @@ are in `tools/blender/fp_hands.toml`, the fitted key poses in `tools/blender/fp_
   the forearm takes 90 % of the hand's twist (`twist_share`), as a real forearm does.
 - **The hold**: `fit_hold` seats each held hand: its roll about its length (within 15 degrees of the fitted one) and
   the palm's distance so the palm sinks at most 0.5 mm into the crystal's surface (its glowing core excepted), the
-  thumb's turn searched with its base, then each digit's curl scaled until it stops at most 1.5 mm in. Since
-  2026-11-19 (the detailed hand m28) `[poses.crystal]`'s `R_c` can set `seat` (the groups the palm is seated by: the
-  palm alone, `Hand`, since the thumb's mound held m28's palm 44 mm off), its own `roll` and `roll_span` over
-  `fp_hands_fit.json`'s (a positive roll turns the back of the hand down; m28's free search went to its edge, 45) and
-  `thumb_front` (the thumb's tip must end in front of the crystal's axis, then the palm is seated again with that
-  turn). `fit_hold` reports how each hold reads (`reads`: the palm's share within 4 mm, the wrist's height, the back
+  thumb's turn searched with its base, then each digit's curl scaled until it stops at most 1.5 mm in.
+  `fit_hold` reports how each hold reads (`reads`: the palm's share within 4 mm, the wrist's height, the back
   toward the eye and up, the fingertips' and the thumb's place on the crystal); `fp_hands_build.py --hold-grid <json>`
-  seats a list of variants and renders each from the eye. On m28 (run n2): the palm 14 mm out (was 44), the back 0.43
-  up (0.01 with the free roll), the thumb's tip 1 mm in front of the axis (was 53 behind), 2.0 mm deepest; open: 6 %
-  of the palm within 4 mm, and the thumbs read as standing up beside the cap. The crystal
+  seats a list of variants and renders each from the eye. On m28 a palm seat, a set roll and the thumb in front (run
+  n2: the palm 14 mm out, the
+  thumb in front) read better by the numbers but twisted the fingers from the eye, the thumb's turn and the ring and
+  little fingers' curl at their limits; they were reverted (run n4 holds as m27's s3): judge a hold from the eye
+  beside its reference, never by the numbers alone. The crystal
   clips key the crystal; the hands ride on it. The inside test takes the sign against the nearest face of the
   crystal's surface, which is not closed everywhere (the loop, the skirt's rim): the shots are the check of a hold.
 - **Clips** (60 fps keys; Godot drops the `_Loop` suffix and loops them): `Idle_Loop` 3 s, `Run_Loop` one Jog cycle of
