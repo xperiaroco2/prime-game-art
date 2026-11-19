@@ -929,7 +929,8 @@ def hit_grid(out: Path, rig: Rig, poses: Poses, body, solid: "Solid", variants: 
     its numbers in hitgrid/grid.json. A variant: `name`; `pose` (default "crystal"); a crystal pose from the eye
     (`cap`, `dist`, `tilt`, `lean`, `yaw`: crystal_in_view), the hold carried to it as Crystal_Hit's keys carry it,
     read from the eye (view_reads) with each hand's deepest point inside the crystal and the wrists out of reach;
-    `grips` = {grip: {field: value}} over [grips] for this moment (the rest grip's thumb grid); `thumb_view`: a second
+    `grips` = {grip: {field: value}} over [grips] for this moment (the rest grip's thumb grid); `R`: the right hand's
+    {p, f, n} over the pose's (the rest grid: the free hand's place in the view); `thumb_view`: a second
     render from the eye magnified on the right hand, hitgrid/<name>_zoom.png, one from its thumb's side,
     hitgrid/<name>_thumb.png, and the thumb's reads against its index
     (thumb_reads). A pose without the crystal hides it."""
@@ -962,7 +963,10 @@ def hit_grid(out: Path, rig: Rig, poses: Poses, body, solid: "Solid", variants: 
         for g, fields in v.get("grips", {}).items():
             poses.grips[g] = {**keep[g], **fields}
         spec = {k: x for k, x in v.items() if k in ("cap", "dist", "tilt", "lean", "yaw")}
-        s = poses.state(base, {"crystal": spec} if spec else None)
+        over = {"crystal": spec} if spec else {}
+        if "R" in v:   # the free hand's place in the view (the rest grid, run p1): {p, f, n} over the pose's R
+            over["R"] = v["R"]
+        s = poses.state(base, over or None)
         held = "R_c" in poses.cfg["poses"][base]
         for o in crystal_objs:
             o.hide_render = not held
