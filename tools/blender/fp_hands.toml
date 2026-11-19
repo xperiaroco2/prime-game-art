@@ -15,7 +15,7 @@
 # finger bones moved to the model's joints, the morph `fist` its corrective). Since 2026-11-18 the rig comes from
 # tools/blender/fp_rig_seed.json (read from the committed hands asset t4): the character build m25 was made from was
 # lost with D: (art#136); was m25, before it the H1u character itself
-char = "2026-11-18-fp-hand-model/m28/fp_hand_char.blend"
+char = "2026-11-18-fp-hand-model/m29/fp_hand_char.blend"
 crystal = "assets/prop/energy_crystal/export/energy_crystal.glb"   # the committed energy crystal (a repo path; was its
                                                                   # raw copy energy-crystal/lit1, same hash)
 skin_inside_cuff_m = 0.035   # the skin is kept from this far inside the sleeve's cuff out to the fingertips

@@ -99,8 +99,9 @@ width = 36.0
 phalanx = [0.50, 0.27, 0.23] # metacarpal (in the mound, to where it stands apart), proximal, distal
 # the thumb's blend into the palm (mm): 12 on the mound, eased to 5 by apart_u (fp_hand_model.Hand.web_k). One 12 mm
 # blend filled the gap past apart_u with a web 13 mm out of the palm's side at u 88 (m26); 3 or 4 mm pinch the
-# surface (Euler 1), 5 keeps it whole (palm grid p2, 2026-11-18)
-web_mm = [12.0, 5.0]
+# surface (Euler 1), 5 keeps it whole (palm grid p2, 2026-11-18) but leaves a notch at the crotch that a thumb swung
+# out at rest opened into a dimple (n6's Idle close-up); 7 rounds it (m29, art#136 run p1)
+web_mm = [12.0, 7.0]
 
 # The fist (views 2 and 3): a real finger pose in the rig, every finger seen from the back as its own rounded
 # knuckle and first phalanx with a crease between neighbours, the thumb across the first two fingers' middle
@@ -187,6 +188,16 @@ crease_bow_mm = 1.5
 crease_wobble_mm = 0.6
 
 # The budget: one arm (forearm, hand, the upper arm's stub); two in view.
+[skin_weights]
+# the thumb's weights eased over the mesh (fp_hand_model.smooth_thumb, m29): each part's own weight switched from one
+# thumb bone to the next within 2 to 3 mm, a sharp crease at a bent thumb joint (n6's Idle); every vertex shared
+# between a thumb bone and another, grown thumb_rings rings, is Laplacian-smoothed thumb_iters times at thumb_lam,
+# among the thumb's bones and `eased` (the index's root too: its share in the web pulled a dimple as the thumb swung)
+thumb_rings = 6
+thumb_iters = 12
+thumb_lam = 0.5
+eased = ["Hand", "LowerArm", "IndexProximal"]
+
 [budget]
 tris_per_arm = 50000      # surface nets at 3 mm: the fingers' gaps stay open; the viewmodel's GPU ms is measured
 texture_px = 2048          # the base colour and the normal map, shared by both arms (the left mirrors the right's UVs)

@@ -542,12 +542,83 @@ def weights(hand: Hand, v):
             else:
                 names.append(part.owner)
                 cols.append(w)
-    W = np.stack(cols, 1)
+    return names, np.stack(cols, 1)   # raw: top4 keeps each vertex's largest four and normalises them
+
+
+def top4(W):
+    """The largest four weights per vertex, normalised: (order, top)."""
     order = np.argsort(-W, 1)[:, :4]
     top = np.take_along_axis(W, order, 1)
     top[top < 0.01] = 0.0
     top /= top.sum(1, keepdims=True)
-    return names, order, top
+    return order, top
+
+
+THUMB_BONES = ("ThumbMetacarpal", "ThumbProximal", "ThumbDistal")
+
+
+def smooth_thumb(names, W, E, spec: dict):
+    """The thumb's weights eased over the mesh (art#136, run p1): each part's exp(-d / sigma) switched from the palm
+    to the thumb's metacarpal, and from one thumb bone to the next, within 2 to 3 mm, so a swung thumb pulled the
+    web's skin into a dimple and a bent joint drew a sharp crease. Every vertex that shares weight between a thumb
+    bone and another bone, grown [skin_weights] thumb_rings rings over the mesh's edges E, is Laplacian-smoothed
+    thumb_iters times (the other vertices hold theirs); the fingers' bones keep out of it, so the index never pulls
+    the web."""
+    W0 = W
+    sw = spec.get("skin_weights", {})
+    rings, iters, lam = int(sw.get("thumb_rings", 4)), int(sw.get("thumb_iters", 12)), float(sw.get("thumb_lam", 0.5))
+    W = W / W.sum(1, keepdims=True)
+    th = np.array([n in THUMB_BONES for n in names])
+    eased = set(THUMB_BONES) | set(sw.get("eased", ["Hand", "LowerArm"]))
+    keep = np.array([n in eased for n in names])
+    ts = W[:, th].sum(1)
+    mixed = (W[:, th].max(1) > 0.02) & (W[:, th].max(1) < 0.98)
+    mask = mixed.copy()
+    for _ in range(rings):
+        grow = mask.copy()
+        grow[E[:, 0]] |= mask[E[:, 1]]
+        grow[E[:, 1]] |= mask[E[:, 0]]
+        mask = grow
+    mask &= ts > 0.002
+    # the fingers' share of a masked vertex stays as it is; only the palm's and the thumb's are eased
+    out = W.copy()
+    for _ in range(iters):
+        s = np.zeros_like(out)
+        c = np.zeros(len(out))
+        np.add.at(s, E[:, 0], out[E[:, 1]])
+        np.add.at(s, E[:, 1], out[E[:, 0]])
+        np.add.at(c, E[:, 0], 1)
+        np.add.at(c, E[:, 1], 1)
+        avg = s / np.maximum(c, 1)[:, None]
+        new = out + lam * (avg - out)
+        fixed = out[:, ~keep].sum(1, keepdims=True)
+        k = new[:, keep]
+        k *= (1.0 - fixed) / np.maximum(k.sum(1, keepdims=True), 1e-9)
+        out[mask[:, None] & keep[None, :]] = k[mask].ravel()
+    raw = W0.copy()
+    raw[mask] = out[mask]   # the vertices outside the mask keep their raw weights, as before
+    return raw, int(mask.sum())
+
+
+def reweight_existing(ob, arm, sp, hand, right_n: int) -> dict:
+    """A build's skin weights recomputed with smooth_thumb in place (a quick look before a full build): the right
+    arm's rest vertices in the hand's space, the left's the same order."""
+    me = ob.data
+    v = np.array([sp.Mi @ x.co for x in me.vertices[:right_n]])
+    names, W = weights(hand, v)
+    faces = np.array([list(p.vertices) for p in me.polygons if p.vertices[0] < right_n])
+    W, n = smooth_thumb(names, W, edges_of(faces), hand.spec)
+    order, top = top4(W)
+    for side, off in (("Right", 0), ("Left", right_n)):
+        for nm in names:
+            g = ob.vertex_groups.get(side + nm)
+            if g is not None:
+                g.remove(list(range(off, off + right_n)))
+        for i in range(right_n):
+            for k in range(4):
+                if top[i, k] > 0:
+                    ob.vertex_groups[side + names[order[i, k]]].add([i + off], float(top[i, k]), "REPLACE")
+    return {"smoothed_verts": n}
 
 
 # --------------------------------------------------------------------------------------- skin and baking
@@ -1528,7 +1599,9 @@ def main(argv) -> None:
         low.data.materials.clear()
         low.data.materials.append(skin_material(base, col_img, nrm_img, float(spec["skin"]["roughness"])))
     # weights (rest, hand space)
-    names, order, top = weights(hand, v)
+    names, W = weights(hand, v)
+    W, stats["thumb_smoothed_verts"] = smooth_thumb(names, W, E, spec)
+    order, top = top4(W)
     top_bone = [names[order[i, 0]] for i in range(len(v))]
     groups = {}
     for j, n in enumerate(names):
