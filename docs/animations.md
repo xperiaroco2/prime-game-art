@@ -1770,7 +1770,16 @@ are in `tools/blender/fp_hands.toml`, the fitted key poses in `tools/blender/fp_
   the forearm takes 90 % of the hand's twist (`twist_share`), as a real forearm does.
 - **The hold**: `fit_hold` seats each held hand: its roll about its length (within 15 degrees of the fitted one) and
   the palm's distance so the palm sinks at most 0.5 mm into the crystal's surface (its glowing core excepted), the
-  thumb's turn searched with its base, then each digit's curl scaled until it stops at most 1.5 mm in. The crystal
+  thumb's turn searched with its base, then each digit's curl scaled until it stops at most 1.5 mm in. Since
+  2026-11-19 (the detailed hand m28) `[poses.crystal]`'s `R_c` can set `seat` (the groups the palm is seated by: the
+  palm alone, `Hand`, since the thumb's mound held m28's palm 44 mm off), its own `roll` and `roll_span` over
+  `fp_hands_fit.json`'s (a positive roll turns the back of the hand down; m28's free search went to its edge, 45) and
+  `thumb_front` (the thumb's tip must end in front of the crystal's axis, then the palm is seated again with that
+  turn). `fit_hold` reports how each hold reads (`reads`: the palm's share within 4 mm, the wrist's height, the back
+  toward the eye and up, the fingertips' and the thumb's place on the crystal); `fp_hands_build.py --hold-grid <json>`
+  seats a list of variants and renders each from the eye. On m28 (run n2): the palm 14 mm out (was 44), the back 0.43
+  up (0.01 with the free roll), the thumb's tip 1 mm in front of the axis (was 53 behind), 2.0 mm deepest; open: 6 %
+  of the palm within 4 mm, and the thumbs read as standing up beside the cap. The crystal
   clips key the crystal; the hands ride on it. The inside test takes the sign against the nearest face of the
   crystal's surface, which is not closed everywhere (the loop, the skirt's rim): the shots are the check of a hold.
 - **Clips** (60 fps keys; Godot drops the `_Loop` suffix and loops them): `Idle_Loop` 3 s, `Run_Loop` one Jog cycle of
@@ -1782,6 +1791,19 @@ are in `tools/blender/fp_hands.toml`, the fitted key poses in `tools/blender/fp_
   render layer (20), drawn by a second camera with `[view] fov_deg` (50 degrees) in a transparent `SubViewport` over
   the player's camera (75), which leaves that layer out; the level's lights are put on that layer too (a camera draws
   only the lights on its layers), one soft fill light lights it alone, and the crystal's own light stays off it.
+- **The colour slot and the look** (2026-11-19, art #136): the game colours the player at runtime (prime-game's
+  `CharacterRig.set_tint`: `albedo_color = the imported albedo_color x the body colour`), so since m28 the skin's base
+  colour texture is a neutral grey pattern and its factor white (the back of the hand 0.72 of the body colour in
+  linear light, 0.86 sRGB; the brightest texel 1.0), and `shots.gd` tints it the same way. `fp_hands.toml [look]`
+  holds what the game copies: the default body colour (`body_srgb`, when no colour is picked), the hands' fill light
+  and the hands' camera's share of the world's ambient light. `fp_hands_run.py --tag <tag> --look-grid <json>` shoots
+  a list of look variants (the fist at the punch's contact, the open hand, the hold) on a tag's build, without a
+  build or checks. The values are the grid's pick closest to concept A's punch frame by numbers (the teal pixels of
+  the hand: hue, saturation, value p10/p50/p90; run n0, 28 variants): body colour sRGB 0.40 0.86 0.80, ambient 0.8, the
+  fill 0.3 warm white from the right side. The fist: hue 180, saturation 0.47, value 0.38/0.56/0.60 (the concept 181,
+  0.43, 0.35/0.55/0.61; m27's baked teal 187, 0.42, 0.46/0.63/0.67). No light direction widened the open hand's spread
+  (0.54-0.61) toward the concept's: that would take a darker pattern in the texture. The palm's paleness cannot survive
+  a multiply; only its lightness stays.
 - **Checks** (the run's exit code): glTF-Validator; in Godot (a copy of the ship package v9 with the hands and the
   energy crystal, in the off-screen window) the socket is a `BoneAttachment3D` within 2 mm of Blender's place, every
   clip's length and loop mode, the fist morph at 1 at the punch's contact; in Blender no held hand more than 3 mm
@@ -1853,9 +1875,11 @@ m27 (2026-11-18) is m26 with the engineer's three fixes, each found by a variant
   Smart UV projection; the left arm is the right mirrored with the same UVs.
 - **The maps** (2048 px): the normal map is baked in Cycles from a 0.7 mm surface of the same field with the creases
   carved in as soft, bowed, wandering grooves (each finger's palm side at its joints, faint wrinkles over the middle
-  knuckles, two palm lines, the wrist); the base colour is computed per texel from the low mesh's baked positions and normals: the character's hand
+  knuckles, two palm lines, the wrist); the base colour is computed per texel from the low mesh's baked positions and normals: against the character's hand
   teal (the median of its skin texture under the hand, sRGB 0.40 0.79 0.79), the palm and fingertips lighter and paler,
-  the knuckles' tops a touch deeper, the creases and the field's own occlusion a little darker. Roughness 0.42, no
+  the knuckles' tops a touch deeper, the creases and the field's own occlusion a little darker; since m28 stored as
+  its lightness alone, neutral grey (each texel's luminance over the teal's, the brightest 1.0), the game's colour
+  slot. Roughness 0.42, no
   metal.
 - **The rig**: the seed's armature with the hand and finger bones moved to the model's joints (same names; the
   ring finger is `Ring`, `Little` stays and carries nothing); the fingers' bone z points to the palm, so a grip's
