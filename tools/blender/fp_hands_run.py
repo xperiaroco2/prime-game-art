@@ -167,6 +167,14 @@ def rest_R(c: dict, fov_deg: float) -> dict:
     return {"p": [round(x, 4) for x in p], "f": [round(x, 4) for x in f], "n": [round(x, 4) for x in n]}
 
 
+def mirror_hand(R: dict) -> dict:
+    """A hand frame {p, f, n, bend} mirrored across the view's middle (x to -x): the other hand's."""
+    out = {k: ([-v[0]] + list(v[1:]) if k in ("p", "f", "n") else v) for k, v in R.items()}
+    if "bend" in out:
+        out["bend"] = [out["bend"][0], -out["bend"][1]]
+    return out
+
+
 def ref_rest() -> Path:
     """The engineer's rest reference (specs/fp_hand_dims.toml [reference.picks] rest, a raw-root path; private)."""
     spec = tomllib.loads((ROOT / "specs" / "fp_hand_dims.toml").read_text(encoding="utf-8"))
@@ -192,6 +200,8 @@ def rest_grid(tag: str, grid_path: Path, fps: int) -> dict:
         if "bend" in c:   # the viewmodel's forearm: along the hand bent by [up, side] degrees, no reach limit
             R["bend"] = c["bend"]
         over.setdefault("poses", {})["grid" + name] = {"R": R, "grip_R": "grid" + name}
+        if c.get("both"):   # the left hand too, the right's mirror across the view (the static two-hand rest)
+            over["poses"]["grid" + name].update({"L": mirror_hand(R), "grip_L": "grid" + name})
         over.setdefault("clips", {})["Grid" + name] = {"pose": "grid" + name, "seconds": 0.1}
         cells.append(name)
         table[name] = {"cell": c, "R": R}

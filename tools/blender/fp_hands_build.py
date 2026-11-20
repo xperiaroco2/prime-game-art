@@ -280,6 +280,11 @@ class Poses:
             spec = self.resolve(pose["R"])
             if "bend" in spec:
                 s.fore["Right"] = fore_dir(s.q["Right"], spec["bend"])
+        if "L" in pose:   # the left hand in view too (the static two-hand rest, art#136 2026-11-20): {p, f, n, bend}
+            spec = pose["L"]
+            s.p["Left"], s.q["Left"] = V(spec["p"]), hand_q(spec["f"], spec["n"])
+            if "bend" in spec:
+                s.fore["Left"] = fore_dir(s.q["Left"], spec["bend"])
         return s
 
 
@@ -326,6 +331,12 @@ def about(pivot: Vector, rot: Matrix, move: Vector) -> Matrix:
     return Matrix.Translation(move) @ Matrix.Translation(pivot) @ rot.to_4x4() @ Matrix.Translation(-pivot)
 
 
+def mirror_x(g: Matrix) -> Matrix:
+    """A view-space transform mirrored across the view's middle (x to -x): the other hand's move."""
+    m = Matrix.Scale(-1.0, 4, (1.0, 0.0, 0.0))
+    return m @ g @ m
+
+
 def euler_deg(pitch, roll, yaw) -> Matrix:
     r = math.radians
     return (Matrix.Rotation(r(yaw), 3, "Z") @ Matrix.Rotation(r(pitch), 3, "X") @ Matrix.Rotation(r(roll), 3, "Y"))
@@ -357,12 +368,16 @@ class Clip:
         sides = SIDES if self.held else ("Right",)
         pivot = s.crystal @ Vector((0, 0, 0.17)) if self.held else s.p["Right"]
         ph = 2.0 * math.pi * t / self.seconds
+        # a pose with the left hand in view too (the static two-hand rest): it moves as the right's mirror
+        free_L = not self.held and "L" in self.base
         if "sway" in self.spec:
             sw = self.spec["sway"]
             c = sw.get("cycles", [1, 1, 1])
             move = Vector([sw["pos"][i] * math.sin(c[i] * ph + 1.3 * i) for i in range(3)])
             rot = euler_deg(*[sw["rot"][i] * math.sin(c[i] * ph + 0.7 + 1.1 * i) for i in range(3)])
             rigid(s, about(pivot, rot, move), sides, self.held)
+            if free_L:
+                rigid(s, mirror_x(about(pivot, rot, move)), ("Left",), False)
         if "run" in self.spec:
             r = self.spec["run"]
             step = math.cos(2.0 * ph)  # two steps a loop: down at each foot's contact
@@ -370,6 +385,8 @@ class Clip:
                                                          r["bob"] * 0.5 * step))
             rot = euler_deg(r["pitch"] * step, r["roll"] * math.sin(ph), r["yaw"] * math.sin(ph))
             rigid(s, about(pivot, rot, move), sides, self.held)
+            if free_L:
+                rigid(s, mirror_x(about(pivot, rot, move)), ("Left",), False)
         return s
 
 
