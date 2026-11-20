@@ -88,14 +88,17 @@ background = "2026-11-08-fp-hand-concepts/_refs/ship_hall.png"
                   # spread 12 bunched them), the thumb rolled and swung away from the palm so it shows out lowest
                   # with a gap (round 2's [-40, 2, 6.9] / [30, -10] and f1r1's [-55, 8, 18] / [30, -30] hid it under
                   # the palm). Was 5/10/15 even, spread 12
-Index = [5, 8, 6]
-Middle = [9, 12, 8]
-Ring = [13, 16, 10]
+                  # f2 (f2r4 F, the back to the eye): a deeper cascade and spread 50; the thumb turned the other way
+                  # ([20, 5, 10] / [30, -30], f1r3 F's) is the only one that shows below the palm with a gap from
+                  # this side. Was f1's 5/8/6, 9/12/8, 13/16/10, spread 30, [-20, 5, 10] / [-30, -30]
+Index = [6, 10, 8]
+Middle = [11, 15, 11]
+Ring = [16, 20, 14]
 Little = [15, 15, 15]
 mirror = true
-spread = 30
-Thumb = [-20, 5, 10]
-ThumbTurn = [-30, -30]
+spread = 50
+Thumb = [20, 5, 10]
+ThumbTurn = [30, -30]
 
 [grips.cap]       # a hand round the crystal (the cap 13.5 cm across flats, the body 11 across corners): the
                   # fingers round its back, the thumb along it; fit_hold scales each digit's curl to the surface
@@ -134,7 +137,15 @@ ThumbTurn = [-20, 50]
                   # reach. Past about 0.42 m the arm cannot reach the low centre (0.5 m: 62 mm short, f1r1) and the
                   # wrist's 20-degree bend then turns the hand straight up; tip 40 foreshortened the fingers into a
                   # clump (f1r2). Was v50br20 at the low centre: R = { p = [0.0332, 0.4, -0.1791], ... }
-R = { p = [0.2019, 0.42, -0.1919], f = [-0.5024, 0.3391, 0.7954], n = [-0.0764, -0.9337, 0.3498] }
+                  # f2 (grids f2r1-f2r4 from the eye, 2026-11-20): f1's upright corner hand read as a "stop" palm
+                  # or a wave. Picked f2r4 F: low, a little right of the middle (rest_R place [56, 94, 0.48],
+                  # fingers at 150 degrees, no lean, tip or roll), the back square to the eye, the forearm in line
+                  # with the hand (bend [0, 0]: the viewmodel's forearm, no reach limit) from the lower right.
+                  # Leaning the fingers away (f2r1, lean 40-60) or toward the left (f2r3, 165-175) foreshortened
+                  # them into a clump; the spread turns the fingers toward the index, so the fingers show at about
+                  # 110 degrees in the picture, not 150. Was f1r3 J, the corner:
+                  # R = { p = [0.2019, 0.42, -0.1919], f = [-0.5024, 0.3391, 0.7954], n = [-0.0764, -0.9337, 0.3498] }
+R = { p = [0.0477, 0.48, -0.197], f = [-0.866, 0.0, 0.5], n = [0.1461, -0.9563, 0.2531], bend = [0.0, 0.0] }
 # the engineer's other choice, the reference's low centre (f1r3 F: place [50, 98, 0.40], 140 degrees, tip 20, roll
 # 15; the wrist 8.3 mm past the reach), with its own thumb ([grips.rest] Thumb = [20, 5, 10], ThumbTurn = [30, -30]):
 # R = { p = [0.0, 0.4, -0.1791], f = [-0.7912, 0.3235, 0.519], n = [0.0936, -0.7746, 0.6254] }
