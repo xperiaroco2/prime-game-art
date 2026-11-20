@@ -187,7 +187,12 @@ grip_R = "fist"
                   # 2026-11-11-fp-hands/hold1..hold7 beside the reference. The hands in the crystal's own space
                   # (origin the tip, z up its length, -y its front, which faces the eye), each from where its palm
                   # touches (Poses.on_crystal) and then seated by fit_hold. Was a torch hold fitted to an AI frame
-crystal = { p = [0.0, 0.4095, -0.4458], up = [0.0, 0.2588, 0.9659], front = [0.0, -1.0, 0.0] }
+                  # g1 (2026-11-20, the M8 review's answer 1, prime-game#1095: keep the m27 grip, raise the crystal in
+                  # the frame): set from the eye, the same lean and distance, the cap point raised from 64.5 % down to
+                  # 54 % (grid g1raise: d64 the old hold, d58, d54, d50; d50 put the cap at the frame's middle); the
+                  # palms from 99 % down to 87 %, both still seated (2.4 mm deepest), in reach. Was the same hold
+                  # 6.5 % of the frame lower: p = [0.0, 0.4095, -0.4458], up = [0.0, 0.2588, 0.9659], front = [0, -1, 0]
+crystal = { cap = [50.0, 54.0], dist = 0.51, tilt = 0.0, lean = 15.0, yaw = 0.0 }
 R_c = { z = 0.15, toward = [1.0, 0.0, 0.5], r = 0.054, wrap = [0.0, 1.0, 0.3], bend = [20.0, -15.0] }
 L_c = { z = 0.15, toward = [-1.0, 0.0, 0.5], r = 0.054, wrap = [0.0, 1.0, 0.3], bend = [20.0, 15.0] }
 grip_R = "cap"

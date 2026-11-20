@@ -146,6 +146,24 @@ assets/body/fp_hands` (2026-11-19, on the detailed hand m28) from `tools/blender
 - Page `tools/out/hand-four-f2/` (unpublished). Next: lower the fingers' rise (the spread's turn compensated, or the
   fingers' own side angle) and fan them; refit the punch and the hold to m40.
 
+## Only the right hand at rest, the crystal raised (runs f5 and f6 on m40, 2026-11-20; not in this asset yet)
+- f5 (the engineer: one hand, never two; first-person hands static in the frame as in flat shooters, VR games no
+  reference): the idle pose places the right hand alone (rest grid f4r2 D); the left stays parked below the frame.
+- f6 (the M8 review's answer 1, prime-game#1095: keep the m27 grip, raise the crystal in the frame): `[poses.crystal]`
+  set from the eye, the cap point at 54 % down (was 64.5 %), the same lean and distance (grid
+  `<raw>/2026-11-11-fp-hands/g1raise`: d64 is the old hold exactly, d58, d54, d50). The palms 87 % down (were 99 %),
+  both seated (2.4 mm deepest), in reach; the hold's fit is m27's (roll 45, thumb [-15, 10] x0.6, curls
+  0.95/1.1/1.1).
+- The hold's fit skips a digit the model does not have (m40's `Little` carries no skin): it no longer curls to its
+  search's edge and warns. The roll 45 on its edge stays, as on the approved n4.
+- The fist (grid `<raw>/2026-11-18-fp-hand-model/g40a`: the thumb's turn [-20..-30, 50..60], its curl, more
+  untangle and smoothing rounds): no variant measurably better than m40's own (about 280 crumpled vertices smoothed
+  in each; the fist 152 x 139 x 126 mm against 156 x 140 x 125). The fist's thumb reaches u 138.5 against the spec's
+  157 whatever its pose: the open thumb is on spec (tip u 134.6 against 135), so a longer reach needs a longer thumb,
+  a change to the look that waits for the engineer.
+- Golden (not re-taken, waits for the engineer's yes): hold 65 % of its box changed (the crystal raised), punch_hit
+  3.5 % (the m40 hand). Every other check of f6 passes; glTF-Validator 0 errors.
+
 ## What the game side builds (not done here)
 - Instance `fp_hands.glb` under the camera; switch clips by state (idle or run, crystal held or not), blend the
   switches (about 0.15 s) and play the hits on the left mouse button.

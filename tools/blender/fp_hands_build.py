@@ -821,6 +821,11 @@ def fit_hold(rig: Rig, poses: Poses, body, solid: Solid, base: str = "crystal", 
             fallback.append(f"thumb turn {fit['turn']} on its search's edge (roll {THUMB_ROLLS[0]} to "
                             f"{THUMB_ROLLS[-1]}, swing {THUMB_SWINGS[0]} to {THUMB_SWINGS[-1]})")
         for f in PM.FINGERS:
+            if f != "Thumb" and not hand_points(body, side, (f,)):
+                # a digit the model does not have (four digits since m40: the rig's Little carries no skin): nothing
+                # to seat, so it stays at its grip's rest instead of curling to the search's edge with no surface
+                fit["scale"][f] = 0.0
+                continue
             if pin and f == "Thumb":
                 fit["scale"][f] = float(pin["curl"])
                 pose_now(rig, poses.state(base))
