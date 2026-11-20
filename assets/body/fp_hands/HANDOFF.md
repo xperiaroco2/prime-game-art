@@ -125,6 +125,27 @@ assets/body/fp_hands` (2026-11-19, on the detailed hand m28) from `tools/blender
   punch_hit 12.8 % (mean 8.4), against 1 %. The hold's fit still ends on its search's edge (palm roll 45).
 - Next: refit the punch and the hold to m40; the engineer picks the place (page `tools/out/hand-four-f1/`).
 
+## The rest hand laid down (run f2 on m40, 2026-11-20; not in this asset yet)
+- f1's corner hand stood upright and read as a "stop" palm or a wave. Grids f2r1-f2r4 (`<raw>/2026-11-11-fp-hands/`,
+  the reference first) with two new cell keys in `fp_hands_run.py --rest-grid`: `bend` (the viewmodel's forearm in
+  line with the hand, no reach limit) and `pitch` (the still looking down, the hands in the body's space or carried by
+  the camera; review shots only, `shots.gd`).
+- Found: leaning the fingers away from the eye (lean 40-60) foreshortens them into a fist; at 165-175 degrees they
+  bunch into a pinch; the spread turns the fingers toward the index, so a hand set at 150 degrees shows its fingers at
+  about 110 in the picture. The thumb shows below the palm only turned the other way ([20, 5, 10] / [30, -30]).
+- Picked f2r4 F (`[poses.idle]`, `[grips.rest]`): low, a little right of the middle (place [56, 94, 0.48]), the back
+  to the eye, bend [0, 0], spread 50. From the eye (`frames/stills/idle.png`, `run.png`): no longer a stop palm, the
+  thumb out below with a gap, but the fingers rise about 70 degrees off horizontal and stand one behind the other
+  (the ring finger mostly hidden); the long forearm lies across the lower right.
+- Looking down 30 degrees (f2r4 I-K): with the hands in the body's space the camera sees the back from above, nearest
+  the reference, but the hand rises into the middle of the frame and the forearm's cut end shows (the viewmodel has no
+  upper arm); with the hands on the camera the hand is the level one over the floor.
+- Reach: Punch 0.0 mm, Run 0.0 (f1: Punch 30.5); with `bend` the arm is not reach-checked at those keys. Golden (not
+  re-taken): hold 5.3 % of its box (mean 5.6), punch_hit 11.7 % (mean 7.7), against 1 %. The hold's fit still ends on
+  its search's edges (palm roll 45, Little curl 2.5).
+- Page `tools/out/hand-four-f2/` (unpublished). Next: lower the fingers' rise (the spread's turn compensated, or the
+  fingers' own side angle) and fan them; refit the punch and the hold to m40.
+
 ## What the game side builds (not done here)
 - Instance `fp_hands.glb` under the camera; switch clips by state (idle or run, crystal held or not), blend the
   switches (about 0.15 s) and play the hits on the left mouse button.
