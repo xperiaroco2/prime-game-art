@@ -164,9 +164,9 @@ ThumbTurn = [-20, 50]
                   # g2 (the engineer, 2026-11-20 evening: "two compact hands"; the hand too big): both hands again,
                   # the right's mirror, further from the eye and lower toward the corners (rest grid g2rest C/G:
                   # place [83, 95, 0.55], the same 120 degrees, tip 30, roll 55): each hand about 18 % of the frame's
-                  # width (was 25 % at 0.38 m). Held as fists (G: grip `fist` with its morphs `fist` and `fist_L`) or
-                  # relaxed (C: grip `rest`, no morph) is his pick; the build keeps fists until he picks, the relaxed
-                  # run overrides grip_R/grip_L/fist/fist_L. Was f5's right hand alone at f4r2 D:
+                  # width (was 25 % at 0.38 m). Held as fists (G: grip `fist` with its morphs `fist` and `fist_L`):
+                  # the engineer's pick of 2026-11-20 ("кулаки", the size "норм"); relaxed (C, run g3r: grip `rest`, no
+                  # morph) dropped. Was f5's right hand alone at f4r2 D:
                   # R = { p = [0.1764, 0.38, -0.1488], f = [-0.3456, 0.4897, 0.8005], n = [0.4645, -0.6519, 0.5993], bend = [0.0, 0.0] }
 R = { p = [0.3009, 0.55, -0.2308], f = [-0.3225, 0.4834, 0.8138], n = [0.4327, -0.6894, 0.581], bend = [0.0, 0.0] }
 L = { p = [-0.3009, 0.55, -0.2308], f = [0.3225, 0.4834, 0.8138], n = [-0.4327, -0.6894, 0.581], bend = [0.0, 0.0] }
@@ -308,14 +308,18 @@ fill = { energy = 0.3, color = [1.0, 0.93, 0.85], rot = [-50.0, -90.0, 0.0] }
                   # approved hold and the punch's contact from the eye, shot from run n6's GLB (the last good asset run)
                   # by run p2gridgold, against every run's own stills, inside each frame's hand box ([x0, y0, x1, y1],
                   # fractions from the top left); a gated frame past max_share fails the run. A pixel counts as changed
-                  # when one channel moves more than `changed` (0..1). idle and run are reported, never gated (the
-                  # rest pose is what changes)
-dir = "2026-11-11-fp-hands/golden/n6"
+                  # when one channel moves more than `changed` (0..1).
+                  # g4 (2026-11-20, the engineer's pick: two compact fists at rest, the size as is): re-shot from run g4
+                  # (m41) into a new folder (n6's stays); the boxes cover both hands (the left fist sits at 10-30 %
+                  # across), and idle and run are gated too, the rest being approved. The hold (d54, f6) is kept as
+                  # g4 shot it: the crystal hit and the export still wait for his yes. Was n6's frames, idle and run
+                  # ungated, the boxes the right half only (hold [0.25, 0.72, 0.76, 1], punch [0.4, 0.3, 1, 1])
+dir = "2026-11-11-fp-hands/golden/g4"
 changed = 0.10
 max_share = 0.01
 frames = [
-  { name = "hold", frame = "stills/hold.png", box = [0.25, 0.72, 0.76, 1.0], sha256 = "7f0f190bf0824d23faeaacec233988326fbe0407884a5a4206effd017d929ca3" },
-  { name = "punch_hit", frame = "stills/punch_hit.png", box = [0.40, 0.30, 1.0, 1.0], sha256 = "9eefeae6ab34dfc2ad469e4a28d9e3ae15819c37aed7583293d322be1bd77b32" },
-  { name = "idle", frame = "stills/idle.png", box = [0.50, 0.50, 1.0, 1.0], gate = false, sha256 = "ae6d1de1db05d0150b2f792940fa8976e09d802394e425e748252dda91b9b125" },
-  { name = "run", frame = "stills/run.png", box = [0.50, 0.50, 1.0, 1.0], gate = false, sha256 = "6f37e4b510a9c9cf4f54ddb25c78fdd802bdc196af46af5b3503c4de8af41102" },
+  { name = "hold", frame = "stills/hold.png", box = [0.15, 0.55, 0.85, 1.0], sha256 = "996500658452d64be92c8a78b635bcb04c116f70a1dc05d033d89defbda83b41" },
+  { name = "punch_hit", frame = "stills/punch_hit.png", box = [0.0, 0.30, 1.0, 1.0], sha256 = "6fd9ded589e8eb4c0b70bba482d366c774c9b50b0786284db0fd2e9d0b2f0a7e" },
+  { name = "idle", frame = "stills/idle.png", box = [0.0, 0.55, 1.0, 1.0], sha256 = "a3e749de315f6bde09aa4a14f3e9b10767541f4b45650e67656cb0bdd559a4eb" },
+  { name = "run", frame = "stills/run.png", box = [0.0, 0.55, 1.0, 1.0], sha256 = "c69c518a57414a24b585df4fa6843a471bb1647a963146ab50a974ca0a50dfef" },
 ]

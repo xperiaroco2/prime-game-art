@@ -168,8 +168,8 @@ assets/body/fp_hands` (2026-11-19, on the detailed hand m28) from `tools/blender
 - The engineer on f6: the hand too big, cut off at the punch's end; two compact hands again (the right punches);
   the crystal hit "is no hit". His reference for it: a gas canister in both hands, wound up and struck with.
 - **Rest:** both hands, mirrored, at 0.55 m (rest grid `g2rest`, cells C relaxed and G fists: place [83, 95, 0.55]),
-  each about 18 % of the frame's width (f5: 25 % at 0.38 m). Held as fists (the build's default until he picks) or
-  relaxed (run `g3r`, `--override` with grip `rest` and no morph).
+  each about 18 % of the frame's width (f5: 25 % at 0.38 m). Held as fists: the engineer's pick of 2026-11-20, with
+  the size as is (the relaxed variant, run `g3r`, dropped).
 - **The left fist:** the model m41 is m40 with a second morph, `fist_L`, the right's corrective mirrored onto the left
   arm (`fp_hand_model.py`); `alien_fist_math.key_weights` writes both targets' weights. **The GLB's mesh has two
   morph targets from m41: `fist` (index 0, the right) and `fist_L` (index 1).**
@@ -181,7 +181,10 @@ assets/body/fp_hands` (2026-11-19, on the detailed hand m28) from `tools/blender
   driven down cap first into the frame's middle (the contact at 0.20 s), a follow-through, back to the hold (grids
   `g2hit`, `g3hit`). The official store trailers of the reference game show no two-handed canister strike (board
   `<raw>/refs/fp-hands-canister`, private), only a one-handed item raised to the upper right and struck down.
-- Golden (not re-taken): the hold and the punch's contact changed by design.
+- Golden re-taken from run g4 into `<raw>/2026-11-11-fp-hands/golden/g4` (n6's kept): the hold, the punch's
+  contact, idle and run, all four gated now, their boxes over both hands; g4 against them: 0.0 changed in each.
+- Still waiting for the engineer: the overhead crystal hit. Until his yes the manifest's approval fields stay empty and
+  the asset's export stays an older run.
 
 ## What the game side builds (not done here)
 - Instance `fp_hands.glb` under the camera; switch clips by state (idle or run, crystal held or not), blend the
