@@ -164,6 +164,25 @@ assets/body/fp_hands` (2026-11-19, on the detailed hand m28) from `tools/blender
 - Golden (not re-taken, waits for the engineer's yes): hold 65 % of its box changed (the crystal raised), punch_hit
   3.5 % (the m40 hand). Every other check of f6 passes; glTF-Validator 0 errors.
 
+## Two compact hands, the punch in view, the overhead crystal hit (runs g3, g4 on m41, 2026-11-20; not in this asset yet)
+- The engineer on f6: the hand too big, cut off at the punch's end; two compact hands again (the right punches);
+  the crystal hit "is no hit". His reference for it: a gas canister in both hands, wound up and struck with.
+- **Rest:** both hands, mirrored, at 0.55 m (rest grid `g2rest`, cells C relaxed and G fists: place [83, 95, 0.55]),
+  each about 18 % of the frame's width (f5: 25 % at 0.38 m). Held as fists (the build's default until he picks) or
+  relaxed (run `g3r`, `--override` with grip `rest` and no morph).
+- **The left fist:** the model m41 is m40 with a second morph, `fist_L`, the right's corrective mirrored onto the left
+  arm (`fp_hand_model.py`); `alien_fist_math.key_weights` writes both targets' weights. **The GLB's mesh has two
+  morph targets from m41: `fist` (index 0, the right) and `fist_L` (index 1).**
+- **Punch:** the contact further and lower (`[poses.fist_out]` p [0.07, 0.40, -0.07], `keep = true`, picked in the
+  Godot grid `g4punch` A): the whole fist in view, the forearm out through the frame's bottom edge. f6's contact at
+  0.24 m (fitted to concept A's frame) showed the arm's cut end in the lower right. The Blender hit grids crop the
+  frame's bottom, so a contact is checked in Godot.
+- **Crystal hit:** an overhead smash in place of the diagonal swing: lifted over the middle and tipped back (0.13 s),
+  driven down cap first into the frame's middle (the contact at 0.20 s), a follow-through, back to the hold (grids
+  `g2hit`, `g3hit`). The official store trailers of the reference game show no two-handed canister strike (board
+  `<raw>/refs/fp-hands-canister`, private), only a one-handed item raised to the upper right and struck down.
+- Golden (not re-taken): the hold and the punch's contact changed by design.
+
 ## What the game side builds (not done here)
 - Instance `fp_hands.glb` under the camera; switch clips by state (idle or run, crystal held or not), blend the
   switches (about 0.15 s) and play the hits on the left mouse button.

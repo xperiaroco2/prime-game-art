@@ -15,7 +15,7 @@
 # finger bones moved to the model's joints, the morph `fist` its corrective). Since 2026-11-18 the rig comes from
 # tools/blender/fp_rig_seed.json (read from the committed hands asset t4): the character build m25 was made from was
 # lost with D: (art#136); was m25, before it the H1u character itself
-char = "2026-11-18-fp-hand-model/m40/fp_hand_char.blend"   # m40: four digits, three slimmer fingers (2026-11-20); was m30
+char = "2026-11-18-fp-hand-model/m41/fp_hand_char.blend"   # m41: m40 with the left fist morph fist_L (2026-11-20); m40: four digits, three slimmer fingers; was m30
 crystal = "assets/prop/energy_crystal/export/energy_crystal.glb"   # the committed energy crystal (a repo path; was its
                                                                   # raw copy energy-crystal/lit1, same hash)
 skin_inside_cuff_m = 0.035   # the skin is kept from this far inside the sleeve's cuff out to the fingertips
@@ -161,18 +161,35 @@ ThumbTurn = [-20, 50]
                   # R = { p = [0.0477, 0.48, -0.197], f = [-0.866, 0.0, 0.5], n = [0.1461, -0.9563, 0.2531], bend = [0.0, 0.0] }
                   # f5 (the engineer, 2026-11-20): only the right hand, the left is not shown at rest. Was f4's mirror:
                   # L = { p = [-0.1764, 0.38, -0.1488], f = [0.3456, 0.4897, 0.8005], n = [-0.4645, -0.6519, 0.5993], bend = [0.0, 0.0] }
-R = { p = [0.1764, 0.38, -0.1488], f = [-0.3456, 0.4897, 0.8005], n = [0.4645, -0.6519, 0.5993], bend = [0.0, 0.0] }
+                  # g2 (the engineer, 2026-11-20 evening: "two compact hands"; the hand too big): both hands again,
+                  # the right's mirror, further from the eye and lower toward the corners (rest grid g2rest C/G:
+                  # place [83, 95, 0.55], the same 120 degrees, tip 30, roll 55): each hand about 18 % of the frame's
+                  # width (was 25 % at 0.38 m). Held as fists (G: grip `fist` with its morphs `fist` and `fist_L`) or
+                  # relaxed (C: grip `rest`, no morph) is his pick; the build keeps fists until he picks, the relaxed
+                  # run overrides grip_R/grip_L/fist/fist_L. Was f5's right hand alone at f4r2 D:
+                  # R = { p = [0.1764, 0.38, -0.1488], f = [-0.3456, 0.4897, 0.8005], n = [0.4645, -0.6519, 0.5993], bend = [0.0, 0.0] }
+R = { p = [0.3009, 0.55, -0.2308], f = [-0.3225, 0.4834, 0.8138], n = [0.4327, -0.6894, 0.581], bend = [0.0, 0.0] }
+L = { p = [-0.3009, 0.55, -0.2308], f = [0.3225, 0.4834, 0.8138], n = [-0.4327, -0.6894, 0.581], bend = [0.0, 0.0] }
+grip_L = "fist"
+fist = 1.0
+fist_L = 1.0
 # the engineer's other choice, the reference's low centre (f1r3 F: place [50, 98, 0.40], 140 degrees, tip 20, roll
 # 15; the wrist 8.3 mm past the reach), with its own thumb ([grips.rest] Thumb = [20, 5, 10], ThumbTurn = [30, -30]):
 # R = { p = [0.0, 0.4, -0.1791], f = [-0.7912, 0.3235, 0.519], n = [0.0936, -0.7746, 0.6254] }
-grip_R = "rest"
+grip_R = "fist"
 keep = true       # this R wins over fp_hands_fit.json's idle (concept A's corner, fitted to its frame): without it every
                   # build since p2 put the hand back in the corner (the five-digit round's m31: round 2's pick never
                   # reached Godot)
 
 [poses.fist_out]  # the punch's contact: concept A's fist frame measured (the fist's middle at 62 % across and 54 %
                   # down, about a fifth of the frame's height), the arm long from the lower right corner
-R = { p = [0.11, 0.24, -0.06], f = [-0.05, 1.0, 0.45], n = [0.3, -0.45, 1.0] }
+                  # g3 (the engineer, 2026-11-20: too big, cut off at the punch's end): further and lower (grids
+                  # g2hit p1-p4, g3hit p5-p7; picked p6), the viewmodel's forearm in line (bend [0, 0]): the whole fist
+                  # in view a little right of and below the middle, the forearm out through the frame's bottom edge
+                  # (at 0.24 m its cut end showed in the lower right). Was p = [0.11, 0.24, -0.06], f = [-0.05, 1, 0.45]
+R = { p = [0.07, 0.40, -0.07], f = [-0.1, 1.0, 0.35], n = [0.3, -0.45, 1.0], bend = [0.0, 0.0] }
+keep = true       # this R wins over fp_hands_fit.json's fist_out (concept A's frame); checked from the game's camera
+                  # in the Godot grid g4punch A (the Blender grids crop the frame's bottom, where the arm's end showed)
 grip_R = "fist"
 
 [poses.crystal]   # Gate R (specs/fp_hand_dims.toml [reference.card] crystal_hold; the engineer's pick 2026-11-12, an
@@ -207,15 +224,22 @@ thumb_pin = { turn = [-15, 10], curl = 0.6 }   # the thumbs as fitted on n6 (app
 # right (about the view's axis: it rolls the hands' flanks too), then `lean` degrees away from the eye, then `yaw`
 # degrees toward the right about the vertical (fp_hands_build.py crystal_in_view). The hands ride on the crystal in the
 # hold's seat, so they never leave its flanks.
-[poses.crystal_windup]   # drawn down and to the left: the cap low, by the left hand, the axis leaning left
-crystal = { cap = [30.0, 80.0], dist = 0.40, tilt = -35.0, lean = 0.0, yaw = -25.0 }   # grid n5grid2 v3
+# g3 (the engineer, 2026-11-20: the diagonal swing "is no hit"; his reference, a gas canister carried in both hands,
+# wound up and struck with): an overhead smash. The official store trailers show no two-handed canister strike, only
+# a one-handed item struck from a raise to the upper right down onto the target, so the move follows that: lifted up
+# and tipped back (the windup), driven forward and down cap first into the middle of the frame (the contact), a short
+# follow-through past it, back to the hold. Picked from the eye in grids g2hit and g3hit: the contact at 0.56-0.62 m
+# brought both upper arms into the frame from above (h1-h3); at 0.50 m the forearms come in level from the sides.
+# Was a diagonal swing: windup cap [30, 80] dist 0.40 tilt -35 yaw -25, contact cap [74, 46] dist 0.42 tilt 20 lean
+# 10 yaw -10, at 0.09 and 0.18 s
+[poses.crystal_windup]   # raised over the middle and tipped back toward the eye (g3hit w4)
+crystal = { cap = [55.0, 18.0], dist = 0.40, tilt = 10.0, lean = -30.0, yaw = 0.0 }
 
-[poses.crystal_hit]      # the contact: the cap and loop in the upper right third near the frame's middle, the crystal
-                         # on the diagonal, the hands low, the frame's middle clear. Picked from the eye in the
-                         # contact grids n5grid/n5grid2 (h6): more tilt or lean raised the left hand to 55-65 % down
-                         # with its forearm flat across the frame from the left, a yaw past 25 brought the right
-                         # upper arm into the eye
-crystal = { cap = [74.0, 46.0], dist = 0.42, tilt = 20.0, lean = 10.0, yaw = -10.0 }
+[poses.crystal_hit]      # the contact: the cap driven into the frame's middle, the top leaning away (g3hit h4)
+crystal = { cap = [50.0, 50.0], dist = 0.50, tilt = 0.0, lean = 40.0, yaw = 0.0 }
+
+[poses.crystal_follow]   # the follow-through: on down past the contact (g3hit f2)
+crystal = { cap = [49.0, 60.0], dist = 0.50, tilt = -5.0, lean = 60.0, yaw = 0.0 }
 
 [clips.Idle_Loop]           # breathing: a slow drift of the hand, a few millimetres and about a degree
 pose = "idle"
@@ -253,20 +277,20 @@ keys = [
   { t = 0.15, R = "fist_out", grip_R = "fist", fist = 1.0, ease = "out" },
   { t = 0.21, R = { mix = ["idle", "fist_out", 0.93] }, grip_R = "fist", fist = 1.0, ease = "out" },
   { t = 0.34, R = { mix = ["idle", "fist_out", 0.3] }, grip_R = "fist", fist = 1.0, ease = "inout" },
-  { t = 0.5, fist = 0.0, ease = "inout" },
+  { t = 0.5, ease = "inout" },   # back to the idle pose's own fist (1 for the fists at rest, 0 relaxed)
 ]
 
-[clips.Crystal_Hit]         # Gate R's card: a two-handed diagonal swing, the cap first: drawn down and to the left
-                            # (crystal_windup), carried across and up to the contact at the upper right (crystal_hit),
-                            # a short follow-through past it and back to the hold; the hands ride on the crystal
+[clips.Crystal_Hit]         # the overhead smash (g3): lifted and tipped back (crystal_windup, 0.13 s), driven down
+                            # cap first into the middle, accelerating (crystal_hit, the contact at 0.20 s), on past it
+                            # (crystal_follow) and back to the hold; the hands ride on the crystal
 pose = "crystal"
 seconds = 0.5
-hit = 0.18
+hit = 0.20
 keys = [
   { t = 0.0 },
-  { t = 0.09, crystal = "crystal_windup", ease = "inout" },
-  { t = 0.18, crystal = "crystal_hit", ease = "in" },
-  { t = 0.25, crystal = { mix = ["crystal", "crystal_hit", 1.12] }, ease = "out" },
+  { t = 0.13, crystal = "crystal_windup", ease = "inout" },
+  { t = 0.20, crystal = "crystal_hit", ease = "in" },
+  { t = 0.26, crystal = "crystal_follow", ease = "out" },
   { t = 0.5, ease = "inout" },
 ]
 

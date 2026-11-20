@@ -77,6 +77,7 @@ class State:
         self.fore = {}  # per side the forearm's direction (elbow to wrist) when the pose sets the wrist's bend
         self.home = {}  # a held pose's: per side the hold's own forearm direction, which a moved crystal keeps (seat_fore)
         self.fist = 0.0
+        self.fist_L = 0.0   # the left hand's fist morph (fist_L, a model from m41; two fists at rest, art#136)
         self.crystal: Matrix | None = None
 
 
@@ -259,6 +260,7 @@ class Poses:
         for side in SIDES:
             s.shoulder[side] = V(pose.get(f"shoulder_{side[0]}", [0, 0, 0]))
         s.fist = float(pose.get("fist", 0.0))
+        s.fist_L = float(pose.get("fist_L", 0.0))
         crystal = pose.get("crystal") or self.cfg["poses"]["crystal"]["crystal"]
         s.crystal = crystal_matrix(self.crystal_spec(crystal))
         if "R_c" in pose:  # the hands in the crystal's space
@@ -298,6 +300,7 @@ def mix(a: State, b: State, w: float, base: dict) -> State:
         if side in a.fore and side in b.fore:
             s.fore[side] = a.fore[side].lerp(b.fore[side], w).normalized()
     s.fist = a.fist + (b.fist - a.fist) * w
+    s.fist_L = a.fist_L + (b.fist_L - a.fist_L) * w
     loc = a.crystal.translation.lerp(b.crystal.translation, w)
     rot = a.crystal.to_quaternion().slerp(b.crystal.to_quaternion(), w)
     s.crystal = Matrix.Translation(loc) @ rot.to_matrix().to_4x4()
@@ -636,7 +639,7 @@ def key_clip(rig: Rig, clip: Clip, fps: int) -> tuple:
     for i in range(n + 1):
         t = clip.seconds * i / n
         s = clip.at(t if not (clip.loop and i == n) else 0.0)
-        fist.append((i / n, s.fist))
+        fist.append((i / n, s.fist, s.fist_L))
         for b, m in rig.solve(s).items():
             pb = arm.pose.bones[b]
             loc, q, _ = m.decompose()
@@ -654,8 +657,12 @@ def key_clip(rig: Rig, clip: Clip, fps: int) -> tuple:
 def set_frame(arm, act, frame_no: int, body=None, fist=None) -> None:
     arm.animation_data.action = act
     bpy.context.scene.frame_set(frame_no)
-    if body is not None and fist is not None:
-        body.data.shape_keys.key_blocks["fist"].value = fist
+    if body is not None and fist is not None:   # fist: the right's weight, or (right, left)
+        w, wl = fist if isinstance(fist, tuple) else (fist, 0.0)
+        kb = body.data.shape_keys.key_blocks
+        kb["fist"].value = w
+        if "fist_L" in kb:
+            kb["fist_L"].value = wl
 
 
 # -------------------------------------------------------------------------------------- the crystal check
@@ -1067,7 +1074,7 @@ def preview(out: Path, arm, body, clips, crystal_objs, held) -> None:
             o.hide_render = name not in held
         for j in range(6):
             i = round(n * j / 5) if not name.endswith("_Loop") else round(n * j / 6)
-            set_frame(arm, act, i, body, fist[i][1])
+            set_frame(arm, act, i, body, fist[i][1:])
             for c, tag in ((cam, "eye"), (side, "side")):
                 sc.camera = c
                 sc.render.filepath = str(out / "preview" / f"{name}_{tag}_{j}.png")
@@ -1192,7 +1199,7 @@ def main(argv) -> None:
         step = max(1, n // 30)
         frames = sorted(set(list(range(0, n + 1, step)) + [n]))
         for i in frames:
-            set_frame(arm, act, i, body, fist[i][1])
+            set_frame(arm, act, i, body, fist[i][1:])
             if name in held:
                 for s in SIDES:
                     deep, gap = contact(body, solid, s)
@@ -1206,7 +1213,9 @@ def main(argv) -> None:
     for o in list(bpy.data.objects):
         if o.type == "CAMERA":
             bpy.data.objects.remove(o, do_unlink=True)
-    body.data.shape_keys.key_blocks["fist"].value = 0.0
+    two = "fist_L" in body.data.shape_keys.key_blocks
+    for k in ("fist", "fist_L") if two else ("fist",):
+        body.data.shape_keys.key_blocks[k].value = 0.0
     arm.animation_data.action = clips["Idle_Loop"][0]
     sc.frame_set(0)
     bpy.ops.object.select_all(action="DESELECT")
@@ -1220,7 +1229,12 @@ def main(argv) -> None:
     if bpy.ops.export_scene.gltf(filepath=str(glb), **opts) != {"FINISHED"}:
         raise SystemExit("the glTF exporter failed")
     EG.fix_zero_tangents(str(glb))
-    got = F.key_weights(str(glb), "fist", {n: [(sh, w) for sh, w in p] for n, p in plans.items()})
+    if two:   # the targets in the mesh's order: fist, then fist_L
+        got = F.key_weights(str(glb), ["fist", "fist_L"],
+                            {n: {"fist": [(sh, w) for sh, w, _ in p], "fist_L": [(sh, wl) for sh, _, wl in p]}
+                             for n, p in plans.items()})
+    else:
+        got = F.key_weights(str(glb), "fist", {n: [(sh, w) for sh, w, _ in p] for n, p in plans.items()})
     stats["fist_weights"] = got
     stats["clips"] = report
     stats["arm_lengths_m"] = [round(rig.la, 4), round(rig.lb, 4)]

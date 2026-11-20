@@ -67,6 +67,33 @@ class WeightsTest(unittest.TestCase):
                 F.key_weights(p, "fist", {})
         json.dumps(got)
 
+    def test_key_weights_two_morphs(self):
+        """Two targets (fist, fist_L): one value per target per time, in the targets' order (art#136)."""
+        times = [0.0, 1.0]
+        bin_ = bytearray(struct.pack("<2f", *times) + struct.pack("<8f", *([0, 0, 0, 1] * 2)))
+        gltf = {"asset": {"version": "2.0"}, "buffers": [{"byteLength": len(bin_)}],
+                "bufferViews": [{"buffer": 0, "byteOffset": 0, "byteLength": 8},
+                                {"buffer": 0, "byteOffset": 8, "byteLength": 32}],
+                "accessors": [{"bufferView": 0, "componentType": 5126, "count": 2, "type": "SCALAR", "min": [0],
+                               "max": [1]}, {"bufferView": 1, "componentType": 5126, "count": 2, "type": "VEC4"}],
+                "nodes": [{"name": "Arms", "mesh": 0}, {"name": "Bone"}],
+                "meshes": [{"name": "Arms", "extras": {"targetNames": ["fist", "fist_L"]},
+                            "primitives": [{"attributes": {}, "targets": [{"POSITION": 1}, {"POSITION": 1}]}]}],
+                "animations": [{"name": "Idle", "samplers": [{"input": 0, "output": 1}],
+                                "channels": [{"sampler": 0, "target": {"node": 1, "path": "rotation"}}]}]}
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "x.glb"
+            F._write_glb(p, gltf, bin_)
+            got = F.key_weights(p, ["fist", "fist_L"], {"Idle": {"fist_L": [(0.0, 1.0)]}})
+            self.assertEqual(got, {"Idle": [0.0, 1.0]})
+            g2, b2 = F._glb(p)
+            ch = g2["animations"][0]["channels"][-1]
+            acc = g2["accessors"][g2["animations"][0]["samplers"][ch["sampler"]]["output"]]
+            self.assertEqual(acc["count"], 4)
+            bv = g2["bufferViews"][acc["bufferView"]]
+            self.assertEqual(struct.unpack_from("<4f", b2, bv["byteOffset"]), (0.0, 1.0, 0.0, 1.0))
+            self.assertEqual(g2["meshes"][0]["weights"], [0.0, 0.0])
+
 
 if __name__ == "__main__":
     unittest.main()

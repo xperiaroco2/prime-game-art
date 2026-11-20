@@ -23,7 +23,9 @@ build with a static clip per cell, each shot from the game's camera into <tag>/f
 with the engineer's reference first (<tag>/grid.png); no checks. A cell's `bend` [up, side] gives the hand the
 viewmodel's forearm (along the hand bent at the wrist, no reach limit); `pitch` (degrees down) shoots it with the
 camera looking down, the hands kept in the body's space (`hands` "body", the default) or carried by the camera
-("camera", a plain viewmodel: the same hand over another background); review shots only.
+("camera", a plain viewmodel: the same hand over another background); review shots only. `both` mirrors the hand
+into the left; `fist` sets the fist morphs' weight (`fist`, and `fist_L` with `both`; give the cell a fist grip);
+`R` = {p, f, n} places the hand as given instead of `place` (a punch contact checked from the game's camera).
 --hit-grid: only the crystal hit's contact grid (fp_hands_build.py --hit-grid: crystal poses from the eye, the hold
 carried to each, their numbers and renders from the eye) into <tag>/hitgrid/, no export, no checks.
 The hold's fit lists its fallbacks per hand (fit_hold: a default taken or a search's edge); the run prints each as a
@@ -196,12 +198,19 @@ def rest_grid(tag: str, grid_path: Path, fps: int) -> dict:
         c = {**grid.get("base", {}), **cell}
         name = CELL_NAMES[i]
         over.setdefault("grips", {})["grid" + name] = {**rest, **{k: c[k] for k in GRIP_KEYS if k in c}}
-        R = rest_R(c, float(cfg["view"]["fov_deg"])) if c.get("place") else dict(cfg["poses"]["idle"]["R"])
+        if "R" in c:   # a hand frame {p, f, n} given as is (a punch contact checked from the game's camera)
+            R = dict(c["R"])
+        else:
+            R = rest_R(c, float(cfg["view"]["fov_deg"])) if c.get("place") else dict(cfg["poses"]["idle"]["R"])
         if "bend" in c:   # the viewmodel's forearm: along the hand bent by [up, side] degrees, no reach limit
             R["bend"] = c["bend"]
         over.setdefault("poses", {})["grid" + name] = {"R": R, "grip_R": "grid" + name}
         if c.get("both"):   # the left hand too, the right's mirror across the view (the static two-hand rest)
             over["poses"]["grid" + name].update({"L": mirror_hand(R), "grip_L": "grid" + name})
+        if "fist" in c:   # the fist morph's weight (with a fist grip: the hand closed at rest), the left's too
+            over["poses"]["grid" + name]["fist"] = float(c["fist"])
+            if c.get("both"):
+                over["poses"]["grid" + name]["fist_L"] = float(c["fist"])
         over.setdefault("clips", {})["Grid" + name] = {"pose": "grid" + name, "seconds": 0.1}
         cells.append(name)
         table[name] = {"cell": c, "R": R}

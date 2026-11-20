@@ -1201,6 +1201,11 @@ def corrective(hand: Hand, arm, ob, sp: Space, right_n: int, spec: dict) -> dict
     co = np.array([v.co[:] for v in sk.data])
     co[:right_n] = key
     sk.data.foreach_set("co", co.ravel())
+    skl = ob.data.shape_keys.key_blocks.get("fist_L")
+    if skl is not None:   # the left fist (art#136, two fists at rest): the left arm is the right's x mirror, vertex
+        coL = np.array([v.co[:] for v in skl.data])   # for vertex, so its fist is the right's key mirrored
+        coL[right_n:2 * right_n] = key * np.array([-1.0, 1.0, 1.0])
+        skl.data.foreach_set("co", coL.ravel())
     return {"moved_mm_p50": round(float(np.median(m)), 2), "moved_mm_p99": round(float(np.percentile(m, 99)), 2),
             "capped": int((m > cap).sum()), "groups": len(sigs), "rayed": rayed, "crumpled": crumpled}
 
@@ -1676,6 +1681,7 @@ def main(argv) -> None:
     mod.object = arm
     ob.shape_key_add(name="Basis")
     ob.shape_key_add(name="fist", from_mix=False)
+    ob.shape_key_add(name="fist_L", from_mix=False)   # the left hand's fist (two fists at rest, art#136)
     if a.fist_grid:
         variants = json.loads(Path(a.fist_grid).read_text(encoding="utf-8"))
         res = fist_grid(out, hand, arm, ob, sp, spec, variants, right_n, a.samples)
