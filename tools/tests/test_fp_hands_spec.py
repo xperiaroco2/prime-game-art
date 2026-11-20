@@ -125,5 +125,30 @@ class FpHandsSpec(unittest.TestCase):
             self.assertIn(name, SPEC["clips"])
 
 
+    def test_rest_grid_frame(self):
+        """fp_hands_run.rest_R (art#136 q2's rest grid): a place in the frame gives the wrist where the hands'
+        camera draws it, the fingers and the back's normal unit and square, the back toward the eye untipped, and
+        `tip` takes the fingers away from the eye."""
+        import importlib.util
+        import math
+        spec = importlib.util.spec_from_file_location("fp_hands_run", BLENDER / "fp_hands_run.py")
+        run = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(run)
+        fov = float(SPEC["view"]["fov_deg"])
+        th = math.tan(math.radians(fov) / 2.0)
+        for cell in ({"place": [53, 99, 0.5], "angle": 135}, {"place": [79, 99, 0.45], "angle": 125, "tip": 30,
+                                                             "roll": 20, "lean": 5}):
+            R = run.rest_R(cell, fov)
+            p, f, n = R["p"], R["f"], R["n"]
+            self.assertAlmostEqual(50 + 50 * p[0] / (p[1] * th * 16 / 9), cell["place"][0], delta=0.1)
+            self.assertAlmostEqual(50 - 50 * p[2] / (p[1] * th), cell["place"][1], delta=0.1)
+            self.assertAlmostEqual(math.hypot(*f), 1.0, delta=1e-3)
+            self.assertAlmostEqual(math.hypot(*n), 1.0, delta=1e-3)
+            self.assertAlmostEqual(sum(a * b for a, b in zip(f, n)), 0.0, delta=1e-3)
+        flat = run.rest_R({"place": [53, 99, 0.5], "angle": 135}, fov)
+        self.assertLess(sum(a * b for a, b in zip(flat["n"], flat["p"])), 0.0)   # the back faces the eye
+        tipped = run.rest_R({"place": [53, 99, 0.5], "angle": 135, "tip": 30}, fov)
+        self.assertGreater(tipped["f"][1], flat["f"][1] + 0.3)
+
 if __name__ == "__main__":
     unittest.main()

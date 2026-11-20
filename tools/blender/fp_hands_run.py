@@ -17,6 +17,10 @@
    and HANDOFF are written by hand).
 --look-grid: only the look's variant grid on the tag's build (no build, no checks): each variant of the JSON list (a
 name and any of fp_hands.toml [look]'s keys over it) shot at LOOK_SHOTS into <tag>/frames/variants/<name>_<shot>.png.
+--rest-grid: the free hand at rest from the eye, a variant grid in Godot (art#136 q2): a JSON {"override": {...},
+"base": {...}, "cells": [...]}, each cell a place and turn (rest_R) and any of [grips.rest]'s keys over the base; one
+build with a static clip per cell, each shot from the game's camera into <tag>/frames/stills/<cell>.png, and a sheet
+with the engineer's reference first (<tag>/grid.png); no checks.
 --hit-grid: only the crystal hit's contact grid (fp_hands_build.py --hit-grid: crystal poses from the eye, the hold
 carried to each, their numbers and renders from the eye) into <tag>/hitgrid/, no export, no checks.
 The hold's fit lists its fallbacks per hand (fit_hold: a default taken or a search's edge); the run prints each as a
@@ -62,7 +66,13 @@ CLOSEUPS = [{"name": "open", "clip": "Idle", "t": 0.0}, {"name": "fist", "clip":
             # neutral close-ups of the open hand at rest (art#136 m31, five digits): its back from the eye's side and
             # its palm from beyond it, 35 cm off the hand's middle (the middle finger's root)
             {"name": "back", "clip": "Idle", "t": 0.0, "bone": "RightMiddleProximal", "side": "back", "dist": 0.35, "fov": 40.0},
-            {"name": "palm", "clip": "Idle", "t": 0.0, "bone": "RightMiddleProximal", "side": "palm", "dist": 0.35, "fov": 40.0}]
+            {"name": "palm", "clip": "Idle", "t": 0.0, "bone": "RightMiddleProximal", "side": "palm", "dist": 0.35, "fov": 40.0},
+            # the same two without the normal map (art#136 q2): a crease that stays is the mesh's (skinning), one that
+            # goes is the bake's
+            {"name": "back_nonormal", "clip": "Idle", "t": 0.0, "bone": "RightMiddleProximal", "side": "back", "dist": 0.35,
+             "fov": 40.0, "no_normal": True},
+            {"name": "palm_nonormal", "clip": "Idle", "t": 0.0, "bone": "RightMiddleProximal", "side": "palm", "dist": 0.35,
+             "fov": 40.0, "no_normal": True}]
 # the look grid's shots: the fist at the punch's contact, the open hand, the crystal held
 LOOK_SHOTS = [{"name": "fist", "clip": "Punch", "t": 0.15}, {"name": "open", "clip": "Idle", "t": 0.0},
               {"name": "hold", "clip": "Crystal_Idle", "t": 0.0, "crystal": True}]
@@ -72,6 +82,107 @@ STILLS = [{"name": "punch_hit", "clip": "Punch", "t": 0.15}, {"name": "hold", "c
 # the reel: (clip, times) in order; the hits between idles, as a player sees them
 REEL = [("Idle_Loop", 1), ("Punch", 1), ("Punch", 1), ("Run_Loop", 2),
         ("Crystal_Idle_Loop", 1), ("Crystal_Hit", 1), ("Crystal_Hit", 1), ("Crystal_Run_Loop", 2)]
+
+
+GRIP_KEYS = ("Index", "Middle", "Ring", "Little", "spread", "Thumb", "ThumbTurn")
+CELL_NAMES = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"   # letters: Godot's importer strips a clip name's trailing digits
+
+
+def toml_cfg() -> dict:
+    return tomllib.loads((ROOT / "tools" / "blender" / "fp_hands.toml").read_text(encoding="utf-8"))
+
+
+def rest_R(c: dict, fov_deg: float) -> dict:
+    """A free hand's frame from the eye (rest grid): `place` [% across, % down, distance m] the wrist in the hands'
+    camera (vertical FOV fov_deg, 16:9); `angle` the fingers' direction in the picture (degrees from the right: 90 up,
+    135 up-left); `lean` the fingers tilted away from the eye; `tip` the hand turned about its side axis, fingers
+    away and the back up toward the view's top (the wrist's pitch); `roll` the back's turn about the fingers (0: the
+    back square to the eye; + the thumb's side toward the eye)."""
+    th = math.tan(math.radians(fov_deg) / 2.0)
+    x_pct, y_pct, dist = c["place"]
+    p = [(x_pct / 100.0 - 0.5) * 2.0 * dist * th * SIZE[0] / SIZE[1], dist, -(y_pct / 100.0 - 0.5) * 2.0 * dist * th]
+    a, e = math.radians(c.get("angle", 135.0)), math.radians(c.get("lean", 0.0))
+
+    def unit(v):
+        L = math.sqrt(sum(x * x for x in v))
+        return [x / L for x in v]
+
+    def cross(u, v):
+        return [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]]
+
+    def turn(v, k, deg):   # v about the unit axis k (Rodrigues)
+        r = math.radians(deg)
+        kv = cross(k, v)
+        d = sum(x * y for x, y in zip(k, v))
+        return [v[i] * math.cos(r) + kv[i] * math.sin(r) + k[i] * d * (1 - math.cos(r)) for i in range(3)]
+
+    f = unit([math.cos(a) * math.cos(e), math.sin(e), math.sin(a) * math.cos(e)])
+    eye = [-x for x in p]
+    d = sum(x * y for x, y in zip(eye, f))
+    n = unit([eye[i] - d * f[i] for i in range(3)])     # the back square to the eye
+    side = unit(cross(f, n))
+    n = unit(turn(n, side, -c.get("tip", 0.0)))   # side = f x n: a negative turn takes the fingers away
+    f = unit(turn(f, side, -c.get("tip", 0.0)))
+    n = unit(turn(n, f, c.get("roll", 0.0)))
+    return {"p": [round(x, 4) for x in p], "f": [round(x, 4) for x in f], "n": [round(x, 4) for x in n]}
+
+
+def ref_rest() -> Path:
+    """The engineer's rest reference (specs/fp_hand_dims.toml [reference.picks] rest, a raw-root path; private)."""
+    spec = tomllib.loads((ROOT / "specs" / "fp_hand_dims.toml").read_text(encoding="utf-8"))
+    return RAW / spec["reference"]["picks"]["rest"]
+
+
+def rest_grid(tag: str, grid_path: Path, fps: int) -> dict:
+    """The rest grid (see the module's doc): one build, a still per cell from the eye, the sheet."""
+    out = OUT / tag
+    if (out / "fp_hands.glb").exists():
+        raise common.Failure(f"{out} holds a build: pick a new --tag")
+    out.mkdir(parents=True, exist_ok=True)
+    grid = json.loads(grid_path.read_text(encoding="utf-8"))
+    cfg = toml_cfg()
+    over = json.loads(json.dumps(grid.get("override", {})))
+    rest = {**cfg["grips"]["rest"], **over.get("grips", {}).get("rest", {})}
+    cells, table = [], {}
+    for i, cell in enumerate(grid["cells"]):
+        c = {**grid.get("base", {}), **cell}
+        name = CELL_NAMES[i]
+        over.setdefault("grips", {})["grid" + name] = {**rest, **{k: c[k] for k in GRIP_KEYS if k in c}}
+        R = rest_R(c, float(cfg["view"]["fov_deg"])) if c.get("place") else cfg["poses"]["idle"]["R"]
+        over.setdefault("poses", {})["grid" + name] = {"R": R, "grip_R": "grid" + name}
+        over.setdefault("clips", {})["Grid" + name] = {"pose": "grid" + name, "seconds": 0.1}
+        cells.append(name)
+        table[name] = {"cell": c, "R": R}
+    (out / "grid_override.json").write_text(json.dumps(over, indent=1), encoding="utf-8")
+    blender.run_script("fp_hands_build.py", ["--raw", str(RAW), "--out", str(out), "--override",
+                                             str(out / "grid_override.json")], timeout=1200)
+    build = json.loads((out / "build.json").read_text(encoding="utf-8"))
+    for name in cells:
+        table[name]["out_of_reach_mm"] = build["clips"]["Grid" + name]["out_of_reach_mm"]
+    proj = stage(tag, out / "fp_hands.glb")
+    code, text = _godot.godot(["--headless", "--path", str(proj), "--import"], 900)
+    if code != 0:
+        raise common.Failure("the Godot import failed:\n" + "\n".join(text.splitlines()[-15:]))
+    frames = out / "frames"
+    frames.mkdir(parents=True, exist_ok=True)
+    req = {"scene": "res://levels/ship/ship.tscn", "hands": "res://fp/fp_hands.glb", "crystal": "res://fp/energy_crystal.glb",
+           "eye": EYE, "look": LOOK, "fov": FOV, "vm_fov": build["vm_fov"], "size": list(SIZE), "fps": fps,
+           "out": str(frames).replace("\\", "/"), "clips": [], "closeups": [], "skin": look(),
+           "stills": [{"name": n, "clip": "Grid" + n, "t": 0.0} for n in cells]}
+    rq = out / "shots_request.json"
+    rq.write_text(json.dumps(req, indent=1), encoding="utf-8")
+    code, text = _godot.window(["--path", str(proj), "-s", "res://fp/shots.gd", "--", str(rq)], SIZE, 1500,
+                               log=out / "shots.log")
+    (out / "shots.log").write_text(text, encoding="utf-8")
+    if code != 0:
+        raise common.Failure("the grid's shots failed:\n" + "\n".join(text.splitlines()[-15:]))
+    files = [str(ref_rest())] + [str(frames / "stills" / f"{n}.png") for n in cells]
+    sheets = out / "sheets.json"
+    sheets.write_text(json.dumps({str(out / "grid.png"): {"files": files, "cols": 4, "w": 320, "h": 180}}),
+                      encoding="utf-8")
+    blender.run_script("fp_hands_build.py", ["--sheets", str(sheets)], timeout=300)
+    (out / "grid.json").write_text(json.dumps(table, indent=1), encoding="utf-8")
+    return {"grid": str(out / "grid.png"), "out_of_reach_mm": {n: table[n]["out_of_reach_mm"] for n in cells}}
 
 
 def stage(tag: str, glb: Path) -> Path:
@@ -241,6 +352,7 @@ def main() -> int:
     ap.add_argument("--asset", default="")
     ap.add_argument("--look-grid", default="")
     ap.add_argument("--hit-grid", default="")
+    ap.add_argument("--rest-grid", default="")
     ap.add_argument("--golden-only", action="store_true")
     ap.add_argument("--golden-dir", default="")
     ap.add_argument("--make-golden", action="store_true")
@@ -261,6 +373,9 @@ def main() -> int:
         variants = json.loads(Path(a.look_grid).read_text(encoding="utf-8"))
         shoot(stage(a.tag, glb), out, build, a.fps, variants)
         print("FP_RUN " + json.dumps({"tag": a.tag, "look_grid": str(out / "frames" / "variants")}))
+        return 0
+    if a.rest_grid:
+        print("FP_RUN " + json.dumps({"tag": a.tag, "rest_grid": rest_grid(a.tag, Path(a.rest_grid).resolve(), a.fps)}))
         return 0
     if a.hit_grid:
         out.mkdir(parents=True, exist_ok=True)

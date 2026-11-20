@@ -125,6 +125,9 @@ centre_v = [36.0, 71.0]     # at its root and from the middle to its tip
 # there, webbed onto it (its vertices the Hand's after the thumb's easing); m32 moved the whole thumb 6 mm out and its
 # mound went 8 mm past the outline at u 58
 apart_out_mm = 5.0
+# m34 (art#136 q2): the proximal phalanx 1.5 mm slimmer each side in its middle (fp_hand_model.Hand.thumb_waist),
+# so its two joints read as knuckles; at the joints the width stays `width`
+waist_mm = 1.5
 palmar_w = -16.0            # the thumb's line sits this far toward the palm from the hand's middle plane
 width = 36.0
 phalanx = [0.50, 0.27, 0.23] # metacarpal (in the mound, to where it stands apart), proximal, distal
