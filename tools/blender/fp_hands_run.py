@@ -20,7 +20,10 @@ name and any of fp_hands.toml [look]'s keys over it) shot at LOOK_SHOTS into <ta
 --rest-grid: the free hand at rest from the eye, a variant grid in Godot (art#136 q2): a JSON {"override": {...},
 "base": {...}, "cells": [...]}, each cell a place and turn (rest_R) and any of [grips.rest]'s keys over the base; one
 build with a static clip per cell, each shot from the game's camera into <tag>/frames/stills/<cell>.png, and a sheet
-with the engineer's reference first (<tag>/grid.png); no checks.
+with the engineer's reference first (<tag>/grid.png); no checks. A cell's `bend` [up, side] gives the hand the
+viewmodel's forearm (along the hand bent at the wrist, no reach limit); `pitch` (degrees down) shoots it with the
+camera looking down, the hands kept in the body's space (`hands` "body", the default) or carried by the camera
+("camera", a plain viewmodel: the same hand over another background); review shots only.
 --hit-grid: only the crystal hit's contact grid (fp_hands_build.py --hit-grid: crystal poses from the eye, the hold
 carried to each, their numbers and renders from the eye) into <tag>/hitgrid/, no export, no checks.
 The hold's fit lists its fallbacks per hand (fit_hold: a default taken or a search's edge); the run prints each as a
@@ -148,7 +151,9 @@ def rest_grid(tag: str, grid_path: Path, fps: int) -> dict:
         c = {**grid.get("base", {}), **cell}
         name = CELL_NAMES[i]
         over.setdefault("grips", {})["grid" + name] = {**rest, **{k: c[k] for k in GRIP_KEYS if k in c}}
-        R = rest_R(c, float(cfg["view"]["fov_deg"])) if c.get("place") else cfg["poses"]["idle"]["R"]
+        R = rest_R(c, float(cfg["view"]["fov_deg"])) if c.get("place") else dict(cfg["poses"]["idle"]["R"])
+        if "bend" in c:   # the viewmodel's forearm: along the hand bent by [up, side] degrees, no reach limit
+            R["bend"] = c["bend"]
         over.setdefault("poses", {})["grid" + name] = {"R": R, "grip_R": "grid" + name}
         over.setdefault("clips", {})["Grid" + name] = {"pose": "grid" + name, "seconds": 0.1}
         cells.append(name)
@@ -168,7 +173,8 @@ def rest_grid(tag: str, grid_path: Path, fps: int) -> dict:
     req = {"scene": "res://levels/ship/ship.tscn", "hands": "res://fp/fp_hands.glb", "crystal": "res://fp/energy_crystal.glb",
            "eye": EYE, "look": LOOK, "fov": FOV, "vm_fov": build["vm_fov"], "size": list(SIZE), "fps": fps,
            "out": str(frames).replace("\\", "/"), "clips": [], "closeups": [], "skin": look(),
-           "stills": [{"name": n, "clip": "Grid" + n, "t": 0.0} for n in cells]}
+           "stills": [{"name": n, "clip": "Grid" + n, "t": 0.0,
+                       **{k: table[n]["cell"][k] for k in ("pitch", "hands") if k in table[n]["cell"]}} for n in cells]}
     rq = out / "shots_request.json"
     rq.write_text(json.dumps(req, indent=1), encoding="utf-8")
     code, text = _godot.window(["--path", str(proj), "-s", "res://fp/shots.gd", "--", str(rq)], SIZE, 1500,

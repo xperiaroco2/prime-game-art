@@ -183,12 +183,24 @@ func _run() -> void:
 			_player.play(String(s["clip"]))
 			_player.seek(float(s["t"]), true)
 			_player.pause()
+			# a review still looking down `pitch` degrees (art#136 f2): the hands kept where the body holds them
+			# ("body") or carried by the camera ("camera", the plain viewmodel); restored after the still
+			var cam0: Transform3D = _cam.global_transform
+			var hands0: Transform3D = hands.global_transform
+			if s.has("pitch"):
+				_cam.global_transform = cam0.rotated_local(Vector3.RIGHT, -deg_to_rad(float(s["pitch"])))
+				_vcam.global_transform = _cam.global_transform
+				if String(s.get("hands", "body")) == "body":
+					hands.global_transform = hands0
 			for w: int in 8:
 				await process_frame
 			await RenderingServer.frame_post_draw
 			var simg: Image = root.get_texture().get_image()
 			simg.convert(Image.FORMAT_RGB8)
 			simg.save_png(sdir.path_join("%s.png" % String(s["name"])))
+			_cam.global_transform = cam0
+			_vcam.global_transform = cam0
+			hands.global_transform = hands0
 	# the crystal's own light on the hands (crystal.gd's omni, a holder may lower it): Crystal_Idle's first frame
 	# at each level of the request, for the look question
 	if _req.has("light_levels"):
