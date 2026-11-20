@@ -311,8 +311,10 @@ the join's `int_value`, `int_rough_add` and `emission_scale`.
   variant H, written as the interior materials' own numbers so the hull's strip lights keep theirs: `int_cyan` `l`
   0.04, `int_amber` `e` 0.14 `l` 2.0 (the strips pass the glow threshold and stay amber), the hall ring's own
   material `int_amber_ring` `e` 0.14 `l` 0.8 `rr` 0.3, `int_halo` `e` 0.5.
-- The details, each its own piece: `cup_a`..`cup_c` (16 oz, scale 1.25, crushed, lying), `spill_a` and `spill_c` (a
-  1.5 mm glossy film running from the mouth; each placed with its cup's position and yaw), `cable_coil` (3.5 turns of
+- The details, each its own piece: `cup_b` (16 oz, crushed, lying, in the west corridor; `cup_a` with `spill_a` left
+  the hall at the engineer's walk of 2026-10-29, `cup_c` with `spill_c` by the console at the M8 review of 2026-11-19,
+  prime-game#1095 answer 9: not a planned prop), the `spill` builder (a 1.5 mm glossy film running from a cup's mouth,
+  placed with its cup's position and yaw) kept for later, `cable_coil` (3.5 turns of
   blue cable and a plug, by the east corridor's south bay), `floor_patch_a`/`_b` (bolted repair plates on the hall's
   rim floor) and `rim_bolts` (hex bolts down every rim plate's seam). The layout test keeps every cup, spill, coil
   and patch outside a station's clearance + 0.4 m.
@@ -399,7 +401,7 @@ Open problems after launch 3:
 | Ground specular | 0.5 (Godot default) | 0.1 (`[light.mats]` `s`, `ext_ground`, `ext_dirt`, `ext_path`) | the dirt mirrored the bright horizon at grazing angles: snow-white through the mouth |
 | Hero fill | none | a `key` lamp (-11, -13, 9 m), range 40, cool, `key_lamp` 1.0 | the hull's far side and the ground were a black pool |
 | Ground cover | - | five pieces in the hero's west foreground, three under the east wing | dark patches in the hero view |
-| Cups | scale 1.5 | 1.8, spills 2.2 / 2.0; cup_a (0.75, -3.0) in hall-out's foreground, cup_c (-1.05, -0.45) in hall-in's | read as a red mark |
+| Cups | scale 1.5 | 1.8, spills 2.2 / 2.0; cup_a (0.75, -3.0) in hall-out's foreground, cup_c (-1.05, -0.45) in hall-in's (both removed since: cup_a 2026-10-29, cup_c 2026-11-19) | read as a red mark |
 | Nozzles | segments only, winding mirrored (culled) | a 0.5..0.72 r cyan inner ring 3 cm proud of the bell's rear cap (ln + 0.4, which hides the throat and the old segments), oriented rearward | black holes |
 
 The light numbers come from one grid (`grid_p4/grid.png`: key 0 / 0.6 / 1.0 / 1.6, fill 1 / 1.5 / 2 / 3, ground
