@@ -1,5 +1,5 @@
 {
- "uri": "../../prime-art-raw/2026-11-11-fp-hands/n6/fp_hands.glb",
+ "uri": "../../prime-art-raw/2026-11-11-fp-hands/g5/fp_hands.glb",
  "mimeType": "model/gltf-binary",
  "validatorVersion": "2.0.0-dev.3.10",
  "issues": {
@@ -31,7 +31,7 @@
     "pointer": "/buffers/0",
     "mimeType": "application/gltf-buffer",
     "storage": "glb",
-    "byteLength": 6914664
+    "byteLength": 8417000
    },
    {
     "pointer": "/images/0",
@@ -67,8 +67,8 @@
   "hasTextures": true,
   "hasDefaultScene": true,
   "drawCallCount": 1,
-  "totalVertexCount": 51156,
-  "totalTriangleCount": 95160,
+  "totalVertexCount": 49576,
+  "totalTriangleCount": 92184,
   "maxUVs": 1,
   "maxInfluences": 4,
   "maxAttributes": 6

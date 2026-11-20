@@ -3,17 +3,20 @@
 Concept A, "the hand as on the character" (the engineer's pick, 2026-11-10): the alien's own forearms and hands at
 true size, the striped sleeve. He rejected the first build (2026-11-11: a broken, twisted wrist, the crystal burning
 the hands white, a strange hold) and picked the way games draw first-person hands: a viewmodel on its own camera,
-each key pose matched to an approved target frame. Built by `tools/blender/fp_hands_run.py --tag n1 --asset
-assets/body/fp_hands` (2026-11-19, on the detailed hand m28) from `tools/blender/fp_hands.toml` and the fitted poses `tools/blender/fp_hands_fit.json`
-(art#136; `docs/animations.md`, "The first-person hands"). Not approved yet: the look is shown at the next review.
+each key pose matched to an approved target frame. Built by `tools/blender/fp_hands_run.py --tag g5 --asset
+assets/body/fp_hands` (2026-11-20, on the four-digit hand m41) from `tools/blender/fp_hands.toml` and the fitted poses
+`tools/blender/fp_hands_fit.json` (art#136; `docs/animations.md`, "The first-person hands"). **Approved by the engineer
+as they are for the M8 demo (2026-11-20, PR #387)**: two compact fists at rest, the right punches, the overhead
+crystal hit. The polish to final quality is art#388.
 
 ## Files
-- `export/fp_hands.glb`: one skinned scene, 7.1 MB.
+- `export/fp_hands.glb`: one skinned scene, 8.6 MB, SHA-256
+  `66349bd02cbfd39c42d6dd0dc035e64f2c696ccdc4342e1df2213652525c69dc`.
   - `FPRig` (Skeleton3D after import): root bone `View` at the eye; per side `Shoulder`, `UpperArm`, `LowerArm`,
     `Hand` and the finger bones under their character names (`RightHand`, `LeftIndexProximal`, ...); `Crystal`.
-  - `FPArms`: the skin of both forearms and hands, the detailed hand m28 (95,160 triangles for the two), one morph
-    target `fist`, one material (the colour slot below). No sleeves yet: the bare arm first; each outfit's sleeve is
-    laid on later.
+  - `FPArms`: the skin of both forearms and hands, the four-digit hand m41 (92,184 triangles for the two), **two morph
+    targets: `fist` (index 0, the right hand) and `fist_L` (index 1, the left)**, one material (the colour slot
+    below). No sleeves yet: the bare arm first; each outfit's sleeve is laid on later.
   - `CrystalSocket`: a node on the `Crystal` bone; Godot imports it as a `BoneAttachment3D` with the `CrystalSocket`
     child. The energy crystal's origin (its tip) goes there with no offset.
 - `source/fp_hands.blend`: the build, for edits.
@@ -52,22 +55,23 @@ assets/body/fp_hands` (2026-11-19, on the detailed hand m28) from `tools/blender
   transparent, SSR, SSAO, SSIL, SDFGI and fog off, and `ambient_light_energy` at **0.8** of the level's.
 - Picked by numbers from a grid of 28 looks against concept A's punch frame (the hand's teal pixels): the fist reads
   hue 180, saturation 0.47, value p10/p50/p90 0.38/0.56/0.60 (the concept: 181, 0.43, 0.35/0.55/0.61; the old baked
-  teal: 187, 0.42, 0.46/0.63/0.67). The look waits for the engineer's eye.
+  teal: 187, 0.42, 0.46/0.63/0.67). Kept at the M8 review (prime-game#1095, answer 2).
 
 ## Clips (the AnimationPlayer's names in Godot)
 | Clip | Length | Loop | What |
 |---|---|---|---|
-| `Idle` | 3.0 s | yes | the right hand low in the lower right corner, breathing (the target frame `idle`) |
-| `Run` | 0.917 s | yes | the run's bob and swing, two steps a loop (the character's Jog cycle); the hand open and relaxed as in `Idle` (no fist) |
-| `Punch` | 0.5 s | no | a straight right punch; contact at **0.15 s** (the target frame `punch`); starts and ends in `Idle`'s pose |
+| `Idle` | 3.0 s | yes | both hands as fists, low in the frame's bottom corners (0.55 m from the eye, each about 18 % of the frame's width), static in the view, breathing |
+| `Run` | 0.917 s | yes | the run's bob and swing, two steps a loop (the character's Jog cycle); both fists as in `Idle` |
+| `Punch` | 0.5 s | no | a straight right punch, the left fist stays at rest; contact at **0.15 s**, the whole fist in view a little right of and below the middle; starts and ends in `Idle`'s pose |
 | `Crystal_Idle` | 3.0 s | yes | the crystal carried with both hands from its sides, like a box (the engineer's pick of 2026-11-12): both palms on its flanks at one height under the skirt, the fingers round its back (see "The hold") |
 | `Crystal_Run` | 0.917 s | yes | the same, with the run's bob and swing |
-| `Crystal_Hit` | 0.5 s | no | a two-handed diagonal swing, the cap leading: drawn down to the lower left (0.09 s), across and up to the contact at **0.18 s** with the cap and loop at the upper right (74 % across, 46 % down; the frame's middle clear), a short follow-through and back; starts and ends in `Crystal_Idle`'s pose (since run n5) |
+| `Crystal_Hit` | 0.5 s | no | a two-handed overhead smash: lifted over the middle and tipped back (0.13 s), driven down cap first into the frame's middle to the contact at **0.20 s**, a short follow-through and back; starts and ends in `Crystal_Idle`'s pose (since run g3) |
 
 - The hits last 0.5 s, the GDD's rate (one swing each 0.5 s), so a held button can chain them.
-- The left arm rests below the frame in the clips without the crystal.
-- The `fist` morph has a track in every clip: in `Punch` it rises to 1 by 0.06 s, holds to 0.32 s and is 0 again
-  at 0.5 s; every other clip holds 0. Godot plays it with the clip.
+- The crystal is held with both hands (the approved m27 grip, raised in the frame: its cap 54 % down).
+- Both morphs have a track in every clip: `fist` and `fist_L` hold 1 in `Idle`, `Run` and `Punch` (the fists) and 0
+  in the crystal clips. Godot plays them with the clip; the game blends the switch between the empty and the
+  crystal clips (about 0.15 s), which opens the fists onto the crystal.
 - The run's speed: the clip is one character Jog cycle; scale its speed by the player's speed if the steps should match.
 
 ## The hold (run n4, 2026-11-19)
@@ -164,7 +168,7 @@ assets/body/fp_hands` (2026-11-19, on the detailed hand m28) from `tools/blender
 - Golden (not re-taken, waits for the engineer's yes): hold 65 % of its box changed (the crystal raised), punch_hit
   3.5 % (the m40 hand). Every other check of f6 passes; glTF-Validator 0 errors.
 
-## Two compact hands, the punch in view, the overhead crystal hit (runs g3, g4 on m41, 2026-11-20; not in this asset yet)
+## Two compact hands, the punch in view, the overhead crystal hit (runs g3, g4 on m41, 2026-11-20; in this asset since g5)
 - The engineer on f6: the hand too big, cut off at the punch's end; two compact hands again (the right punches);
   the crystal hit "is no hit". His reference for it: a gas canister in both hands, wound up and struck with.
 - **Rest:** both hands, mirrored, at 0.55 m (rest grid `g2rest`, cells C relaxed and G fists: place [83, 95, 0.55]),
@@ -183,8 +187,9 @@ assets/body/fp_hands` (2026-11-19, on the detailed hand m28) from `tools/blender
   `<raw>/refs/fp-hands-canister`, private), only a one-handed item raised to the upper right and struck down.
 - Golden re-taken from run g4 into `<raw>/2026-11-11-fp-hands/golden/g4` (n6's kept): the hold, the punch's
   contact, idle and run, all four gated now, their boxes over both hands; g4 against them: 0.0 changed in each.
-- Still waiting for the engineer: the overhead crystal hit. Until his yes the manifest's approval fields stay empty and
-  the asset's export stays an older run.
+- The engineer's yes (2026-11-20): the hands and their animations as they are for the M8 demo ("fine for a beta, not
+  ideal"; the crystal hit reads as a small push). Exported by run g5, which matches the golden frames (0.0 changed in
+  each); the polish is art#388.
 
 ## What the game side builds (not done here)
 - Instance `fp_hands.glb` under the camera; switch clips by state (idle or run, crystal held or not), blend the
