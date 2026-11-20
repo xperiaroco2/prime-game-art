@@ -1054,13 +1054,23 @@ def preview(out: Path, arm, body, clips, crystal_objs, held) -> None:
             sheet(out / "preview" / f"_{name}_{tag}.png", [out / "preview" / f"{name}_{tag}_{j}.png" for j in range(6)])
 
 
-def sheet(path: Path, files: list, cols: int = 3, w: int = 480, h: int = 270) -> None:
-    """The frames side by side (3 x 2 at w x h each), for a quick look."""
+def sheet(path: Path, files: list, cols: int = 3, w: int = 480, h: int = 270, crop=None) -> None:
+    """The frames side by side (3 x 2 at w x h each), for a quick look; `crop` [x0, y0, x1, y1] (shares of each
+    frame, from its top left) shows only that part of every frame, larger (the rest grid's hand region)."""
     import numpy as np
     rows = (len(files) + cols - 1) // cols
     big = np.zeros((rows * h, cols * w, 4), dtype=np.float32)
     for k, f in enumerate(files):
         im = bpy.data.images.load(str(f))
+        if crop:
+            W0, H0 = im.size
+            full = np.array(im.pixels[:], dtype=np.float32).reshape(H0, W0, 4)
+            x0, x1 = int(crop[0] * W0), int(crop[2] * W0)
+            y0, y1 = H0 - int(crop[3] * H0), H0 - int(crop[1] * H0)   # Blender's rows start at the bottom
+            part = full[y0:y1, x0:x1]
+            bpy.data.images.remove(im)
+            im = bpy.data.images.new("crop", x1 - x0, y1 - y0)
+            im.pixels = part.ravel()
         im.scale(w, h)
         px = np.array(im.pixels[:], dtype=np.float32).reshape(h, w, 4)
         r, c = rows - 1 - k // cols, k % cols  # Blender's pixels start at the bottom row
@@ -1088,7 +1098,7 @@ def main(argv) -> None:
         for path, files in json.loads(Path(a.sheets).read_text(encoding="utf-8")).items():
             if isinstance(files, dict):   # {files, cols, w, h}: a grid sheet (the rest grid's, the reference first)
                 sheet(Path(path), [Path(f) for f in files["files"]], cols=int(files.get("cols", 3)),
-                      w=int(files.get("w", 640)), h=int(files.get("h", 360)))
+                      w=int(files.get("w", 640)), h=int(files.get("h", 360)), crop=files.get("crop"))
                 continue
             sheet(Path(path), [Path(f) for f in files], w=640, h=360)
         return
