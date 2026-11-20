@@ -159,9 +159,9 @@ ThumbTurn = [-20, 50]
                   # right's mirror (fp_hands_run.mirror_hand). Roll -30 to -55 (f4r2 A, B) turned the palms up;
                   # tip 50 with no roll (f4r1) pointed the fingers away into paws. Was f2r4 F's single right hand:
                   # R = { p = [0.0477, 0.48, -0.197], f = [-0.866, 0.0, 0.5], n = [0.1461, -0.9563, 0.2531], bend = [0.0, 0.0] }
+                  # f5 (the engineer, 2026-11-20): only the right hand, the left is not shown at rest. Was f4's mirror:
+                  # L = { p = [-0.1764, 0.38, -0.1488], f = [0.3456, 0.4897, 0.8005], n = [-0.4645, -0.6519, 0.5993], bend = [0.0, 0.0] }
 R = { p = [0.1764, 0.38, -0.1488], f = [-0.3456, 0.4897, 0.8005], n = [0.4645, -0.6519, 0.5993], bend = [0.0, 0.0] }
-L = { p = [-0.1764, 0.38, -0.1488], f = [0.3456, 0.4897, 0.8005], n = [-0.4645, -0.6519, 0.5993], bend = [0.0, 0.0] }
-grip_L = "rest"
 # the engineer's other choice, the reference's low centre (f1r3 F: place [50, 98, 0.40], 140 degrees, tip 20, roll
 # 15; the wrist 8.3 mm past the reach), with its own thumb ([grips.rest] Thumb = [20, 5, 10], ThumbTurn = [30, -30]):
 # R = { p = [0.0, 0.4, -0.1791], f = [-0.7912, 0.3235, 0.519], n = [0.0936, -0.7746, 0.6254] }
