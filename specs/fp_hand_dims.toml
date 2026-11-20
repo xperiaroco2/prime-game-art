@@ -1,0 +1,267 @@
+# The detailed first-person hand (art#136, xperiaroco2/prime-game#1587): the spec (Gate 1; docs/pipeline.md, the
+# gates of docs/decisions/2026-10-31-asset-pipeline-gates.md). A separate hand model for the viewmodel only (the
+# engineer, 2026-11-11: up close the character's own hand reads as a shapeless lump); the third-person character keeps
+# its own hand. tools/blender/fp_hand_model.py builds it from this file; tools/tests/test_fp_hand_spec.py checks it.
+#
+# Space: the hand's own, in mm. u along the hand from the wrist joint (the rig's RightHand head) to the fingertips
+# (negative: up the forearm), v across toward the thumb, w out of the back of the hand (u x v = w). The right hand is
+# built; the left is its mirror. The concept's pixels convert by `px_per_mm` from `wrist_row` (u = (row - wrist_row) /
+# px_per_mm) and from each view's centre column (v = (col - centre) / px_per_mm, the thumb's side positive).
+
+[hand]
+id = "fp_hand"
+concept = "2026-11-11-fp-hand-model-concepts/a_refined/image-0.png"   # under the raw folder
+concept_note = """concept A refined, the engineer's pick (2026-11-11); 1536 x 1024 px, four views on grey: 0 the back
+of the right hand, relaxed and open; 1 the palm, drawn as a left palm (the thumb on the right: compare the right palm
+mirrored); 2 the fist from the back of the hand, hanging (the knuckles and the backs of the first phalanges, the thumb
+round under it at the lower right); 3 the fist from the thumb's side. View 0 wins for every open size, view 2 for the
+fist's width and length, view 3 for its depth."""
+engineer_words = """2026-11-11: four digits (three thick rounded fingers and a thumb), soft rounded knuckles, gentle
+creases so each finger reads in the fist, smooth teal skin with a faint vinyl sheen, a lighter palm and fingertips;
+bare forearm (a garment's sleeve comes later from each worn outfit).
+2026-11-20 (docs/decisions/2026-10-19-alien-overlaid-face-four-fingers.md, "Note of 2026-11-20"): five digits tried,
+four stand: three fingers and a thumb, the final word. From the eye m30's three thick fingers merged into a mitten
+beside the rest reference: the fingers slimmer so they read apart."""
+# m40 (2026-11-20, four digits) changed, and why: [fingers] index, middle and ring slimmed from 47.5 / 45 / 39 mm wide
+# to 37 / 38 / 35 (the five-digit round m31-m34: slimmer fingers read apart from the eye; four of 33 / 34 / 32 / 27
+# fit the palm, three need a little more to fill its 131 mm knuckle row), thickness 0.88 of each; the middle the
+# longest (to u 208, hand_len_mm), index and ring equal (97 mm knuckle to tip; m30's ring was 77, the index the
+# longest); the knuckles spread over the knuckle row with a few mm of palm between them, the tips further apart; the
+# thumb's phalanges 5 mm out (apart_out_mm, m33's fix: m30's palm measured 54.2 mm at u 88 against 49, the thumb's
+# web) and its proximal phalanx slimmer in its middle (waist_mm) so its joints read; the creases carved only on
+# their own digit and faded in round it (fp_hand_model.Hand.crease, the five-digit round's q2: on slim fingers a
+# joint's groove cut the neighbour's side into saw-tooth spikes); [fist] the ring's spread a little wider for the
+# slimmer fingers. Unchanged: the forearm, the palm's outline, the skin, the thumb's length and width# the rig: the axolotl character's arm rig (art#196 H1u) as data, read from the committed hands asset t4 by
+# tools/blender/fp_rig_seed.py (the character build itself was lost with D: on 2026-11-18; the engineer's choice the
+# same day: go on from assets/body/fp_hands/source/fp_hands.blend)
+rig_seed = "tools/blender/fp_rig_seed.json"
+# the scale: the character's hand, wrist to fingertip (RightHand head to the middle finger's tip), and its forearm
+# (RightLowerArm), so the viewmodel's arm lengths stay the character's
+hand_len_mm = 208.4
+forearm_len_mm = 220.5
+upper_stub_mm = 80.0     # the upper arm kept past the elbow (never in the frame: the viewmodel keeps it behind)
+px_per_mm = 2.0          # view 0: the wrist (row 375) to the longest tip (row 793) is 418 px for 208.4 mm (2.006); the
+                         # longest digit was read as the index until m30, the middle since m40
+wrist_row = 375
+centre_col = [210, 609, 1010, 1375]   # each view's forearm centre line at row 111
+tol_mm = 4.0             # the most a build's measured size may differ from this file (or tol_pct of it, the larger)
+tol_pct = 5.0
+
+# The forearm: its width (across v) and depth (along w) at stations up the arm (u), view 0 and view 3 (the depth;
+# the fist's side view, the same forearm). The wrist's soft pad (u -12) is the hand's carpal base, not a cuff.
+[forearm]
+u = [-300.0, -221.0, -132.0, -92.0, -62.0, -32.0, -12.0]
+width = [94.0, 92.0, 88.0, 78.0, 73.0, 78.0, 85.0]
+depth = [90.0, 90.0, 90.0, 80.0, 71.0, 65.5, 65.0]
+centre_v = [0.0, 0.0, -1.0, -0.8, 0.5, 2.5, 3.0]   # the outline's middle, view 0
+
+# The palm's outline in view 0 at stations along u: from v_min (the ring finger's side) to v_max (the thumb's side,
+# the thumb's mound included up to u 58; from u 75 the thumb stands apart). Its thickness (along w) is not drawn in
+# any view: taken from the fingers (the palm about as thick as the middle finger at the knuckles, a little more over
+# the thumb's mound, which bulges on the palm's side).
+[palm]
+u = [0.0, 28.0, 58.0, 88.0, 98.0]
+v_min = [-40.0, -57.0, -70.0, -82.0, -84.0]
+v_max = [46.5, 68.5, 82.0, 49.0, 47.5]
+thickness = [52.0, 48.0, 44.0, 40.0, 38.0]
+cupping_mm = 4.0        # the palm's middle sits this far in from its sides (a soft hollow, view 1)
+# the little side's mound on the palm's side (an ellipsoid, mm): m26's (c [56, -52, -6], r [34, 17, 15]) stood out of
+# the outline by 5 to 8 mm at u 28 and 58; moved in and made deeper, it bulges on the palm's face instead (m27, palm
+# grid p1-p2 of 2026-11-18)
+little_mound = { c = [64.0, -42.0, -8.0], r = [30.0, 13.0, 17.0] }
+
+# The three fingers and the thumb (view 0). `knuckle_u`: the base joint (the knuckle bump on the back); `crotch_u`: where
+# the finger leaves its neighbour on the back; `tip_u` and `centre_v`: the tip and the line along the finger; `width`
+# across, `thickness` along w (not drawn in any view: 0.88 of the width, the soft sausage of view 1's fingers);
+# `phalanx` the three bones' share of knuckle-to-tip (the creases of view 1 at about 0.42 and 0.74 of it).
+# The rig's names: index (next to the thumb), middle, ring; the character's Little bones stay and carry nothing.
+# m40: index, middle and ring 37 / 38 / 35 wide, the middle the longest (110 mm knuckle to tip), index and ring 97;
+# the knuckles at v 25 / -15 / -57 (3 to 5 mm of palm between them), each tip further out than its knuckle so the
+# gaps open toward the tips. Was (m26-m30): index 47.5 wide to u 210 (centre_v [25, 35]), middle 45 to u 205
+# ([-23, -26]), ring 39 to u 165 (knuckle_v -61, [-70.5, -73]); the ring's -61 had kept m26's palm in its outline
+[fingers.index]
+knuckle_u = 97.0
+crotch_u = 114.0
+tip_u = 194.0
+centre_v = [26.0, 32.0]     # at the crotch and at the tip
+knuckle_v = 25.0
+width = 37.0
+thickness = 32.5
+phalanx = [0.42, 0.32, 0.26]
+[fingers.middle]
+knuckle_u = 98.0
+crotch_u = 116.0
+tip_u = 208.0
+centre_v = [-15.0, -17.0]
+knuckle_v = -15.0
+width = 38.0
+thickness = 33.5
+phalanx = [0.42, 0.32, 0.26]
+[fingers.ring]
+knuckle_u = 92.0
+crotch_u = 110.0
+tip_u = 189.0
+centre_v = [-58.0, -66.0]
+# the centre at the knuckle (default: on the line through the crotch and the tip): m26's ring, on that line, made the
+# palm 9 mm wider than view 0 at u 88 and 98 (m27, palm grid p1-p2); m40's slimmer ring sits inside it at -57
+knuckle_v = -57.0
+width = 35.0
+thickness = 31.0
+phalanx = [0.42, 0.32, 0.26]
+[fingers.thumb]
+base_u = 20.0               # the thumb's root joint, inside the mound (near the wrist)
+apart_u = 75.0              # where the thumb stands apart from the palm's side in view 0
+tip_u = 135.0
+centre_v = [36.0, 71.0]     # at its root and from the middle to its tip
+# m40 (from the five-digit m33): the thumb's two phalanges 5 mm further from the index's side (its root and metacarpal
+# stay, so the mound at u 58 keeps its outline): m30's palm measured 54.2 mm at u 88 against 49, the thumb's inner
+# side webbed onto the palm's edge there; m32 moved the whole thumb out and its mound went 8 mm past u 58's outline
+apart_out_mm = 5.0
+# m40: the proximal phalanx 2 mm slimmer each side in its middle (fp_hand_model.Hand.thumb_waist; the five-digit m34
+# tried 1.5, never seen in Godot), so its two joints read as knuckles and the thumb is no sausage; at the joints the
+# width stays `width`; with the wrinkles over its last joint's back (fp_hand_model.Hand._creases)
+waist_mm = 2.0
+palmar_w = -16.0            # the thumb's line sits this far toward the palm from the hand's middle plane
+width = 36.0
+phalanx = [0.50, 0.27, 0.23] # metacarpal (in the mound, to where it stands apart), proximal, distal
+# the thumb's blend into the palm (mm): 12 on the mound, eased to 5 by apart_u (fp_hand_model.Hand.web_k). One 12 mm
+# blend filled the gap past apart_u with a web 13 mm out of the palm's side at u 88 (m26); 3 or 4 mm pinch the
+# surface (Euler 1), 5 keeps it whole (palm grid p2, 2026-11-18) but leaves a notch at the crotch that a thumb swung
+# out at rest opened into a dimple (n6's Idle close-up); 7 (m29, art#136 run p1) left the dark notch in Godot as it
+# was and the palm 54.3 mm wide at u 98: the notch was the normal map's bake (fp_hand_model.bake_maps' cage, m30),
+# so back to 5
+web_mm = [12.0, 5.0]
+
+# The fist (views 2 and 3): a real finger pose in the rig, every finger seen from the back as its own rounded
+# knuckle and first phalanx with a crease between neighbours, the thumb across the first two fingers' middle
+# phalanges. A corrective morph `fist` keeps the curled fingers' volume (linear skinning alone thins the inner side of
+# each bent joint). Sizes in mm, as measured: width across the knuckles, length wrist to the lowest knuckle (view 2),
+# depth back to front (view 3).
+[fist]
+width = 156.0
+length = 140.0
+thumb_low_u = 157.0
+depth = 125.0
+# the concept's fist (views 2 and 3): the first phalanges bent about half way at the knuckles (seen from the back as
+# rounded columns below the knuckle row), the middle phalanges making the fist's front, the tips tucked into the palm
+# (variant grids g6-g8 and g19, 2026-11-12: an 80-degree knuckle bend hid the fingers end-on from the back and made
+# the fist too short; a 15-degree one with a 120-degree middle joint folded the middle phalanx back over the first in
+# a torn flap on the thumb's side)
+# m26's [55-60, 90, 50] made a fist 108 mm deep: its front is the thumb lying on the middle phalanges, its back the
+# knuckle heads, and the 90-degree middle joints folded the middle phalanges back up toward the palm. m27 (fist grids
+# g27a-g27f, 2026-11-18): the knuckles bent a little more and the middle joints less, the middle phalanges hanging
+# lower; with the thumb swung to 50, `swell_mm` 5, the knuckle heads raised and `spread_mm`, the fist is 123 mm deep
+curl_deg = { index = [60, 65, 60], middle = [62, 65, 60], ring = [65, 65, 60] }
+# the thumb tucked down the side of the index's curled finger, its tip by the index's middle phalanx: picked by eye
+# from variant grids (g4 `tuck` 2026-11-11, g15 and g16 2026-11-12, the vertices coloured by group). The search
+# (`fit = true`, fp_hand_model.fit_thumb, steered by `thumb_target`) sent the thumb out in front of the fist or, turned
+# across it, up and away
+# (m27: swung 50 instead of 35 toward the palm, down onto the lower middle phalanges; grids g27d-g27f)
+thumb = { turn = [-20.0, 50.0], curl = [25.0, 30.0, 40.0], fit = false }
+# the fist's own surface (fp_hand_model.FistField and corrective): each finger keeps its own round surface (a crease
+# where neighbours press together), a little fuller than open (`swell_mm`), blended into the palm only near its root
+# (`root_blend_mm`); a knuckle head per finger on the back (an ellipsoid at the knuckle joint, radii as shares of the
+# finger's radius along u, v, w, raised `up` mm toward the back) and a valley between neighbours; the palm's flesh wraps the middle phalanges and
+# tips pressed into it (`tip_blend_mm`: they cut its front and side in a torn-looking ring otherwise). A finger's
+# vertex goes out along a ray from its phalanx's axis; a web or root shared by groups follows its neighbours as a
+# membrane; then `untangle` rounds of relaxing on the surface and `smooth_rounds` of smoothing where it is still
+# rough (more than `rough_mm` off its neighbours' mean); a vertex moves at most `move_cap_mm`
+swell_mm = 5.0            # m26 1.5; 5 since m27 (grids g27c-g27f): the fist's chunky fingers, wider and deeper
+root_blend_mm = 12.0
+tip_blend_mm = 8.0
+web_blend_mm = 8.0
+untangle = 8
+smooth_rounds = 10
+rough_mm = 1.0
+move_cap_mm = 60.0
+knuckle = { r = [0.9, 1.0, 1.0], up = 12.0, along = 0.0 }   # m26 [0.9, 0.95, 0.85] up 5: the back's top was the wrist
+# the ring finger pushed out sideways in the fist (mm along v, after the pose; FistField): the folded fingers press each
+# other apart. m27's narrower palm (the ring's knuckle_v) took the fist to 145 mm wide; the concept's fist is 156 across
+# its knuckles against an open palm of 131 (grid g27f)
+# m40: -9, the slimmer fingers' fist narrower by the knuckles' spans (m30 -6)
+spread_mm = { ring = -9.0 }
+# the valleys between the knuckles over the back of the fist (a groove per pair of neighbours, `back` mm toward the
+# wrist and `front` mm past the knuckle row, `depth` deep, a Gaussian `width` wide): with the knuckle heads what makes
+# each finger read from behind (grid g20, 2026-11-12; without them the back read as one smooth slab)
+valley = { depth = 5.0, width = 7.0, back = 35.0, front = 16.0 }
+# the tunnel the curled fingers leave in front of the palm, filled with the palm's flesh (an ellipsoid in the hand's
+# space, mm): from the player's eye its opening by the thumb read as a dark hole (the Godot close-up t17; grid g21)
+cavity = { c = [96.0, 15.0, -36.0], r = [26.0, 55.0, 17.0] }
+
+# The skin (the concept's look, the character's teal): the base is the character's own hand albedo (its median, read
+# off its skin texture under the hand), so the first-person hand matches the body; the palm, the fingers' palm side and
+# the fingertips lighter and a little paler; the knuckles' tops a touch deeper; a soft gradient between them, never a
+# hard edge or a flat colour. A faint vinyl sheen: low roughness, no metal. The creases: a few soft grooves (the
+# fingers' palm side at each joint, two palm lines, the wrist), faint wrinkles over the back of the middle knuckles,
+# all in the normal map.
+[skin]
+base_srgb = [0.40, 0.79, 0.79]   # the character's hand teal (the median of its skin texture under the hand, measured by
+                                 # the m25 build; docs/animations.md): since m28 only the reference the pattern's
+                                 # lightness is measured against. The base colour texture is neutral grey (each texel's
+                                 # luminance over this colour's, the brightest 1.0; the back of the hand 0.72 linear,
+                                 # 0.86 sRGB) and the material's factor white: the game multiplies it by the player's
+                                 # body colour (prime-game's CharacterRig.set_tint), fp_hands.toml [look] body_srgb
+                                 # the default. The palm's paleness (palm_paler) cannot survive a multiply: only its
+                                 # lightness stays
+palm_lighter = 0.12        # the palm's value over the base (HSV value, 0-1)
+palm_paler = 0.10          # and its saturation under the base's (a share of it)
+tip_lighter = 0.08         # the fingertips' value over the base, from the last crease to the tip
+knuckle_deeper = 0.04      # the knuckles' tops: value under the base
+roughness = 0.42
+# the creases' groove (fp_hand_model.Hand.crease): m26's, 2.6 mm wide, straight and of one depth, "looked ruled" (its
+# critic, 2026-11-18); since m27 4 mm wide, bowed toward the tip in the middle of the palm side by `crease_bow_mm`,
+# wandering by `crease_wobble_mm` along their length, their depth swelling and fading by a fifth (crease grid c27a:
+# 2.6 / 0 / 0 ruled, 5 / 2 / 0.8 blurred into folds, 4 mm at 0.4 deep barely read)
+crease_depth_mm = 0.5
+crease_width_mm = 4.0
+crease_bow_mm = 1.5
+crease_wobble_mm = 0.6
+
+# The budget: one arm (forearm, hand, the upper arm's stub); two in view.
+[skin_weights]
+# the thumb's weights eased over the mesh (fp_hand_model.smooth_thumb, m29): each part's own weight switched from one
+# thumb bone to the next within 2 to 3 mm, a sharp crease at a bent thumb joint (n6's Idle); every vertex shared
+# between a thumb bone and another, grown thumb_rings rings, is Laplacian-smoothed thumb_iters times at thumb_lam,
+# among the thumb's bones and `eased` (the index's root too: its share in the web pulled a dimple as the thumb swung)
+thumb_rings = 6
+thumb_iters = 12
+thumb_lam = 0.5
+eased = ["Hand", "LowerArm", "IndexProximal"]
+
+[budget]
+tris_per_arm = 50000      # surface nets at 3 mm: the fingers' gaps stay open; the viewmodel's GPU ms is measured
+texture_px = 2048          # the base colour and the normal map, shared by both arms (the left mirrors the right's UVs)
+
+# How it moves: the fingers bend at their three joints, the thumb at its root and two joints; the wrist bends at most
+# 20 degrees from the forearm's line (fp_hands.toml [view] bend_max_deg); the forearm takes the hand's twist
+# (fp_hands.toml [rig] twist_share); the palm stays one soft piece; no crease shows on the forearm in any clip.
+[behaviour]
+bends = ["fingers: base, middle and last joint", "thumb: root, middle and last joint", "wrist: up to 20 deg"]
+stays = ["palm: one soft piece", "forearm: smooth, its twist spread along it"]
+
+# Gate R, reference first (docs/decisions/2026-11-12-reference-first.md, docs/references.md): the engineer's picks per
+# moment on the board <raw>/refs/fp-hands/ (2026-11-12, art#136 c6822743654). The pictures stay private; this card
+# says in words what the build copies. Percentages are of the frame, across from the left and down from the top.
+[reference]
+board = "refs/fp-hands"
+[reference.picks]
+crystal_hold = ["picks/crystal_hold/2780980_ss_05.jpg", "2780980/ss_01.jpg"]
+# the free hand at rest (the engineer's pick 2026-11-19, art#136 run p1): its own board, a raw-root path
+# since 2026-11-20 the engineer's own frame (art#136): a static two-hand view-model as in flat shooters; the
+# hands never follow the look (BONEWORKS, a VR game, hangs them on the body, which a flat game does not). Was
+# refs/fp-hands-empty/picks/rest/823500_trailer_00_t0012.0.jpg
+rest = "refs/fp-hands-static/picks/rest/engineer_2026-11-20.webp"
+punch = "real/ (the engineer's windup and contact photos from the eye; to come)"
+# the crystal hit (the engineer's pick 2026-11-19, "as you recommend", art#136): its own board, a raw-root path
+crystal_hit = ["refs/fp-hands-crystal-hit/picks/crystal_hit/239140_ss_07.jpg", "refs/fp-hands-crystal-hit/picks/crystal_hit/239140_ss_00.jpg", "refs/fp-hands-crystal-hit/picks/crystal_hit/2780980_ss_01.jpg"]
+[reference.card]
+crystal_hold = """The item held low in the middle with both hands from its sides, like a box being carried: the item \
+fills about a third of the frame's width (35 to 68 %), its top at about 60 to 75 % down, its lower part cut off by the \
+frame's bottom. The two hands sit at the same height on the item's left and right flanks, mirrored, the palms flat \
+on the sides, the backs of the hands toward the eye and outward, the fingers pointing forward and wrapping round the \
+item's far corners, the thumbs up along the near faces. The forearms come in from the bottom corners, each a straight \
+line through its wrist into the hand (no bent or twisted wrist, nothing crossed). No hand covers the item's top: for \
+the crystal, the cap and its loop stay in view above the hands."""
+rest = """The right hand only (the engineer, 2026-11-20: the left is not shown at rest), from the eye, static in the view whatever the look (a view-model, as in flat shooters). Low in the right half, the forearm coming in from the bottom right corner (the cuff at about 80 % across at the bottom edge), the back of the hand up and toward the eye, the hand nearly level and pointing forward and in toward the middle; the fingertips at about 57 % across, 60-67 % down. The fingers softly curled, each a little more than the one before it from the index, slightly apart. The thumb relaxed below the index, swung in toward the middle, its tip under the index's first joint with a clear gap; never sticking out. Big in the frame: a hand about half the frame's height long."""
+punch = """The engineer's photos from the eye: the windup and the contact (to come)."""
+crystal_hit = """A two-handed diagonal swing, the item's head first (Dying Light 239140_ss_07 for the windup and the \npath, 239140_ss_00 for the contact; the grip from the sides as Lockdown Protocol 2780980_ss_01 and the hold). Both hands \nstay on the item, low in the frame, the forearms from the bottom corners. The path runs from the lower left to the \nupper right: the windup draws the item down and to the left, its head low by the left hand; the swing carries it \nacross and up, the head leading all the way. At the contact the head, for the crystal its cap and loop, is in the \nupper right third near the frame's middle (where a target's head would be), the item crossing the frame on the \ndiagonal, the hands still in the lower quarter; the target in the middle stays visible. The references' items are \nlong (a bat, a sword): take the direction, the hands' place and the leading head, and shorten the reach to the \ncrystal's length; the hands never leave its flanks."""

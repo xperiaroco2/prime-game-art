@@ -1,0 +1,70 @@
+{
+ "source": "fp_hands_fit.py: the target frames of [view] targets, the hands' camera at [view] fov_deg; the crystal hold is fp_hands.toml's own since 2026-11-12 (Gate R, the reference's pick), not fitted; the crystal hit's contact neither since 2026-11-19 (its target frame was lost with D:; fp_hands.toml [poses.crystal_hit] is set from the eye)",
+ "poses": {
+  "idle": {
+   "R": {
+    "p": [
+     0.2881,
+     0.35,
+     -0.205
+    ],
+    "f": [
+     -0.5555,
+     0.7608,
+     0.3355
+    ],
+    "n": [
+     -0.1759,
+     -0.5019,
+     0.8468
+    ],
+    "bend": [
+     0.0,
+     -16.0
+    ]
+   }
+  },
+  "fist_out": {
+   "R": {
+    "p": [
+     0.0875,
+     0.54,
+     -0.0337
+    ],
+    "f": [
+     -0.2125,
+     0.969,
+     0.1257
+    ],
+    "n": [
+     -0.3035,
+     -0.1877,
+     0.9341
+    ],
+    "bend": [
+     -16.0,
+     -1.0
+    ]
+   }
+  }
+ },
+ "hold_roll": {
+  "Right": 30.0,
+  "Left": -30.0
+ },
+ "overlap": {
+  "idle": {
+   "skin": 0.3913,
+   "sleeve": 0.0
+  },
+  "fist_out": {
+   "skin": 0.3657,
+   "sleeve": 0.6123
+  },
+  "crystal_hit": {
+   "skin": 0.0633,
+   "sleeve": 0.0003,
+   "crystal": 0.3197
+  }
+ }
+}

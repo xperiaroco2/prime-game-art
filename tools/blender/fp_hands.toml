@@ -1,0 +1,325 @@
+# The first-person hands (art#136, xperiaroco2/prime-game#1587): concept A, "the hand as on the character" (the
+# engineer's pick, 2026-11-10, prime-game#1095 c6764216585): the alien's own forearms and hands at true size, the
+# striped sleeve to mid-forearm, cut from the character build and posed in the camera's space.
+# tools/blender/fp_hands_build.py reads this file; tools/blender/fp_hands_run.py drives the build, the export and the
+# shots (docs/animations.md, "The first-person hands").
+#
+# Space: the camera's, in metres, x right, y forward (the view direction), z up; the eye at the origin. The GLB maps
+# it to Godot's camera space (x right, y up, -z forward): the hands' root goes under the Camera3D with no offset.
+# A hand's frame: p, the wrist (the Hand bone's head); f, the fingers' direction (wrist to the middle knuckle); n,
+# the back of the hand's normal. Grips are alien_hands.toml's (relaxed, runfist) or this file's [grips].
+
+[source]
+# the build the arms come from: the detailed first-person hand (concept A refined, specs/fp_hand_dims.toml),
+# fp_hand_model.py's build of the two first-person arms on the axolotl H1u character's arm rig (the rig's hand and
+# finger bones moved to the model's joints, the morph `fist` its corrective). Since 2026-11-18 the rig comes from
+# tools/blender/fp_rig_seed.json (read from the committed hands asset t4): the character build m25 was made from was
+# lost with D: (art#136); was m25, before it the H1u character itself
+char = "2026-11-18-fp-hand-model/m41/fp_hand_char.blend"   # m41: m40 with the left fist morph fist_L (2026-11-20); m40: four digits, three slimmer fingers; was m30
+crystal = "assets/prop/energy_crystal/export/energy_crystal.glb"   # the committed energy crystal (a repo path; was its
+                                                                  # raw copy energy-crystal/lit1, same hash)
+skin_inside_cuff_m = 0.035   # the skin is kept from this far inside the sleeve's cuff out to the fingertips
+sleeve = false               # the bare arm first (the engineer, 2026-11-11): the skin from above the elbow, no
+                             # garment; each outfit's own sleeve is laid on later
+sleeve_above_elbow_m = 0.14  # the sleeve is kept from this far above the elbow out to its cuff: enough that its cut
+                             # end stays behind the frame's corner, short of the upper arm (the first build kept it
+                             # whole and it entered the frame)
+
+[rig]
+fps = 60
+# the upper arm's head (the shoulder joint) in the camera's space: lower and further forward than the
+# anatomical 0.13 / -0.14 / -0.26, the usual first-person placement, so the elbow stays under the frame and
+# the forearm can reach the middle of the view; the arm's own lengths are the character's
+shoulder_R = [0.20, 0.04, -0.42]
+shoulder_L = [-0.20, 0.04, -0.42]
+elbow_R = [1.0, -0.2, -1.0]     # where the elbow points (a direction, before it is made square to the arm)
+elbow_L = [-1.0, -0.2, -1.0]
+palm_m = 0.02                   # a held hand: the palm's middle this far off the surface (half the hand's thickness)
+reach_m = 0.045                 # and the wrist this far back from the palm's middle, along the fingers
+twist_share = 0.9               # the forearm takes this share of the hand's twist about the forearm (the rest stays
+                                # at the wrist): a turned hand turns the forearm, as a real one does, never the wrist
+# the viewmodel (since the engineer's rejection of the first build, 2026-11-11): a pose with a wrist `bend` sets its
+# forearm's direction itself (the hand's length bent by at most [view] bend_max_deg at the wrist), and the upper arm
+# runs from the elbow back along upper_* out of the frame; the shoulder joint goes wherever that ends
+upper_R = [-0.10, 0.90, -0.40]  # the upper arm's direction, shoulder to elbow: mostly forward, so the shoulder ends
+upper_L = [0.10, 0.90, -0.40]   # up behind the eye and the upper arm never enters the frame
+elbow_max_deg = 30.0            # the elbow bends at most this far, so the upper arm runs on near the forearm's line
+                                # out of the frame (a deeper bend put the elbow's crease in view)
+park_L = { p = [-0.26, 0.02, -0.62], f = [0.3, 1.0, 0.2], n = [-0.2, 0.0, 1.0] }   # the free left hand, below the frame
+
+[view]
+# the hands' own camera (the usual first-person viewmodel): a narrower lens than the world's 75 degrees, so true-size
+# hands sit low at the frame's edges as in the target frames instead of reaching up into a wide view; the game renders
+# the hands' layer through a second camera with this vertical field of view, following the player's camera
+fov_deg = 50.0
+crystal_scale = 1.3   # the held crystal drawn this much bigger in first person (CrystalSocket's own scale), the usual
+                      # viewmodel cheat: at true size the hands read too big for it (the engineer's pick, 2026-11-11)
+bend_max_deg = 20.0   # the most a wrist bends from the forearm's line, up or sideways (a straight, unbroken wrist)
+cap_z_m = 0.30        # the crystal's cap point above its tip, unscaled (crystal_dims.toml: the top disc under the loop,
+                      # between the cap's dome and the loop): what a crystal pose from the eye places in the frame
+# the target frame per key pose (batch 2026-11-11-fp-hand-frames, the engineer's direction of 2026-11-11), which
+# fp_hands_fit.py fits the pose to by silhouette
+# (the hold, 2026-11-11-fp-hand-frames/hold, is no target since 2026-11-12: [poses.crystal] copies the reference; the
+# crystal hit's frame, lost with D:, none since 2026-11-19: [poses.crystal_hit] is set from the eye by Gate R's card)
+targets = { idle = "2026-11-11-fp-hand-frames/idle/image-0.png", fist_out = "2026-11-11-fp-hand-frames/punch/image-0.png" }
+# the empty hall the concept frames were made over (the ship package v9's night render), for the arm's silhouette:
+# what differs from it
+background = "2026-11-08-fp-hand-concepts/_refs/ship_hall.png"
+
+[grips.rest]      # the free hand at rest in the view (art#136 run p1, reference first): the engineer's pick, a right hand
+                  # from the eye with long, nearly straight fingers, a soft curl, slightly spread, the thumb swung
+                  # clearly out from the index and the lowest digit (refs/fp-hands-empty/picks/rest, private).
+                  # The start: Quaternius UAL1 Standard's Idle_Loop (CC0, sources/quaternius_ual1_standard.toml),
+                  # its right hand read in headless Blender (each joint's flex about the hand's side axis, frame 0 = 30):
+                  # index 77/77/77, middle 78/77/77, ring 78/77/77, pinky 82/78/77 (a loose fist); the side angles
+                  # index -0.7, ring -2.8 (rest -2.4, -4.5: no spread beyond its rest); thumb MCP 25, IP 87, its
+                  # proximal 47 degrees out from the index's. Our hand has three fingers: index, middle and ring take
+                  # UAL's own, the pinky is left out (our rig's Little is unweighted). UAL's thumb_01 turns about a
+                  # base frame of its own, so our metacarpal and ThumbTurn kept n6's as the start (21 out).
+                  # Fitted by eye beside the reference (grids p1grid, p1gridb, fp_hands_build.py --hit-grid with `R`):
+                  # UAL's curls x 1, 0.35, 0.18, 0.12 and 0.08, spread 0, 8 and 12, the metacarpal -21 and -40, at the
+                  # current place and two nearer the reference's; picked c3s12t40: UAL x 0.08 (a soft curl), spread 12,
+                  # the thumb swung out by its metacarpal to -40 with UAL's MCP and IP x 0.08. Round 2 (grids
+                  # p2grida-d, the wrist's turn first: [poses.idle]): p1's even curl read as three fused, parallel
+                  # fingers, so the curl cascades, index least: 5, 10 and 15 degrees at each joint (8/14/20 bunched
+                  # them in the level views); spread 18 and the thumb at -55 showed no difference from the eye
+                  # f1 (four digits on m40, rest grids f1r1-f1r3 from the eye in Godot): a softer cascade per joint
+                  # and spread 30 (the index turned 30, the middle 9 and the ring 12 degrees: the three read apart;
+                  # spread 12 bunched them), the thumb rolled and swung away from the palm so it shows out lowest
+                  # with a gap (round 2's [-40, 2, 6.9] / [30, -10] and f1r1's [-55, 8, 18] / [30, -30] hid it under
+                  # the palm). Was 5/10/15 even, spread 12
+                  # f2 (f2r4 F, the back to the eye): a deeper cascade and spread 50; the thumb turned the other way
+                  # ([20, 5, 10] / [30, -30], f1r3 F's) is the only one that shows below the palm with a gap from
+                  # this side. Was f1's 5/8/6, 9/12/8, 13/16/10, spread 30, [-20, 5, 10] / [-30, -30]
+                  # r1 (2026-11-20, the engineer: "the fingers are twisted"): f2's numbers, seen from the side, the
+                  # back and the palm, were no human hand: spread 50 laid the three fingers over each other and the
+                  # thumb's swing -30 bent it back behind the hand's back. A plain relaxed hand instead: the curl
+                  # cascades away from the thumb (15-25, 20-30, 10-15 degrees), no spread, the thumb swung 25 forward
+                  # in front of the palm and a little bent; checked in three plain views first, then from the eye.
+                  # fp_hands_run.py GRIP_LIMITS refuses a grip past a human hand's joints. Was f2's 6/10/8, 11/15/11,
+                  # 16/20/14, spread 50, Thumb [20, 5, 10], ThumbTurn [30, -30]
+Index = [15, 20, 10]
+Middle = [20, 25, 12]
+Ring = [25, 30, 15]
+Little = [15, 15, 15]
+mirror = true
+spread = 0
+Thumb = [0, 10, 10]
+ThumbTurn = [0, 25]
+
+[grips.cap]       # a hand round the crystal (the cap 13.5 cm across flats, the body 11 across corners): the
+                  # fingers round its back, the thumb along it; fit_hold scales each digit's curl to the surface
+Index = [30, 35, 15]
+Middle = [32, 36, 16]
+Ring = [34, 38, 16]
+Little = [34, 38, 16]
+mirror = true
+spread = 3
+Thumb = [10, 12, 8]
+ThumbTurn = [30, 25]
+
+
+[grips.fist]      # the punch's fist on the detailed hand (fp_hand_model.py's fit, specs/fp_hand_dims.toml [fist]):
+                  # the first phalanges half bent, the middle phalanges the fist's front, the thumb tucked down
+                  # the index's side; the morph `fist` (weight 1 with it) is the fist's own surface. Since m27 (fist
+                  # grids g27a-f, 2026-11-18) the middle joints 65 degrees and the thumb swung 50: the fist
+                  # 123 mm deep (m26's 90-degree middle joints, 108)
+Index = [60, 65, 60]
+Middle = [62, 65, 60]
+Ring = [65, 65, 60]
+Little = [0, 0, 0]
+mirror = true
+Thumb = [25, 30, 40]
+ThumbTurn = [-20, 50]
+
+[poses.idle]      # the free hand at rest, placed after the engineer's rest reference (art#136 round 2, grids p2grida-d):
+                  # low and a little right of the middle, the forearm out through the bottom edge (the wrist at 55 %
+                  # across on it), the fingers toward the upper left (their tips solved to about 30 % / 68 %), the back
+                  # turned to the eye as if the player looked 50 degrees down (the reference's view looks at the floor;
+                  # ours looks level, so a level hand showed only its edge: grids p2grida-c), rolled 20 degrees
+                  # thumb side up. Picked v50br20 (yaw 63, pitch 29 before the tilt). Was concept A's lower right corner
+                  # f1 (four digits on m40, 2026-11-20; fp_hands_run.py --rest-grid f1r1-f1r3, the reference first):
+                  # picked f1r3 J, the lower right corner (rest_R place [79, 99, 0.42], fingers at 125 degrees, tip
+                  # 20, roll 15): three fingers apart and the thumb out lowest with a gap, the wrist in the arm's
+                  # reach. Past about 0.42 m the arm cannot reach the low centre (0.5 m: 62 mm short, f1r1) and the
+                  # wrist's 20-degree bend then turns the hand straight up; tip 40 foreshortened the fingers into a
+                  # clump (f1r2). Was v50br20 at the low centre: R = { p = [0.0332, 0.4, -0.1791], ... }
+                  # f2 (grids f2r1-f2r4 from the eye, 2026-11-20): f1's upright corner hand read as a "stop" palm
+                  # or a wave. Picked f2r4 F: low, a little right of the middle (rest_R place [56, 94, 0.48],
+                  # fingers at 150 degrees, no lean, tip or roll), the back square to the eye, the forearm in line
+                  # with the hand (bend [0, 0]: the viewmodel's forearm, no reach limit) from the lower right.
+                  # Leaning the fingers away (f2r1, lean 40-60) or toward the left (f2r3, 165-175) foreshortened
+                  # them into a clump; the spread turns the fingers toward the index, so the fingers show at about
+                  # 110 degrees in the picture, not 150. Was f1r3 J, the corner:
+                  # R = { p = [0.2019, 0.42, -0.1919], f = [-0.5024, 0.3391, 0.7954], n = [-0.0764, -0.9337, 0.3498] }
+                  # f4 (2026-11-20, the engineer's own frame, refs/fp-hands-static/picks/rest/engineer_2026-11-20.webp):
+                  # both hands, a static view-model as in flat shooters (never hung on the body). Picked f4r2 D:
+                  # rest_R place [78, 92, 0.38], fingers at 120 degrees, tip 30, roll 55 (the thumb's side toward
+                  # the eye, so the fingers point in toward the middle and the backs face up), the left hand the
+                  # right's mirror (fp_hands_run.mirror_hand). Roll -30 to -55 (f4r2 A, B) turned the palms up;
+                  # tip 50 with no roll (f4r1) pointed the fingers away into paws. Was f2r4 F's single right hand:
+                  # R = { p = [0.0477, 0.48, -0.197], f = [-0.866, 0.0, 0.5], n = [0.1461, -0.9563, 0.2531], bend = [0.0, 0.0] }
+                  # f5 (the engineer, 2026-11-20): only the right hand, the left is not shown at rest. Was f4's mirror:
+                  # L = { p = [-0.1764, 0.38, -0.1488], f = [0.3456, 0.4897, 0.8005], n = [-0.4645, -0.6519, 0.5993], bend = [0.0, 0.0] }
+                  # g2 (the engineer, 2026-11-20 evening: "two compact hands"; the hand too big): both hands again,
+                  # the right's mirror, further from the eye and lower toward the corners (rest grid g2rest C/G:
+                  # place [83, 95, 0.55], the same 120 degrees, tip 30, roll 55): each hand about 18 % of the frame's
+                  # width (was 25 % at 0.38 m). Held as fists (G: grip `fist` with its morphs `fist` and `fist_L`):
+                  # the engineer's pick of 2026-11-20 ("кулаки", the size "норм"); relaxed (C, run g3r: grip `rest`, no
+                  # morph) dropped. Was f5's right hand alone at f4r2 D:
+                  # R = { p = [0.1764, 0.38, -0.1488], f = [-0.3456, 0.4897, 0.8005], n = [0.4645, -0.6519, 0.5993], bend = [0.0, 0.0] }
+R = { p = [0.3009, 0.55, -0.2308], f = [-0.3225, 0.4834, 0.8138], n = [0.4327, -0.6894, 0.581], bend = [0.0, 0.0] }
+L = { p = [-0.3009, 0.55, -0.2308], f = [0.3225, 0.4834, 0.8138], n = [-0.4327, -0.6894, 0.581], bend = [0.0, 0.0] }
+grip_L = "fist"
+fist = 1.0
+fist_L = 1.0
+# the engineer's other choice, the reference's low centre (f1r3 F: place [50, 98, 0.40], 140 degrees, tip 20, roll
+# 15; the wrist 8.3 mm past the reach), with its own thumb ([grips.rest] Thumb = [20, 5, 10], ThumbTurn = [30, -30]):
+# R = { p = [0.0, 0.4, -0.1791], f = [-0.7912, 0.3235, 0.519], n = [0.0936, -0.7746, 0.6254] }
+grip_R = "fist"
+keep = true       # this R wins over fp_hands_fit.json's idle (concept A's corner, fitted to its frame): without it every
+                  # build since p2 put the hand back in the corner (the five-digit round's m31: round 2's pick never
+                  # reached Godot)
+
+[poses.fist_out]  # the punch's contact: concept A's fist frame measured (the fist's middle at 62 % across and 54 %
+                  # down, about a fifth of the frame's height), the arm long from the lower right corner
+                  # g3 (the engineer, 2026-11-20: too big, cut off at the punch's end): further and lower (grids
+                  # g2hit p1-p4, g3hit p5-p7; picked p6), the viewmodel's forearm in line (bend [0, 0]): the whole fist
+                  # in view a little right of and below the middle, the forearm out through the frame's bottom edge
+                  # (at 0.24 m its cut end showed in the lower right). Was p = [0.11, 0.24, -0.06], f = [-0.05, 1, 0.45]
+R = { p = [0.07, 0.40, -0.07], f = [-0.1, 1.0, 0.35], n = [0.3, -0.45, 1.0], bend = [0.0, 0.0] }
+keep = true       # this R wins over fp_hands_fit.json's fist_out (concept A's frame); checked from the game's camera
+                  # in the Godot grid g4punch A (the Blender grids crop the frame's bottom, where the arm's end showed)
+grip_R = "fist"
+
+[poses.crystal]   # Gate R (specs/fp_hand_dims.toml [reference.card] crystal_hold; the engineer's pick 2026-11-12, an
+                  # item carried with two hands from its sides): the crystal upright in the middle, low (the hands cut by
+                  # the frame's bottom, as in the reference), tilted 15 degrees away from the eye so the cap and its
+                  # loop read; both hands on its flanks at one height (15 cm up the crystal, just under the skirt),
+                  # the backs of the hands turned up toward the eye, mirrored, the fingers round its back, the thumbs up
+                  # along the near faces; the forearms come in diagonally from the frame's bottom corners (the critic's
+                  # note on t20: the reference shows its forearm): the wrist bent 15 degrees toward the little finger
+                  # (with the palm on a side, the thumb is up: the forearm rises) and cocked 20 toward its back (the
+                  # forearm comes from outside). Picked from the grids
+                  # 2026-11-11-fp-hands/hold1..hold7 beside the reference. The hands in the crystal's own space
+                  # (origin the tip, z up its length, -y its front, which faces the eye), each from where its palm
+                  # touches (Poses.on_crystal) and then seated by fit_hold. Was a torch hold fitted to an AI frame
+                  # g1 (2026-11-20, the M8 review's answer 1, prime-game#1095: keep the m27 grip, raise the crystal in
+                  # the frame): set from the eye, the same lean and distance, the cap point raised from 64.5 % down to
+                  # 54 % (grid g1raise: d64 the old hold, d58, d54, d50; d50 put the cap at the frame's middle); the
+                  # palms from 99 % down to 87 %, both still seated (2.4 mm deepest), in reach. Was the same hold
+                  # 6.5 % of the frame lower: p = [0.0, 0.4095, -0.4458], up = [0.0, 0.2588, 0.9659], front = [0, -1, 0]
+crystal = { cap = [50.0, 54.0], dist = 0.51, tilt = 0.0, lean = 15.0, yaw = 0.0 }
+R_c = { z = 0.15, toward = [1.0, 0.0, 0.5], r = 0.054, wrap = [0.0, 1.0, 0.3], bend = [20.0, -15.0] }
+L_c = { z = 0.15, toward = [-1.0, 0.0, 0.5], r = 0.054, wrap = [0.0, 1.0, 0.3], bend = [20.0, 15.0] }
+grip_R = "cap"
+grip_L = "cap"
+thumb_pin = { turn = [-15, 10], curl = 0.6 }   # the thumbs as fitted on n6 (approved): on m29 the fit's own search
+                                              # went to turn [75, 30] and curl x2.5, the thumbs off the flanks
+                                              # (art#136 round 2; fp_hands.toml [golden] holds the hold to n6)
+
+# The crystal hit's key poses, set from the eye (Gate R: specs/fp_hand_dims.toml [reference.card] crystal_hit, the
+# engineer's pick 2026-11-19): a crystal pose by where its cap point ([view] cap_z_m) lands in the hands' frame, `cap` =
+# [% across, % down], `dist` m ahead of the eye; from upright, its front to the eye, its top `tilt` degrees toward the
+# right (about the view's axis: it rolls the hands' flanks too), then `lean` degrees away from the eye, then `yaw`
+# degrees toward the right about the vertical (fp_hands_build.py crystal_in_view). The hands ride on the crystal in the
+# hold's seat, so they never leave its flanks.
+# g3 (the engineer, 2026-11-20: the diagonal swing "is no hit"; his reference, a gas canister carried in both hands,
+# wound up and struck with): an overhead smash. The official store trailers show no two-handed canister strike, only
+# a one-handed item struck from a raise to the upper right down onto the target, so the move follows that: lifted up
+# and tipped back (the windup), driven forward and down cap first into the middle of the frame (the contact), a short
+# follow-through past it, back to the hold. Picked from the eye in grids g2hit and g3hit: the contact at 0.56-0.62 m
+# brought both upper arms into the frame from above (h1-h3); at 0.50 m the forearms come in level from the sides.
+# Was a diagonal swing: windup cap [30, 80] dist 0.40 tilt -35 yaw -25, contact cap [74, 46] dist 0.42 tilt 20 lean
+# 10 yaw -10, at 0.09 and 0.18 s
+[poses.crystal_windup]   # raised over the middle and tipped back toward the eye (g3hit w4)
+crystal = { cap = [55.0, 18.0], dist = 0.40, tilt = 10.0, lean = -30.0, yaw = 0.0 }
+
+[poses.crystal_hit]      # the contact: the cap driven into the frame's middle, the top leaning away (g3hit h4)
+crystal = { cap = [50.0, 50.0], dist = 0.50, tilt = 0.0, lean = 40.0, yaw = 0.0 }
+
+[poses.crystal_follow]   # the follow-through: on down past the contact (g3hit f2)
+crystal = { cap = [49.0, 60.0], dist = 0.50, tilt = -5.0, lean = 60.0, yaw = 0.0 }
+
+[clips.Idle_Loop]           # breathing: a slow drift of the hand, a few millimetres and about a degree
+pose = "idle"
+seconds = 3.0
+sway = { pos = [0.0025, 0.0015, 0.004], rot = [1.0, 0.6, 0.8], cycles = [1, 1, 1] }
+
+[clips.Run_Loop]            # the run: the hand bobs with each step (two per loop) and swings once a loop
+pose = "idle"
+seconds = 0.9167            # the character's Jog_Fwd_Loop (55 frames at 60 fps, as t4); a source with that action
+                            # replaces it with the action's length (the rig seed has none)
+run = { bob = 0.022, side = 0.020, fwd = 0.010, roll = 5.0, pitch = 3.0, yaw = 2.0, lift = [0.0, -0.01, 0.01] }
+
+[clips.Crystal_Idle_Loop]
+pose = "crystal"
+seconds = 3.0
+sway = { pos = [0.002, 0.0015, 0.004], rot = [0.8, 0.6, 0.6], cycles = [1, 1, 1] }
+
+[clips.Crystal_Run_Loop]
+pose = "crystal"
+seconds = 0.9167
+run = { bob = 0.020, side = 0.016, fwd = 0.008, roll = 4.0, pitch = 3.0, yaw = 2.0, lift = [0.0, -0.01, 0.0] }
+
+# The hits: at most one each 0.5 s (GDD "Melee: any item hits"), so each clip is 0.5 s and ends in its hold pose.
+# A key: t (s), the pose's fields to change (R, grip_R, crystal), `fist` (the morph's weight), `ease` (how the
+# segment that ends at this key moves: in, out, inout, linear), `shoulder_R` (the shoulder joint's shift, m).
+[clips.Punch]
+pose = "idle"
+seconds = 0.5
+hit = 0.15                  # the contact, for the game's hit sound and the shake
+# the keys are mixes of the two fitted frames (idle and fist_out): w 0 is the idle, 1 the contact, below 0 a
+# pull-back, above 1 past it
+keys = [
+  { t = 0.0 },
+  { t = 0.06, R = { mix = ["idle", "fist_out", -0.2], dp = [0.0, -0.02, -0.01] }, grip_R = "fist", fist = 1.0, ease = "inout" },
+  { t = 0.15, R = "fist_out", grip_R = "fist", fist = 1.0, ease = "out" },
+  { t = 0.21, R = { mix = ["idle", "fist_out", 0.93] }, grip_R = "fist", fist = 1.0, ease = "out" },
+  { t = 0.34, R = { mix = ["idle", "fist_out", 0.3] }, grip_R = "fist", fist = 1.0, ease = "inout" },
+  { t = 0.5, ease = "inout" },   # back to the idle pose's own fist (1 for the fists at rest, 0 relaxed)
+]
+
+[clips.Crystal_Hit]         # the overhead smash (g3): lifted and tipped back (crystal_windup, 0.13 s), driven down
+                            # cap first into the middle, accelerating (crystal_hit, the contact at 0.20 s), on past it
+                            # (crystal_follow) and back to the hold; the hands ride on the crystal
+pose = "crystal"
+seconds = 0.5
+hit = 0.20
+keys = [
+  { t = 0.0 },
+  { t = 0.13, crystal = "crystal_windup", ease = "inout" },
+  { t = 0.20, crystal = "crystal_hit", ease = "in" },
+  { t = 0.26, crystal = "crystal_follow", ease = "out" },
+  { t = 0.5, ease = "inout" },
+]
+
+[look]
+# the hands' look in the shots, which the game copies (assets/body/fp_hands/HANDOFF.md): the skin's texture is a
+# neutral grey pattern since m28 and the game colours it as it colours the player (prime-game's CharacterRig.set_tint:
+# albedo_color = the imported albedo_color, white, x the body colour); body_srgb is the default body colour, when no
+# colour is picked. fill: the hands' own directional light on their layer alone (energy, colour, rotation in degrees
+# under the hands' camera); ambient: the share of the world's ambient light on the hands' camera
+body_srgb = [0.40, 0.86, 0.80]
+ambient = 0.8
+fill = { energy = 0.3, color = [1.0, 0.93, 0.85], rot = [-50.0, -90.0, 0.0] }
+
+[golden]          # the golden-frame check (art#136 round 2; fp_hands_run.py golden(), tools/blender/fp_golden.py): the
+                  # approved hold and the punch's contact from the eye, shot from run n6's GLB (the last good asset run)
+                  # by run p2gridgold, against every run's own stills, inside each frame's hand box ([x0, y0, x1, y1],
+                  # fractions from the top left); a gated frame past max_share fails the run. A pixel counts as changed
+                  # when one channel moves more than `changed` (0..1).
+                  # g4 (2026-11-20, the engineer's pick: two compact fists at rest, the size as is): re-shot from run g4
+                  # (m41) into a new folder (n6's stays); the boxes cover both hands (the left fist sits at 10-30 %
+                  # across), and idle and run are gated too, the rest being approved. The hold (d54, f6) is kept as
+                  # g4 shot it: the crystal hit and the export still wait for his yes. Was n6's frames, idle and run
+                  # ungated, the boxes the right half only (hold [0.25, 0.72, 0.76, 1], punch [0.4, 0.3, 1, 1])
+dir = "2026-11-11-fp-hands/golden/g4"
+changed = 0.10
+max_share = 0.01
+frames = [
+  { name = "hold", frame = "stills/hold.png", box = [0.15, 0.55, 0.85, 1.0], sha256 = "996500658452d64be92c8a78b635bcb04c116f70a1dc05d033d89defbda83b41" },
+  { name = "punch_hit", frame = "stills/punch_hit.png", box = [0.0, 0.30, 1.0, 1.0], sha256 = "6fd9ded589e8eb4c0b70bba482d366c774c9b50b0786284db0fd2e9d0b2f0a7e" },
+  { name = "idle", frame = "stills/idle.png", box = [0.0, 0.55, 1.0, 1.0], sha256 = "a3e749de315f6bde09aa4a14f3e9b10767541f4b45650e67656cb0bdd559a4eb" },
+  { name = "run", frame = "stills/run.png", box = [0.0, 0.55, 1.0, 1.0], sha256 = "c69c518a57414a24b585df4fa6843a471bb1647a963146ab50a974ca0a50dfef" },
+]

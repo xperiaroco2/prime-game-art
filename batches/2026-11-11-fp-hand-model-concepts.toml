@@ -1,0 +1,41 @@
+# art#136 (xperiaroco2/prime-game#1587): the first-person hand gets its own detailed model (the engineer's pick,
+# 2026-11-11, after the bare-arm close-ups showed the character's hand reads as a lump up close: a shapeless fist, flat
+# skin). Three concepts of the bare alien hand for his pick, each one sheet of four views on a plain background (the
+# back of the open hand, its palm, the fist from the front, the fist from the side), the forearm to mid-forearm, no
+# clothes: (a) the hand we have, refined; (b) chunkier, rounder, more cartoon appeal; (c) slimmer fingers with the
+# axolotl's skin detail. Edits of our own close-ups of the approved four-digit hand (art#196). Medium (exploration),
+# n = 1. No game, film, studio, character or person names.
+id = "2026-11-11-fp-hand-model-concepts"
+service = "openai-images"
+purpose = "art#136: three concepts of a detailed bare first-person alien hand (four views each) for the engineer's pick before its 3D model; pictures only."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 1.0
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-11-11"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6291187194 (the standing permission of 2026-10-20: OpenAI images within a batch's cost_cap_usd); the engineer's pick of a separate detailed first-person hand, 2026-11-11, in the art session"
+model = "gpt-image-2.5-sunburst"
+quality = "medium"
+
+[defaults]
+size = "1536x1024"
+n = 1
+
+[[items]]
+id = "a_refined"
+kind = "edit"
+prompt = "A clean character-art reference sheet of one right hand of a cartoon alien, for a 3D modeller, on a plain light grey background, soft even studio light. Four views in a row, the same hand in each: 1) the back of the relaxed open hand, fingers slightly curled; 2) the palm side of the open hand; 3) a tight fist seen from the front, knuckles toward us, the thumb folded across the first two fingers; 4) the same fist from the side. Each view includes the bare forearm up to mid-forearm, no sleeve, no clothes. This is the exact hand of the references, refined for a close first-person view: FOUR digits only, three thick rounded fingers and one thumb, never five; a broad palm; soft rounded knuckles; clear gentle creases where the fingers bend so each finger reads separately in the fist; no fingernails, no veins, no hair, no wrinkles. Smooth soft teal skin with a faint vinyl-toy sheen and a subtle lighter tone on the palm and fingertips. Count the digits in every view: three fingers and one thumb. No text, no labels, no logos, no watermark."
+images = [ { file = "raw:2026-11-08-fp-hand-concepts/_refs/hand_open.png", provenance = "our alien hand, Blender close-ups of art#196 (2026-10-31-hands/closeups/hands_Idle_Loop.png, first row, cropped)", sha256 = "ec5c8f225460d1bef16f31c477b0bd4b83f8eb3fbc6aa2e34fbf54d81da584a6" }, { file = "raw:2026-11-08-fp-hand-concepts/_refs/hand_fist.png", provenance = "our alien hand's fist, thumb pose H1u, Blender close-ups of art#196 (2026-10-31-hands/h1u/g1/close_axolotl.png, third row, cropped)", sha256 = "8cc0f23338b1073d0544c9ea569d0e11142a8024a4d0f149ba4fb5ec49d9c190" } ]
+
+[[items]]
+id = "b_chunky"
+kind = "edit"
+prompt = "A clean character-art reference sheet of one right hand of a cartoon alien, for a 3D modeller, on a plain light grey background, soft even studio light. Four views in a row, the same hand in each: 1) the back of the relaxed open hand, fingers slightly curled; 2) the palm side of the open hand; 3) a tight fist seen from the front, knuckles toward us, the thumb folded across the first two fingers; 4) the same fist from the side. Each view includes the bare forearm up to mid-forearm, no sleeve, no clothes. Based on the hand of the references but chunkier and more appealing, like a premium stylised animated film: FOUR digits only, three plump rounded fingers and one stout thumb, never five; a big soft palm pad; a slim wrist that makes the hand read bold; clear separation between the fingers in the fist; no fingernails, no veins, no hair. Smooth soft teal skin with a faint vinyl-toy sheen, a soft lighter tone on the palm. Count the digits in every view: three fingers and one thumb. No text, no labels, no logos, no watermark."
+images = [ { file = "raw:2026-11-08-fp-hand-concepts/_refs/hand_open.png", provenance = "our alien hand, Blender close-ups of art#196 (2026-10-31-hands/closeups/hands_Idle_Loop.png, first row, cropped)", sha256 = "ec5c8f225460d1bef16f31c477b0bd4b83f8eb3fbc6aa2e34fbf54d81da584a6" }, { file = "raw:2026-11-08-fp-hand-concepts/_refs/hand_fist.png", provenance = "our alien hand's fist, thumb pose H1u, Blender close-ups of art#196 (2026-10-31-hands/h1u/g1/close_axolotl.png, third row, cropped)", sha256 = "8cc0f23338b1073d0544c9ea569d0e11142a8024a4d0f149ba4fb5ec49d9c190" } ]
+
+[[items]]
+id = "c_axolotl"
+kind = "edit"
+prompt = "A clean character-art reference sheet of one right hand of a cartoon alien with an axolotl's character, for a 3D modeller, on a plain light grey background, soft even studio light. Four views in a row, the same hand in each: 1) the back of the relaxed open hand, fingers slightly curled; 2) the palm side of the open hand; 3) a tight fist seen from the front, knuckles toward us, the thumb folded across the first two fingers; 4) the same fist from the side. Each view includes the bare forearm up to mid-forearm, no sleeve, no clothes. Based on the hand of the references but with longer, slimmer, slightly tapered fingers with soft round tips, still FOUR digits only, three fingers and one thumb, never five; no fingernails, no hair. Smooth soft teal skin with a gentle gradient, a paler belly-like tone on the palm and inner forearm, and a few faint darker speckles on the back of the hand, like an axolotl. Count the digits in every view: three fingers and one thumb. No text, no labels, no logos, no watermark."
+images = [ { file = "raw:2026-11-08-fp-hand-concepts/_refs/hand_open.png", provenance = "our alien hand, Blender close-ups of art#196 (2026-10-31-hands/closeups/hands_Idle_Loop.png, first row, cropped)", sha256 = "ec5c8f225460d1bef16f31c477b0bd4b83f8eb3fbc6aa2e34fbf54d81da584a6" }, { file = "raw:2026-11-08-fp-hand-concepts/_refs/hand_fist.png", provenance = "our alien hand's fist, thumb pose H1u, Blender close-ups of art#196 (2026-10-31-hands/h1u/g1/close_axolotl.png, third row, cropped)", sha256 = "8cc0f23338b1073d0544c9ea569d0e11142a8024a4d0f149ba4fb5ec49d9c190" } ]
