@@ -8,8 +8,8 @@ keeps the arm bones under one root `View` at the eye plus a `Crystal` bone with 
 energy crystal's origin, its tip, goes), and keys the clips of fp_hands.toml in the camera's space: the arm is a
 two-bone solve from the shoulder joint to the wrist with the elbow toward [rig] elbow_*, the forearm takes a share
 of the hand's twist, the fingers take grips (alien_hands.toml's and this file's), and the hits key the run fist's
-morph `fist`. Writes <out>/fp_hands.blend, <out>/fp_hands.glb (the morph's weights keyed per clip afterwards by
-alien_fist_math.key_weights) and <out>/build.json (counts, clip lengths, the crystal contact per clip). --preview
+morphs `fist` (the right hand) and, on a model from m41, `fist_L` (the left). Writes <out>/fp_hands.blend,
+<out>/fp_hands.glb (the morphs' weights keyed per clip afterwards by alien_fist_math.key_weights) and <out>/build.json (counts, clip lengths, the crystal contact per clip). --preview
 also renders Workbench frames from the eye into <out>/preview/ (quick checks; the review shots are Godot's).
 """
 from __future__ import annotations
