@@ -18,8 +18,20 @@ round under it at the lower right); 3 the fist from the thumb's side. View 0 win
 fist's width and length, view 3 for its depth."""
 engineer_words = """2026-11-11: four digits (three thick rounded fingers and a thumb), soft rounded knuckles, gentle
 creases so each finger reads in the fist, smooth teal skin with a faint vinyl sheen, a lighter palm and fingertips;
-bare forearm (a garment's sleeve comes later from each worn outfit)."""
-# the rig: the axolotl character's arm rig (art#196 H1u) as data, read from the committed hands asset t4 by
+bare forearm (a garment's sleeve comes later from each worn outfit).
+2026-11-20 (docs/decisions/2026-10-19-alien-overlaid-face-four-fingers.md, "Note of 2026-11-20"): five digits tried,
+four stand: three fingers and a thumb, the final word. From the eye m30's three thick fingers merged into a mitten
+beside the rest reference: the fingers slimmer so they read apart."""
+# m40 (2026-11-20, four digits) changed, and why: [fingers] index, middle and ring slimmed from 47.5 / 45 / 39 mm wide
+# to 37 / 38 / 35 (the five-digit round m31-m34: slimmer fingers read apart from the eye; four of 33 / 34 / 32 / 27
+# fit the palm, three need a little more to fill its 131 mm knuckle row), thickness 0.88 of each; the middle the
+# longest (to u 208, hand_len_mm), index and ring equal (97 mm knuckle to tip; m30's ring was 77, the index the
+# longest); the knuckles spread over the knuckle row with a few mm of palm between them, the tips further apart; the
+# thumb's phalanges 5 mm out (apart_out_mm, m33's fix: m30's palm measured 54.2 mm at u 88 against 49, the thumb's
+# web) and its proximal phalanx slimmer in its middle (waist_mm) so its joints read; the creases carved only on
+# their own digit and faded in round it (fp_hand_model.Hand.crease, the five-digit round's q2: on slim fingers a
+# joint's groove cut the neighbour's side into saw-tooth spikes); [fist] the ring's spread a little wider for the
+# slimmer fingers. Unchanged: the forearm, the palm's outline, the skin, the thumb's length and width# the rig: the axolotl character's arm rig (art#196 H1u) as data, read from the committed hands asset t4 by
 # tools/blender/fp_rig_seed.py (the character build itself was lost with D: on 2026-11-18; the engineer's choice the
 # same day: go on from assets/body/fp_hands/source/fp_hands.blend)
 rig_seed = "tools/blender/fp_rig_seed.json"
@@ -28,7 +40,8 @@ rig_seed = "tools/blender/fp_rig_seed.json"
 hand_len_mm = 208.4
 forearm_len_mm = 220.5
 upper_stub_mm = 80.0     # the upper arm kept past the elbow (never in the frame: the viewmodel keeps it behind)
-px_per_mm = 2.0          # view 0: the wrist (row 375) to the index's tip (row 793) is 418 px for 208.4 mm (2.006)
+px_per_mm = 2.0          # view 0: the wrist (row 375) to the longest tip (row 793) is 418 px for 208.4 mm (2.006); the
+                         # longest digit was read as the index until m30, the middle since m40
 wrist_row = 375
 centre_col = [210, 609, 1010, 1375]   # each view's forearm centre line at row 111
 tol_mm = 4.0             # the most a build's measured size may differ from this file (or tol_pct of it, the larger)
@@ -62,38 +75,52 @@ little_mound = { c = [64.0, -42.0, -8.0], r = [30.0, 13.0, 17.0] }
 # across, `thickness` along w (not drawn in any view: 0.88 of the width, the soft sausage of view 1's fingers);
 # `phalanx` the three bones' share of knuckle-to-tip (the creases of view 1 at about 0.42 and 0.74 of it).
 # The rig's names: index (next to the thumb), middle, ring; the character's Little bones stay and carry nothing.
+# m40: index, middle and ring 37 / 38 / 35 wide, the middle the longest (110 mm knuckle to tip), index and ring 97;
+# the knuckles at v 25 / -15 / -57 (3 to 5 mm of palm between them), each tip further out than its knuckle so the
+# gaps open toward the tips. Was (m26-m30): index 47.5 wide to u 210 (centre_v [25, 35]), middle 45 to u 205
+# ([-23, -26]), ring 39 to u 165 (knuckle_v -61, [-70.5, -73]); the ring's -61 had kept m26's palm in its outline
 [fingers.index]
 knuckle_u = 97.0
-crotch_u = 115.0
-tip_u = 210.0
-centre_v = [25.0, 35.0]     # at the crotch and at the tip
-width = 47.5
-thickness = 41.0
+crotch_u = 114.0
+tip_u = 194.0
+centre_v = [26.0, 32.0]     # at the crotch and at the tip
+knuckle_v = 25.0
+width = 37.0
+thickness = 32.5
 phalanx = [0.42, 0.32, 0.26]
 [fingers.middle]
-knuckle_u = 95.0
-crotch_u = 112.0
-tip_u = 205.0
-centre_v = [-23.0, -26.0]
-width = 45.0
-thickness = 39.5
+knuckle_u = 98.0
+crotch_u = 116.0
+tip_u = 208.0
+centre_v = [-15.0, -17.0]
+knuckle_v = -15.0
+width = 38.0
+thickness = 33.5
 phalanx = [0.42, 0.32, 0.26]
 [fingers.ring]
-knuckle_u = 88.0
-crotch_u = 106.0
-tip_u = 165.0
-centre_v = [-70.5, -73.0]
+knuckle_u = 92.0
+crotch_u = 110.0
+tip_u = 189.0
+centre_v = [-58.0, -66.0]
 # the centre at the knuckle (default: on the line through the crotch and the tip): m26's ring, on that line, made the
-# palm 9 mm wider than view 0 at u 88 and 98; from -61 it splays out to its tip (m27, palm grid p1-p2)
-knuckle_v = -61.0
-width = 39.0
-thickness = 34.5
+# palm 9 mm wider than view 0 at u 88 and 98 (m27, palm grid p1-p2); m40's slimmer ring sits inside it at -57
+knuckle_v = -57.0
+width = 35.0
+thickness = 31.0
 phalanx = [0.42, 0.32, 0.26]
 [fingers.thumb]
 base_u = 20.0               # the thumb's root joint, inside the mound (near the wrist)
 apart_u = 75.0              # where the thumb stands apart from the palm's side in view 0
 tip_u = 135.0
 centre_v = [36.0, 71.0]     # at its root and from the middle to its tip
+# m40 (from the five-digit m33): the thumb's two phalanges 5 mm further from the index's side (its root and metacarpal
+# stay, so the mound at u 58 keeps its outline): m30's palm measured 54.2 mm at u 88 against 49, the thumb's inner
+# side webbed onto the palm's edge there; m32 moved the whole thumb out and its mound went 8 mm past u 58's outline
+apart_out_mm = 5.0
+# m40: the proximal phalanx 2 mm slimmer each side in its middle (fp_hand_model.Hand.thumb_waist; the five-digit m34
+# tried 1.5, never seen in Godot), so its two joints read as knuckles and the thumb is no sausage; at the joints the
+# width stays `width`; with the wrinkles over its last joint's back (fp_hand_model.Hand._creases)
+waist_mm = 2.0
 palmar_w = -16.0            # the thumb's line sits this far toward the palm from the hand's middle plane
 width = 36.0
 phalanx = [0.50, 0.27, 0.23] # metacarpal (in the mound, to where it stands apart), proximal, distal
@@ -151,7 +178,8 @@ knuckle = { r = [0.9, 1.0, 1.0], up = 12.0, along = 0.0 }   # m26 [0.9, 0.95, 0.
 # the ring finger pushed out sideways in the fist (mm along v, after the pose; FistField): the folded fingers press each
 # other apart. m27's narrower palm (the ring's knuckle_v) took the fist to 145 mm wide; the concept's fist is 156 across
 # its knuckles against an open palm of 131 (grid g27f)
-spread_mm = { ring = -6.0 }
+# m40: -9, the slimmer fingers' fist narrower by the knuckles' spans (m30 -6)
+spread_mm = { ring = -9.0 }
 # the valleys between the knuckles over the back of the fist (a groove per pair of neighbours, `back` mm toward the
 # wrist and `front` mm past the knuckle row, `depth` deep, a Gaussian `width` wide): with the knuckle heads what makes
 # each finger read from behind (grid g20, 2026-11-12; without them the back read as one smooth slab)

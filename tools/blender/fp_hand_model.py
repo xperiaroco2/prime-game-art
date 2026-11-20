@@ -16,7 +16,7 @@ fingers), onto which the skinned vertices are carried group by group (corrective
 
 Writes <out>/fp_hand_char.blend: the rig (spec [hand] rig_seed, the character's arm rig as data: fp_rig_seed.py) with
 the two first-person arms (one mesh with the morph; the left the right's mirror, its UVs shared) and its hand and
-finger bones moved to the model's joints (same names; Little kept, unweighted), for fp_hands_build.py's cut; the
+finger bones moved to the model's joints (same names; Little kept, unweighted: four digits, the engineer 2026-11-20), for fp_hands_build.py's cut; the
 pattern's lightness is measured against the spec's [skin] base_srgb (the character's teal, measured before its build
 was lost);
 <out>/textures/; <out>/model.json (counts, the spec's sizes measured, the fist's fit); --renders: <out>/renders/, the
@@ -46,7 +46,7 @@ import fp_rig_seed  # noqa: E402
 
 SPEC = ROOT / "specs" / "fp_hand_dims.toml"
 SIDES = ("Right", "Left")
-DIGITS = ("index", "middle", "ring")
+DIGITS = ("index", "middle", "ring")   # four digits: three fingers and a thumb (the engineer, 2026-11-20)
 RIG = {"index": "Index", "middle": "Middle", "ring": "Ring", "thumb": "Thumb"}
 PHAL = {"finger": ("Proximal", "Intermediate", "Distal"), "thumb": ("Metacarpal", "Proximal", "Distal")}
 T0 = time.time()
@@ -206,6 +206,8 @@ class Hand:
             p = a + (b - a) * acc
             if acc < 0.999:
                 p[1] = t["centre_v"][1] - 5.0 * (1.0 - acc) / 0.6   # the thumb out at the side by its middle
+            if len(pts) >= 2:   # the phalanges (past the metacarpal) further from the index's side (m33, m40)
+                p[1] += float(t.get("apart_out_mm", 0.0))
             pts.append(p)
         radii = [r * 1.12, r * 1.02, r * 1.0, r * 0.98]
         self.parts["thumb"] = []
@@ -216,6 +218,23 @@ class Hand:
             z = np.array([0.44, -0.9, 0.0])
             self.joints["Thumb" + ph] = (pts[i], pts[i + 1], z)
         self.creases = self._creases()
+
+    def thumb_waist(self, p, deltas=None):
+        """The thumb's proximal phalanx slimmed in its middle by `[fingers.thumb] waist_mm` (art#136 q2): an even
+        round cone from root to tip read as a sausage; with the shaft slimmer the joints at both its ends read as
+        knuckles. Added to the phalanx's distance, a Gaussian along its axis (none at the joints)."""
+        w = float(self.spec["fingers"]["thumb"].get("waist_mm", 0.0))
+        if w <= 0.0:
+            return 0.0
+        part = self.parts["thumb"][1]
+        q = p
+        if deltas and part.owner in deltas:
+            inv = np.linalg.inv(deltas[part.owner])
+            q = p @ inv[:3, :3].T + inv[:3, 3]
+        a, b = part.kw["a"], part.kw["b"]
+        L = float(np.linalg.norm(b - a))
+        s = ((q - a) @ ((b - a) / L)) / L
+        return w * np.exp(-((s - 0.5) / 0.26) ** 2)
 
     def web_k(self, p):
         """The thumb's blend into the palm (mm): `[fingers.thumb] web_mm` [at the mound, past apart_u], eased over
@@ -264,6 +283,7 @@ class Hand:
             chain = np.minimum(np.minimum(P1, I1), D1)
             soft = chain if soft is None else smin(soft, chain, 3.0)
         M, Tp, Td = F["thumb"]
+        Tp = Tp + self.thumb_waist(p, deltas)
         total = np.minimum(total, smin(B, smin(M, Tp, 6.0), self.web_k(p)))
         soft = smin(soft, np.minimum(np.minimum(M, Tp), Td), 3.0)
         total = np.minimum(total, soft)
@@ -286,18 +306,28 @@ class Hand:
                     continue
                 # the joint's palm crease at its head (the finger's root crease sits a little past the knuckle)
                 at = a + t * (r * 0.55 if i == 0 else 0.0)
-                out.append({"p": at, "t": t, "side": -W, "r": r, "depth": 1.0, "w": 1.0, "face": 0.3})
-                if i == 1 and name != "thumb":   # the wrinkles over the middle knuckle's back
+                out.append({"p": at, "t": t, "side": -W, "r": r, "depth": 1.0, "w": 1.0, "face": 0.3, "digit": name})
+                # the wrinkles over the middle knuckle's back, and over the thumb's last joint (q2: its joint read)
+                if (i == 1 and name != "thumb") or (i == 2 and name == "thumb"):
                     for k, off in enumerate((-3.2, 0.0, 3.2)):
                         out.append({"p": a + t * off, "t": t, "side": W, "r": r, "depth": 0.4 if k != 1 else 0.55,
-                                    "w": 0.8, "face": 0.55})
+                                    "w": 0.8, "face": 0.55, "digit": name})
         # the palm lines (palm side): across under the fingers, and round the thumb's mound
         out.append({"line": [[78.0, -86.0], [74.0, -45.0], [70.0, -10.0], [62.0, 18.0]], "side": -W, "depth": 0.8,
                     "w": 1.3})
         out.append({"line": [[22.0, 22.0], [40.0, 18.0], [58.0, 22.0], [72.0, 34.0]], "side": -W, "depth": 0.6,
                     "w": 1.3})
-        out.append({"line": [[-3.0, -40.0], [-3.0, 0.0], [-3.0, 44.0]], "side": -W, "depth": 0.6, "w": 1.0})
+        # the wrist's line: shallow and wide (q2: 0.6 deep and 4 mm wide read as a pinched dark line in Godot)
+        out.append({"line": [[-3.0, -40.0], [-3.0, 0.0], [-3.0, 44.0]], "side": -W, "depth": 0.35, "w": 1.8})
         return out
+
+    def _own(self, q, digit):
+        """How much points q are on `digit`'s own surface rather than another digit's: 1 where every other digit is
+        3 mm further than this one, 0 where another is as near or nearer (smoothstep between)."""
+        d_self = np.min([part(q) for part in self.parts[digit]], axis=0)
+        d_oth = np.min([part(q) for n in DIGITS + ("thumb",) if n != digit for part in self.parts[n]], axis=0)
+        s = np.clip((d_oth - d_self) / 3.0, 0.0, 1.0)
+        return s * s * (3.0 - 2.0 * s)
 
     def crease(self, p, n=None):
         """The creases' depth (mm, carved inward) at points p: a soft groove per line, on its side of the hand. Each
@@ -352,9 +382,16 @@ class Hand:
             phi = np.arctan2(radial @ e2, radial @ e1)
             shift = bow * np.clip(facing, 0.0, 1.0) ** 2
             shift = shift + wob * (np.sin(2.2 * phi + ph) + 0.4 * np.sin(4.7 * phi + 2.3 * ph))
-            g = np.exp(-((ax - shift) / (0.5 * width * c["w"])) ** 2) * np.clip((facing - c["face"]) / 0.35, 0.0, 1.0)
+            # it fades in round the finger over half its turn's cosine (q2: over 0.35 its ends were cut square, a
+            # wedge on the slimmer fingers' sides)
+            fade = np.clip((facing - c["face"]) / 0.5, 0.0, 1.0)
+            g = np.exp(-((ax - shift) / (0.5 * width * c["w"])) ** 2) * fade * fade * (3.0 - 2.0 * fade)
             g *= 0.8 + 0.2 * np.sin(3.0 * phi + 3.1 * ph)
             g *= np.exp(-np.maximum(rn - c["r"] * 1.15, 0.0) / 2.0)
+            # only on its own digit (art#136 q2): the slimmer fingers' neighbours stand within 1.15 radii of the
+            # axis, so each joint's groove was carved into the next finger's side too, at that finger's other
+            # height: the saw-tooth spikes between the fingers in the palm close-up and the pinches by the knuckles
+            g *= self._own(p[near], c["digit"])
             out[near] += depth * c["depth"] * g
         return out
 
@@ -1420,8 +1457,8 @@ def renders(out: Path, arm, ob, sp: Space, spec: dict, concept: Path, samples: i
 
 def debug_colours(ob, right_n: int, by_bone: bool = False) -> None:
     """The arm's material swapped for one coloured per vertex by its top bone's group (palm grey, index red, middle
-    green, ring blue, thumb yellow; a thumb's metacarpal orange)."""
-    col = {"base": (0.6, 0.6, 0.6), "index": (0.9, 0.15, 0.1), "middle": (0.1, 0.8, 0.2), "ring": (0.15, 0.3, 0.95),
+    green, ring blue, little violet, thumb yellow; a thumb's metacarpal orange)."""
+    col = {"base": (0.6, 0.6, 0.6), "index": (0.9, 0.15, 0.1), "middle": (0.1, 0.8, 0.2), "ring": (0.15, 0.3, 0.95), "little": (0.8, 0.2, 0.9),
            "thumb": (0.95, 0.85, 0.1)}
     names = {g.index: g.name for g in ob.vertex_groups}
     attr = ob.data.color_attributes.new("dbg", "FLOAT_COLOR", "POINT")
