@@ -321,7 +321,7 @@ def fit_crystal_frame(sc: Scene, poses: B.Poses, want: dict, evals: int, parts, 
                       check_arms: bool = False) -> dict:
     """The crystal's place and turn (the hands carried with it). `across`: the most it turns about the axes across
     the view (x and z, degrees); the swing's turn about the view's own axis (y) is free."""
-    base = poses.cfg["poses"]["crystal"]["crystal"]
+    base = poses.crystal_spec(poses.cfg["poses"]["crystal"]["crystal"])   # {p, up, front}, also when set from the eye
 
     def f(x):
         s = poses.state("crystal", {"crystal": crystal_spec(base, x)})
