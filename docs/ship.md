@@ -311,8 +311,10 @@ the join's `int_value`, `int_rough_add` and `emission_scale`.
   variant H, written as the interior materials' own numbers so the hull's strip lights keep theirs: `int_cyan` `l`
   0.04, `int_amber` `e` 0.14 `l` 2.0 (the strips pass the glow threshold and stay amber), the hall ring's own
   material `int_amber_ring` `e` 0.14 `l` 0.8 `rr` 0.3, `int_halo` `e` 0.5.
-- The details, each its own piece: `cup_a`..`cup_c` (16 oz, scale 1.25, crushed, lying), `spill_a` and `spill_c` (a
-  1.5 mm glossy film running from the mouth; each placed with its cup's position and yaw), `cable_coil` (3.5 turns of
+- The details, each its own piece: `cup_b` (16 oz, crushed, lying, in the west corridor; `cup_a` with `spill_a` left
+  the hall at the engineer's walk of 2026-10-29, `cup_c` with `spill_c` by the console at the M8 review of 2026-11-19,
+  prime-game#1095 answer 9: not a planned prop), the `spill` builder (a 1.5 mm glossy film running from a cup's mouth,
+  placed with its cup's position and yaw) kept for later, `cable_coil` (3.5 turns of
   blue cable and a plug, by the east corridor's south bay), `floor_patch_a`/`_b` (bolted repair plates on the hall's
   rim floor) and `rim_bolts` (hex bolts down every rim plate's seam). The layout test keeps every cup, spill, coil
   and patch outside a station's clearance + 0.4 m.

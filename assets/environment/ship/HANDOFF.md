@@ -2,7 +2,10 @@
 
 The empty ship of art#263 (a wide metal manta at night: the hall, the throat and its ramp, two corridors, two lens tip
 rooms, the vault; the throat walls with the gill set) as the game's package, for prime-game#1225 (the engine) and #1285 (boot into it). Written by
-`tools/run.sh ship --out <raw>/ship/v5/polish/sm/pieces --export <raw>/ship/v5/export/v9` (2026-11-01, branch feat/ship-nozzle-back-263, nb: the old nozzle look back inside the smooth bells, a dark throat with one light ring, a small glowing dot and ten gapped lip segments, no fan blades, glowing from their own materials; polish n1/n2/n3: the hall's relief bays, the vault door, the ramp's hazard stripes, the underbody and chine light lines, the smooth oculus trim, one plate seam family over the jaws) (art#335, `docs/ship.md` "The export"); the files and their
+`tools/run.sh ship --out <raw>/ship/v5/polish/sm/pieces --export <raw>/ship/v5/export/v9` (2026-11-01, branch feat/ship-nozzle-back-263, nb: the old nozzle look back inside the smooth bells, a dark throat with one light ring, a small glowing dot and ten gapped lip segments, no fan blades, glowing from their own materials; polish n1/n2/n3: the hall's relief bays, the vault door, the ramp's hazard stripes, the underbody and chine light lines, the smooth oculus trim, one plate seam family over the jaws) (art#335, `docs/ship.md` "The export"), then v10 by
+`tools/run.sh ship --export <raw>/ship/v5/export/v10` (2026-11-20): v9 without `cup_c` and `spill_c`, the red cup and its
+spill by the console (the M8 review, prime-game#1095 answer 9: not a planned prop); every other file is v9's, byte for
+byte, and only `levels/ship/ship.tscn` changed; the files and their
 hashes are in `manifest.toml` and the package's `package.json`. The GLBs are not committed here: the package lives in
 the raw folder until approved.
 
@@ -10,7 +13,7 @@ the raw folder until approved.
 
 | Path | What |
 |---|---|
-| `assets/environment/ship/<piece>.glb` | the 195 pieces, each with a minimal `.import` (11.2); colliders are the GLBs' `-col` trimesh hints |
+| `assets/environment/ship/<piece>.glb` | the 193 pieces, each with a minimal `.import` (11.2); colliders are the GLBs' `-col` trimesh hints |
 | `assets/environment/ship/*.gdshader` | the shared metal, the star sky, the lens bronze (`console_metal`) and the charger's traces, arcs and conduits (art shaders shipped as files) |
 | `assets/environment/ship/materials/*.tres` | one `metal_<name>.tres` per shared metal, `night_sky.tres`, `night_env.tres` |
 | `levels/ship/ship.tscn` | the level: `Ship` > `Pieces`, `Environment`, `Lights`, `Probes`, `Clearing` (`Pieces`, `Lights`, `Ground`), `Nose` (the jaw and its `AnimationPlayer`), `Stations`, `Markers` |
@@ -115,7 +118,7 @@ lamps hold their static glow (no blink).
 | `out_hero` | 5331 | 2,604,284 | 3.67 |
 
 `in_hall` is a player's eye in the hall (1.6 m over the deck), `in_tip_e` in a tip room, `out_hero` the outside from
-above. Every piece is its own instance (1056), so the hall draws about 4700 calls: merging or batching the static
+above. Every piece is its own instance (1054), so the hall draws about 4700 calls: merging or batching the static
 pieces, as the House does, is the first lever if the game's budget needs it.
 
 ## The check (art side)
