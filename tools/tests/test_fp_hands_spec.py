@@ -150,5 +150,20 @@ class FpHandsSpec(unittest.TestCase):
         tipped = run.rest_R({"place": [53, 99, 0.5], "angle": 135, "tip": 30}, fov)
         self.assertGreater(tipped["f"][1], flat["f"][1] + 0.3)
 
+    def test_grips_human(self):
+        """Every grip of fp_hands.toml stays inside a human hand's joints (fp_hands_run.GRIP_LIMITS, art#136
+        2026-11-20), and the limits refuse f2's twisted rest: spread 50 and the thumb bent back."""
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("fp_hands_run", BLENDER / "fp_hands_run.py")
+        run = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(run)
+        self.assertEqual(run.grips_errors(SPEC), [])
+        f2 = {"Index": [6, 10, 8], "spread": 50, "Thumb": [20, 5, 10], "ThumbTurn": [30, -30]}
+        errors = run.grip_errors("f2", f2)
+        self.assertEqual(len(errors), 2, errors)
+        self.assertTrue(any("spread" in e for e in errors) and any("swing" in e for e in errors), errors)
+        over = {"grips": {"rest": {"spread": 50}}}
+        self.assertEqual(len(run.grips_errors(SPEC, over)), 1)
+
 if __name__ == "__main__":
     unittest.main()

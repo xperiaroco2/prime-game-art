@@ -89,6 +89,43 @@ REEL = [("Idle_Loop", 1), ("Punch", 1), ("Punch", 1), ("Run_Loop", 2),
 
 GRIP_KEYS = ("Index", "Middle", "Ring", "Little", "spread", "Thumb", "ThumbTurn")
 CELL_NAMES = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"   # letters: Godot's importer strips a clip name's trailing digits
+# a human hand's joint limits for a grip, degrees (art#136, 2026-11-20): the rest grip tuned only from the eye reached
+# spread 50 (the three fingers lay over each other) and the thumb swung -30 (bent back behind the hand's back); a
+# relaxed hand spreads 0-5 and its thumb swings forward, in front of the palm (alien_pose_math.grip_quats: a finger's
+# curl about its x, the side axis; spread about z; the thumb's curl about its x, the palm's normal, so toward the
+# index in the palm's plane; ThumbTurn [roll about its length, swing about z: + in front of the palm])
+GRIP_LIMITS = {"curl": (-10.0, 100.0), "spread": (-5.0, 20.0), "thumb_curl": (-10.0, 60.0),
+               "thumb_roll": (-40.0, 40.0), "thumb_swing": (-10.0, 75.0)}
+
+
+def grip_errors(name: str, g: dict) -> list[str]:
+    """Each value of grip `g` outside GRIP_LIMITS, as text; empty when the grip is a human hand's."""
+    out = []
+
+    def check(what, v, lim):
+        if not GRIP_LIMITS[lim][0] <= float(v) <= GRIP_LIMITS[lim][1]:
+            out.append(f"grip {name}: {what} {v} outside {GRIP_LIMITS[lim]} ({lim})")
+
+    for f in ("Index", "Middle", "Ring", "all"):
+        for i, v in enumerate(g.get(f, [])[:3]):
+            check(f"{f}[{i}]", v, "curl")
+    if "spread" in g:
+        check("spread", g["spread"], "spread")
+    for i, v in enumerate(g.get("Thumb", [])[:3]):
+        check(f"Thumb[{i}]", v, "thumb_curl")
+    if "ThumbTurn" in g:
+        check("ThumbTurn roll", g["ThumbTurn"][0], "thumb_roll")
+        check("ThumbTurn swing", g["ThumbTurn"][1], "thumb_swing")
+    return out
+
+
+def grips_errors(cfg: dict, over: dict | None = None) -> list[str]:
+    """grip_errors over every grip of fp_hands.toml with an override's grips laid over it."""
+    over_g = (over or {}).get("grips", {})
+    out = []
+    for name in sorted(set(cfg.get("grips", {})) | set(over_g)):
+        out += grip_errors(name, {**cfg.get("grips", {}).get(name, {}), **over_g.get(name, {})})
+    return out
 
 
 def toml_cfg() -> dict:
@@ -158,6 +195,8 @@ def rest_grid(tag: str, grid_path: Path, fps: int) -> dict:
         over.setdefault("clips", {})["Grid" + name] = {"pose": "grid" + name, "seconds": 0.1}
         cells.append(name)
         table[name] = {"cell": c, "R": R}
+    if errors := grips_errors(cfg, over):
+        raise common.Failure("not a human hand:\n" + "\n".join(errors))
     (out / "grid_override.json").write_text(json.dumps(over, indent=1), encoding="utf-8")
     blender.run_script("fp_hands_build.py", ["--raw", str(RAW), "--out", str(out), "--override",
                                              str(out / "grid_override.json")], timeout=1200)
@@ -397,6 +436,10 @@ def main() -> int:
             return 2
         if a.override and a.asset:
             print("--override builds a review variant, never the asset", file=sys.stderr)
+            return 2
+        over = json.loads(Path(a.override).read_text(encoding="utf-8")) if a.override else {}
+        if errors := grips_errors(toml_cfg(), over):
+            print("not a human hand:\n" + "\n".join(errors), file=sys.stderr)
             return 2
         args = ["--raw", str(RAW), "--out", str(out)] + (["--preview"] if a.preview else [])
         args += ["--override", str(Path(a.override).resolve())] if a.override else []

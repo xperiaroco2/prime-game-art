@@ -91,14 +91,21 @@ background = "2026-11-08-fp-hand-concepts/_refs/ship_hall.png"
                   # f2 (f2r4 F, the back to the eye): a deeper cascade and spread 50; the thumb turned the other way
                   # ([20, 5, 10] / [30, -30], f1r3 F's) is the only one that shows below the palm with a gap from
                   # this side. Was f1's 5/8/6, 9/12/8, 13/16/10, spread 30, [-20, 5, 10] / [-30, -30]
-Index = [6, 10, 8]
-Middle = [11, 15, 11]
-Ring = [16, 20, 14]
+                  # r1 (2026-11-20, the engineer: "the fingers are twisted"): f2's numbers, seen from the side, the
+                  # back and the palm, were no human hand: spread 50 laid the three fingers over each other and the
+                  # thumb's swing -30 bent it back behind the hand's back. A plain relaxed hand instead: the curl
+                  # cascades away from the thumb (15-25, 20-30, 10-15 degrees), no spread, the thumb swung 25 forward
+                  # in front of the palm and a little bent; checked in three plain views first, then from the eye.
+                  # fp_hands_run.py GRIP_LIMITS refuses a grip past a human hand's joints. Was f2's 6/10/8, 11/15/11,
+                  # 16/20/14, spread 50, Thumb [20, 5, 10], ThumbTurn [30, -30]
+Index = [15, 20, 10]
+Middle = [20, 25, 12]
+Ring = [25, 30, 15]
 Little = [15, 15, 15]
 mirror = true
-spread = 50
-Thumb = [20, 5, 10]
-ThumbTurn = [30, -30]
+spread = 0
+Thumb = [0, 10, 10]
+ThumbTurn = [0, 25]
 
 [grips.cap]       # a hand round the crystal (the cap 13.5 cm across flats, the body 11 across corners): the
                   # fingers round its back, the thumb along it; fit_hold scales each digit's curl to the surface
