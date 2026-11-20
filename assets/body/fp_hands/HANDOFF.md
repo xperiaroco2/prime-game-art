@@ -103,6 +103,28 @@ assets/body/fp_hands` (2026-11-19, on the detailed hand m28) from `tools/blender
   degrees down, the fingers toward the upper left), `[grips.rest]` a curl cascade 5/10/15. The corner place stays in
   the toml as a comment for the engineer's choice.
 
+## Four digits (run f1 on the hand m40, 2026-11-20; not in this asset yet)
+- The engineer's final word of 2026-11-20: three fingers and a thumb. `specs/fp_hand_dims.toml` m40: index, middle,
+  ring 37 / 38 / 35 mm wide (m30: 47.5 / 45 / 39), the middle the longest (to u 208), index and ring 97 mm knuckle
+  to tip. Measured: the palm within the spec at every station (u 88: v_max 49.6 against 49, m30 54.2; u 98: 49.3
+  against 47.5), the fingers within 1 mm; off spec as before, the fist's thumb at u 138.6 (spec 157; m30 142.6).
+  The model: `<raw>/2026-11-18-fp-hand-model/m40/`.
+- Ported from the five-digit branch: the thumb's phalanges 5 mm out (`apart_out_mm`), its proximal phalanx's waist
+  (2 mm) and wrinkles over its last joint, each crease carved on its own digit only and faded in round it, the
+  wrist's line shallower and wider; `fp_hands_run.py --rest-grid` (with a cropped sheet, `grid_crop.png`); the
+  back and palm close-ups without the normal map; `[poses.idle] keep = true`.
+- Close-ups m30 against m40 (runs f1m30 and f1, `frames/closeup_*.png`): the fingers apart with gaps, the web's
+  notch gone, the palm's saw-tooth creases gone. Still there: a crumpled patch on the palm side at the index's root.
+- The rest pose (grids `<raw>/2026-11-11-fp-hands/f1r1`-`f1r3`): past about 0.42 m the arm does not reach the low
+  centre (0.5 m: 62 mm short) and the wrist's bend limit turns the hand upright; tip 40 bunches the fingers; the
+  thumb shows only rolled and swung away from the palm. Picked f1r3 J, the lower right corner; the low centre
+  (f1r3 F) stays in the toml as a comment with its own thumb. From the eye the corner hand is about 13 % of the
+  frame's width against the reference's 25 %.
+- Reach at the pick (the corner): Punch 30.5 mm out of reach, Run 0.0 (the low centre on m30: Punch 45.6, Run 7.0).
+- The golden check fails where the hand changed, as expected (not re-taken): hold 5.3 % of its box (mean 5.6),
+  punch_hit 12.8 % (mean 8.4), against 1 %. The hold's fit still ends on its search's edge (palm roll 45).
+- Next: refit the punch and the hold to m40; the engineer picks the place (page `tools/out/hand-four-f1/`).
+
 ## What the game side builds (not done here)
 - Instance `fp_hands.glb` under the camera; switch clips by state (idle or run, crystal held or not), blend the
   switches (about 0.15 s) and play the hits on the left mouse button.
