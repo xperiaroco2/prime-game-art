@@ -15,7 +15,7 @@
 # finger bones moved to the model's joints, the morph `fist` its corrective). Since 2026-11-18 the rig comes from
 # tools/blender/fp_rig_seed.json (read from the committed hands asset t4): the character build m25 was made from was
 # lost with D: (art#136); was m25, before it the H1u character itself
-char = "2026-11-18-fp-hand-model/m30/fp_hand_char.blend"
+char = "2026-11-18-fp-hand-model/m40/fp_hand_char.blend"   # m40: four digits, three slimmer fingers (2026-11-20); was m30
 crystal = "assets/prop/energy_crystal/export/energy_crystal.glb"   # the committed energy crystal (a repo path; was its
                                                                   # raw copy energy-crystal/lit1, same hash)
 skin_inside_cuff_m = 0.035   # the skin is kept from this far inside the sleeve's cuff out to the fingertips
@@ -83,14 +83,19 @@ background = "2026-11-08-fp-hand-concepts/_refs/ship_hall.png"
                   # p2grida-d, the wrist's turn first: [poses.idle]): p1's even curl read as three fused, parallel
                   # fingers, so the curl cascades, index least: 5, 10 and 15 degrees at each joint (8/14/20 bunched
                   # them in the level views); spread 18 and the thumb at -55 showed no difference from the eye
-Index = [5, 5, 5]
-Middle = [10, 10, 10]
-Ring = [15, 15, 15]
+                  # f1 (four digits on m40, rest grids f1r1-f1r3 from the eye in Godot): a softer cascade per joint
+                  # and spread 30 (the index turned 30, the middle 9 and the ring 12 degrees: the three read apart;
+                  # spread 12 bunched them), the thumb rolled and swung away from the palm so it shows out lowest
+                  # with a gap (round 2's [-40, 2, 6.9] / [30, -10] and f1r1's [-55, 8, 18] / [30, -30] hid it under
+                  # the palm). Was 5/10/15 even, spread 12
+Index = [5, 8, 6]
+Middle = [9, 12, 8]
+Ring = [13, 16, 10]
 Little = [15, 15, 15]
 mirror = true
-spread = 12
-Thumb = [-40, 2.0, 6.9]
-ThumbTurn = [30, -10]
+spread = 30
+Thumb = [-20, 5, 10]
+ThumbTurn = [-30, -30]
 
 [grips.cap]       # a hand round the crystal (the cap 13.5 cm across flats, the body 11 across corners): the
                   # fingers round its back, the thumb along it; fit_hold scales each digit's curl to the surface
@@ -123,11 +128,20 @@ ThumbTurn = [-20, 50]
                   # turned to the eye as if the player looked 50 degrees down (the reference's view looks at the floor;
                   # ours looks level, so a level hand showed only its edge: grids p2grida-c), rolled 20 degrees
                   # thumb side up. Picked v50br20 (yaw 63, pitch 29 before the tilt). Was concept A's lower right corner
-R = { p = [0.0332, 0.4, -0.1791], f = [-0.7793, -0.1162, 0.6158], n = [0.5612, -0.5667, 0.6033] }
-# the engineer's other choice, today's lower right corner (grid p2gridd cornv50): the wrist at 80 % across on the
-# bottom edge, the fingertips at 62 % / 76 %, the same view tilt
-# R = { p = [0.1791, 0.36, -0.1679], f = [-0.4286, 0.8717, 0.2376], n = [-0.2575, -0.3699, 0.8927] }
+                  # f1 (four digits on m40, 2026-11-20; fp_hands_run.py --rest-grid f1r1-f1r3, the reference first):
+                  # picked f1r3 J, the lower right corner (rest_R place [79, 99, 0.42], fingers at 125 degrees, tip
+                  # 20, roll 15): three fingers apart and the thumb out lowest with a gap, the wrist in the arm's
+                  # reach. Past about 0.42 m the arm cannot reach the low centre (0.5 m: 62 mm short, f1r1) and the
+                  # wrist's 20-degree bend then turns the hand straight up; tip 40 foreshortened the fingers into a
+                  # clump (f1r2). Was v50br20 at the low centre: R = { p = [0.0332, 0.4, -0.1791], ... }
+R = { p = [0.2019, 0.42, -0.1919], f = [-0.5024, 0.3391, 0.7954], n = [-0.0764, -0.9337, 0.3498] }
+# the engineer's other choice, the reference's low centre (f1r3 F: place [50, 98, 0.40], 140 degrees, tip 20, roll
+# 15; the wrist 8.3 mm past the reach), with its own thumb ([grips.rest] Thumb = [20, 5, 10], ThumbTurn = [30, -30]):
+# R = { p = [0.0, 0.4, -0.1791], f = [-0.7912, 0.3235, 0.519], n = [0.0936, -0.7746, 0.6254] }
 grip_R = "rest"
+keep = true       # this R wins over fp_hands_fit.json's idle (concept A's corner, fitted to its frame): without it every
+                  # build since p2 put the hand back in the corner (the five-digit round's m31: round 2's pick never
+                  # reached Godot)
 
 [poses.fist_out]  # the punch's contact: concept A's fist frame measured (the fist's middle at 62 % across and 54 %
                   # down, about a fifth of the frame's height), the arm long from the lower right corner
