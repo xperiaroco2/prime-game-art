@@ -24,7 +24,7 @@ OUT = common.OUT / "ragdoll"
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("glb", type=Path, help="the character GLB (the Ultimate Modular rig)")
+    parser.add_argument("glb", type=Path, help="the character GLB (the Ultimate Modular rig or the contract's humanoid skeleton; --fall and --shots: UM only)")
     parser.add_argument("--out", type=Path, help="work folder (default tools/out/ragdoll/<stem>/)")
     parser.add_argument("--asset", type=Path, help="write the data into this asset folder (export/, package.json, HANDOFF.md)")
     parser.add_argument("--fall", action="store_true", help="the headless Godot fall check")
@@ -38,6 +38,10 @@ def handoff_section(data: dict, file_name: str) -> str:
         f"| `{b['bone']}` | {b['profile']} | {b['parent'] or '-'} | {b['shape']} | {b['mass_kg']:.2f} | "
         f"{(b['joint'] or {}).get('type', 'root')} |" for b in bones)
     c = data["collision"]
+    feet = ("The rig's feet\nhang from `Root`, so a foot's joint links it to the lower leg (the builder's `Joint3D`s, not "
+            "`PhysicalBone3D`'s own\njoint)." if data.get("rig", "um") == "um" else
+            "On the contract's skeleton each foot\nis its lower leg's child, and every joint links a body to its "
+            "physical parent.")
     return f"""## Ragdoll (art #115)
 
 The knockdown is a ragdoll (prime-game PR #754, KE7); the knockdown, downed and get-up clips are gone. `export/{file_name}`
@@ -49,9 +53,8 @@ as it is): `build(skeleton, data)` adds a `PhysicalBoneSimulator3D` with one `Ph
 velocity and links the bodies with `Joint3D` nodes; `stop(sim)` at a revive. The parts are on layer {c['layer']}
 (`{c['layer_name']}`) with mask {', '.join(str(m) for m in c['mask'])} (`{', '.join(c['mask_names'])}`): never players,
 another ragdoll or itself. Bones without a body follow their parent (fingers the hand, toes the foot, the shoulders
-and upper chest the chest); the sockets' `BoneAttachment3D`s follow the simulated bones with no change. The rig's feet
-hang from `Root`, so a foot's joint links it to the lower leg (the builder's `Joint3D`s, not `PhysicalBone3D`'s own
-joint). Proven on Jolt Physics, the game's engine: `tools/run.py ragdoll <glb> --fall`.
+and upper chest the chest); the sockets' `BoneAttachment3D`s follow the simulated bones with no change. {feet}
+Proven on Jolt Physics, the game's engine: `tools/run.py ragdoll <glb> --fall`.
 
 | Bone | Profile | Physical parent | Shape | kg | Joint |
 |---|---|---|---|---|---|
