@@ -44,7 +44,7 @@ holds the lobby frame again.
 | Arch | 6 x 6 m in the north wall's middle; the corridor x -3..3, z -38..-30, its end closed by a wall and a sealed door slab | H.arch |
 | Doors | 3 x 4.5 m, the red lamp's centre at 5.1 m: D1 west wall z 2, D2 east wall z 2, D3 and D4 north wall x -11 and 11; each a slab 0.15 m inside the wall's inner face | H.door, H.doors |
 | Floor | one level, 2 m plates (the plates follow the arc), the ring r 15 round the ship's middle | H.tile, H.ring |
-| Spawns | ten at z 0, x -9..9 step 2 (since step 5a z 2.5) | H.spawns |
+| Spawns | ten at z 0, x -9..9 step 2 (since step 5a z 2.5; since the ship package v10 z 2.52, art #374) | H.spawns |
 | Ship | step 1: plan origin at (0, 0, -17), nose north: lobby x = plan x, lobby z = plan y - 17, lobby y = plan h; nose z -24.10, the pods' ends z -2.04 (the mid pod), middle z -13.07, half span 13.05. Since step 5a: origin z -14.5, the closed nose z -26.99 (`hall.toml` holds the truth) | the engineer, 2026-10-30 |
 
 Numbers not in the drawing, ours (blockout): the pilasters 0.8 x 0.6 m (the drawing's glyph is 1.2 m wide, which puts

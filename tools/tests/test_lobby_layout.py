@@ -38,7 +38,7 @@ class LobbyLayoutTest(unittest.TestCase):
     def test_the_engineers_numbers(self) -> None:
         # step 5a (the engineer, art#356 comment 6536044954): the origin 2.5 m toward the window, the spawns with it
         self.assertEqual(self.layout["ship"]["origin"], [0.0, 0.0, -14.5])
-        self.assertEqual(self.layout["floor"]["spawns_z"], 2.5)
+        self.assertEqual(self.layout["floor"]["spawns_z"], 2.52)   # 2.52 since the ship package v10 (art #374)
         n = lobby_layout.ship_numbers(self.layout, self.fp(self.layout))
         self.assertAlmostEqual(n["nose_z"], -21.6, places=2)
         self.assertAlmostEqual(n["aft_z"], 0.46, delta=0.01)
