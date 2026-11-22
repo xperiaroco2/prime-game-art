@@ -416,11 +416,11 @@ def backbox_parts() -> list:
 def markers() -> dict:
     """The game's markers in the cabinet frame (Godot matrices)."""
     a = math.radians(MK["closeup_down_deg"])
-    d = MK["closeup_dist"] * CM
+    up, back = (v * CM for v in MK["closeup_at"])
     cam_z = Vector((0.0, math.sin(a), -math.cos(a)))           # the camera looks along -z: down and toward +z
     cam_x = Vector((-1.0, 0.0, 0.0))
     cam_y = cam_z.cross(cam_x)
-    pos = Vector((0.0, H_C, Z_C)) + cam_z * d
+    pos = Vector((0.0, H_C + up, Z_C - back))
     closeup = Matrix((( *cam_x, 0), (*cam_y, 0), (*cam_z, 0), (0, 0, 0, 1))).transposed()
     closeup.translation = pos
     yaw180 = Matrix(((-1, 0, 0, 0), (0, 1, 0, 0), (0, 0, -1, 0), (0, 0, 0, 1)))

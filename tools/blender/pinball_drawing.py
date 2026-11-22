@@ -130,10 +130,9 @@ def dims(s: Sheet, d: dict, build: dict) -> None:
     xb = s.p(v, (0, 0, bb["z"][1]))[0] - 5.0
     s.dim((xb, s.p(v, (0, bb["y"][0], 0))[1]), (xb, s.p(v, (0, bb["y"][1], 0))[1]), fmt(bb["y"][1] - bb["y"][0]))
     tm = (0, h_c, z_c)
-    a = math.radians(mk["closeup_down_deg"])
-    cam = (0, h_c + mk["closeup_dist"] * math.sin(a), z_c - mk["closeup_dist"] * math.cos(a))
+    cam = (0, h_c + mk["closeup_at"][0], z_c - mk["closeup_at"][1])
     s.line(s.p(v, tm), s.p(v, cam), "m", 0.3)
-    s.text(s.p(v, (0, cam[1] + 4, cam[2])), f"CloseUp {fmt(mk['closeup_dist'])} at {fmt(mk['closeup_down_deg'])}°",
+    s.text(s.p(v, (0, cam[1] + 4, cam[2])), f"CloseUp +{fmt(mk['closeup_at'][0])} / {fmt(mk['closeup_at'][1])}, {fmt(mk['closeup_down_deg'])}° down",
            "h", 3.0)
     s.text(s.p(v, (0, h_c + 5, z_c)), "TableMount", "h", 3.0)
     spot = pl["spot"][2] - pl["origin"][2]

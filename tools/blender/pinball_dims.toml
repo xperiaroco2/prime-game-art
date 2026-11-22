@@ -106,7 +106,9 @@ medallion_r = [4.2, 3.2, 2.4]    # under the screen: copper, cyan ring, the dark
 medallion_y = 132.0
 
 [markers]                        # the game's markers, cabinet frame (the greybox's TableMount, CloseUp, Display)
-closeup_dist = 160.0             # CloseUp: this far from TableMount along a line 55 deg down, fov 50
-closeup_down_deg = 55.0
+closeup_at = [129.0, 130.0]      # CloseUp: this far above TableMount and toward the player (prime-game d643623a, the
+                                 # engineer's M8 review #1095 c7021998428: 0.38 m further back than Gate 1's 160 cm on
+                                 # a 55 deg line, so the display's top line is in the frame)
+closeup_down_deg = 42.0          # its pitch down (Gate 1: 55)
 closeup_fov = 50.0
 display_ahead = 0.4              # Display: on the screen's middle, this far in front of its glass; its +z faces -z
