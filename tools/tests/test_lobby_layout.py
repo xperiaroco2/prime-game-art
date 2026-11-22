@@ -576,11 +576,13 @@ class LobbyLayoutTest(unittest.TestCase):
         cf = lobby_layout.closed_footprint(self.layout, fp, place)
         cn = lobby_layout.ship_numbers(self.layout, cf)
         self.assertAlmostEqual(cn["nose_z"], -26.99, places=2)
-        self.assertAlmostEqual(cn["aft_z"], 0.46, delta=0.01)
-        self.assertAlmostEqual(cn["middle_z"], -13.26, delta=0.01)   # the ring's centre
+        # the package v10 (art #374; nose/b4 and v8 lost with D:): the pods end at 0.515 (v8's 0.46)
+        self.assertAlmostEqual(cn["aft_z"], 0.515, delta=0.01)
+        self.assertAlmostEqual(cn["middle_z"], -13.24, delta=0.01)   # the ring's centre
         self.assertAlmostEqual(lobby_layout.wall_gaps(self.layout, cf)["N"], 3.01, delta=0.01)
         spawn = min(lobby_layout.poly_dist(cf, (x, self.layout["floor"]["spawns_z"])) for x in self.layout["floor"]["spawns_x"])
-        self.assertAlmostEqual(spawn, 2.04, delta=0.01)
+        self.assertAlmostEqual(spawn, 2.005, delta=0.01)   # spawns_z 2.52 (v8: 2.04 at 2.5)
+        self.assertGreaterEqual(spawn, self.layout["floor"]["spawn_ship_m"])
         self.assertEqual(lobby_layout.check(self.layout, cf), [])
         moved = copy.deepcopy(self.layout)   # step 4c's place: the jaw 0.51 m from the north wall, refused
         moved["ship"]["origin"] = [0.0, 0.0, -17.0]
