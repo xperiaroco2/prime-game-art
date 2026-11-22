@@ -73,6 +73,7 @@ ROUGH = {"teal_dark": ("rough_dark.png", 0.07), "teal_light": ("rough_light.png"
 UV_CM = 40.0              # the box-projected UVs: one texture tile per 40 cm (the roughness break-up)
 TEXDIR: list = []         # [the folder of the generated textures] (main sets it)
 FEATURES: list = []       # [[a, b], [normals]] in the cabinet frame, cm
+RAILS: list = []          # [the top rails' look] (main sets it: --rails, else [body] rails)
 
 
 def argv() -> dict:
@@ -252,9 +253,15 @@ def body_parts() -> list:
     dark.box((-(w - t), -T["field_thick"] - 0.5, K["field"][1] / 2), (w - t, ry[0], fz), MOUNT)   # the front block
     dark.box((-(w - t), -T["field_thick"] - 0.5, bz), (w - t, ry[0], -K["field"][1] / 2 - 1.0), MOUNT)  # the back
     copper = Part("trims", "copper", bevel=0.3, segs=3)
+    rails = Part("rails", "teal_dark", bevel=0.3, segs=3)
     for sx in (-1, 1):   # the top rails over the contract's walls, holding the glass
         a, b = sorted((sx * B["rail_in"], sx * B["rail_out"]))
-        copper.box((a, ry[0], bz), (b, ry[1], fz + 0.6), MOUNT)
+        if RAILS[0] == "copper":   # Gate 3 step 2: solid copper
+            copper.box((a, ry[0], bz), (b, ry[1], fz + 0.6), MOUNT)
+        else:                      # "dark" (the concept's): the dark rail, a copper strip along each top edge
+            rails.box((a, ry[0], bz), (b, ry[1], fz + 0.6), MOUNT)
+            for e0, e1 in ((a - 0.1, a + B["rail_edge"]), (b - B["rail_edge"], b + 0.1)):
+                copper.box((e0, ry[1] - 1.0, bz - 0.1), (e1, ry[1] + 0.3, fz + 0.7), MOUNT)
         xb = sorted((sx * (w - 1.0), sx * (w + 0.3)))   # the trim along the side's bottom edge
         copper.box((xb[0], by - 0.3, bz), (xb[1], by + tr, fz + 0.3), MOUNT)
         for z in (fz, bz):        # the vertical corner trims
@@ -299,7 +306,7 @@ def body_parts() -> list:
             c0, c1 = sorted((sx * (w - F["cap"]), sx * (w + 0.5)))
             z0, z1 = (zc - F["cap"], zc + 0.8) if zc == fz else (zc - 0.8, zc + F["cap"])
             copper.box((c0, ry[0] - F["cap"], z0), (c1, ry[1] + 0.4, z1), MOUNT)
-    return [dark, copper, light, art]
+    return [dark, copper, light, art] + ([rails] if RAILS[0] != "copper" else [])
 
 
 def front_parts() -> list:
@@ -587,6 +594,7 @@ def main() -> None:
     (out / "renders").mkdir(parents=True, exist_ok=True)
     for ob in list(bpy.data.objects):
         bpy.data.objects.remove(ob)
+    RAILS.append(args.get("rails") or B["rails"])
     TEXDIR.append(out / "tex")      # Gate 3's art: the night Earth and the roughness break-up (pinball_art.py)
     tex = pinball_art.make(TEXDIR[0], Path(args["earth"]),
                            {f: (MATS[m][2], amp) for m, (f, amp) in ROUGH.items()})

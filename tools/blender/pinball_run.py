@@ -119,6 +119,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", default="v1", help="the output folder under <raw>/lobby/pinball/")
     ap.add_argument("--no-build", action="store_true")
+    ap.add_argument("--rails", choices=("copper", "dark"), help="the top rails' look (default: [body] rails)")
     ap.add_argument("--no-shots", action="store_true")
     ap.add_argument("--no-video", action="store_true")
     ap.add_argument("--px", type=int, default=4, help="the orthographic renders' pixels per cm")
@@ -126,7 +127,7 @@ def main() -> int:
     out = BASE / args.tag
     out.mkdir(parents=True, exist_ok=True)
     if not args.no_build:
-        r = blender.run_script("pinball_build.py", ["--out", str(out), "--px", str(args.px), "--earth", str(EARTH)], timeout=900)
+        r = blender.run_script("pinball_build.py", ["--out", str(out), "--px", str(args.px), "--earth", str(EARTH)] + (["--rails", args.rails] if args.rails else []), timeout=900)
         print(*[x for x in (r.stdout or "").splitlines() if x.startswith("PINBALL_BUILD")], sep="\n", flush=True)
     ok = True
     for g in GLBS:

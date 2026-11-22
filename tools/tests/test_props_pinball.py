@@ -92,7 +92,7 @@ class PinballSpec(unittest.TestCase):
         tilt = math.radians(t["tilt_deg"])
         far = t["front_y"] + k["field"][1] * math.sin(tilt)
         self.assertLess(far, bb["y"][0] + 1.0, "the field's far end stays under the backbox")
-        self.assertEqual(DIMS["markers"]["closeup_down_deg"], 42.0)   # prime-game d643623a
+        self.assertEqual(DIMS["markers"]["closeup_down_deg"], 37.0)   # prime-game d643623a's 42, the screen kept in view
         self.assertEqual(DIMS["markers"]["closeup_at"], [129.0, 130.0])
         self.assertEqual(DIMS["markers"]["closeup_fov"], 50.0)
 

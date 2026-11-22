@@ -61,6 +61,9 @@ bottom_y = -26.0                 # the body's underside (26 cm below the field, 
 rail_y = [10.0, 13.5]            # the copper top rails, over the contract's walls and holding the glass
 rail_in = 30.0                   # the rails' inner edge (x): over the side walls' inner faces
 rail_out = 42.0                  # their outer edge: a 1 cm lip outside the side walls
+rails = "copper"                 # the rails' look: "copper" (Gate 3 step 2) or "dark" (the concept's: teal_dark, a
+                                 # copper strip rail_edge wide along each top edge); the build's --rails overrides it
+rail_edge = 1.2
 lockdown_z = [65.0, 74.0]        # the copper lockdown bar across the front, at the rails' height
 trim = 1.2                       # the copper trims along the body's edges: width
 chamfer = 0.6                    # the edge chamfer on the body, legs and backbox
@@ -109,6 +112,7 @@ medallion_y = 132.0
 closeup_at = [129.0, 130.0]      # CloseUp: this far above TableMount and toward the player (prime-game d643623a, the
                                  # engineer's M8 review #1095 c7021998428: 0.38 m further back than Gate 1's 160 cm on
                                  # a 55 deg line, so the display's top line is in the frame)
-closeup_down_deg = 42.0          # its pitch down (Gate 1: 55)
+closeup_down_deg = 37.0          # its pitch down (Gate 1: 55; the greybox 42): the cabinet's screen stands higher over
+                                 # the table than the greybox's Display, so at 42 its top line left the frame
 closeup_fov = 50.0
 display_ahead = 0.4              # Display: on the screen's middle, this far in front of its glass; its +z faces -z

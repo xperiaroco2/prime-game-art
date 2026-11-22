@@ -936,8 +936,11 @@ with a dark screen in a cyan line, the night Earth on the playfield; the hall's 
    degrees about y (the table's +z, the flippers' end, toward the player on the cabinet's -z), then the tilt, so the
    game's flat physics table is drawn tilted. The backbox's top is 1.9 m; its screen is 66 x 38 cm for the three
    Label3D lines of `Display` (best and owner, score, balls; its +z faces the player). `CloseUp` stands 1.29 m above
-   `TableMount` and 1.30 m toward the player, pitched 42 degrees down, fov 50, as the greybox's after the engineer's M8
-   review (prime-game d643623a; Gate 1 had 1.6 m on a line 55 degrees down). In the lobby the cabinet's origin (the floor
+   `TableMount` and 1.30 m toward the player, pitched 37 degrees down, fov 50: the greybox's place after the engineer's M8
+   review (prime-game d643623a; Gate 1 had 1.6 m on a line 55 degrees down), its pitch 37 rather than the greybox's 42
+   because the cabinet's screen stands higher over the table than the greybox's `Display`, so at 42 its top line left
+   the frame. The top rails have two looks (`[body] rails`, the build's `--rails`): `copper` (Gate 3 step 2) and
+   `dark` (the concept's: the dark rail with a copper strip `rail_edge` wide along each top edge); the engineer picks. In the lobby the cabinet's origin (the floor
    under the footprint's middle) stands at (18, 0, 3.44): its front 40 cm from the greybox's `PinballSpot` (18, 0,
    2.2). `tools/blender/pinball_drawing.py` draws the front, side and top in cm from the model's own feature edges
    (`features.json`) with the spec's dimensions: `drawing.svg` on paper, `drawing_model.svg` over the model's
