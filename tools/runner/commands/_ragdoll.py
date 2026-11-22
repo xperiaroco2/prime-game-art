@@ -65,14 +65,39 @@ _LIMB = [
 ]
 
 
-def plan() -> list[dict[str, Any]]:
+# The two rigs the data is measured on: "um", the Ultimate Modular export (slice_m1), and "contract", the art
+# contract's humanoid skeleton (contract/contract.toml; the aliens of art #196, art #393), whose bone names are the
+# profile names above (Hips, Spine, Chest, LeftUpperArm, ..., LeftHand), with UpperChest, Shoulder, Toes and the
+# fingers following the nearest simulated bone up the skeleton.
+_TRUNK_PROFILE = {b: p for b, p, *_ in _TRUNK}
+
+
+def rig_of(names) -> str:
+    """The rig of a skeleton's bone names: "um" or "contract" (ValueError for neither)."""
+    names = set(names)
+    if {"Body", "Torso", "Wrist.R"} <= names:
+        return "um"
+    if {"Hips", "Spine", "Chest", "RightHand", "LeftUpperLeg"} <= names:
+        return "contract"
+    raise ValueError("the skeleton is neither the Ultimate Modular rig nor the contract's humanoid one")
+
+
+def plan(rig: str = "um") -> list[dict[str, Any]]:
     """The simulated bones in build order (every parent before its children)."""
-    out = [{"bone": b, "profile": p, "parent": par, "shape": s, "mass_share": m, "joint": j} for b, p, par, s, m, j in _TRUNK]
+    if rig not in ("um", "contract"):
+        raise ValueError(f"unknown rig {rig}")
+    um = rig == "um"
+    name = (lambda b: b) if um else (lambda b: _TRUNK_PROFILE[b])
+    out = [{"bone": name(b), "profile": p, "parent": par and name(par), "shape": s, "mass_share": m, "joint": j}
+           for b, p, par, s, m, j in _TRUNK]
     for s, side, _ in SIDES:
         for b, p, par, shape, m, j in _LIMB:
-            parent = par if par in ("Torso", "Body") else f"{par}.{s}"
-            out.append({"bone": f"{b}.{s}", "profile": f"{side}{p}", "parent": parent, "shape": shape, "mass_share": m,
-                        "joint": dict(j) if j else None})
+            if par in ("Torso", "Body"):
+                parent = name(par)
+            else:
+                parent = f"{par}.{s}" if um else f"{side}{par}"
+            out.append({"bone": f"{b}.{s}" if um else f"{side}{p}", "profile": f"{side}{p}", "parent": parent,
+                        "shape": shape, "mass_share": m, "joint": dict(j) if j else None})
     return out
 
 
@@ -238,18 +263,21 @@ def _capsule(local: list[tuple[float, float, float]]) -> tuple[list[float], floa
 
 
 def measure(glb: Path, asset: str | None = None) -> dict[str, Any]:
-    """The ragdoll data of a character GLB on the Ultimate Modular rig."""
+    """The ragdoll data of a character GLB on the Ultimate Modular rig or the contract's humanoid skeleton."""
     gltf, blob = read_glb(glb)
     skel = skeleton(gltf)
-    bones = plan()
+    rig = rig_of(skel["names"])
+    bones = plan(rig)
     simulated = {b["bone"] for b in bones}
     missing = sorted(simulated - set(skel["names"]))
     if missing:
         raise ValueError(f"{glb.name} lacks the simulated bones {', '.join(missing)}")
     parents = dict(skel["parents"])
-    # The rig's feet hang from Root (an IK-style rig), not from the lower legs: they belong to the lower legs' chain.
-    for s, _, _ in SIDES:
-        parents[f"Foot.{s}"] = f"LowerLeg.{s}"
+    # The UM rig's feet hang from Root (an IK-style rig), not from the lower legs: they belong to the lower legs' chain
+    # (the contract's feet are the lower legs' children already).
+    for s, side, _ in SIDES:
+        if rig == "um":
+            parents[f"Foot.{s}"] = f"LowerLeg.{s}"
     owners = simulated | set(FIT)
     points: dict[str, list] = {b: [] for b in owners}
     unowned: dict[str, int] = {}
@@ -286,7 +314,7 @@ def measure(glb: Path, asset: str | None = None) -> dict[str, Any]:
         if j is None:
             continue
         j["anchor"] = [0.0, 0.0, 0.0]
-        if b["bone"].startswith("Foot."):
+        if b["profile"].endswith("Foot"):
             # The ankle: the foot's own head lies at the heel on the ground; the joint sits where the lower leg's
             # capsule ends, expressed in the foot's frame.
             leg = next(x for x in bones if x["bone"] == b["parent"])
@@ -311,6 +339,7 @@ def measure(glb: Path, asset: str | None = None) -> dict[str, Any]:
         "bones": bones,
         "followers": {k: v for k, v in sorted(followers.items())},
         "unweighted_or_above_hips": unowned,
+        **({"rig": rig} if rig != "um" else {}),   # the UM data keeps its shipped form (slice_m1)
     }
 
 

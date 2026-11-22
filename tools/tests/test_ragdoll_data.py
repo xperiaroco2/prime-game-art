@@ -103,3 +103,43 @@ class PackageTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ContractRigTest(unittest.TestCase):
+    """The contract's humanoid skeleton (the aliens, art #393): the plan names its bones and keeps the UM plan's shapes,
+    shares and joints; a recovered alien GLB, when present, measures and checks clean."""
+
+    def test_the_rig_is_told_from_the_names(self) -> None:
+        self.assertEqual(_ragdoll.rig_of(["Root", "Body", "Torso", "Wrist.R"]), "um")
+        self.assertEqual(_ragdoll.rig_of(["Hips", "Spine", "Chest", "RightHand", "LeftUpperLeg"]), "contract")
+        with self.assertRaises(ValueError):
+            _ragdoll.rig_of(["Hips", "Spine"])
+
+    def test_the_contract_plan(self) -> None:
+        um, con = _ragdoll.plan("um"), _ragdoll.plan("contract")
+        self.assertEqual(len(um), len(con))
+        names = [b["bone"] for b in con]
+        self.assertEqual(names[:4], ["Hips", "Spine", "Chest", "Neck"])
+        self.assertIn("LeftHand", names)
+        self.assertIn("RightFoot", names)
+        seen: set[str] = set()
+        for u, c in zip(um, con):
+            self.assertEqual(c["bone"], c["profile"], "the contract's bones are the profile names")
+            for k in ("profile", "shape", "mass_share", "joint"):
+                self.assertEqual(u[k], c[k], k)
+            if c["parent"] is not None:
+                self.assertIn(c["parent"], seen)
+            seen.add(c["bone"])
+        self.assertEqual(next(b for b in con if b["bone"] == "LeftUpperArm")["parent"], "Chest")
+        self.assertEqual(next(b for b in con if b["bone"] == "RightUpperLeg")["parent"], "Hips")
+
+    def test_a_recovered_alien(self) -> None:
+        glb = common.raw_dir() / "recovered" / "artifact-Ff1dvJw6uG541Z6qvTnNcT" / "glb" / "chameleon.glb"
+        if not glb.is_file():
+            self.skipTest("needs the recovered chameleon.glb in the raw folder")
+        data = _ragdoll.measure(glb)
+        gltf, _ = _ragdoll.read_glb(glb)
+        skel = _ragdoll.skeleton(gltf)
+        self.assertEqual(data["rig"], "contract")
+        self.assertEqual(_ragdoll.check(data, skel["names"]) + _ragdoll.shapes_in_bounds(data, skel["global"]), [])
+        self.assertEqual(data["unweighted_or_above_hips"], {})
