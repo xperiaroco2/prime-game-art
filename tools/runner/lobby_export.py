@@ -59,8 +59,8 @@ QUESTIONS = [
     "L3: behind the shut nose and the closed doors the package's whole interior is still drawn when in view (about "
     "3200 draw calls in the views that see the ship, HANDOFF 'Cost'); an occluder or hiding Ship's interior pieces in "
     "the lobby is the game's call.",
-    "L4: the ten spawn markers (Markers/Spawn0..9) stand at z 2.5, 0.76 m outside the floor ring (r 15 round the "
-    "closed ship's middle, z -13.26); the ring is the floor's inlay only, no rule of the game.",
+    "L4: the ten spawn markers (Markers/Spawn0..9) stand at z 2.52, 0.76 m outside the floor ring (r 15 round the "
+    "closed ship's middle, z -13.24), 2.0 m from the ship; the ring is the floor's inlay only, no rule of the game.",
     "L5: the Earth is the object Earth/EarthObject (earth_object.gdshader in far mode: every ray from far_eye, the shell "
     "follows the camera), so it stays at infinity: never parent it to anything that moves, never scale it; the camera's "
     "far plane must reach LobbyHall's metadata camera_far_m. The sky (lobby_env.tres) draws the stars and, in its "

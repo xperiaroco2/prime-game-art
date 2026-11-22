@@ -6,7 +6,8 @@
 # `lobby` command builds and shoots it.
 
 version = 3
-raw_dir = "lobby/hall/v19"         # under the raw folder: pieces/, plan/, logs/, shots/
+raw_dir = "lobby/hall/v20"         # under the raw folder: pieces/, plan/, logs/, shots/ (v20: the ship package v10,
+                                   # the ring at z -13.24, the spawns at z 2.52; v19 the game's current package's)
 # The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
 # their walls by the `lobby` command from [door] doors)
 place = [
@@ -60,8 +61,10 @@ doors = [["D1", "W", 2.0], ["D2", "E", 2.0], ["D3", "N", -11.0], ["D4", "N", 11.
 
 [floor]
 ring_r = 15.0                      # H.ring: the floor ring round the ship
-spawns_z = 2.5                     # H.spawns: ten markers, x -9..9 step 2; step 5a (the engineer, art#356 comment
-                                   # 6536044954): at z 2.5 (was the greybox's 0), 2 m from the engine pods, facing the window
+spawns_z = 2.52                    # H.spawns: ten markers, x -9..9 step 2; step 5a (the engineer, art#356 comment
+                                   # 6536044954): at z 2.5 (was the greybox's 0), 2 m from the engine pods, facing the window;
+                                   # 2.52 since the ship's package v10 (its pods end 5 cm further aft than nose/b4's): the
+                                   # two middle spawns were 1.99 m from it (art #374's rebuild found it)
 spawns_x = [-9.0, -7.0, -5.0, -3.0, -1.0, 1.0, 3.0, 5.0, 7.0, 9.0]
 spawn_ship_m = 2.0                 # the least gap between a spawn and the ship's footprint
 ship_wall_m = 3.0                  # the least gap between the ship's footprint and every wall and door
@@ -73,8 +76,8 @@ ship_wall_m = 3.0                  # the least gap between the ship's footprint 
 # y. The closed nose at z -26.99, the engine pods' ends at z 0.46; the ring centred on the closed ship's middle
 # (z -13.26, computed by the check; `lobby --check` prints the numbers).
 origin = [0.0, 0.0, -14.5]
-pieces_dir = "ship/v5/nose/b4/pieces"   # art #263's built pieces (under the raw folder), never rebuilt from here;
-                                   # step 4c: the jaw nose b4 the package was built from (the jaws built closed)
+pieces_dir = "ship/v5/pieces"      # art #263's built pieces (under the raw folder), never rebuilt from here: the
+                                   # ship's current build, its jaw nose b4 (nose/b4 was lost with D:, art #374)
 hull = "P"                         # ship_hull_shape.outline("P"): the hull's footprint
 pods = ["nozzle_pod_outer", "nozzle_pod_mid"]   # their placed bounds join the footprint (the build report)
 tail = "skin_top"                  # its bounds' aft end beyond the outline joins the footprint, as wide as the pods
@@ -90,7 +93,8 @@ stand_in = []                      # step 4c: the ramp is gone (the jaw nose, sh
 # the night clearing's WorldEnvironment (it fights the hall's AgX, glow and exposure) and the moon and cool key (two
 # shadowed suns that would light the hall's walls and cast two more ship shadows against the Earth's light). The
 # ship's 105 own lamps and its 7 interior probes stay.
-package = { dir = "ship/v5/export/v8", nose = ["jaw_lower", "jaw_upper", "jaw_root"], use = true, free = ["Clearing", "Environment", "Lights:DirectionalLight3D"], keep = ["Lights", "Probes", "Pieces", "Nose", "Stations", "Markers"] }
+# The package v10 (art #386, the game's ship) since v8 was lost with D: (art #374).
+package = { dir = "ship/v5/export/v10", nose = ["jaw_lower", "jaw_upper", "jaw_root"], use = true, free = ["Clearing", "Environment", "Lights:DirectionalLight3D"], keep = ["Lights", "Probes", "Pieces", "Nose", "Stations", "Markers"] }
 # The forest clearing (layouts/ship/exterior.toml), not in the lobby
 drop = ["ground", "pine_a", "pine_b", "pine_c", "pine_d", "pine_e", "pine_f", "pine_g", "pine_s", "rock_a", "rock_b",
         "rock_c", "rock_pile_a", "rock_pile_b", "ground_lamp", "dirt_patch", "dirt_path", "tuft_a", "tuft_b",
