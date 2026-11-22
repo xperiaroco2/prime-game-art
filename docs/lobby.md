@@ -44,7 +44,7 @@ holds the lobby frame again.
 | Arch | 6 x 6 m in the north wall's middle; the corridor x -3..3, z -38..-30, its end closed by a wall and a sealed door slab | H.arch |
 | Doors | 3 x 4.5 m, the red lamp's centre at 5.1 m: D1 west wall z 2, D2 east wall z 2, D3 and D4 north wall x -11 and 11; each a slab 0.15 m inside the wall's inner face | H.door, H.doors |
 | Floor | one level, 2 m plates (the plates follow the arc), the ring r 15 round the ship's middle | H.tile, H.ring |
-| Spawns | ten at z 0, x -9..9 step 2 (since step 5a z 2.5) | H.spawns |
+| Spawns | ten at z 0, x -9..9 step 2 (since step 5a z 2.5; since the ship package v10 z 2.52, art #374) | H.spawns |
 | Ship | step 1: plan origin at (0, 0, -17), nose north: lobby x = plan x, lobby z = plan y - 17, lobby y = plan h; nose z -24.10, the pods' ends z -2.04 (the mid pod), middle z -13.07, half span 13.05. Since step 5a: origin z -14.5, the closed nose z -26.99 (`hall.toml` holds the truth) | the engineer, 2026-10-30 |
 
 Numbers not in the drawing, ours (blockout): the pilasters 0.8 x 0.6 m (the drawing's glyph is 1.2 m wide, which puts
@@ -1011,3 +1011,14 @@ are unchanged, so nothing on the hall's side moved.
   the rule is the engineer's call (moving the ship 2.5 m south puts the pods' ends past the spawns at z 0).
 - Step 4c, D1: from the glass the 4096 x 2048 maps are magnified (cities as soft blobs); walking east the sun (at
   infinity, 1.5 deg behind the limb at the spawn) comes out from behind the near globe as an orange ball.
+
+## The ship package v10 (art #374, 2026-11-23)
+
+The ship's raw build `ship/v5/nose/b4/pieces` and its package `ship/v5/export/v8` were lost with D: (2026-11-18). The
+hall now reads the ship's current build `ship/v5/pieces` (its jaw nose b4) and the game's package `ship/v5/export/v10`
+(art #386). The numbers above that name v8 and nose/b4 (step 5a: aft z 0.46, the ring at z -13.26, the spawns 2.04 m
+from the ship) are history. With v10 the closed ship's engine pods end at z 0.515, so the ring's centre is z -13.24
+and the spawns at z 2.5 stood 1.99 m from the ship, under the 2 m rule: `spawns_z` is 2.52 (2.005 m), a 2 cm move.
+The hall's raw folder is `lobby/hall/v20` for builds with these numbers (v19 holds the game's current package's
+hall). The game sees the new spawns and ring only with the next `lobby --export` and its game PR.
+
