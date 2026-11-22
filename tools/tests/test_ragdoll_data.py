@@ -101,9 +101,6 @@ class PackageTest(unittest.TestCase):
             self.assertEqual([f["name"] for f in files], [DATA.name])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class ContractRigTest(unittest.TestCase):
     """The contract's humanoid skeleton (the aliens, art #393): the plan names its bones and keeps the UM plan's shapes,
@@ -143,3 +140,18 @@ class ContractRigTest(unittest.TestCase):
         self.assertEqual(data["rig"], "contract")
         self.assertEqual(_ragdoll.check(data, skel["names"]) + _ragdoll.shapes_in_bounds(data, skel["global"]), [])
         self.assertEqual(data["unweighted_or_above_hips"], {})
+
+    def test_the_contract_plan_names_the_contract_bones(self) -> None:
+        bones = json.loads((common.ROOT / "contract" / "humanoid.json").read_text(encoding="utf-8"))["bones"]
+        parent = {b["name"]: b["parent"] for b in bones}
+        for b in _ragdoll.plan("contract"):
+            self.assertIn(b["bone"], parent, f"{b['bone']} is not a contract bone")
+            if b["parent"]:   # the physical parent is an ancestor in the contract's skeleton
+                up = parent[b["bone"]]
+                while up and up != b["parent"]:
+                    up = parent.get(up, "")
+                self.assertEqual(up, b["parent"], b["bone"])
+
+
+if __name__ == "__main__":
+    unittest.main()

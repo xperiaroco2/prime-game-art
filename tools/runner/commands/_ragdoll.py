@@ -275,8 +275,8 @@ def measure(glb: Path, asset: str | None = None) -> dict[str, Any]:
     parents = dict(skel["parents"])
     # The UM rig's feet hang from Root (an IK-style rig), not from the lower legs: they belong to the lower legs' chain
     # (the contract's feet are the lower legs' children already).
-    for s, side, _ in SIDES:
-        if rig == "um":
+    if rig == "um":
+        for s, _, _ in SIDES:
             parents[f"Foot.{s}"] = f"LowerLeg.{s}"
     owners = simulated | set(FIT)
     points: dict[str, list] = {b: [] for b in owners}
