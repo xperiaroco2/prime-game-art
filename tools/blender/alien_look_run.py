@@ -60,6 +60,8 @@ def glb_images(path: Path) -> dict[str, bytes]:
     base = 20 + n + 8
     out = {}
     for i, im in enumerate(gltf.get("images", [])):
+        if "bufferView" not in im or im.get("mimeType", "image/png") != "image/png":
+            continue   # only embedded PNGs (the recovered aliens' kind); png_pixels reads nothing else
         bv = gltf["bufferViews"][im["bufferView"]]
         s = base + bv.get("byteOffset", 0)
         out[im.get("name", f"image_{i}")] = data[s:s + bv["byteLength"]]
@@ -149,6 +151,9 @@ def char_entry(name: str, glb: Path, tex: Path) -> dict:
     tex.mkdir(parents=True, exist_ok=True)
     for k, v in images.items():
         (tex / f"{k}.png").write_bytes(v)
+    missing = [k for k in (f"{name}_mask", f"{name}_body_albedo") if k not in images]
+    if missing:
+        raise common.Failure(f"{glb.name}: no embedded PNG {', '.join(missing)} (is '{name}' the materials' name?)")
     mask = images[f"{name}_mask"]
     return {"glb": _godot.stage(glb, f"look_{name}"), "mask": str(tex / f"{name}_mask.png"), "detail": DETAIL,
             "body_mask": body_mask(mask), "body_detail": DETAIL, "accent": "", "gill": "", "body_accent": "",
@@ -171,6 +176,9 @@ def main() -> int:
     for spec in a.glb:
         name, path = spec.split("=", 1)
         chars[name] = char_entry(name, Path(path), out / "tex" / name)
+    shots = [s for s in shots if s["char"] in chars]   # the default shots name both aliens; keep the given ones'
+    if not shots:
+        raise common.Failure(f"no shot for {', '.join(chars)}{' among --only ' + a.only if a.only else ''}")
     (out / "inputs.json").write_text(json.dumps(chars, indent=1), encoding="utf-8", newline="\n")
     job = {"out": str(out), "hdri": "", "fix": {"shadow_quality": 5}, "chars": chars, "shots": shots}
     (out / "look_job.json").write_text(json.dumps(job, indent=1), encoding="utf-8", newline="\n")
