@@ -6,7 +6,8 @@
 # `lobby` command builds and shoots it.
 
 version = 3
-raw_dir = "lobby/hall/v19"         # under the raw folder: pieces/, plan/, logs/, shots/
+raw_dir = "lobby/hall/v20"         # under the raw folder: pieces/, plan/, logs/, shots/ (v20: the ship package v10,
+                                   # the ring at z -13.24, the spawns at z 2.52; v19 the game's current package's)
 # The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
 # their walls by the `lobby` command from [door] doors)
 place = [

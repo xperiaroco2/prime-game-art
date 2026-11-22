@@ -1011,3 +1011,14 @@ are unchanged, so nothing on the hall's side moved.
   the rule is the engineer's call (moving the ship 2.5 m south puts the pods' ends past the spawns at z 0).
 - Step 4c, D1: from the glass the 4096 x 2048 maps are magnified (cities as soft blobs); walking east the sun (at
   infinity, 1.5 deg behind the limb at the spawn) comes out from behind the near globe as an orange ball.
+
+## The ship package v10 (art #374, 2026-11-23)
+
+The ship's raw build `ship/v5/nose/b4/pieces` and its package `ship/v5/export/v8` were lost with D: (2026-11-18). The
+hall now reads the ship's current build `ship/v5/pieces` (its jaw nose b4) and the game's package `ship/v5/export/v10`
+(art #386). The numbers above that name v8 and nose/b4 (step 5a: aft z 0.46, the ring at z -13.26, the spawns 2.04 m
+from the ship) are history. With v10 the closed ship's engine pods end at z 0.515, so the ring's centre is z -13.24
+and the spawns at z 2.5 stood 1.99 m from the ship, under the 2 m rule: `spawns_z` is 2.52 (2.005 m), a 2 cm move.
+The hall's raw folder is `lobby/hall/v20` for builds with these numbers (v19 holds the game's current package's
+hall). The game sees the new spawns and ring only with the next `lobby --export` and its game PR.
+
