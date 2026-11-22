@@ -1,0 +1,87 @@
+# art#389 (the bar with its tap), art#390 (the mirror), art#391 (the match console): Gate 0's concepts, round 1. The
+# engineer's word "Арт в M8" (2026-11-22, relayed by the director): the lobby's greybox props get their art in M8,
+# keeping the hall's style (scheme S4, two-tone teal-grey with copper accents) and adding nothing visible beyond the
+# three pieces. Text generations, medium (exploration), one image per concept: four designs per piece, sized to the
+# game's greybox contracts (each issue's body). Forms and materials only; no game, film, studio or brand names; no
+# people; no text on any screen.
+id = "2026-11-22-lobby-bar-mirror-console-concepts"
+service = "openai-images"
+purpose = "art#389-391: four concepts each for the lobby's bar with its tap, mirror and match console, for the engineer's pick."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 2.0
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-11-22"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6291187194 (the standing permission of 2026-10-20: OpenAI images within a batch's cost_cap_usd); the pieces: https://github.com/xperiaroco2/prime-game/issues/1095#issuecomment-6801492855 and the engineer's word of 2026-11-22 (art#389)"
+model = "gpt-image-2.5-sunburst"
+quality = "medium"
+
+[defaults]
+size = "1536x1024"
+n = 1
+
+# --- the bar with its tap (art#389): a free-standing counter 6 m long, 1 m deep, 1.1 m high; the tap on its top at
+# the middle, used from the front
+[[items]]
+id = "bar1_hall"
+kind = "generate"
+prompt = "A stylised 3D game-art concept render of one object for a modern adult-cartoon multiplayer game: clean bold readable shapes, slightly exaggerated proportions, crisp bevels, rich high-quality materials, cool and stylish, never childish. It stands in a space-station lobby hall with two-tone teal-grey brushed metal panels and copper accents, lit by warm light from above and a cold blue light from a big window (out of frame). Made by an advanced alien civilisation, but clearly furniture people walk up to and use. Seen from the 3/4 front at eye height (1.65 m), the whole object in frame on a dark polished metal floor. No people, no text, no letters, no numbers, no logos, no brand names, no bottles, no other props. THE OBJECT: a long free-standing bar counter, 6 m long, 1 m deep, 1.1 m high, with one drink tap standing on its top at the middle of the long side, where a player stands to fill a mug. DESIGN: matches the hall: the counter's front in two-tone teal-grey panels with copper trims and rivet rows, a dark polished top with a copper edge, a thin cyan light band under the top's lip; the tap a slim copper tower with one curved spout and one lever handle, a small cyan light ring at its base."
+
+[[items]]
+id = "bar2_galley"
+kind = "generate"
+prompt = "A stylised 3D game-art concept render of one object for a modern adult-cartoon multiplayer game: clean bold readable shapes, slightly exaggerated proportions, crisp bevels, rich high-quality materials, cool and stylish, never childish. It stands in a space-station lobby hall with two-tone teal-grey brushed metal panels and copper accents, lit by warm light from above and a cold blue light from a big window (out of frame). Made by an advanced alien civilisation, but clearly furniture people walk up to and use. Seen from the 3/4 front at eye height (1.65 m), the whole object in frame on a dark polished metal floor. No people, no text, no letters, no numbers, no logos, no brand names, no bottles, no other props. THE OBJECT: a long free-standing bar counter, 6 m long, 1 m deep, 1.1 m high, with one drink tap standing on its top at the middle of the long side, where a player stands to fill a mug. DESIGN: a sleek starship galley: the counter's front gently curved, seamless brushed teal-grey metal, the top a single slab of dark glassy stone with a soft glowing underlight; the tap an alien dispenser column with a small glass chamber showing an amber glowing drink inside and a copper nozzle."
+
+[[items]]
+id = "bar3_dock"
+kind = "generate"
+prompt = "A stylised 3D game-art concept render of one object for a modern adult-cartoon multiplayer game: clean bold readable shapes, slightly exaggerated proportions, crisp bevels, rich high-quality materials, cool and stylish, never childish. It stands in a space-station lobby hall with two-tone teal-grey brushed metal panels and copper accents, lit by warm light from above and a cold blue light from a big window (out of frame). Made by an advanced alien civilisation, but clearly furniture people walk up to and use. Seen from the 3/4 front at eye height (1.65 m), the whole object in frame on a dark polished metal floor. No people, no text, no letters, no numbers, no logos, no brand names, no bottles, no other props. THE OBJECT: a long free-standing bar counter, 6 m long, 1 m deep, 1.1 m high, with one drink tap standing on its top at the middle of the long side, where a player stands to fill a mug. DESIGN: a dock workers' bar on a space station: the counter built of heavy riveted teal-grey plates with a kick rail of copper pipe along its foot, a worn dark metal top; the tap a chunky pressure valve: a copper pipe rising from the counter, a round gauge, a big wheel handle and a short spout."
+
+[[items]]
+id = "bar4_lounge"
+kind = "generate"
+prompt = "A stylised 3D game-art concept render of one object for a modern adult-cartoon multiplayer game: clean bold readable shapes, slightly exaggerated proportions, crisp bevels, rich high-quality materials, cool and stylish, never childish. It stands in a space-station lobby hall with two-tone teal-grey brushed metal panels and copper accents, lit by warm light from above and a cold blue light from a big window (out of frame). Made by an advanced alien civilisation, but clearly furniture people walk up to and use. Seen from the 3/4 front at eye height (1.65 m), the whole object in frame on a dark polished metal floor. No people, no text, no letters, no numbers, no logos, no brand names, no bottles, no other props. THE OBJECT: a long free-standing bar counter, 6 m long, 1 m deep, 1.1 m high, with one drink tap standing on its top at the middle of the long side, where a player stands to fill a mug. DESIGN: an upscale orbital lounge: the counter's front a padded panel of dark teal leather in a diamond quilt with copper studs, a warm dark polished top with a rounded copper bull-nose edge; the tap a tall slender copper swan-neck with a single lever handle."
+
+# --- the mirror (art#390): the glass exactly 2 m wide and 2.5 m high on a wall; the art is its frame and housing
+[[items]]
+id = "mir1_hall"
+kind = "generate"
+prompt = "A stylised 3D game-art concept render of one object for a modern adult-cartoon multiplayer game: clean bold readable shapes, slightly exaggerated proportions, crisp bevels, rich high-quality materials, cool and stylish, never childish. It is mounted on the wall of a space-station lobby hall with two-tone teal-grey brushed metal panels and copper accents, lit by warm light from above and a cold blue light from a big window (out of frame). Made by an advanced alien civilisation. Seen from the 3/4 front at eye height (1.65 m), the whole object in frame. No people, no text, no letters, no numbers, no logos, no other props. THE OBJECT: a tall full-length wall mirror where players stand to look at themselves: one flat rectangular mirror glass exactly 2 m wide and 2.5 m high, its bottom edge at the floor, reflecting only the empty hall softly. DESIGN: matches the hall: a teal-grey metal frame about 12 cm wide with a copper inner bevel and rivet rows, two slim vertical cyan light strips along the sides of the glass like a dressing-room mirror."
+
+[[items]]
+id = "mir2_backstage"
+kind = "generate"
+prompt = "A stylised 3D game-art concept render of one object for a modern adult-cartoon multiplayer game: clean bold readable shapes, slightly exaggerated proportions, crisp bevels, rich high-quality materials, cool and stylish, never childish. It is mounted on the wall of a space-station lobby hall with two-tone teal-grey brushed metal panels and copper accents, lit by warm light from above and a cold blue light from a big window (out of frame). Made by an advanced alien civilisation. Seen from the 3/4 front at eye height (1.65 m), the whole object in frame. No people, no text, no letters, no numbers, no logos, no other props. THE OBJECT: a tall full-length wall mirror where players stand to look at themselves: one flat rectangular mirror glass exactly 2 m wide and 2.5 m high, its bottom edge at the floor, reflecting only the empty hall softly. DESIGN: a backstage star's mirror: a deep brushed teal-grey metal frame lined with a row of round warm-white bulbs all the way round the glass, copper bulb collars."
+
+[[items]]
+id = "mir3_fins"
+kind = "generate"
+prompt = "A stylised 3D game-art concept render of one object for a modern adult-cartoon multiplayer game: clean bold readable shapes, slightly exaggerated proportions, crisp bevels, rich high-quality materials, cool and stylish, never childish. It is mounted on the wall of a space-station lobby hall with two-tone teal-grey brushed metal panels and copper accents, lit by warm light from above and a cold blue light from a big window (out of frame). Made by an advanced alien civilisation. Seen from the 3/4 front at eye height (1.65 m), the whole object in frame. No people, no text, no letters, no numbers, no logos, no other props. THE OBJECT: a tall full-length wall mirror where players stand to look at themselves: one flat rectangular mirror glass exactly 2 m wide and 2.5 m high, its bottom edge at the floor, reflecting only the empty hall softly. DESIGN: alien sculpted: the frame is a set of angular teal-grey metal fins sweeping back from the glass's edges like a ship's hull, copper tips, a glowing cyan seam where the fins meet the glass."
+
+[[items]]
+id = "mir4_minimal"
+kind = "generate"
+prompt = "A stylised 3D game-art concept render of one object for a modern adult-cartoon multiplayer game: clean bold readable shapes, slightly exaggerated proportions, crisp bevels, rich high-quality materials, cool and stylish, never childish. It is mounted on the wall of a space-station lobby hall with two-tone teal-grey brushed metal panels and copper accents, lit by warm light from above and a cold blue light from a big window (out of frame). Made by an advanced alien civilisation. Seen from the 3/4 front at eye height (1.65 m), the whole object in frame. No people, no text, no letters, no numbers, no logos, no other props. THE OBJECT: a tall full-length wall mirror where players stand to look at themselves: one flat rectangular mirror glass exactly 2 m wide and 2.5 m high, its bottom edge at the floor, reflecting only the empty hall softly. DESIGN: minimal: the glass set flush into a recessed dark teal-grey wall panel, a thin copper line round its edge and a soft cyan glow from the recess behind it, nothing else."
+
+# --- the match console (art#391): a standing panel 1.2 m wide, 1.6 m high, 0.3 m deep; a screen 0.96 x 0.54 m centred at
+# 1.15 m up on its front, used with the crosshair from up to 2.5 m
+[[items]]
+id = "con1_hall"
+kind = "generate"
+prompt = "A stylised 3D game-art concept render of one object for a modern adult-cartoon multiplayer game: clean bold readable shapes, slightly exaggerated proportions, crisp bevels, rich high-quality materials, cool and stylish, never childish. It stands in a space-station lobby hall with two-tone teal-grey brushed metal panels and copper accents, lit by warm light from above and a cold blue light from a big window (out of frame). Made by an advanced alien civilisation, but clearly a machine people walk up to and use. Seen from the 3/4 front at eye height (1.65 m), the whole object in frame on a dark polished metal floor. No people, no text, no letters, no numbers, no logos, no other props. THE OBJECT: a free-standing console where players set up the next match: a slim upright body 1.2 m wide, 1.6 m high and 30 cm deep, with one flat wide screen 96 cm by 54 cm on its front, its centre at 1.15 m, showing a plain dark glowing panel without any text. DESIGN: matches the hall: two-tone teal-grey panels with copper trims and rivet rows, a copper bezel round the screen with a thin cyan light ring, a wider base plate with a cyan light band at the floor."
+
+[[items]]
+id = "con2_monolith"
+kind = "generate"
+prompt = "A stylised 3D game-art concept render of one object for a modern adult-cartoon multiplayer game: clean bold readable shapes, slightly exaggerated proportions, crisp bevels, rich high-quality materials, cool and stylish, never childish. It stands in a space-station lobby hall with two-tone teal-grey brushed metal panels and copper accents, lit by warm light from above and a cold blue light from a big window (out of frame). Made by an advanced alien civilisation, but clearly a machine people walk up to and use. Seen from the 3/4 front at eye height (1.65 m), the whole object in frame on a dark polished metal floor. No people, no text, no letters, no numbers, no logos, no other props. THE OBJECT: a free-standing console where players set up the next match: a slim upright body 1.2 m wide, 1.6 m high and 30 cm deep, with one flat wide screen 96 cm by 54 cm on its front, its centre at 1.15 m, showing a plain dark glowing panel without any text. DESIGN: an alien monolith: a faceted dark teal-grey slab with chamfered corners, the screen floating in a cut-out window edged by a glowing cyan line, thin copper seams running down the facets to a glowing ring on the floor."
+
+[[items]]
+id = "con3_lectern"
+kind = "generate"
+prompt = "A stylised 3D game-art concept render of one object for a modern adult-cartoon multiplayer game: clean bold readable shapes, slightly exaggerated proportions, crisp bevels, rich high-quality materials, cool and stylish, never childish. It stands in a space-station lobby hall with two-tone teal-grey brushed metal panels and copper accents, lit by warm light from above and a cold blue light from a big window (out of frame). Made by an advanced alien civilisation, but clearly a machine people walk up to and use. Seen from the 3/4 front at eye height (1.65 m), the whole object in frame on a dark polished metal floor. No people, no text, no letters, no numbers, no logos, no other props. THE OBJECT: a free-standing console where players set up the next match: a slim upright body 1.2 m wide, 1.6 m high and 30 cm deep, with one flat wide screen 96 cm by 54 cm on its front, its centre at 1.15 m, showing a plain dark glowing panel without any text. DESIGN: a ship's bridge terminal: a narrow teal-grey pedestal rising from a round base to a wide screen housing like a fin-shaped head, the screen in a deep copper-rimmed frame, small cyan indicator lights along the pedestal."
+
+[[items]]
+id = "con4_rugged"
+kind = "generate"
+prompt = "A stylised 3D game-art concept render of one object for a modern adult-cartoon multiplayer game: clean bold readable shapes, slightly exaggerated proportions, crisp bevels, rich high-quality materials, cool and stylish, never childish. It stands in a space-station lobby hall with two-tone teal-grey brushed metal panels and copper accents, lit by warm light from above and a cold blue light from a big window (out of frame). Made by an advanced alien civilisation, but clearly a machine people walk up to and use. Seen from the 3/4 front at eye height (1.65 m), the whole object in frame on a dark polished metal floor. No people, no text, no letters, no numbers, no logos, no other props. THE OBJECT: a free-standing console where players set up the next match: a slim upright body 1.2 m wide, 1.6 m high and 30 cm deep, with one flat wide screen 96 cm by 54 cm on its front, its centre at 1.15 m, showing a plain dark glowing panel without any text. DESIGN: rugged station equipment: a bolted armoured teal-grey cabinet with two side grab handles, the screen behind a thick armoured bezel with copper corner caps, a yellow-black hazard edge at its foot."
