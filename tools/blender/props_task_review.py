@@ -1,7 +1,7 @@
 """Line-up review sheets of the built props (art #82, docs/props.md), in headless Blender:
 
   blender -b --factory-startup --python-exit-code 1 --python tools/blender/props_task_review.py -- \
-      --spec props/tasks.toml --glbs D:/prime-art-raw/props/task/v1 --out D:/prime-art-raw/review/house/82
+      --spec props/tasks.toml --glbs <raw>/props/task/v1 --out <raw>/review/house/82
 
 Imports each prop's GLB (its colliders hidden; a switch shows its `on` state), stands a 1.8 m grey capsule (0.5 m
 wide) at its left, and renders it from the front and from three-quarters (Workbench, the paint from the vertex

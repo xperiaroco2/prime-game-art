@@ -92,6 +92,22 @@ weights'; it was not a wish for five visible fingers. Four is the rule from now 
   Little groups empty; the Meshy body route that showed five (#340) is rejected.
 - The 2026-10-24 amendment's character budget (40,000 / 60,000) stands, and so do decisions 1 and 3.
 
+## Note of 2026-11-20: five digits tried, four stand
+
+The engineer, 2026-11-20, in chat, recorded in art#196 comments
+[7024609467](https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-7024609467) (five) and
+[7025749169](https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-7025749169) (four again).
+- **What happened.** The first-person rest-hand pilot (art#136) read as a mitten from the eye beside the reference he
+  picked (BONEWORKS). On the art manager's advice he chose five digits, and a five-digit model was built (m33). He
+  then asked whether four fingers are a problem.
+- **The answer.** Not in themselves. The mitten came from the pose (bunched fingers, the thumb under the palm), from a
+  bug (`fp_hands_fit.json` overrode `[poses.idle]`, so the rest hand was always drawn in the corner) and from thick
+  fingers. The five-digit hand still fused from the eye for the same reasons.
+- **Four stand:** three fingers and a thumb, as the 2026-10-28 amendment says. The five-digit work stays unmerged on
+  `feat/fp-hand-five-136`. The contract and the body don't change.
+- **Lesson.** Before changing the design to fix a look, find what makes the look: the pose, the camera and the bugs
+  first, the design last.
+
 ## Links
 
 - The engineer's words and the stage, art#196 comments:

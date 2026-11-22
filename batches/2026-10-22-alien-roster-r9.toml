@@ -7,7 +7,7 @@
 # with a growth that suggests a hairstyle as a smooth part of the skull. Round 7's method: each item is an edit with
 # rf2 as the style reference only (round 7's lead, framing sentence and style tail, the head turned to the viewer's
 # left), n 1; a concept that misses gets one revised item (suffix r). The source table:
-# D:/prime-art-raw/research/2026-10-22-roster/design/r9/concepts_r9.src.json (the blend column is for us; the
+# <raw>/research/2026-10-22-roster/design/r9/concepts_r9.src.json (the blend column is for us; the
 # prompts describe shapes). The standing permission for OpenAI images: art#196 comment 6291187194 (2026-10-20),
 # medium for exploration, within this batch's dollar cap. No game, film, studio, character or religious-figure
 # names; no real people. Schema: docs/openai-images.md.

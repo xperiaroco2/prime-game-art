@@ -2,12 +2,12 @@
 
 The engineer, after the tests of wave 1: "the feet are broken again". The Ultimate Modular rig has no toe bone, so each
 shoe is one rigid piece: at push-off a retargeted clip tips the whole shoe onto its toe (UAL Walk_Loop, side view in
-`D:/prime-art-raw/review/stage1/20/`), and the pack's own feet, placed apart from the legs (children of `Root`), lift
+`<raw>/review/stage1/20/`), and the pack's own feet, placed apart from the legs (children of `Root`), lift
 and turn sideways in its Walk (m1_rex in art #18's Godot frames). The engineer decided to give the rig a toe bone and to
 try Meshy's animations (its library and its text to motion) on our characters for about 60 credits (chat with the art
 manager, 2026-10-03, [art #16](https://github.com/xperiaroco2/prime-game-art/issues/16#issuecomment-5971404896)).
 
-Pictures and clips are outside git in `D:/prime-art-raw/review/stage1/25/` (`feet/`, `pairs/`, `strips/`, `clips/`,
+Pictures and clips are outside git in `<raw>/review/stage1/25/` (`feet/`, `pairs/`, `strips/`, `clips/`,
 `metrics/`, `metrics.md`, `rig_inputs/`). The method is in [../animations.md](../animations.md) (the retarget, the
 review, the feet step, the Meshy libraries) and [../meshy.md](../meshy.md) (the client, batch 4's run).
 
@@ -69,7 +69,7 @@ fitted) and by the retarget and the review for a pack original:
 
 ### Rigid shoes against toe bones (UAL1, retargeted onto the review donors)
 
-`tools/run.py anim-review feet --out D:/prime-art-raw/review/stage1/25` (the `[[feet]]` row `ual_locomotion`): each
+`tools/run.py anim-review feet --out <raw>/review/stage1/25` (the `[[feet]]` row `ual_locomotion`): each
 clip retargeted twice onto the same donor, rigid shoes over toe bones; a side close-up following the right shoe (12
 frames, `feet/<body>/ual_locomotion_ual_<clip>.png`) and a looping side-by-side MP4 (`.mp4`). Measures from three sole
 vertices per shoe (under the foot pivot, under the ball, the tip), while the tip is within 1 cm of the floor.
@@ -113,7 +113,7 @@ path, so the sliding, does not change. A per-vertex floor clamp would remove the
 `batches/2026-10-b4-animations.toml`, run by the art manager on 2026-10-03 (18:57 to 19:00 UTC) after the engineer's
 yes in chat: **374 credits before, 315 after, 59 spent**, each task charged as estimated (`meshy estimate`: 59 of the
 cap of 60). Task ids, files and the balance after each item are in [../meshy.md](../meshy.md) and each item's
-`generation.json`; the originals are in `D:/prime-art-raw/2026-10-b4-animations/` and copied to
+`generation.json`; the originals are in `<raw>/2026-10-b4-animations/` and copied to
 `OneDrive/prime-art-raw/` (`raw-backup`, 23 files).
 
 | Item | Task id | Credits | What came back |
@@ -379,7 +379,7 @@ Meshy clips and the clip each one competes with.
   text-to-motion clip, with `licence = "restricted"` (the manifest's value for raw library motions and anything
   unclear), `ai_generated = true` for both kinds (the field is a boolean: for the library clips it is the conservative
   value, since Meshy does not say whether they are generated; `notes` says so), `source.model_version = "undisclosed"`
-  and the animate task ids in `source.task_ids`, and the raw files stay private (`D:/prime-art-raw/2026-10-b4-animations/` and OneDrive, never in git). A clip
+  and the animate task ids in `source.task_ids`, and the raw files stay private (`<raw>/2026-10-b4-animations/` and OneDrive, never in git). A clip
   we retarget, clean up or key by hand from one of them is still derived from it. **The game repo is public**, so in
   this state no Meshy clip can enter it; the question for the engineer is below.
 
@@ -428,12 +428,12 @@ cheap public-safe source for crawling and 8-direction locomotion.
 
 ```
 tools/run.py retarget --library meshy --body men --clips Walking,RunFast --floor
-tools/run.py anim-review clips --sources meshy,meshyw --out D:/prime-art-raw/review/stage1/25
-tools/run.py anim-review clips --body men --clips meshy_own:Walking,...,ual:Walk_Loop,... --out D:/prime-art-raw/review/stage1/25
-tools/run.py anim-review clips --body women --clips meshyw_own:Walking,...,ual:Walk_Loop,... --out D:/prime-art-raw/review/stage1/25
-tools/run.py anim-review pairs --sources meshy,meshyw --out D:/prime-art-raw/review/stage1/25
-tools/run.py anim-review feet --only meshy_feet_men,meshy_feet_women,meshy_toes --out D:/prime-art-raw/review/stage1/25
-tools/run.py anim-review table --out D:/prime-art-raw/review/stage1/25
+tools/run.py anim-review clips --sources meshy,meshyw --out <raw>/review/stage1/25
+tools/run.py anim-review clips --body men --clips meshy_own:Walking,...,ual:Walk_Loop,... --out <raw>/review/stage1/25
+tools/run.py anim-review clips --body women --clips meshyw_own:Walking,...,ual:Walk_Loop,... --out <raw>/review/stage1/25
+tools/run.py anim-review pairs --sources meshy,meshyw --out <raw>/review/stage1/25
+tools/run.py anim-review feet --only meshy_feet_men,meshy_feet_women,meshy_toes --out <raw>/review/stage1/25
+tools/run.py anim-review table --out <raw>/review/stage1/25
 ```
 
 The own-rig runs list every clip of the rig (men: `meshy_own:` Walking, Running, RunFast, Walk_Backward,

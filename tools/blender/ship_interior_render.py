@@ -9,6 +9,7 @@ writes a compare sheet (the approved 2D left, the render right; about 1280 px wi
 from __future__ import annotations
 
 import math
+import os
 import sys
 import tomllib
 from pathlib import Path
@@ -118,9 +119,16 @@ def pixels(path: Path, w: int, h: int) -> np.ndarray:
     return cell
 
 
+def _root(env_name: str, dirname: str) -> Path:
+    """ART_RAW_DIR / ART_DESIGN_DIR, else the folder beside the main checkout (tools/runner/pins.py)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from runner import pins
+    return Path(os.environ.get(getattr(pins, env_name)) or pins.beside_checkout(getattr(pins, dirname)))
+
+
 def main() -> None:
     root, pieces, out = Path(arg("--root")), Path(arg("--pieces")), Path(arg("--out"))
-    refs = Path(arg("--refs", "D:/prime-game-design/ideas/ship-components/2d"))
+    refs = Path(arg("--refs", str(_root("DESIGN_ENV", "DESIGN_DIRNAME") / "ideas/ship-components/2d")))
     w, h = (int(v) for v in arg("--size", "640x360").split("x"))
     names = arg("--views", ",".join(VIEWS)).split(",")
     out.mkdir(parents=True, exist_ok=True)

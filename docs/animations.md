@@ -431,7 +431,7 @@ frame where the retarget's floor clamp lifts them, which no resampling keeps (5 
 The engineer's notes (2026-10-07): the feet straight and the idle relaxed. UAL's Idle_Loop turns the right foot 44
 degrees out and stands tense: fists (Middle2 78 degrees), a wide staggered stance (ankles 47.7 cm apart, the right
 foot 45.7 cm behind the left: men), the head 10 to 15 degrees down. The lab worked the edit out on a copy of the set (round D:
-`D:/prime-art-raw/research/2026-10-05-faces/lab/clay_d/clay_idle.py` and `README_idle.txt`); these ops are its port.
+`<raw>/research/2026-10-05-faces/lab/clay_d/clay_idle.py` and `README_idle.txt`); these ops are its port.
 Built with the lab's values, round 1 matched the lab's relaxed set within 0.4 mm at every joint on every frame; round 2
 fixed what the reviews found in the lab's idle_ends (a creeping foot slid, a settling foot sunk, the package clips left
 out), and the set pins the women's arm offset that `auto` finds instead of the lab's
@@ -805,7 +805,7 @@ armature-space poses and turns them back into each bone's basis under its own pa
 need `[follow]` to name the foot's own parent (the lower leg). Checked on the alien: the source rest gives the target
 rest exactly (`rest_check` 0.001 mm, 0 deg), the ankles miss their goals by at most 16 mm over the ten clips.
 
-`$PYTHON_BIN tools/blender/alien_ttm.py --blend <char.blend> --raw D:/prime-art-raw --out <dir> [--items a,b]
+`$PYTHON_BIN tools/blender/alien_ttm.py --blend <char.blend> --raw <raw> --out <dir> [--items a,b]
 [--no-sheets]` bakes each FBX (`ITEMS`: the seven clips of `batches/2026-10-25-alien-locomotion-ttm.toml` and three
 baseline rows of batches 5 and 6) at the character's fps as `CharacterArmature|TM_<item>`, cuts its loop
 (`cycle`, bounds from the clip's own cadence: one cycle of two steps) as `CharacterArmature|TM_<item>_Loop`, mirrors
@@ -840,7 +840,7 @@ with `Strafe_*__s45` and `Jog_Bwd__s25` beside them for review; the shuffle stra
 (`footstep_interval`, `footstep_cadence.gd`'s), the rates at the game's speeds against its 0.25-4.0 clamp
 (`play_rows`), the stride flag (scaled over 2x either way) and the reels' plan and timelines.
 
-`$PYTHON_BIN tools/blender/alien_loco.py --raw D:/prime-art-raw [--chars chameleon,axolotl]` (about 2 min) opens each
+`$PYTHON_BIN tools/blender/alien_loco.py --raw <raw> [--chars chameleon,axolotl]` (about 2 min) opens each
 R2b character, appends step 2's loops, makes the set (`_make`: cycle, in place, stride, arms, mirror; the cut in place
 comes before the stride since step 4b, so the stride plants the feet in the frame its measure was made for), writes
 the actions,
@@ -852,7 +852,7 @@ copied beside the GLB. Then `tools/run.sh godot-check <glb> --profile alien --st
 `--build DIR --out DIR` (T1, art #196) take another character build and output under `raw_base` for one run, the
 set file unchanged (`alien_loco_math.with_paths`; a new build into the set's own `out` is refused, and so is an out
 whose character folder already holds a GLB): the new bodies' build `r2c/build` (the chameleon on M2c's body, the
-axolotl on M1f's) into `loco/t1`, `... alien_loco.py --raw D:/prime-art-raw --build r2c/build --out loco/t1`. On T1
+axolotl on M1f's) into `loco/t1`, `... alien_loco.py --raw <raw> --build r2c/build --out loco/t1`. On T1
 the chameleon's set is made (31 clips; Jog_Fwd v0 5.44 m/s, Sprint_Fwd 8.34, f3's 5.15 and 7.80 on the taller body).
 The axolotl's is not: on M1f's body her Jog_Fwd and Sprint_Fwd touch the floor for 2 frames a step (a toe within
 2 cm of its lowest), so `measure` finds no ground velocity (v0 0, c0 None) and `stride` divided by zero (since R1 the set skips such a clip instead: `SKIP <clip>: speed ... asked, but the measure found no ground velocity`, `skipped` in its `loco.json` row, and so every clip made from it; `alien_loco_math.unmeasured`). The build's
@@ -900,7 +900,7 @@ full-body clip frames of one character's builds side by side (`godot/alien/body_
 the game look of `char_shots.gd`, a floor, the camera following the Hips): a row per build, six clips (idle, walk,
 Jog_Fwd, Crouch_Fwd, Jump_Start at its take-off, Strafe_Left), `body_clips_<c>.jpg` and its `.json` (per cell the
 clip's time and the Hips' height).
-`... alien_loco.py --raw D:/prime-art-raw --reels [--only NAME,...] [--char axolotl]` runs `godot/alien/treadmill_reels.gd` in the
+`... alien_loco.py --raw <raw> --reels [--only NAME,...] [--char axolotl]` runs `godot/alien/treadmill_reels.gd` in the
 off-screen window on the chameleon (`--char`: another character, into `<out>/reels/<char>/`): the character held in place (the hips' travel per loop taken off its node), the
 floor's stripes moving at the slot's speed against the travel, the clip at rate = speed / v0, a disc under each foot
 at its contact and a timeline of the game's footstep beat (white ticks, the clip's own contacts as yellow ticks
@@ -927,7 +927,7 @@ plants the feet a loop's travel on, where the legs reached back a whole loop at 
 ### The clothed alien's two bodies (art #196, clothes step 2)
 The aliens are always clothed (the route of the engineer's yes to step 2, 2026-10-28, art #196 comment
 6469797321): our own body stays the functional base, Meshy makes only the clothes, and each garment is fitted once on
-the base body and carried to the female variant. The base is S4b's cage body (`D:/prime-art-raw/review/char/alien-parts-kit/S4b/build/alien_body.blend`,
+the base body and carried to the female variant. The base is S4b's cage body (`<raw>/review/char/alien-parts-kit/S4b/build/alien_body.blend`,
 `tools/blender/alien_cage.py --target`), the body under both characters of `loco/f3`.
 - **Four digits.** The engineer, 2026-10-28 (comment 6467823137): three fingers and a thumb, never a fifth. The cage
   body already builds that hand (`alien_cage.py`'s `FINGERS = ("Index", "Middle", "Ring")`: three finger tubes and a
@@ -962,7 +962,7 @@ the base body and carried to the female variant. The base is S4b's cage body (`D
   each clip's first and middle frame).
 - **The game build** is f3's: `alien_char_run.py --heads <c> --tag <tag>/build --no-shots --clip-edits
   tools/blender/anim_sets/alien.toml --lively <c>=<lively>/v9_r2c_n4 (axolotl: axolotl_v9_r2c_n4) [--body <female>]`,
-  then `alien_loco.py --raw D:/prime-art-raw --build ../<tag>/build --out ../<loco>` (paths under the set's
+  then `alien_loco.py --raw <raw> --build ../<tag>/build --out ../<loco>` (paths under the set's
   `raw_base`), then `godot-check <glb> --profile alien --strict-contract --textured`.
 
 ### 100STYLE onto the alien, and the orientation warp (art #196, the strafe pilot)
@@ -975,7 +975,7 @@ Chest3 unused; Collar/Shoulder/Elbow/Wrist -> Shoulder/UpperArm/LowerArm/Hand; H
 LowerLeg/Foot/Toes; fingers, Jaw and eyes at rest): the source rest gives the target rest exactly (rest check 0.001 mm,
 0 deg; both rests are T-poses facing the front, so no `[align]`).
 
-`$PYTHON_BIN tools/blender/alien_mocap.py --raw D:/prime-art-raw [--char chameleon] [--clips Neutral_BR,...]`
+`$PYTHON_BIN tools/blender/alien_mocap.py --raw <raw> [--char chameleon] [--clips Neutral_BR,...]`
 (about 2 min) imports each take with Blender's own BVH importer (bundled `io_anim_bvh`: scale 0.01, the file's +Z
 front onto -Y, quaternions; the rig lifted onto the floor for the retarget as `retarget_smpl` does), picks the
 steadiest 3 s window inside the take's `Frame_Cuts.csv` range (`pick_window`: the travel straight, the hips' facing
@@ -1343,7 +1343,7 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
 - **Data plus a solver.** `tools/blender/anim_sets/alien_poses.toml` holds the poses (authored directions, contact
   goals on landmarks, grips); `alien_pose_math.py` (no bpy) solves them per character on its own rest skeleton (two-bone
   IK, feet planted flat, the kneeling knee and the seat fitted to the floor, hands touched onto the skin). New bodies
-  on the same skeleton: re-run `$PYTHON_BIN tools/blender/alien_poses.py --raw D:/prime-art-raw --step <new> --glb
+  on the same skeleton: re-run `$PYTHON_BIN tools/blender/alien_poses.py --raw <raw> --step <new> --glb
   --masks` (background, about 25 min for both), then `alien_poses_run.py --step <new> --check --shots`.
 - **Measures and limits** (every pair, both characters, `build/<char>/poses.json`): the lowest skin point within
   0.5 cm of the floor; a planted foot without `foot_pitch` flat (its heel's and ball's lowest skin both within 1 cm
@@ -1634,7 +1634,7 @@ sides fold (H1k: 300-570 hidden vertices per hand, creases and spikes). `[fist] 
 - `metrics`: folded triangles (normal against the envelope's), the shortest edge against the median, the vertices'
   distance from the envelope (bumps), the facets' sag. `test_alien_fist_envelope_blender.py` checks them on
   synthetic tubes: merged folds, pressed does not.
-H1l's grid on the axolotl (`D:/prime-art-raw/2026-10-31-hands/h1l/e2/`): press at inflate 1.4 reads as a clean
+H1l's grid on the axolotl (`<raw>/2026-10-31-hands/h1l/e2/`): press at inflate 1.4 reads as a clean
 cartoon fist in Blender (three pressed fingers, the thumb across the front), 33-36 folded triangles per hand left
 (from 84-86 bare; the posed mesh's own shortest edge is 0.09 of the median, so the brief's 30 % bound fails before any
 move); the index's curl still shows a small dark notch from the thumb's side.
@@ -1644,9 +1644,9 @@ half-curled index met the thumb with a hole between them. `[fist] lead` (0..1, d
 run ahead inside a clip: `weight_plan` keys it full at `lead` of each ramp into the fist grip and leaves 1 only at
 `1 - lead` of each ramp out (`lead = 0.5`). It acts on grip ramps keyed inside a clip (the review's ReviewBlend); a
 crossfade between two clips in the game lerps the morph and the bones by one weight. **It does not remove the ring:**
-H1m's Blender blend grid (`D:/prime-art-raw/2026-10-31-hands/h1m/blend/`; in step, morph lead 0.5, thumb lag 0.4,
+H1m's Blender blend grid (`<raw>/2026-10-31-hands/h1m/blend/`; in step, morph lead 0.5, thumb lag 0.4,
 both) shows the ring at 0.5 and 0.65 in every schedule, because it is the index's own half curl closing on itself,
-not the thumb or the morph; the fix belongs to the grip's path (the index's joints curling in another order). H1m's fold grid (`D:/prime-art-raw/2026-10-31-hands/h1m/g1/`):
+not the thumb or the morph; the fix belongs to the grip's path (the index's joints curling in another order). H1m's fold grid (`<raw>/2026-10-31-hands/h1m/g1/`):
 `env_core` 1.0 / 1.1, `env_k_core_mm` 18 and a thumb shift of 2-3 mm all add folds (41-47 per hand against p2's
 33-36); the folds sit inside single fingers (index, middle, ring), not on the webs: a line across the inner
 crease of each finger's curl, under the surface (seen only in x-ray, `g2/folds_axolotl.png`); a local umbrella on
@@ -1658,7 +1658,7 @@ to each ramp into or out of the fist grip (`stagger_keys`): into it, the Interme
 fist grip at `tip_to`, the Proximal ones leave the old grip only at `base_from`, the thumb leaves at `from` and
 arrives at `to`; out of it, the same path backwards. Set to `curl = [0.6, 0.4]`, `thumb = [0.6, 1.0]`: at half way
 the hand is an open C with the fingers tucked, at 0.65 a closing C, at 0.8 nearly a fist. H1n's Blender grids
-(`D:/prime-art-raw/2026-10-31-hands/h1n/r1/`, `r2/`): knuckles first, or the thumb in step or early, still ring at
+(`<raw>/2026-10-31-hands/h1n/r1/`, `r2/`): knuckles first, or the thumb in step or early, still ring at
 0.5-0.65, and so does `lead` 1. **Not yet seen in Godot on the axolotl:** H1n's Godot ReviewBlend sheet
 (`h1n/sheets/blend.png`) was read as "no ring at 50 % on either character", but H1o found the axolotl's close-ups
 byte-identical across H1m, H1n and H1o although the GLBs differ (a stale `godot/import/axolotl_review.glb`, or two
@@ -1681,7 +1681,7 @@ and tip joints are curled further (about 98 and 30 degrees), which puts the tips
 - the moves are capped at `c_cap_mm`, then smoothed as a field (`c_smooth` Laplacian rounds on the moves, never on the
   positions; the rim is held).
 
-On H1i's mesh (not H1p's dense one) the morph moves at most about 3.6 mm (`D:/prime-art-raw/2026-10-31-hands/h1q/`).
+On H1i's mesh (not H1p's dense one) the morph moves at most about 3.6 mm (`<raw>/2026-10-31-hands/h1q/`).
 The morph turns over 0-3 triangles per hand. The bones' own skin has 11-18 triangles per hand that face against the
 union. The grid rejected fuller base curls (88-92 degrees) and a thumb along the index's side: both left a thumb nub
 and a wider index coil. Still open: seen from the thumb side, the index's coil stays an open loop. Filling it would
@@ -1694,7 +1694,7 @@ give the index-thumb contact zone its own cap: `c_local_r_mm` > 0 makes a mask (
 segments and the thumb's tip, falling to 0 by a smoothstep over that distance, so the palm under them is in it), and
 there the raw move comes from an envelope with `c_local_cap_mm` and `c_local_hide_mm`, optionally with the index's
 curl filled by its chord cone (`c_local_core`, over `c_local_k_core_mm`); the two moves blend by the mask before the
-smoothing. Off by default. H1r's grid (`D:/prime-art-raw/2026-10-31-hands/h1r/r1/`): a cap of 12 or 15 mm over 8 or
+smoothing. Off by default. H1r's grid (`<raw>/2026-10-31-hands/h1r/r1/`): a cap of 12 or 15 mm over 8 or
 14 mm changes nothing visible (the largest move 2.4 -> 2.6 mm on the axolotl): the cap does not bind, because the
 few raw targets over 10 mm are averaged away by the smoothing and the coil's hole has no target inside the union;
 the chord fill moves the zone up to 4.6-5.4 mm and narrows the hole without closing it, at 36-57 triangles against
@@ -1724,11 +1724,215 @@ same axis here (equal rows). The field, envelope-wrap and local routes were dele
 (`[fist] route`, the default). `[grips.runfist]` has its own spec entry (`body_dims/hand_grips.toml`: limits and the
 thumb's sink, 7.5 mm at most) and `test_alien_grip_solve.py` pins it and its use by Jog, Sprint and Strafe.
 
+## The first-person hands (art #136)
+
+The hands a player sees in first person (xperiaroco2/prime-game#1587): concept A, "the hand as on the character",
+the engineer's pick of 2026-11-10. He rejected the first build (art PR #378, 2026-11-11: a broken, twisted wrist,
+the crystal's light burning the hands white, a strange hold: true-size arms solved from the shoulder under the
+world's wide lens, poses set by numbers, no look check) and, after a look at how other games draw them, picked the
+viewmodel: the hands on their own camera, each key pose matched to an approved target frame.
+`tools/blender/fp_hands_run.py --tag <tag> [--asset assets/body/fp_hands]` builds, checks and shoots them; the numbers
+are in `tools/blender/fp_hands.toml`, the fitted key poses in `tools/blender/fp_hands_fit.json`.
+
+- **Target frames first**: one approved picture per key moment from the eye (batch 2026-11-11-fp-hand-frames, edits
+  of concept A's frames: `idle`, `punch`, `hold`, `crystal_hit`; `[view] targets`). The 3D is fitted to them, and a
+  rebuilt look is judged beside them before anything is shown.
+- **Since 2026-11-12, the reference first** (Gate R, `docs/decisions/2026-11-12-reference-first.md`): a moment that
+  shipped games or real life already show is copied from the engineer's pick on the board `<raw>/refs/fp-hands/`, its
+  card in `specs/fp_hand_dims.toml` `[reference]`; an AI frame is no longer a pose target. The crystal hold is the
+  first: an item carried with two hands from its sides (the pick, a box in a shipped game), `[poses.crystal]` set by
+  hand in `fp_hands.toml` and no longer fitted (its entry left `fp_hands_fit.json`, which keeps the fitted `idle`,
+  `fist_out` and `crystal_hit` until their own picks replace them). The pose was picked from variant grids rendered
+  from the eye beside the reference (`hold*` under `2026-11-11-fp-hands/`). With the palm on a side of the item, the
+  thumb is up, so the wrist's `bend` swaps its meaning: its second value (toward the thumb) is the vertical one
+  (`-15` on the right, `15` on the left: the forearm rises toward the wrist), its first (toward the back of the hand)
+  the horizontal one (`20`: the hand cocked back, so the forearm comes in diagonally from the frame's bottom corner,
+  as in the reference; `-20` swung both forearms inward across the eye).
+- **The fit** (`fp_hands_fit.py --raw <raw> --out <dir> --write`, headless Blender): each target's arm is what differs
+  from the empty hall it was made over (`[view] background`); of it the bright cyan is the crystal, the teal the skin,
+  the rest the sleeve. A pose is searched (a pattern search, about 300 renders) so its silhouette from the hands'
+  camera covers the same pixels, part by part (intersection over union): a free hand's wrist, turn and wrist bend; the
+  held crystal's place and turn on its glow, then each hand's height and side on it with its length tangent to the
+  crystal (the fingers wrap round its front, never along it), then `fit_hold`; the hit's contact as the hold swung
+  across the view (about the view's axis, at most 25 degrees about the others). `compare_<pose>.png` shows each fit
+  over its target; `--write` stores the poses for the build.
+- **The cut** (`fp_hands_build.py`, headless Blender): the alien's arms are cut out of a character build
+  (`[source] char`): the skin from 3.5 cm inside the sleeve's cuff to the fingertips, the striped sleeve from 14 cm
+  above the elbow out (no upper arm in a viewmodel), the run fist's morph `fist` kept. The arm bones stay with their
+  names under a new root `View` at the eye, beside a `Crystal` bone that carries the node `CrystalSocket`.
+- **The camera's space**: x right, y forward, z up, the eye at the origin; the GLB maps it to Godot's camera space, so
+  the root goes under the hands' camera with no offset. The arms keep the character's lengths (upper arm 24.9 cm,
+  forearm 22.1 cm).
+- **The viewmodel's arm**: a pose sets the wrist `p`, the fingers' direction `f`, the back of the hand's normal `n`
+  and the wrist's `bend` (at most `[view] bend_max_deg`, 20 degrees: a straight wrist); the forearm runs back from
+  the wrist along that, the elbow bends at most `[rig] elbow_max_deg` (30 degrees) in the plane that leaves the least
+  twist between forearm and upper arm (no wrung sleeve), and the shoulder joint goes wherever the upper arm ends;
+  the forearm takes 90 % of the hand's twist (`twist_share`), as a real forearm does.
+- **The hold**: `fit_hold` seats each held hand: its roll about its length (within 15 degrees of the fitted one) and
+  the palm's distance so the palm sinks at most 0.5 mm into the crystal's surface (its glowing core excepted), the
+  thumb's turn searched with its base, then each digit's curl scaled until it stops at most 1.5 mm in.
+  `fit_hold` reports how each hold reads (`reads`: the palm's share within 4 mm, the wrist's height, the back
+  toward the eye and up, the fingertips' and the thumb's place on the crystal); `fp_hands_build.py --hold-grid <json>`
+  seats a list of variants and renders each from the eye. On m28 a palm seat, a set roll and the thumb in front (run
+  n2: the palm 14 mm out, the
+  thumb in front) read better by the numbers but twisted the fingers from the eye, the thumb's turn and the ring and
+  little fingers' curl at their limits; they were reverted (run n4 holds as m27's s3): judge a hold from the eye
+  beside its reference, never by the numbers alone. The crystal
+  clips key the crystal; the hands ride on it. The inside test takes the sign against the nearest face of the
+  crystal's surface, which is not closed everywhere (the loop, the skirt's rim): the shots are the check of a hold.
+- **Clips** (60 fps keys; Godot drops the `_Loop` suffix and loops them): `Idle_Loop` 3 s, `Run_Loop` one Jog cycle of
+  the character (0.917 s, two steps), `Crystal_Idle_Loop`, `Crystal_Run_Loop`, and the hits, 0.5 s each (one swing each
+  0.5 s, GDD "Melee: any item hits"): `Punch` (the fist morph keyed through it, the contact at 0.15 s) and
+  `Crystal_Hit` (the contact at 0.18 s). The hits' keys are mixes of the fitted frames (`{ mix = [a, b, w] }`: w below
+  0 a wind-up, above 1 a follow-through). Each hit starts and ends in its idle.
+- **The crystal hit** (since run n5, 2026-11-19; the card `crystal_hit` in `specs/fp_hand_dims.toml [reference]`): a
+  two-handed diagonal swing, the cap first. Its key poses are set from the eye (`[poses.crystal_windup]`,
+  `[poses.crystal_hit]`: `crystal = { cap = [% across, % down], dist, tilt, lean, yaw }`, `crystal_in_view`; the cap
+  point is `[view] cap_z_m` up the crystal): the windup at 0.09 s (the cap at 30/80 %), the contact at 0.18 s (74/46 %),
+  a follow-through 12 % past it, the hold at 0.5 s. The hands ride on the crystal in the hold's seat; a moved crystal
+  keeps each forearm on the hold's line as far as the wrist allows (`seat_fore`, the bend clamped to `bend_max_deg`).
+  `build.json`'s `keys_from_eye` reads each key (cap and tip in the frame, tilt, the middle's clearance, the palms,
+  the wrists' bend). `fp_hands_run.py --tag <tag> --hit-grid <json>` renders a list of moments from the eye (Workbench)
+  with those numbers, no build or checks; a moment may name another pose, override grips (`grips`) and, with
+  `thumb_view`, add a magnified eye view and a thumb-side view with the free thumb's reads against its index. What the
+  grids showed: the hands hold the crystal's flanks, so a tilt toward the reference's 45 degrees lifts the left hand to
+  55-65 % down with its forearm flat across the frame from the left, and a yaw past about 25 degrees brings the right
+  upper arm into the eye; the contact keeps a 14-degree tilt with both hands low. The rest grip's thumb (Idle, Run)
+  lies along the index, 1.5 mm off it (the card `rest`).
+- **The hold's fallbacks**: `fit_hold` lists per hand where it took a default or stopped on a search's edge (no thumb
+  turn, a digit opened to -1.5, a curl, roll or thumb turn on its range's edge, a palm not seated); the run prints each
+  as `warning (not failing): ...` and in `FP_RUN`'s `hold_fallback`.
+- **Godot** (`godot/fp_hands/shots.gd`, what the game repeats; `HANDOFF.md`): the hands and the crystal on their own
+  render layer (20), drawn by a second camera with `[view] fov_deg` (50 degrees) in a transparent `SubViewport` over
+  the player's camera (75), which leaves that layer out; the level's lights are put on that layer too (a camera draws
+  only the lights on its layers), one soft fill light lights it alone, and the crystal's own light stays off it.
+- **The colour slot and the look** (2026-11-19, art #136): the game colours the player at runtime (prime-game's
+  `CharacterRig.set_tint`: `albedo_color = the imported albedo_color x the body colour`), so since m28 the skin's base
+  colour texture is a neutral grey pattern and its factor white (the back of the hand 0.72 of the body colour in
+  linear light, 0.86 sRGB; the brightest texel 1.0), and `shots.gd` tints it the same way. `fp_hands.toml [look]`
+  holds what the game copies: the default body colour (`body_srgb`, when no colour is picked), the hands' fill light
+  and the hands' camera's share of the world's ambient light. `fp_hands_run.py --tag <tag> --look-grid <json>` shoots
+  a list of look variants (the fist at the punch's contact, the open hand, the hold) on a tag's build, without a
+  build or checks. The values are the grid's pick closest to concept A's punch frame by numbers (the teal pixels of
+  the hand: hue, saturation, value p10/p50/p90; run n0, 28 variants): body colour sRGB 0.40 0.86 0.80, ambient 0.8, the
+  fill 0.3 warm white from the right side. The fist: hue 180, saturation 0.47, value 0.38/0.56/0.60 (the concept 181,
+  0.43, 0.35/0.55/0.61; m27's baked teal 187, 0.42, 0.46/0.63/0.67). No light direction widened the open hand's spread
+  (0.54-0.61) toward the concept's: that would take a darker pattern in the texture. The palm's paleness cannot survive
+  a multiply; only its lightness stays.
+- **Checks** (the run's exit code): glTF-Validator; in Godot (a copy of the ship package v9 with the hands and the
+  energy crystal, in the off-screen window) the socket is a `BoneAttachment3D` within 2 mm of Blender's place, every
+  clip's length and loop mode, the fist morph at 1 at the punch's contact; in Blender no held hand more than 3 mm
+  inside or 4 mm off the crystal in any sampled frame.
+- **Shots**: each clip's frames from the hall at eye height, a key-frame sheet per clip, MP4s and `_reel.mp4` (idle,
+  two punches, the run, then the same with the crystal), and `light_<n>.png`: the held crystal at 100, 40 and 15 % of
+  its own light (crystal.gd's `omni_energy`; the hands no longer take it).
+
+### The detailed first-person hand (art #136, 2026-11-11)
+
+Up close the character's own hand read as a shapeless lump (the bare-arm close-ups, t12), so the viewmodel has its own
+hand: concept A refined (four digits: three thick rounded fingers and a thumb; batch
+2026-11-11-fp-hand-model-concepts, the engineer's pick), its spec `specs/fp_hand_dims.toml` (Gate 1: every size
+measured off the concept's back view at 2 px/mm, the hand 20.84 cm long as the character's, the forearm 22.05 cm),
+built by `tools/blender/fp_hand_model.py --raw <raw> --out <dir> [--renders] [--fist-grid <json>]` (headless
+Blender, about 3.5 minutes with the bake on the laptop). `fp_hands.toml [source] char` names its output (m27 since
+2026-11-18).
+
+**Its inputs are in git** since 2026-11-18 (art #136): the axolotl character build it took its rig and skin colour
+from lived only on D: and is gone. The engineer's choice the same day: go on from the committed hands asset t4.
+- **The rig**: `tools/blender/fp_rig_seed.json`, the 40 bones of t4's `FPRig` (the character's arm, hand and finger
+  bones as the character had them, with `View` at the eye and `Crystal`), read once by
+  `tools/blender/fp_rig_seed.py --blend assets/body/fp_hands/source/fp_hands.blend --out tools/blender/fp_rig_seed.json`
+  (a rig rebuilt from the JSON matches within 1 micrometre); `specs/fp_hand_dims.toml [hand] rig_seed` names it.
+- **The skin colour**: `[skin] base_srgb`, the value m25 measured (t4's own body texture pointed at D: too).
+- **The energy crystal**: its committed GLB, `assets/prop/energy_crystal/export/energy_crystal.glb`.
+- **The shots' world**: the ship package v9, rebuilt by `ship --build` and `ship --export <raw>/ship/v5/export/v9
+  --no-compare`.
+
+m26, the first build on the seed, matches m25 by every number m25's PR recorded: 23 794 quads an arm (Euler 2), the
+fist morph's move p50 0.15 / p99 14.5 mm, the fist 154 / 142.4 / 107.7 mm. The hands' run `s2` on it passes every
+check, the Godot shots included. The concept (`[hand] concept`) and the target frames are AI generations lost with
+D:: `--renders` and `fp_hands_fit.py` cannot run until they come back from the review pages' copies or anew;
+`fp_hands_fit.json` keeps the fitted poses.
+
+m27 (2026-11-18) is m26 with the engineer's three fixes, each found by a variant grid (all under
+`<raw>/2026-11-18-fp-hand-model/`):
+- **The palm narrower at the knuckles** (palm grids `p27/p1`, `p2`: the open hand's measures and which part makes
+  each station's edge): m26's ring finger, on the line through its crotch and tip, stood 9 mm out of view 0's outline
+  at u 88 and 98, and one 12 mm blend of the thumb into the palm filled the gap past `apart_u` with a web 13 mm out of
+  the palm's thumb side. Now `[fingers.ring] knuckle_v` -61 (the ring splays out from a knuckle nearer the middle),
+  `[palm] little_mound` moved in and deeper, and `[fingers.thumb] web_mm` [12, 5] (eased to 5 mm by `apart_u`; 3 or
+  4 mm pinch the surface, Euler 1). The palm at u 88: -85.7 to 54.2 mm (m26 -91.2 to 62.5, spec -82 to 49); u 98:
+  -86.8 to 50.7 (m26 -91.6 to 59.8); u 28 and 58 at spec. The finger widths unchanged.
+- **Softer creases** (crease grid `c27a`, four bakes, the palm and the back of the fingers close): m26's 2.6 mm
+  straight grooves of one depth looked ruled. Now 4 mm wide, bowed 1.5 mm toward the tip in the middle of the palm
+  side, wandering 0.6 mm along their length, their depth swelling and fading by a fifth, the palm lines fading out
+  at their ends (`[skin] crease_*`). 5 mm with 2 mm of bow blurred them into folds; 4 mm at 0.4 deep barely read.
+- **A deeper fist** (fist grids `g27a`-`g27f`): the fist's front is the thumb lying on the middle phalanges and its
+  back the knuckle heads (`fist_measure` logs both). The cavity, the knuckle heads alone and looser middle joints
+  alone moved neither; the middle joints at 65 degrees (was 90) with the knuckles at 60-65, the thumb swung 50 (was
+  35), `swell_mm` 5 and the knuckle heads 12 mm up made it 123 mm deep. The narrower palm took the fist to 145 mm wide;
+  `[fist] spread_mm` (the ring pushed 6 mm out sideways in the fist only: folded fingers press each other apart)
+  brings it back to 155.
+- **m27's numbers**: 23 790 quads an arm (Euler 2); the fist 155.2 wide / 142.6 long / 123.2 deep, `thumb_low_u`
+  142.6 (m26 154 / 142.4 / 107.7, 142.4; spec 156 / 140 / 125, 157); the fist morph's move p50 0.14 / p99 14.6 mm.
+  Off the spec's tolerance: the palm's thumb side at u 88 (54.2, spec 49: the thumb's own surface weighted to the
+  hand, the web 5 mm can leave) and `thumb_low_u` (as m26).
+
+- **The shape is a signed distance field**: one smoothed profile from the upper arm's stub through the wrist to the
+  knuckles (the forearm's stations, then the palm's outline and thickness; a rounded ellipse, a flatter superellipse
+  in the palm; its end domed under the fingers' roots), with the thumb's and the little side's mounds blended on. A
+  forearm ending in a palm of its own left a seam at the wrist or across the palm in every variant tried (a chain of
+  cones left rings, a domed end a ledge, a blend a sawtooth groove in the Godot close-up). Each finger three round cones,
+  joined hard (a soft join swells each joint into a ring), webbed onto the palm (10 mm); neighbouring digits meet in a
+  3 mm crease, which is what keeps each finger readable in the fist.
+- **The mesh**: surface nets on a 3 mm grid (the 5 mm gap between the thumb and the palm stays open; the Euler number
+  is checked, 2), relaxed along the surface and projected back onto it: about 24 400 quads (48 800 triangles) an arm.
+  Smart UV projection; the left arm is the right mirrored with the same UVs.
+- **The maps** (2048 px): the normal map is baked in Cycles from a 0.7 mm surface of the same field with the creases
+  carved in as soft, bowed, wandering grooves (each finger's palm side at its joints, faint wrinkles over the middle
+  knuckles, two palm lines, the wrist); the base colour is computed per texel from the low mesh's baked positions and normals: against the character's hand
+  teal (the median of its skin texture under the hand, sRGB 0.40 0.79 0.79), the palm and fingertips lighter and paler,
+  the knuckles' tops a touch deeper, the creases and the field's own occlusion a little darker; since m28 stored as
+  its lightness alone, neutral grey (each texel's luminance over the teal's, the brightest 1.0), the game's colour
+  slot. Roughness 0.42, no
+  metal.
+- **The rig**: the seed's armature with the hand and finger bones moved to the model's joints (same names; the
+  ring finger is `Ring`, `Little` stays and carries nothing); the fingers' bone z points to the palm, so a grip's
+  positive curl closes the hand as on the character. Weights from the parts: each part's bone through
+  exp(-distance / sigma), four kept.
+- **The fist** is the grip `[grips.fist]` (fingers 60-65 / 65 / 60 degrees since m27, the thumb tucked down the
+  index's side, picked by eye) plus the morph `fist`, the fist's own surface (`FistField`, 2026-11-12, the engineer's pick of route
+  over more tuning of a corrective). The field is the hand's parts posed with the grip's bones, but each finger keeps
+  its own round surface, a little fuller (`swell_mm`), blended into the palm only at its root. The back has a big
+  knuckle head per finger and a valley between neighbours, without which the back read as one smooth slab. The
+  palm's flesh wraps the middle phalanges and tips pressed into it, and fills the tunnel they leave in front of it,
+  which read as a dark hole from the player's eye. The skinned
+  vertices are carried onto it group by group:
+  - a finger's or the thumb's vertex goes out along the ray from its phalanx's posed axis to its finger's surface,
+    blended with the nearest-point projection by its share of the finger's weight;
+  - the palm's (the thumb's mound included) goes onto the palm;
+  - a web or root shared by groups follows its neighbours as a membrane;
+  - a few rounds of relaxing on the surface and of Taubin smoothing where the surface is still rough.
+
+  The move goes back into the rest through each vertex's skinning matrix. One field for the whole fist, with the
+  vertices projected onto it nearest-point (the first build), melted the fingers into a mitten and left a slit by
+  the thumb. These left torn flaps:
+  - each phalanx on its own surface;
+  - a 120-degree middle joint, which folds the middle phalanx back over the first;
+  - a fingertip cutting the palm's edge.
+
+  `--fist-grid` renders a JSON list of variants (the curls, the thumb, any `[fist]` key; `debug` colours the vertices
+  by group or by bone, `zoom` frames one spot) with each one's fist sizes, for a pick by eye. The morph is right only
+  with `[grips.fist]`: the punch's keys use it.
+- **Its review**: `--renders` shoots the concept's four views at its scale (orthographic, 2 px/mm) and lays them under
+  it with the concept's outline over them (`renders/compare.png`), with each view's silhouette overlap; `model.json`
+  holds the spec's sizes measured on the build (open and in the fist) and the ones off the spec's tolerance.
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
 [--jobs N] [--out DIR]` (default output `tools/out/anim-review`; the review of art #20 went to
-`D:/prime-art-raw/review/stage1/20/`, that of UAL2 (art #24) to `D:/prime-art-raw/review/stage1/24/`, outside git).
+`<raw>/review/stage1/20/`, that of UAL2 (art #24) to `<raw>/review/stage1/24/`, outside git).
 Steps, or `all` in this order:
 
 | Step | Makes |

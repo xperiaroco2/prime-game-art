@@ -2,14 +2,14 @@
  "package": {
   "version": 3,
   "scene": "res://levels/ship/ship.tscn",
-  "pieces": 195,
-  "placements": 1056,
-  "bytes": 13535359
+  "pieces": 193,
+  "placements": 1054,
+  "bytes": 13483795
  },
- "files": 211,
+ "files": 209,
  "stations": 11,
  "load": {
-  "pieces": 519,
+  "pieces": 517,
   "bodies": 728,
   "lights": 148,
   "size_worst_m": 1.0000076144935435e-05,
@@ -143,11 +143,11 @@
  },
  "views": {
   "in_hall": {
-   "draw_calls": 4661,
-   "gpu_ms": 4.73,
+   "draw_calls": 4649,
+   "gpu_ms": 196.55,
    "mean_abs": 0.003,
    "off_share": 0.0,
-   "primitives": 2323697,
+   "primitives": 2319857,
    "size": [
     1920,
     1080
@@ -155,7 +155,7 @@
   },
   "in_tip_e": {
    "draw_calls": 1251,
-   "gpu_ms": 4.37,
+   "gpu_ms": 172.92,
    "mean_abs": 0.006,
    "off_share": 0.0001,
    "primitives": 1266363,
@@ -165,11 +165,11 @@
    ]
   },
   "out_hero": {
-   "draw_calls": 5296,
-   "gpu_ms": 3.69,
+   "draw_calls": 5284,
+   "gpu_ms": 175.88,
    "mean_abs": 0.003,
    "off_share": 0.0,
-   "primitives": 2571912,
+   "primitives": 2569648,
    "size": [
     1920,
     1080

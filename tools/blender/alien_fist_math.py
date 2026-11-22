@@ -127,11 +127,15 @@ def _write_glb(path, gltf: dict, bin_: bytearray) -> None:
         fh.write(out)
 
 
-def key_weights(path, morph: str, plans: dict, default: float = 0.0) -> dict:
+def key_weights(path, morph, plans: dict, default: float = 0.0) -> dict:
     """Into the GLB at path: on every mesh whose morph targets are exactly [morph] (glTF extras.targetNames), a
     `weights` channel per animation: the weight per sample time of that animation's densest input (its frames),
     from plans {animation name: [(share, weight)]}, else `default` held. Fails if any other mesh has targets or no
-    mesh has the morph. Returns {animation: [min, max]}."""
+    mesh has the morph. Returns {animation: [min, max]}.
+    `morph` may also be a list of names, the targets in that order (art#136: `fist` and `fist_L`); plans are then
+    {animation name: {morph: [(share, weight)]}}, a morph missing from an animation's plan held at `default`."""
+    many = not isinstance(morph, str)
+    morphs = list(morph) if many else [morph]
     gltf, bin_ = _glb(path)
     nodes = []
     for ni, node in enumerate(gltf.get("nodes", [])):
@@ -142,9 +146,9 @@ def key_weights(path, morph: str, plans: dict, default: float = 0.0) -> dict:
         has = any(pr.get("targets") for pr in me["primitives"])
         if not has:
             continue
-        if names != [morph]:
-            raise ValueError(f"{path}: mesh {me.get('name')} has morph targets {names}, only [{morph!r}] is allowed")
-        me["weights"] = [0.0]
+        if names != morphs:
+            raise ValueError(f"{path}: mesh {me.get('name')} has morph targets {names}, only {morphs!r} is allowed")
+        me["weights"] = [0.0] * len(morphs)
         nodes.append(ni)
     if not nodes:
         raise ValueError(f"{path}: no mesh carries the morph {morph!r}")
@@ -158,8 +162,10 @@ def key_weights(path, morph: str, plans: dict, default: float = 0.0) -> dict:
         o = bv.get("byteOffset", 0) + acc.get("byteOffset", 0)
         times = struct.unpack_from(f"<{acc['count']}f", bin_, o)
         t0, t1 = times[0], times[-1]
-        keys = plans.get(an.get("name"), [(0.0, default)])
-        ws = [weight_at(keys, (t - t0) / (t1 - t0) if t1 > t0 else 0.0) for t in times]
+        plan = plans.get(an.get("name"), {} if many else [(0.0, default)])
+        per = [plan.get(m, [(0.0, default)]) for m in morphs] if many else [plan]
+        # glTF's weights output: per sample time one value per morph target, in the targets' order
+        ws = [weight_at(keys, (t - t0) / (t1 - t0) if t1 > t0 else 0.0) for t in times for keys in per]
         while len(bin_) % 4:
             bin_.append(0)
         off = len(bin_)

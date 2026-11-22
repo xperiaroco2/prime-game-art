@@ -62,7 +62,7 @@ in the library's format (`docs/props.md`), one GLB per kind named `<scatter id>_
 with the plant builders; the library's checks, Godot import and line-up sheets run unchanged:
 
 ```
-tools/run.sh props-library --library props/plants.toml --build --out D:/prime-art-raw/house/80/plants --sheets DIR
+tools/run.sh props-library --library props/plants.toml --build --out <raw>/house/80/plants --sheets DIR
 ```
 
 Solid clay lumps in the leaf paints (two tones a plant), no alpha cards: 430 to 980 triangles (vegetation 400 to

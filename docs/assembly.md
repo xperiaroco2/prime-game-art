@@ -6,7 +6,7 @@ gets two toe bones: 64, art #25) with
 five-finger chains and 24 actions, and per pack character four parts, `<Name>_Head`, `<Name>_Body` (top),
 `<Name>_Legs` or `_Pants` (bottom) and `<Name>_Feet` (shoes), with flat material colours and no textures. The engineer
 chose this base on xperiaroco2/prime-game#165 after the final character test
-(`D:/prime-art-raw/research/2026-10-03-art-research/final-character-test/`); art #17 ported that test's scripts into
+(`<raw>/research/2026-10-03-art-research/final-character-test/`); art #17 ported that test's scripts into
 `tools/blender/um/` with the behaviour unchanged. Every later task (the glTF export, the parts catalogue, the face kit,
 the production of parts) builds on this one implementation.
 
@@ -26,7 +26,7 @@ tools/run.py assemble <recipe> [--ids m1_rex,w1_ivy] [--modes chars,face,...|non
 
 Windows: `tools\run.cmd assemble um_final_test --blend`. `<recipe>` is a path from the repo root, a name in
 `recipes/` (`.json` may be left out), or another path (absolute, or from the current folder, tried last). The command
-validates the recipe against the packs in the raw folder (`ART_RAW_DIR`, default `D:/prime-art-raw`) before Blender
+validates the recipe against the packs in the raw folder (`ART_RAW_DIR`, default `../prime-art-raw` beside the main checkout) before Blender
 starts, then runs `tools/blender/assemble_characters.py` in background Blender and prints one line per character.
 
 With the parts catalogue (`catalogue/ultimate_modular.json`) present, the validation also refuses (art #42):
@@ -177,7 +177,7 @@ The approved look of the characters (art #16, plan comment 6057672162; art #42):
 Modular bodies smoothed, one static baked clay (no boil). `--look clay` or a recipe's `"look": "clay"` runs the clay
 pass on each built character in the rest pose at the origin, after the parts and the scripted face are built and before
 the pose; `--bake` then bakes it into plain glTF textures. Ported from round D of the faces lab
-(`D:/prime-art-raw/research/2026-10-05-faces/lab/clay_d`: `clay_lib.py`, `clay_parts.py`, `clay_bake.py`,
+(`<raw>/research/2026-10-05-faces/lab/clay_d`: `clay_lib.py`, `clay_parts.py`, `clay_bake.py`,
 `clay_libbake.py`; its `README_bake.txt` holds the measurements behind the numbers in `um/claylook.py`). The proof
 recipe is `recipes/clay_round_d.json`, round D's reference man `m1` and woman `w1`.
 
@@ -318,7 +318,7 @@ random face and fails on any miss (`docs/faces.md`). The zones, the limits and t
 ## Regression against the final test
 
 `tools/run.py assemble um_final_test --modes chars,face,hands,lineup,crossgender,qa,ankles --blend --compare
-D:/prime-art-raw/research/2026-10-03-art-research/final-character-test/work/build_report.json` rebuilds the four
+<raw>/research/2026-10-03-art-research/final-character-test/work/build_report.json` rebuilds the four
 characters and compares. On 2026-10-03 the whole report equalled the final test's in every value (triangles, heights
 rest and posed, seam overlaps, every probe count and sample, the cross-gender numbers); the only differences are the
 names (`shoes` for the final test's `feet`, the `pose` format of the neutral variant) and the added `recipe` key. All

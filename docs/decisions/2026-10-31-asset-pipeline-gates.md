@@ -13,7 +13,7 @@
 ## Context
 
 Her dungarees took about 40 builder steps (art #196: C1 to C1k, E1 to E1m, M2a to M2m; briefs and handoffs in
-`D:/prime-art-raw/manager/clothes/`), and the result still missed the concept: the bib sat too low, it bent and the
+`<raw>/manager/clothes/`), and the result still missed the concept: the bib sat too low, it bent and the
 straps slid on it in motion. The retrospective (the research report, summarised on #196 c6542991280) found seven
 root causes:
 1. **The concept was never turned into measured targets on the body.** E1i's bib raise lived only in a command-line

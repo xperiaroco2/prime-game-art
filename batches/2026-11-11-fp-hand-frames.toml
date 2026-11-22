@@ -1,0 +1,52 @@
+# art#136 (xperiaroco2/prime-game#1587): the engineer rejected the first 3D build of the first-person hands (art PR #378,
+# 2026-11-11: the wrist broken and twisted, the crystal's light burning the hands white, a strange hold). His pick of the
+# way on (2026-11-11, in the art session): first a target frame per key moment from the eye, his yes, then the 3D matched
+# to them. Four frames, each an edit of concept A's picked frames (batch 2026-11-08-fp-hand-concepts, his pick of
+# 2026-11-10), one change each: idle, the crystal held, the punch's contact, the crystal hit's contact. High quality
+# (focused work on one piece), n = 1. No game, film, studio, character or person names.
+id = "2026-11-11-fp-hand-frames"
+service = "openai-images"
+purpose = "art#136: the four target frames (idle, crystal held, punch contact, crystal hit contact) of concept A for the engineer's yes before the 3D is rebuilt; pictures only."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 2.0
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-11-11"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6291187194 (the standing permission of 2026-10-20: OpenAI images within a batch's cost_cap_usd); the engineer's pick of the frames-first route, 2026-11-11, in the art session after art PR #378"
+model = "gpt-image-2.5-sunburst"
+quality = "high"
+
+[defaults]
+size = "1536x864"
+n = 1
+
+[[items]]
+id = "idle"
+kind = "edit"
+prompt = "This is our approved frame from a first-person game: keep it exactly, the same ship hall, the same camera, the same light, the same hand, skin and striped sleeve. This is the resting pose the player sees all the time, so it must look natural and calm. Change only this: the right forearm and hand sit a little lower and further right, entering from the lower right corner; the wrist is straight and relaxed, in one line with the forearm, never bent back or twisted; the hand is turned slightly so we see the back of the hand and a bit of its thumb side; the fingers hang softly curled, as a relaxed hand does, not spread, not pointing. Hand and forearm take about a quarter of the frame's height. The hand keeps FOUR digits only: three thick rounded fingers and one thumb, never five. Smooth matte teal skin with a faint vinyl-toy sheen, no fingernails. No on-screen interface, no crosshair, no text, no logos, no watermark."
+images = [ { file = "raw:2026-11-08-fp-hand-concepts/a_idle/image-0.png", provenance = "concept A's idle frame, the engineer's pick of 2026-11-10 (batch 2026-11-08-fp-hand-concepts, item a_idle)", sha256 = "5ba00d05efacff5d5bf30152f76a7643019e5d1817201db9cd20aabb9f03ff9a" } ]
+
+[[items]]
+id = "hold"
+kind = "edit"
+prompt = "The first reference is our approved frame from a first-person game: keep its composition, the ship hall, the camera, the hands' skin and the striped sleeves. The second reference is our energy crystal; copy it exactly and do not redesign it: a long faceted cyan crystal with pale facet lines, a point at the bottom, under a dark graphite and bronze octagonal cap with small lit windows and a bronze loop handle on top. Change only this. True sizes: the crystal is 35 cm long; a hand from wrist to fingertips is 21 cm, so a hand is about 0.6 of the crystal's length and twice the cap's height. Both hands carry the crystal low in front of the chest, at the bottom centre of the frame, tilted a little to the left: the left hand comes from the lower left and cradles the crystal's body from below, palm up, fingers wrapped around it; the right hand comes from the lower right and holds the cap from its right side, the fingers over the cap's top edge and the thumb on its near face. Both wrists straight and relaxed, in line with the forearms, never bent back or twisted; the elbows low, out of the frame. The crystal glows softly: its cyan light gives the nearest fingers a gentle cyan tint, but the hands and sleeves keep their own colours and shading, no white burnt-out areas, no glare. Each hand has FOUR digits only: three thick rounded fingers and one thumb, never five. Smooth matte teal skin with a faint vinyl-toy sheen, no fingernails. No on-screen interface, no crosshair, no text, no logos, no watermark."
+images = [ { file = "raw:2026-11-08-fp-hand-concepts/a_crystal/image-0.png", provenance = "concept A's crystal frame, the engineer's pick of 2026-11-10 (batch 2026-11-08-fp-hand-concepts, item a_crystal)", sha256 = "cd17270cffa7c27c5b1200cfd9e611b810927c0d6584bd4f08af65ed0c7fe8c3" }, { file = "raw:2026-11-08-fp-hand-concepts/_refs/crystal_q34.png", provenance = "our approved energy_crystal, charged, Godot render (energy-crystal/build/godot/charged_q34.png)", sha256 = "4d927e1afe5e3890dd1337974d8376cc880df9944b8339c2e621bcf4f960f0ab" } ]
+
+[[items]]
+id = "punch"
+kind = "edit"
+prompt = "The first reference is our approved frame from a first-person game: keep it exactly, the same ship hall, the same camera, the same light, the same hand, skin and striped sleeve. The second reference shows this exact hand's fist. Change only this: it is the moment a short straight punch lands. The right arm is extended forward from the lower right corner toward the frame's centre, the fist just right of the centre and a little below it, slightly smaller than in the first reference because it is further away; the fist is tight, we see the back of the hand and three big rounded knuckles leading, the thumb folded across the fingers as in the second reference; the wrist is straight and firm, in one line with the forearm, never bent or twisted. A short motion blur on the sleeve only, the fist sharp. The hand keeps FOUR digits only: three fingers and one thumb, never five. Smooth matte teal skin with a faint vinyl-toy sheen, no fingernails. No on-screen interface, no crosshair, no text, no logos, no watermark, no impact effects."
+images = [ { file = "raw:2026-11-08-fp-hand-concepts/a_fist/image-0.png", provenance = "concept A's fist frame, the engineer's pick of 2026-11-10 (batch 2026-11-08-fp-hand-concepts, item a_fist)", sha256 = "91760ef60ad2d16a0683931f91cd41f3021d442db666e31edf1f16a2ca4ce464" }, { file = "raw:2026-11-08-fp-hand-concepts/_refs/hand_fist.png", provenance = "our alien hand's fist, thumb pose H1u, Blender close-ups of art#196 (2026-10-31-hands/h1u/g1/close_axolotl.png, third row, cropped)", sha256 = "8cc0f23338b1073d0544c9ea569d0e11142a8024a4d0f149ba4fb5ec49d9c190" } ]
+
+[[items]]
+id = "crystal_hit"
+kind = "edit"
+prompt = "The first reference is our frame of this same first-person view with the crystal held; keep the same hands, the same grips (left hand under the crystal's body, right hand on the cap), the same skin, sleeves, crystal, ship hall, camera and light. The second reference is our energy crystal; copy it exactly. Change only this: it is the moment a two-handed blow lands. Both arms have swung the crystal from the right across to the centre, the crystal now lies diagonally across the middle of the frame at chest height, its point leading forward and to the left, the cap at the right near the right hand, as if striking something just in front of the player. The grips do not change; both wrists stay natural and in line with the forearms, never bent back or twisted; the forearms come up from the lower corners. A short motion blur trail behind the crystal's point only. The crystal glows softly; the hands keep their own teal colour, with only a gentle cyan tint near it, no white burnt-out areas. Each hand has FOUR digits only: three fingers and one thumb, never five. No on-screen interface, no crosshair, no text, no logos, no watermark, no impact effects, no sparks."
+images = [ { from = "hold", pick = 0 }, { file = "raw:2026-11-08-fp-hand-concepts/_refs/crystal_q34.png", provenance = "our approved energy_crystal, charged, Godot render (energy-crystal/build/godot/charged_q34.png)", sha256 = "4d927e1afe5e3890dd1337974d8376cc880df9944b8339c2e621bcf4f960f0ab" } ]
+
+[[items]]
+id = "punch_thumb"
+kind = "edit"
+prompt = "The first reference is our frame of a first-person punch; keep it exactly: the same arm, sleeve, fist position and size, the same ship hall, camera, light and motion blur. The second reference shows this exact hand's fist. Change only the thumb: it is folded down across the front of the fingers, lying flat over the middle of the first two fingers below the knuckles, as in the second reference; nothing sticks out to the side of the fist. The fist is tight and compact, the wrist straight. FOUR digits only: three fingers and one thumb. No on-screen interface, no text, no logos, no watermark."
+images = [ { from = "punch", pick = 0 }, { file = "raw:2026-11-08-fp-hand-concepts/_refs/hand_fist.png", provenance = "our alien hand's fist, thumb pose H1u, Blender close-ups of art#196 (2026-10-31-hands/h1u/g1/close_axolotl.png, third row, cropped)", sha256 = "8cc0f23338b1073d0544c9ea569d0e11142a8024a4d0f149ba4fb5ec49d9c190" } ]

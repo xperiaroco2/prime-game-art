@@ -10,9 +10,9 @@ Updated 2026-10-07 after a completeness check of the first synthesis: the recomm
 measured, the readability lead has been checked on held-out positions, and a production split by source (with Meshy
 on paper) and the runner-up's missing MVP pieces have been added.
 
-The research, the lab and the scripts are outside git in `D:/prime-art-raw/research/2026-10-06-locations/`
+The research, the lab and the scripts are outside git in `<raw>/research/2026-10-06-locations/`
 (`principles.md`, `styles.md`, `godot_tech.md`, `cc0_kits.md`, `objects.md`, `specs/`, `judges/`, `maps/`, `gaps/`);
-the review renders in `D:/prime-art-raw/review/locations/` (one folder per prototype, `hybrid/`, `pastel_soft_extra/`,
+the review renders in `<raw>/review/locations/` (one folder per prototype, `hybrid/`, `pastel_soft_extra/`,
 `maps/`, `kits/`). All Godot work used Godot 4.7.2 Forward+ (Vulkan, RTX 4060) in lab projects, headless or in an
 off-screen window; Blender ran in the background only. Memory is given in MiB (2^20 bytes); the lab's notes mix
 decimal MB and MiB, and the figures below are converted from the bytes in each `perf.json` (papercraft's stores only

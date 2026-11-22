@@ -8,7 +8,7 @@ version = 3                                  # lens step 1 (art#263 c6344490367)
 raw_dir = "ship/v5"                          # under the raw folder: pieces/, shots/, plan/, logs/, notes/
 interior = "layouts/ship/interior.toml"      # the INTERIOR lane's pieces and placements
 exterior = "layouts/ship/exterior.toml"      # the EXTERIOR lane's pieces and placements
-plan_ref = "D:/prime-game-design/ideas/ship-components/2d/plan-3.jpg"
+plan_ref = "<design>/ideas/ship-components/2d/plan-3.jpg"
 
 [size]                                       # the lens-diamond hull P: the manager's pick under the engineer's standing
                                              # instruction (art#263 c6344490367; <raw>/ship/v2/blockout6/report.json)

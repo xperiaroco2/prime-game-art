@@ -97,7 +97,7 @@ class Rules(unittest.TestCase):
 
 
 # The ground floor (#75b; the greenhouse #80): the rooms, their stations' props, the room-defining props and the fixtures of the
-# plan's inventory (D:/prime-art-raw/research/2026-10-10-house-plan/inventory.md sections 4 and 8).
+# plan's inventory (<raw>/research/2026-10-10-house-plan/inventory.md sections 4 and 8).
 ROOMS = {
     "wc": {"wc_toilet", "wc_vanity"},  # #158
     "pantry": {"pantry_shelf"},  # #158

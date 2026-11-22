@@ -6,13 +6,13 @@ Date: 2026-10-29. Status: accepted as a trial (the engineer's yes, below). Super
 ## Context
 The female alien was the shared body with a few cm moved at the chest, hips and seat (f1, f2;
 `tools/blender/alien_female_geom.py`), on body A's skeleton. In the dungarees she read too close to him
-(`D:/prime-art-raw/2026-10-28-alien-clothes-m1/c1/look/r28/axolotl_vs_sketch.png`): same shoulders, same height, same
+(`<raw>/2026-10-28-alien-clothes-m1/c1/look/r28/axolotl_vs_sketch.png`): same shoulders, same height, same
 limbs. Her 2D target, `2026-10-29-alien-female-body-2d-r2/d` with f's front numbers (batch
 `batches/2026-10-29-alien-female-body-2d-r2.toml`), asks B over A for shoulders about 0.82, waist 0.78, hips 1.10 to
 1.13, forearms, wrists and calves 0.85 and a body 5 to 8 cm shorter. Shoulders, height and limb length move joints, so
 they cannot be vertex moves on A's skeleton.
 
-The research (R1, `D:/prime-art-raw/manager/clothes/research-body-types.md`) compared one mesh with shape keys, one
+The research (R1, `<raw>/manager/clothes/research-body-types.md`) compared one mesh with shape keys, one
 mesh per body with every garment made per body, and the hybrid most games use now: a few base bodies, each garment
 authored once and refit per base by a script, builds within a type as shape keys.
 

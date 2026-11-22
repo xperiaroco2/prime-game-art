@@ -12,7 +12,7 @@ plasticine (no boil), as round D of the faces lab made it (docs/assembly.md, "Th
 
 Call apply() in the rest position with the character at the origin, after the parts and the scripted face are built.
 Static copies of the undecimated clothing (`sources`) are kept for the bake's pack-colour pass (um/claybake.py).
-Ported from clay_lib.py, clay_parts.py and clay_bake.py of D:/prime-art-raw/research/2026-10-05-faces/lab/clay_d.
+Ported from clay_lib.py, clay_parts.py and clay_bake.py of <raw>/research/2026-10-05-faces/lab/clay_d.
 """
 
 import bmesh

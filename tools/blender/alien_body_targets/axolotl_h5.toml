@@ -1,5 +1,5 @@
 # H5 (art #196, bodies_a): the axolotl woman's body A, her own refit targets (alien_body.py --targets).
-# Measured by tools/blender/alien_body_measure.py on D:/prime-art-raw/2026-10-24-alien-body-neck/ax_turn_c/image-0.png
+# Measured by tools/blender/alien_body_measure.py on <raw>/2026-10-24-alien-body-neck/ax_turn_c/image-0.png
 # (front | side, 1536 x 1024; --panels 2 --head-m 0.4095): the front's top row 21, ring 244, sole 1001. At the r5
 # axolotl head's own scale (0.369 m above its ring, body_v2's char.json) she would stand 1.62 m with her eyes near
 # 1.42 m, far under the game's camera (contract eye_height_m 1.6, tolerance 0.08); so the body below the ring keeps

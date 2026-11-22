@@ -210,8 +210,6 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
 PIECES |= {
     # details
     "cup_b": ("cup", {"seed": 11, "scale": 1.8}, False),
-    "cup_c": ("cup", {"seed": 27, "scale": 1.8}, False),
-    "spill_c": ("spill", {"seed": 8, "from": 0.2, "size": 2.0}, False),
     "cable_coil": ("cable_coil", {}, False),
     "floor_patch_a": ("floor_patch", {"u": 0.42, "v": 0.36}, False),
     "floor_patch_b": ("floor_patch", {"u": 0.36, "v": 0.3}, False),
@@ -576,8 +574,9 @@ def placements() -> list[tuple[str, list[float], float]]:
         x, y = local((0.0, 0.0), -S.COR_ANG, u, v)
         return [round(s * x, 4), y]
     # the engineer's walk (2026-10-29, shot 009): the hall's spilled cup_a and its puddle removed
-    for pid, xy, yaw in (("cup_c", [-1.05, -0.45], 200.0), ("spill_c", [-1.05, -0.45], 200.0),
-                         ("cup_b", cor_pt(-1, 7.37, 0.95), 80.0 + S.COR_ANG),
+    # the M8 review (2026-11-19, prime-game#1095 answer 9): cup_c and its spill by the engine console removed too, not
+    # a planned prop (was cup_c and spill_c at [-1.05, -0.45], yaw 200)
+    for pid, xy, yaw in (("cup_b", cor_pt(-1, 7.37, 0.95), 80.0 + S.COR_ANG),
                          ("cable_coil", cor_pt(1, 7.11, 1.0), 20.0 - S.COR_ANG),
                          ("floor_patch_a", polar(S.R_RIM_REF - 0.08, 96.0), -96.0 + 8.0),   # rebuild A: 112.5 is a socket flat now
                          ("floor_patch_b", polar(S.R_RIM_REF - 0.08, -62.0), 62.0 - 5.0)):

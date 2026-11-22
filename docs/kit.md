@@ -6,7 +6,7 @@ fences, gates and glass walls on one grid. Art #74 built the first kit, the **Ho
 GLB per piece and checks every piece in glTF-Validator and Godot. Art #86 made **version 2** (below): 105 pieces
 (v1's 71 with their ids kept, 34 more), the pitched and glass roofs, the porch, the pillar, the chimney, the gazebo,
 and look.md section 5's material plan (one `set` material for plaster, wood and concrete). The GLBs stay in the raw
-folder (`D:/prime-art-raw/kits/house/v<version>/`; v1 is kept untouched in `v1/`, v2 builds into `v2/`, v3 into `v3d/`: the House layout's `kit_dir`; `v3/` holds a stale in-between build, `v3b/` the
+folder (`<raw>/kits/house/v<version>/`; v1 is kept untouched in `v1/`, v2 builds into `v2/`, v3 into `v3d/`: the House layout's `kit_dir`; `v3/` holds a stale in-between build, `v3b/` the
 slate-ceiling build of #77, and `v3c/` is `v3b/` with the 12 pieces carrying the `ceiling` role rebuilt for #152; `v3d/` is `v3c/` with the attic stair, the long hatch tile and its guard added for #183) until the
 engineer approves the kit's look on a review page; then they come into the repo with their manifests.
 
@@ -19,7 +19,7 @@ tools/run.sh kit [--spec kits/house.json] [--out DIR] [--only id,...] [--no-buil
 | Option | What it does |
 |---|---|
 | (none) | Checks the spec (with the seam and closure checks), builds every piece in headless Blender (`tools/blender/kit_build.py`), checks every GLB and imports them all into `godot/` headless (`godot/check/kit.gd`); about 5 minutes, plus any wait for the heavy-run lock |
-| `--out` | Output folder (default `<raw>/kits/<kit>/v<version>`; for the House kit the House layout's `kit_dir` while it names a build of the spec's version, now `D:/prime-art-raw/kits/house/v3d`) |
+| `--out` | Output folder (default `<raw>/kits/<kit>/v<version>`; for the House kit the House layout's `kit_dir` while it names a build of the spec's version, now `<raw>/kits/house/v3d`) |
 | `--only` | Only these pieces (`--proof` needs the whole kit) |
 | `--no-build` | Checks the GLBs already in `--out` (about 1 minute with Godot) |
 | `--no-godot` | Skips the Godot import (and the proof) |
@@ -108,7 +108,7 @@ The engineer's picks of 2026-10-10: a free roof of clay pantiles with one gable 
 - **Pantiles** (`kit_geom.pantile_courses`): the pitched panels' top is courses of tiles, 1/3 m deep up the slope and
   1/3 m wide, cut on one kit-wide grid of multiples from the eave wall's line, so neighbouring panels meet. Each
   course's lower edge stands 3 cm proud of the slab and its upper edge sinks under the next lip: the stepped course
-  shadows of the look round (`D:/prime-art-raw/research/2026-10-10-roof-look/`). Across its width each tile is the
+  shadows of the look round (`<raw>/research/2026-10-10-roof-look/`). Across its width each tile is the
   pantile's S in three facets (`TILE_S`: the edge 2 cm up, the pan's hollow at 0.45, the roll's crown 4.5 cm up at
   0.78, the edge again; `tile_lift`), on the same grid, so the relief runs on across panels and the lips are wavy:
   geometry, not a normal map (the material system has no per-role texture source). Each tile takes one of the roles

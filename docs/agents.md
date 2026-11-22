@@ -59,7 +59,7 @@ The drivers overlap: a long agent pays every one of the others on every call.
    - Sonnet runs critics, judges, reviewers, verifiers and research that only reads. The exception is the art
      critic's A/B (#46, `docs/decisions/2026-10-08-art-critic-model-ab.md`): its control critic and its blind judge
      run on Opus.
-   - A lab round (a research iteration outside git, in `D:/prime-art-raw/research/`) keeps one critic. From a short
+   - A lab round (a research iteration outside git, in `<raw>/research/`) keeps one critic. From a short
      brief and the contact sheet, it ranks the variants, lists its remarks and gives the engineer a recommendation, so
      he judges a ranked shortlist, not raw output.
    - The critic's model is a per-launch arg (`critic_model`); no shared script names a default. On the A/B's trial

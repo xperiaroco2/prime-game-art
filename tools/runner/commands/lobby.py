@@ -593,7 +593,7 @@ def shoot(layout: dict, out: Path, place: list, folder: Path, grid: bool | str =
     req, staged, _want = scene_request(layout, out, place, lobby_layout.ship_report(layout))
     rv = layout["review"]
     req.update({"mode": "shoot", "background": rv["background"], "views": [v[:5] for v in rv["views"]],
-                "top": rv["top"], "compare": [[v[0], v[5]] for v in rv["views"] if v[5]],
+                "top": rv["top"], "compare": [[v[0], common.resolve_ref(v[5])] for v in rv["views"] if v[5]],
                 "closeups": [v[:5] for v in rv.get("closeups", [])],
                 "look": look_request(layout, layout["look"]["scheme"])})
     if "earth" in layout:

@@ -137,7 +137,7 @@ UNIT = [-0.80, 0.80, round(-0.01 - RECESS, 4), round(0.50 - RECESS, 4), -0.02, 1
 def raw_root() -> Path:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from runner import pins
-    return Path(os.environ.get(pins.RAW_ENV) or pins.RAW_DEFAULT)
+    return Path(os.environ.get(pins.RAW_ENV) or pins.beside_checkout(pins.RAW_DIRNAME))
 
 
 def cv(h: float) -> float:

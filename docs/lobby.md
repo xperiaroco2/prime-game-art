@@ -25,7 +25,7 @@ window's Earth and the light on top.
 | `assets/environment/lobby/` | Step 5b: the package's `manifest.toml`, `package.json`, `report.json` and `HANDOFF.md` (the binaries stay in the raw folder until approved) |
 | `sources/nasa_earth_lobby.toml` | Step 3b: the Earth's source record (`NASA-PD`, credit "Earth imagery: NASA") |
 
-The source: the engineer's approved drawing `D:/prime-game-design/ideas/lobby-station/hall/drawing/drawing.js` (its
+The source: the engineer's approved drawing `<design>/ideas/lobby-station/hall/drawing/drawing.js` (its
 `H` object and rows table) and concepts `a_entrance.jpg` (A) and `c_back.jpg` (C) beside it; the ship's placement from
 the engineer's decision of 2026-10-30 (art#356 comment 6522500716).
 

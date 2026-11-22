@@ -15,7 +15,7 @@ tools/run.py faces [--families f3_almond,f6_painted] [--expressions neutral,clos
                    [--styles faces/styles.json] [--review faces/review.json] [--check]
 ```
 
-Windows: `tools\run.cmd faces --out D:/prime-art-raw/review/stage1/21`. It checks `faces/styles.json`,
+Windows: `tools\run.cmd faces --out <raw>/review/stage1/21`. It checks `faces/styles.json`,
 `faces/review.json` and the heads recipe (with the packs in the raw folder) before Blender starts; `--check` stops
 there. Then `tools/blender/faces_render.py` runs in background Blender: it builds the four review heads with the
 assembler (`um/assemble.py`), removes the final test's face parts, gives the face skin to the Head bone alone (below),
@@ -24,7 +24,7 @@ line per family and fails when a part is not weighted to the Head bone alone, a 
 skin at rest or in the motion actions, the hair hides more than 40 % of a face part from the front, or the face moves in
 the Head bone's frame during the strip (see Checks). A full run (7 families, 9 expressions, every sheet: 801 renders and
 two clips) took 494 s before the review fixes added the motion measure and the spacing sheet. Review images go outside
-git (`D:/prime-art-raw/review/...`), never into the repo.
+git (`<raw>/review/...`), never into the repo.
 
 The seven families of `faces/styles.json` (the choice is the engineer's):
 
@@ -128,7 +128,7 @@ were for art #17's recipes and tests).
 
 ## Game distance
 
-The camera comes from the game repo (read only; `D:/prime-game` at `c43c0e1`, unchanged at `d9dec50`): `client/player/player.tscn` has a
+The camera comes from the game repo (read only; `<game>` at `c43c0e1`, unchanged at `d9dec50`): `client/player/player.tscn` has a
 `Camera3D` with no `fov` set, so Godot's default 75 degrees vertical (`keep_aspect` keeps the height);
 `content/modes/base_mode.tres` sets `eye_height_m = 1.6`; `project.godot` sets no anti-aliasing (MSAA and screen-space
 AA off by default). On a 1920 x 1080 screen one metre at distance d covers 1080 / (2 d tan 37.5) pixels: 352 px at
@@ -236,7 +236,7 @@ says they animate by face morphs on the template head.
 ## The clay face kit (art #42 part B)
 
 The clay look's faces (the plasticine style the engineer chose on 2026-10-06) come from the faces lab's round E kit
-(`D:/prime-art-raw/research/2026-10-05-faces/lab/clay_e/clay_face_b.py`), ported into `tools/blender/um/clayface/`:
+(`<raw>/research/2026-10-05-faces/lab/clay_e/clay_face_b.py`), ported into `tools/blender/um/clayface/`:
 
 | Module | What |
 |---|---|
@@ -323,7 +323,7 @@ on, the noses barely different (the pack nose dominated). `faces/clay_head.json`
    a gap over the top: w4's neck seam -17.3 mm, its Punk choker floating). `profile` is that head's radius about the
    bean centre's vertical axis per `dz` (4 mm steps from `bottom_dz` up to `top_dz`, just above the cut) and azimuth
    (7.5 degrees), unscaled, sampled once from `head_clay.blend` (`source`; the sampler
-   `D:/prime-art-raw/clay-bean/lab/neck_profile.py`); a closed tube, one ring per level. Its weights still come from
+   `<raw>/clay-bean/lab/neck_profile.py`); a closed tube, one ring per level. Its weights still come from
    the nearest pack-head point (the report's `clean_head.neck_tube`). w3 and w4 after it: neck seams +111/+110 mm
    (into the top), see-through rays at rest 22/95 -> 2/0, poke-through 0;
 5. `heads.morph_jaw` (`jaw_morph`): the lab cast's head is round C's ONE head (`clay_c/clay_head_c.py` `build_one`):
@@ -334,7 +334,7 @@ on, the noses barely different (the pack nose dominated). `faces/clay_head.json`
    (-0.086). So the lab head's own jaw is the target: `profile` is that head's radius about the bean centre's vertical
    axis per `dz` from the bean centre (2 mm steps) and azimuth (7.5 degrees, from -Y toward +X), unscaled, sampled
    once from `head_clay.blend` (`jaw_source`: its SHA-256 and face frame; the sampler
-   `D:/prime-art-raw/clay-bean/lab/jaw_profile.py`). Every vertex in the band whose radius is below the profile by
+   `<raw>/clay-bean/lab/jaw_profile.py`). Every vertex in the band whose radius is below the profile by
    less than `reach` moves out by the difference x the smoothstep bump, never in (the report's `jaw_morph`). w3 and w4
    after it: 3/4 at 30 mm y -0.0855/-0.086 (the lab head -0.0857/-0.0859), front -0.091 (-0.089);
 6. `heads.lift_grid`, `lift_by` (`scalp_lift`) and `heads.push_out` (`push_out`): the hair's shell lifted off the

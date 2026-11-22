@@ -953,7 +953,7 @@ AIR_M = 0.01  # idle_ends: a foot lifted more than this is in the air; never bot
 def idle_end_weights(frames: int, ends, feet: dict, fade: int, speed_m: float, rise_m: float, step_m: float,
                      upper: bool = True) -> dict:
     """The weights of idle_ends over frames 0..frames (anim_edit.op_idle_ends; the lab's round D, blend_transitions in
-    D:/prime-art-raw/research/2026-10-05-faces/lab/clay_d/clay_idle.py).
+    <raw>/research/2026-10-05-faces/lab/clay_d/clay_idle.py).
 
     ends: "start" and/or "end", the clip's ends that meet the idle. feet: {"L"/"R": [(x, y, z) per frame]}, the feet
     before the edit (world m). Returns
