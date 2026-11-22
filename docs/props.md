@@ -935,8 +935,9 @@ with a dark screen in a cyan line, the night Earth on the playfield; the hall's 
    front edge 92 cm above the floor, tilted 6.5 degrees (far end up). The tilt lives in `TableMount`'s basis: 180
    degrees about y (the table's +z, the flippers' end, toward the player on the cabinet's -z), then the tilt, so the
    game's flat physics table is drawn tilted. The backbox's top is 1.9 m; its screen is 66 x 38 cm for the three
-   Label3D lines of `Display` (best and owner, score, balls; its +z faces the player). `CloseUp` is 1.6 m from
-   `TableMount` on a line 55 degrees down, fov 50, as the greybox's. In the lobby the cabinet's origin (the floor
+   Label3D lines of `Display` (best and owner, score, balls; its +z faces the player). `CloseUp` stands 1.29 m above
+   `TableMount` and 1.30 m toward the player, pitched 42 degrees down, fov 50, as the greybox's after the engineer's M8
+   review (prime-game d643623a; Gate 1 had 1.6 m on a line 55 degrees down). In the lobby the cabinet's origin (the floor
    under the footprint's middle) stands at (18, 0, 3.44): its front 40 cm from the greybox's `PinballSpot` (18, 0,
    2.2). `tools/blender/pinball_drawing.py` draws the front, side and top in cm from the model's own feature edges
    (`features.json`) with the spec's dimensions: `drawing.svg` on paper, `drawing_model.svg` over the model's
@@ -984,6 +985,13 @@ with a dark screen in a cyan line, the night Earth on the playfield; the hall's 
 5. **The driver**: `$PYTHON_BIN tools/blender/pinball_run.py [--tag v2] [--no-build] [--no-shots] [--no-video]` runs
    the build, glTF-Validator on both GLBs, the drawing, the clearances in the hall (the east wall, its pilasters, door
    D2: `clearances.json`), the shots and the video into `<raw>/lobby/pinball/<tag>/`. Background only (about 10
-   minutes with the hall's first import). `tools/tests/test_props_pinball.py` checks the spec's contract numbers and
+   minutes with the hall's first import).
+   The inputs were lost with D: (2026-11-18); for the rebuild of 2026-11-23 the hall's pieces were rebuilt
+   (`lobby --build`), NASA's three maps downloaded again from NASA's own `assets.science.nasa.gov` (the Black Marble
+   and the December topography with the record's hashes), the concept and the game's contract copied back into
+   `ref/`, and the hall's ship points at the ship's surviving build (`ship/v5/pieces`, package v10). NASA's 8192 px
+   cloud map is not on its new server, so the window's clouds came from NASA's `cloud_combined_2048.jpg`
+   (`<raw>/lobby/hall/earth-src/stand-in/`), cut by a one-off call of `lobby.earth_tex`: the hall's sky only, not
+   the pinball's art. `tools/tests/test_props_pinball.py` checks the spec's contract numbers and
    sums, the front's V and, with the raw build present (the newest of v2, v1), the GLBs' node names, the table
    nodes' transforms and the art's textures.
