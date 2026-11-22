@@ -1,6 +1,7 @@
 # art#392 (the lobby bar's mug of beer, held in the right hand): Gate 0's concepts, round 1. Waits for the engineer's
 # separate word on the count and the cost (the director, 2026-11-23: concepts beyond art#389-391's twelve go to him).
-# Text generations, medium (exploration), one image per concept: four designs, sized to the proposed spec (15 cm tall,
+# Approved 2026-11-23: the engineer's yes to about $0.30 of concepts, relayed by the director (this batch with art#389-391's
+# $0.14 is about $0.24). Text generations, medium (exploration), one image per concept: four designs, sized to the proposed spec (15 cm tall,
 # 9 cm across, the handle on the right). Forms and materials only; no game, film, studio or brand names; no people.
 id = "2026-11-23-lobby-mug-concepts"
 service = "openai-images"
@@ -9,9 +10,9 @@ plan = "OpenAI API, prepaid balance (topped up by the engineer)"
 terms_url = "https://openai.com/policies/services-agreement/"
 licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
 cost_cap_usd = 0.5
-approved_by = ""
-approved_at = ""
-approval_ref = ""
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-11-23"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6291187194 (the standing permission of 2026-10-20: OpenAI images within a batch's cost_cap_usd); the engineer's yes of 2026-11-23 to about $0.30 of concepts, relayed by the director (art#392)"
 model = "gpt-image-2.5-sunburst"
 quality = "medium"
 
