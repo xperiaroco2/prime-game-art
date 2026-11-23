@@ -1,12 +1,12 @@
 {
   "asset": "pinball",
-  "built_by": "tools/blender/pinball_run.py --tag v4 --asset assets/prop/pinball",
+  "built_by": "tools/blender/pinball_run.py --tag v6 --asset assets/prop/pinball",
   "cabinet": {
     "triangles": 36680,
     "triangles_by_material": {
       "pinball_teal_dark": 1132,
-      "pinball_copper": 28840,
-      "pinball_teal_light": 864,
+      "pinball_steel": 28088,
+      "pinball_teal_light": 1616,
       "pinball_side_art": 216,
       "pinball_cyan": 5120,
       "pinball_lens": 400,
@@ -14,10 +14,11 @@
     },
     "triangles_by_part": {
       "body": 648,
-      "trims": 4888,
+      "trims": 4136,
       "panels": 324,
       "side_art": 216,
       "rails": 376,
+      "rail_edges": 752,
       "medallion": 2160,
       "rings": 1140,
       "domes": 308,
@@ -47,7 +48,8 @@
     },
     "origin": "the floor under the footprint's middle",
     "player_side": "-Z",
-    "rails": "dark"
+    "rails": "teal",
+    "metal": "steel"
   },
   "table": {
     "triangles": 4408,
@@ -193,5 +195,5 @@
       "numHints": 0
     }
   },
-  "review": "<raw>/lobby/pinball/v4/"
+  "review": "<raw>/lobby/pinball/v6/"
 }
