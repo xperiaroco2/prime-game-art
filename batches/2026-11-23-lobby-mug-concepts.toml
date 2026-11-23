@@ -1,0 +1,41 @@
+# art#392 (the lobby bar's mug of beer, held in the right hand): Gate 0's concepts, round 1. Waits for the engineer's
+# separate word on the count and the cost (the director, 2026-11-23: concepts beyond art#389-391's twelve go to him).
+# Approved 2026-11-23: the engineer's yes to about $0.30 of concepts, relayed by the director (this batch with art#389-391's
+# $0.14 is about $0.24). Text generations, medium (exploration), one image per concept: four designs, sized to the proposed spec (15 cm tall,
+# 9 cm across, the handle on the right). Forms and materials only; no game, film, studio or brand names; no people.
+id = "2026-11-23-lobby-mug-concepts"
+service = "openai-images"
+purpose = "art#392: four concepts for the lobby bar's mug of beer, for the engineer's pick."
+plan = "OpenAI API, prepaid balance (topped up by the engineer)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 0.5
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-11-23"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6291187194 (the standing permission of 2026-10-20: OpenAI images within a batch's cost_cap_usd); the engineer's yes of 2026-11-23 to about $0.30 of concepts, relayed by the director (art#392)"
+model = "gpt-image-2.5-sunburst"
+quality = "medium"
+
+[defaults]
+size = "1536x1024"
+n = 1
+
+[[items]]
+id = "mug1_hall"
+kind = "generate"
+prompt = "A stylised 3D game-art concept render of one object for a modern adult-cartoon multiplayer game: clean bold readable shapes, slightly exaggerated proportions, crisp bevels, rich high-quality materials, cool and stylish, never childish. It stands on a dark polished metal bar top in a space-station lobby hall with two-tone teal-grey brushed metal panels and copper accents, lit by warm light from above and a cold blue light from a big window (out of frame). Made by an advanced alien civilisation, but clearly a drinking mug people pick up by its handle. Seen from the 3/4 front at a slightly high angle, the whole object large in frame, a soft blurred background. No people, no hands, no text, no letters, no numbers, no logos, no brand names, no bottles, no other props. THE OBJECT: one mug of beer, 15 cm tall and 9 cm across, its handle on the right side, full of amber beer with a thick white foam head that reads clearly from above. DESIGN: matches the hall: a thick clear glass body with a copper band round the foot and a thin copper rim, the handle a copper loop riveted to two copper bands; a small cyan light ring in the base glowing through the beer."
+
+[[items]]
+id = "mug2_tankard"
+kind = "generate"
+prompt = "A stylised 3D game-art concept render of one object for a modern adult-cartoon multiplayer game: clean bold readable shapes, slightly exaggerated proportions, crisp bevels, rich high-quality materials, cool and stylish, never childish. It stands on a dark polished metal bar top in a space-station lobby hall with two-tone teal-grey brushed metal panels and copper accents, lit by warm light from above and a cold blue light from a big window (out of frame). Made by an advanced alien civilisation, but clearly a drinking mug people pick up by its handle. Seen from the 3/4 front at a slightly high angle, the whole object large in frame, a soft blurred background. No people, no hands, no text, no letters, no numbers, no logos, no brand names, no bottles, no other props. THE OBJECT: one mug of beer, 15 cm tall and 9 cm across, its handle on the right side, full of amber beer with a thick white foam head that reads clearly from above. DESIGN: a sturdy metal tankard: brushed teal-grey metal outside with copper rivet rows and a copper rim, a chunky angular copper handle; the beer and foam visible at the open top."
+
+[[items]]
+id = "mug3_stein"
+kind = "generate"
+prompt = "A stylised 3D game-art concept render of one object for a modern adult-cartoon multiplayer game: clean bold readable shapes, slightly exaggerated proportions, crisp bevels, rich high-quality materials, cool and stylish, never childish. It stands on a dark polished metal bar top in a space-station lobby hall with two-tone teal-grey brushed metal panels and copper accents, lit by warm light from above and a cold blue light from a big window (out of frame). Made by an advanced alien civilisation, but clearly a drinking mug people pick up by its handle. Seen from the 3/4 front at a slightly high angle, the whole object large in frame, a soft blurred background. No people, no hands, no text, no letters, no numbers, no logos, no brand names, no bottles, no other props. THE OBJECT: one mug of beer, 15 cm tall and 9 cm across, its handle on the right side, full of amber beer with a thick white foam head that reads clearly from above. DESIGN: a heavy faceted glass stein: thick vertical facets catching the light, the amber beer glowing through them, a wide glass handle with a thumb rest, a rounded heavy glass foot."
+
+[[items]]
+id = "mug4_alien"
+kind = "generate"
+prompt = "A stylised 3D game-art concept render of one object for a modern adult-cartoon multiplayer game: clean bold readable shapes, slightly exaggerated proportions, crisp bevels, rich high-quality materials, cool and stylish, never childish. It stands on a dark polished metal bar top in a space-station lobby hall with two-tone teal-grey brushed metal panels and copper accents, lit by warm light from above and a cold blue light from a big window (out of frame). Made by an advanced alien civilisation, but clearly a drinking mug people pick up by its handle. Seen from the 3/4 front at a slightly high angle, the whole object large in frame, a soft blurred background. No people, no hands, no text, no letters, no numbers, no logos, no brand names, no bottles, no other props. THE OBJECT: one mug of beer, 15 cm tall and 9 cm across, its handle on the right side, full of amber beer with a thick white foam head that reads clearly from above. DESIGN: an alien-made glass mug: a bulbous rounded body narrowing to the rim, softly ribbed like a shell, a sculpted copper handle that wraps half way round the body; the beer glowing amber inside."

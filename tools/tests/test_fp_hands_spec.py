@@ -165,5 +165,52 @@ class FpHandsSpec(unittest.TestCase):
         over = {"grips": {"rest": {"spread": 50}}}
         self.assertEqual(len(run.grips_errors(SPEC, over)), 1)
 
+    def test_mug(self):
+        """The M8 beer mug (art#392): the mug clips hold the committed mug by its Grip, the mug pose is placed from
+        the eye with the left fist as at rest, the clips sway about the idle's pivot (the left as Idle's), the search
+        ranges rise, and the mug GLB has the contract's nodes."""
+        mug, pose = SPEC["mug"], POSES["mug"]
+        self.assertEqual(mug["bone"], "RightHand")
+        self.assertGreater(mug["scale"], 0.0)
+        self.assertLessEqual({"grip", "out"}, set(pose["mug"]))
+        self.assertLessEqual({"t", "around"}, set(pose["hand"]))
+        self.assertEqual(pose["L"], POSES["idle"]["L"], "the left fist as at rest")
+        self.assertEqual((pose["grip_L"], pose["fist_L"]), (POSES["idle"]["grip_L"], POSES["idle"]["fist_L"]))
+        for axis in ("x", "y", "z"):
+            lo, hi, step = SPEC["mug"]["fit"][axis]
+            self.assertTrue(lo < hi and step > 0, axis)
+        mugs = {n: c for n, c in SPEC["clips"].items() if c["pose"] == "mug"}
+        self.assertEqual(set(mugs), {"Mug_Idle_Loop", "Mug_Run_Loop"})
+        for name, twin in (("Mug_Idle_Loop", "Idle_Loop"), ("Mug_Run_Loop", "Run_Loop")):
+            c, t = mugs[name], SPEC["clips"][twin]
+            self.assertEqual(c["pivot"], "idle", name)
+            self.assertEqual(c["seconds"], t["seconds"], name)
+            self.assertEqual((c.get("sway"), c.get("run")), (t.get("sway"), t.get("run")), name)
+        glb = common.ROOT / mug["glb"]
+        data = glb.read_bytes()
+        n = int.from_bytes(data[12:16], "little")
+        nodes = {x["name"]: x for x in json.loads(data[20:20 + n])["nodes"]}
+        self.assertEqual(set(nodes), {"Mug", "Beer", "Grip"})
+        grip = nodes["Grip"]
+        self.assertEqual([round(v, 3) for v in grip["translation"]], [0.074, 0.08, 0.0])
+        x, y, z, w = grip["rotation"]   # +90 degrees about +Y: the Grip's -Z along the mug's -X (toward its axis)
+        self.assertAlmostEqual(abs(y), abs(w), places=4)
+        self.assertAlmostEqual(y * w * 2.0, 1.0, places=4)
+        self.assertEqual((round(x, 6), round(z, 6)), (0.0, 0.0))
+
+    def test_the_committed_hands_carry_the_mug(self):
+        """fp_hands.glb itself: the mug's socket and clips beside every clip and socket the engineer approved (g5)."""
+        glb = common.ROOT / "assets" / "body" / "fp_hands" / "export" / "fp_hands.glb"
+        data = glb.read_bytes()
+        if data[:4] != b"glTF":
+            self.skipTest("fp_hands.glb is an LFS pointer here")
+        n = int.from_bytes(data[12:16], "little")
+        doc = json.loads(data[20:20 + n])
+        self.assertEqual({a["name"] for a in doc["animations"]},
+                         {"Idle_Loop", "Run_Loop", "Punch", "Crystal_Idle_Loop", "Crystal_Run_Loop", "Crystal_Hit",
+                          "Mug_Idle_Loop", "Mug_Run_Loop"})
+        self.assertLessEqual({"CrystalSocket", "MugSocket"}, {x.get("name") for x in doc["nodes"]})
+
+
 if __name__ == "__main__":
     unittest.main()

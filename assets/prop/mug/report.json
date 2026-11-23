@@ -1,0 +1,97 @@
+{
+ "asset": "mug",
+ "built_by": "mug() in tools/blender/lobby_furniture_build.py with tools/blender/mug_dims.toml (feat/lobby-furniture, 9a3bf4d2); packed unchanged from <raw>/lobby/furniture/mug3/mug/mug.glb",
+ "mesh": {
+  "triangles": 1680,
+  "triangles_by_mesh": {
+   "Beer": 472,
+   "Mug": 1208
+  },
+  "triangles_by_material": {
+   "mug_glass": 1208,
+   "mug_beer": 92,
+   "mug_foam": 380
+  },
+  "bounds_cm": {
+   "min": [
+    -4.71,
+    0.0,
+    -4.71
+   ],
+   "max": [
+    8.09,
+    18.2,
+    4.71
+   ]
+  },
+  "materials": [
+   "mug_beer",
+   "mug_foam",
+   "mug_glass"
+  ],
+  "textures": 0,
+  "origin": "the centre of the base's underside",
+  "handle": "+X"
+ },
+ "gltf": {
+  "nodes": [
+   "Beer",
+   "Grip",
+   "Mug"
+  ],
+  "grip": {
+   "translation": [
+    0.07400000095367432,
+    0.07999999821186066,
+    0
+   ],
+   "rotation_xyzw": [
+    0,
+    0.7071066498756409,
+    0,
+    0.70710688829422
+   ]
+  }
+ },
+ "gltf_validator": {
+  "numErrors": 0,
+  "numWarnings": 0,
+  "numInfos": 4,
+  "numHints": 0,
+  "truncated": false
+ },
+ "godot": {
+  "from": "godot/fp_hands/shots.gd in an off-screen window (fp_hands_run.py --tag mug4): the mug under MugSocket with Grip.transform.affine_inverse()",
+  "grip": {
+   "origin": [
+    0.0740000009536743,
+    0.0799999982118607,
+    0.0
+   ],
+   "x": [
+    3.57627868652344e-07,
+    0.0,
+    -0.999999940395355
+   ],
+   "y": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "z": [
+    0.999999940395355,
+    0.0,
+    3.57627868652344e-07
+   ]
+  },
+  "grip_class": "Node3D",
+  "nodes": [
+   "Beer",
+   "Grip",
+   "Mug"
+  ],
+  "socket_parent": "BoneAttachment3D",
+  "socket_scale": 1.30000019073486
+ },
+ "review": "<raw>/fp-hands/mug/mug4/"
+}

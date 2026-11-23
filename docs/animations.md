@@ -1826,6 +1826,25 @@ are in `tools/blender/fp_hands.toml`, the fitted key poses in `tools/blender/fp_
 - **Shots**: each clip's frames from the hall at eye height, a key-frame sheet per clip, MP4s and `_reel.mp4` (idle,
   two punches, the run, then the same with the crystal), and `light_<n>.png`: the held crystal at 100, 40 and 15 % of
   its own light (crystal.gd's `omni_energy`; the hands no longer take it).
+- **The mug** (art #392, the M8 beer mug `assets/prop/mug/`): `MugSocket`, a node on the bone `RightHand` (Godot:
+  a `BoneAttachment3D` with the `MugSocket` child, like `CrystalSocket`), where the mug's `Grip` marker goes (the
+  game: the mug GLB under it with `Grip.transform.affine_inverse()`); its own scale (`[mug] scale`, 1.3, the crystal's)
+  draws the mug bigger in first person, since at true size the handle's 2.1 cm opening is narrower than this hand's
+  fingers. Two clips, `Mug_Idle_Loop` (3 s) and `Mug_Run_Loop` (the run's 0.917 s): the right hand round the handle's
+  upright bar, the left fist as in `Idle_Loop` and `Run_Loop` (the clips sway about the idle's pivot, `pivot =
+  "idle"`, so the left's keys are the same). `[poses.mug]` places the mug from the eye (`mug = { grip, out }`: the
+  Grip in the view and the way the handle points out, upright) and the hand from it: `fit_mug` searches the wrist's
+  place in the socket's space, its turn about the bar, the fingers' curl scale and the fist morph's weight
+  (`[mug.fit]`) against a stand-in of the mug (`[mug.shapes]`: a cylinder and three capsules, `mug_sdf`) for no point
+  inside, each of the index, middle and ring fingers touching the handle with its tip past the bar (through the
+  handle) and the palm near the bar. The fit runs after the other clips are keyed, so they stay as they were (the
+  golden frames). `build.json` holds the pick (`mug_fit`) and per mug clip `mug_contact_mm`: per digit, the palm and
+  all, the deepest point inside the glass's mesh and the nearest gap in the worst sampled frame; the run fails past
+  1.5 mm inside or a finger 2 mm off (`MUG_INSIDE_MM`, `MUG_GAP_MM`). The shots add `stills/mug_idle.png` and
+  `mug_empty.png` (`Beer` hidden), the close-ups `closeup_mug_back*` (the back of the hand from the eye's side) and
+  `closeup_mug_fingers*` (the fingers through the handle from beyond the mug), full and empty, and check in Godot that
+  `MugSocket` is a `BoneAttachment3D` within 2 mm of Blender's place and that the mug imports as `Beer`, `Grip` and
+  `Mug`.
 
 ### The detailed first-person hand (art #136, 2026-11-11)
 

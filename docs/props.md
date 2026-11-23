@@ -1051,3 +1051,20 @@ to him, so the concepts' copper is the hall's cold steel and their light lines a
   the glass's middle. The concept's fan is wider than that space allows.
 - **Tests:** `tools/tests/test_lobby_furniture.py` checks the specs against the greybox, that no look is coppery, the
   placement maths and the clearance check.
+
+## The M8 beer mug (art #392)
+
+The lobby bar's mug of beer, held in the right hand: concept 3, a faceted glass stein (batch
+`batches/2026-11-23-lobby-mug-concepts.toml`, item `mug3_stein`), kept by the engineer for M8 as it stands. The
+package `assets/prop/mug/` is the raw build `<raw>/lobby/furniture/mug3/mug/mug.glb` copied unchanged: `mug()` in
+`tools/blender/lobby_furniture_build.py` with `tools/blender/mug_dims.toml` (on `main` since PR #405) writes it from code, so there is no `.blend`.
+
+- **One GLB for `mug` and `mug_empty`:** `Mug` (the glass and handle), `Beer` (the beer and foam, hidden for
+  `mug_empty`) and the marker `Grip` on the handle's upright bar at (0.074, 0.08, 0) m, its +Y up the handle and its
+  -Z toward the mug's axis. Origin the base's underside, the handle on +X, 0.09 m across, 0.15 m tall; 1,680
+  triangles, three materials, no textures.
+- **In a hand:** the GLB under the hand's socket with `Grip.transform.affine_inverse()`: `MugSocket` in first
+  person (the hands' package, `docs/animations.md`, "The first-person hands", the mug), `Socket_HandR` on other
+  players.
+- **Checks:** glTF-Validator (`report.json`); the import, the nodes and the `Grip` frame in Godot come from the
+  first-person hands' shots (`godot/fp_hands/shots.gd`, `check.json` `mug`), which place it as the game does.

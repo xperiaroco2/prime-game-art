@@ -11,7 +11,7 @@ crystal hit. The polish to final quality is art#388.
 
 ## Files
 - `export/fp_hands.glb`: one skinned scene, 8.6 MB, SHA-256
-  `66349bd02cbfd39c42d6dd0dc035e64f2c696ccdc4342e1df2213652525c69dc`.
+  `1554e7a7827647b6eb7eb51190c0eb39f1da38a63856f905c0882adbac027931` (run mug4: g5 with the mug, art#392).
   - `FPRig` (Skeleton3D after import): root bone `View` at the eye; per side `Shoulder`, `UpperArm`, `LowerArm`,
     `Hand` and the finger bones under their character names (`RightHand`, `LeftIndexProximal`, ...); `Crystal`.
   - `FPArms`: the skin of both forearms and hands, the four-digit hand m41 (92,184 triangles for the two), **two morph
@@ -19,6 +19,10 @@ crystal hit. The polish to final quality is art#388.
     below). No sleeves yet: the bare arm first; each outfit's sleeve is laid on later.
   - `CrystalSocket`: a node on the `Crystal` bone; Godot imports it as a `BoneAttachment3D` with the `CrystalSocket`
     child. The energy crystal's origin (its tip) goes there with no offset.
+  - `MugSocket` (art#392): a node on the `RightHand` bone; Godot imports it as a `BoneAttachment3D` with the
+    `MugSocket` child (checked in the shots). The mug (`assets/prop/mug/export/mug.glb`) goes under it with
+    `Grip.transform.affine_inverse()`; the socket's own scale, 1.3, draws it bigger in first person (as
+    `CrystalSocket` the crystal).
 - `source/fp_hands.blend`: the build, for edits.
 
 ## Scale and placement: a viewmodel
@@ -65,6 +69,8 @@ crystal hit. The polish to final quality is art#388.
 | `Punch` | 0.5 s | no | a straight right punch, the left fist stays at rest; contact at **0.15 s**, the whole fist in view a little right of and below the middle; starts and ends in `Idle`'s pose |
 | `Crystal_Idle` | 3.0 s | yes | the crystal carried with both hands from its sides, like a box (the engineer's pick of 2026-11-12): both palms on its flanks at one height under the skirt, the fingers round its back (see "The hold") |
 | `Crystal_Run` | 0.917 s | yes | the same, with the run's bob and swing |
+| `Mug_Idle` | 3.0 s | yes | the M8 beer mug held in the right hand (art#392): the fingers round the handle's upright bar, the mug upright low right; the left fist exactly as in `Idle` (see "The mug") |
+| `Mug_Run` | 0.917 s | yes | the same with `Run`'s bob and swing; the left fist exactly as in `Run` |
 | `Crystal_Hit` | 0.5 s | no | a two-handed overhead smash: lifted over the middle and tipped back (0.13 s), driven down cap first into the frame's middle to the contact at **0.20 s**, a short follow-through and back; starts and ends in `Crystal_Idle`'s pose (since run g3) |
 
 - The hits last 0.5 s, the GDD's rate (one swing each 0.5 s), so a held button can chain them.
@@ -191,9 +197,22 @@ crystal hit. The polish to final quality is art#388.
   ideal"; the crystal hit reads as a small push). Exported by run g5, which matches the golden frames (0.0 changed in
   each); the polish is art#388.
 
+## The mug (run mug4, art#392; approved by the engineer on 2026-11-23)
+- The clips `Mug_Idle` and `Mug_Run` and `MugSocket` added; every other clip, bone, morph and socket as in g5: the
+  four golden frames (hold, punch contact, idle, run) of run mug4 match g4's with 0.0 of their boxes changed.
+- The hold (`fp_hands.toml [poses.mug]`, fitted by `fit_mug`): the mug's Grip at (0.21, 0.45, -0.115) m in the
+  camera's space (x right, y forward, z up in Blender; Godot (0.21, -0.115, -0.45)), upright, the handle pointing
+  right and a little toward the eye; the wrist 13 cm behind the bar along the fingers, turned 20 degrees about it;
+  curls index x1.2, middle x1.35, ring x1.0; the `fist` morph at 0.5 in these clips (`fist_L` 1).
+- Measured on the mug's mesh in Blender in every sampled frame of both clips (`build.json` `mug_contact_mm`): index
+  0.7 mm into the glass at most and touching (0.0 mm gap), middle 0.3 mm and touching, ring 0.5 mm off, the thumb
+  touching; the palm 9.6 mm off the bar. The run fails past 1.5 mm inside or a finger 2 mm off.
+- Play `Mug_Idle` or `Mug_Run` while a `mug` or `mug_empty` is held (`Beer` hidden for the empty one), blending the
+  switch as for the crystal clips.
+
 ## What the game side builds (not done here)
 - Instance `fp_hands.glb` under the camera; switch clips by state (idle or run, crystal held or not), blend the
   switches (about 0.15 s) and play the hits on the left mouse button.
 - The held crystal: instance the energy crystal's package under `CrystalSocket` with its `crystal.gd` look; hide it
   when no crystal is held.
-- The look waits for the engineer's yes at the next review; see the PR.
+- The engineer approved the hold as shot (2026-11-23, "Так", relayed by the director), socket scale 1.3 included.
