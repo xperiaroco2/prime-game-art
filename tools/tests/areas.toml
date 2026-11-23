@@ -105,6 +105,10 @@ tests = ["test_ragdoll_*", "test_slice_*"]
 sources = ["faces/*", "tools/blender/faces_*", "tools/runner/commands/faces.py"]
 tests = ["test_faces_*"]
 
+[area.lobby_furniture]
+sources = ["tools/blender/lobby_furniture_*", "tools/blender/bar_dims.toml", "tools/blender/mirror_dims.toml", "tools/blender/match_console_dims.toml", "tools/blender/mug_dims.toml", "godot/lobby_furniture/*"]  # the lobby's bar, mirror, match console and mug (#389-#392)
+tests = ["test_lobby_furniture*"]
+
 [area.alien_package]
 sources = ["tools/runner/commands/_alien_package.py", "tools/runner/commands/alien_package.py", "godot/alien/alien_dress.gd", "godot/alien/package_check.gd"]  # the alien's game package (#393); before light's alien_*
 tests = ["test_alien_package*"]

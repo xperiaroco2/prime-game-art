@@ -1,0 +1,91 @@
+# The lobby's bar with its tap (art #389): Gate 1's drawing as numbers, every size in cm. The engineer's pick of
+# 2026-11-23: concept 2 "galley" (<raw>/2026-11-22-lobby-bar-mirror-console-concepts/bar2_galley/image-0.png),
+# without copper (copper reads as retro: his word of the same day). Where the concept and the game's greybox disagree
+# the greybox wins (prime-game levels/lobby/lobby.tscn `Bar`: a 1 x 1.1 x 6 m box at x -17..-16, z -13..-7; `Tap` at
+# (-15, 0, -10), where a player stands to take a drink).
+#
+# The frame (Godot axes): the origin on the floor under the footprint's middle, y up, the length along x, the
+# customers' side +z. Placed at the greybox's middle turned 90 degrees, so +z faces the hall (+x).
+# Built by tools/blender/lobby_furniture_build.py (--piece bar), shot by tools/blender/lobby_furniture_run.py.
+
+[size]
+length = 600.0          # the greybox's 6 m
+depth = 100.0           # its 1 m
+height = 110.0          # its 1.1 m: the top's upper face
+end_r = 42.0            # the plan's rounded ends (the concept's pill-like ends): the corner radius
+
+[plinth]                # the base band (the concept's copper band, here cold steel) with the cool glow strip under it
+height = 9.0
+inset = 3.0             # in from the body's face
+glow_h = 1.2            # the floor glow line at its foot, cyan
+glow_inset = 4.5
+
+[body]                  # the brushed teal-grey shell between the plinth and the top
+inset = 5.0             # in from the top's outline (the top's overhang)
+seam_x = [-205.0, 205.0]   # the vertical panel seams on the long faces (the concept's)
+seam_w = 0.8
+seam_d = 0.4
+
+[swoosh]                # the front's sweep: a steel line drawn on the customers' face (the concept's copper line)
+top_y = 86.0            # its high ends, near the bar's ends
+low_y = 58.0            # its long low run
+ends_x = [-250.0, 250.0]   # where it starts high
+low_x = [-160.0, 160.0]    # where the run is low
+w = 2.4                 # the line's width
+proud = 0.9             # standing proud of the face
+panel_proud = 0.6       # the lower panel under the sweep stands this much proud, a darker shade (the concept's two
+                        # panels: the upper band and the swept lower panel)
+panel_bottom = 4.0      # the lower panel's foot above the plinth
+
+[top]                   # the dark stone top (the concept's dark marble), its edge rounded
+thick = 7.0
+round = 2.5
+glow_h = 1.0            # the cool light line in the shadow under the top's lip
+glow_drop = 1.5
+
+[tap]                   # one tap on the top at the long side's middle, near the customers' edge
+at_z = 30.0             # its column's axis: this far toward the customers from the middle
+base_r = 7.0
+base_h = 3.0
+column_w = 9.0          # the column's width and depth
+column_d = 7.0
+column_h = 38.0
+window_w = 4.0          # the lit window in the column showing the drink (amber: it is the beer, not trim)
+window_h = 18.0
+window_y = 10.0         # its bottom above the base
+crest_h = 9.0           # the two fins crowning the column (the concept's alien crest)
+spout_y = 27.0          # the spout's height above the top
+spout_len = 9.0         # toward the customers
+spout_r = 0.9
+handle_h = 11.0         # the lever above the spout
+
+[look]                  # the materials (no copper): base sRGB, metallic, roughness, emission
+shell = [[0.36, 0.45, 0.47], 0.55, 0.36, 0.0]     # brushed teal-grey, the hall's panels' family
+shell2 = [[0.28, 0.36, 0.38], 0.55, 0.4, 0.0]     # the lower swept panel, a shade darker
+steel = [[0.60, 0.64, 0.66], 0.85, 0.38, 0.0]     # the hall's no-copper trim
+stone = [[0.10, 0.10, 0.11], 0.0, 0.12, 0.0]      # the dark polished top
+glow = [[0.45, 0.92, 1.0], 0.0, 0.3, 2.0]         # cool cyan light lines
+beer = [[0.95, 0.55, 0.12], 0.0, 0.2, 0.45]        # the drink in the tap's window (1.4 burnt to white)
+dark = [[0.04, 0.045, 0.05], 0.6, 0.5, 0.0]       # Gate 3: the drip tray's slots
+
+[placement]             # in layouts/lobby/hall.toml's frame (the greybox's), cm
+origin = [-1650.0, 0.0, -1000.0]
+yaw_deg = 90.0          # +z (the customers) faces the hall's +x
+tap_spot = [-1500.0, 0.0, -1000.0]   # the greybox's Tap marker
+
+[detail]                # Gate 3 (the engineer approved the shape on 2026-11-23): texture and hardware, no size moves
+stone_tile = 200.0      # the top's dark marble: one tile per 2 m (the 6 m top shows three, not six repeats)
+vein = [0.30, 0.31, 0.33]   # the veins' sRGB over the stone's base, soft and cool
+vein_mix = 0.45        # their strength (v4: 0.75 with sharp veins read as cracks)
+shell_tile = 60.0       # the shell's brushed steel-grey grain: one tile per 60 cm, streaks along the length
+shell_rough = 0.06      # its roughness break-up, +- round [look] shell's
+swoosh_bevel = 0.0      # the steel sweep stays a flat ribbon: v4's 0.3 bevel broke it into dashes at the joints
+tray_w = 16.0           # the drip tray under the spout, on the top: width (x), depth (z), height
+tray_d = 10.0
+tray_h = 1.0
+tray_slots = 5          # its grate: slots across, dark
+slot_w = 1.0
+bezel_w = 0.8           # the steel bezel round the tap's beer window, standing proud
+bezel_proud = 0.4
+knob_r = 1.5            # the lever's knob: radius and height, in the dark stone
+knob_h = 3.5
