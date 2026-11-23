@@ -55,6 +55,9 @@ RAW = common.raw_dir()
 OUT = RAW / "2026-11-11-fp-hands"
 SHIP = RAW / "ship" / "v5" / "export" / "v9"   # the ship package v9 (art#263, PR #376), a Godot project
 CRYSTAL = ROOT / "assets" / "prop" / "energy_crystal" / "export"
+MUG = ROOT / "assets" / "prop" / "mug" / "export" / "mug.glb"   # the M8 beer mug (art#392), held in the Mug clips
+MUG_INSIDE_MM = 1.5   # a finger may press this far into the mug's glass (a soft hand on a hard handle)
+MUG_GAP_MM = 2.0      # and each of the index, middle and ring fingers stays this close to it in every frame
 SIZE = (1280, 720)
 FOV = 75.0          # the game's Camera3D (player.tscn: Godot's default 75 degrees, vertical)
 EYE = [0.0, 2.8, 2.6]       # the hall: its floor at 1.2 m, the eye 1.6 m over it (the game's eye_height_m),
@@ -77,16 +80,29 @@ CLOSEUPS = [{"name": "open", "clip": "Idle", "t": 0.0}, {"name": "fist", "clip":
             {"name": "back_nonormal", "clip": "Idle", "t": 0.0, "bone": "RightMiddleProximal", "side": "back", "dist": 0.35,
              "fov": 40.0, "no_normal": True},
             {"name": "palm_nonormal", "clip": "Idle", "t": 0.0, "bone": "RightMiddleProximal", "side": "palm", "dist": 0.35,
-             "fov": 40.0, "no_normal": True}]
+             "fov": 40.0, "no_normal": True},
+            # the mug's handle in the hand (art#392): the back of the hand from the eye's side, the fingers through the
+            # handle from beyond the mug, full and empty (`beer` false: the Beer node hidden, as for mug_empty)
+            {"name": "mug_back", "clip": "Mug_Idle", "t": 0.0, "bone": "RightMiddleProximal", "side": "back", "dist": 0.4,
+             "fov": 40.0, "mug": True},
+            {"name": "mug_fingers", "clip": "Mug_Idle", "t": 0.0, "bone": "RightMiddleProximal", "side": "palm", "dist": 0.4,
+             "fov": 40.0, "mug": True},
+            {"name": "mug_back_empty", "clip": "Mug_Idle", "t": 0.0, "bone": "RightMiddleProximal", "side": "back",
+             "dist": 0.4, "fov": 40.0, "mug": True, "beer": False},
+            {"name": "mug_fingers_empty", "clip": "Mug_Idle", "t": 0.0, "bone": "RightMiddleProximal", "side": "palm",
+             "dist": 0.4, "fov": 40.0, "mug": True, "beer": False}]
 # the look grid's shots: the fist at the punch's contact, the open hand, the crystal held
 LOOK_SHOTS = [{"name": "fist", "clip": "Punch", "t": 0.15}, {"name": "open", "clip": "Idle", "t": 0.0},
               {"name": "hold", "clip": "Crystal_Idle", "t": 0.0, "crystal": True}]
 # stills from the eye at moments no frame lands on (frames/stills/<name>.png): the golden check's
 STILLS = [{"name": "punch_hit", "clip": "Punch", "t": 0.15}, {"name": "hold", "clip": "Crystal_Idle", "t": 0.0, "crystal": True},
-          {"name": "idle", "clip": "Idle", "t": 0.0}, {"name": "run", "clip": "Run", "t": 0.0}]
+          {"name": "idle", "clip": "Idle", "t": 0.0}, {"name": "run", "clip": "Run", "t": 0.0},
+          {"name": "mug_idle", "clip": "Mug_Idle", "t": 0.0, "mug": True},
+          {"name": "mug_empty", "clip": "Mug_Idle", "t": 0.0, "mug": True, "beer": False}]
 # the reel: (clip, times) in order; the hits between idles, as a player sees them
 REEL = [("Idle_Loop", 1), ("Punch", 1), ("Punch", 1), ("Run_Loop", 2),
-        ("Crystal_Idle_Loop", 1), ("Crystal_Hit", 1), ("Crystal_Hit", 1), ("Crystal_Run_Loop", 2)]
+        ("Crystal_Idle_Loop", 1), ("Crystal_Hit", 1), ("Crystal_Hit", 1), ("Crystal_Run_Loop", 2),
+        ("Mug_Idle_Loop", 1), ("Mug_Run_Loop", 2)]
 
 
 GRIP_KEYS = ("Index", "Middle", "Ring", "Little", "spread", "Thumb", "ThumbTurn")
@@ -259,6 +275,7 @@ def stage(tag: str, glb: Path) -> Path:
     (proj / "fp").mkdir()
     shutil.copyfile(glb, proj / "fp" / "fp_hands.glb")
     shutil.copyfile(CRYSTAL / "energy_crystal.glb", proj / "fp" / "energy_crystal.glb")
+    shutil.copyfile(MUG, proj / "fp" / "mug.glb")
     (proj / "crystal").mkdir()
     for f in CRYSTAL.iterdir():
         if f.suffix in (".gd", ".gdshader"):
@@ -280,10 +297,10 @@ def shoot(proj: Path, out: Path, build: dict, fps: int, variants: list | None = 
     frames = out / "frames"
     if frames.exists():
         shutil.rmtree(frames)
-    clips = [{"name": _godot.godot_name(n)[0], "crystal": c["holds_crystal"], "hit": c["hit_s"], "cycles": 2 if "Run" in n else 1}
-             for n, c in build["clips"].items()]
+    clips = [{"name": _godot.godot_name(n)[0], "crystal": c["holds_crystal"], "mug": c.get("holds_mug", False),
+              "hit": c["hit_s"], "cycles": 2 if "Run" in n else 1} for n, c in build["clips"].items()]
     req = {"scene": "res://levels/ship/ship.tscn", "hands": "res://fp/fp_hands.glb",
-           "crystal": "res://fp/energy_crystal.glb", "eye": EYE, "look": LOOK, "fov": FOV, "vm_fov": build["vm_fov"], "size": list(SIZE), "fps": fps,
+           "crystal": "res://fp/energy_crystal.glb", "mug": "res://fp/mug.glb", "eye": EYE, "look": LOOK, "fov": FOV, "vm_fov": build["vm_fov"], "size": list(SIZE), "fps": fps,
            "out": str(frames).replace("\\", "/"), "clips": clips, "light_levels": LIGHT_LEVELS, "closeups": CLOSEUPS, "stills": STILLS, "skin": look()}
     if variants:
         req.update({"variants": variants, "variant_shots": LOOK_SHOTS})
@@ -350,6 +367,11 @@ def build_checks(build: dict) -> list[str]:
                 bad.append(f"{name}: the {side} hand is {cc['deepest_inside']} mm inside the crystal")
             if cc["nearest_gap"] > 4.0:
                 bad.append(f"{name}: the {side} hand floats {cc['nearest_gap']} mm off the crystal")
+        for part, cc in c.get("mug_contact_mm", {}).items():
+            if cc["deepest_inside"] > MUG_INSIDE_MM:
+                bad.append(f"{name}: the right {part} is {cc['deepest_inside']} mm inside the mug")
+            if part in ("Index", "Middle", "Ring") and cc["nearest_gap"] > MUG_GAP_MM:
+                bad.append(f"{name}: the right {part} floats {cc['nearest_gap']} mm off the mug")
     return bad
 
 
@@ -376,6 +398,17 @@ def checks(build: dict, check: dict) -> list[str]:
             d = math.dist(g, [w[0], w[2], -w[1]])
             if d > SOCKET_TOL_M:
                 bad.append(f"{name}: CrystalSocket {d * 1000:.1f} mm from Blender's in Godot")
+        w = build.get("mug_socket_in_view", {}).get(name)
+        if w is not None:
+            g = got.get("mug_socket", {}).get("origin")
+            if g is None or math.dist(g, [w[0], w[2], -w[1]]) > SOCKET_TOL_M:
+                bad.append(f"{name}: MugSocket at {g} in Godot, Blender's {[w[0], w[2], -w[1]]}")
+    mug = check.get("mug", {})
+    if build.get("mug_socket_in_view"):
+        if mug.get("socket_parent") != "BoneAttachment3D":
+            bad.append(f"MugSocket's parent is {mug.get('socket_parent')}, not a BoneAttachment3D")
+        if sorted(mug.get("nodes", [])) != ["Beer", "Grip", "Mug"]:
+            bad.append(f"the mug's nodes are {mug.get('nodes')}, not Beer, Grip and Mug")
     return bad
 
 

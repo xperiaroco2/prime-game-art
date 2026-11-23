@@ -132,6 +132,18 @@ mirror = true
 Thumb = [25, 30, 40]
 ThumbTurn = [-20, 50]
 
+[grips.mug]       # the right hand round the M8 beer mug's handle (art#392): the fingers wrap the upright bar, their
+                  # tips through the handle toward the glass, the thumb along the index's side over the bar; fit_mug
+                  # scales the three fingers' curl ([mug.fit] curl) and places the hand on the bar
+Index = [50, 70, 45]
+Middle = [52, 72, 45]
+Ring = [55, 74, 45]
+Little = [0, 0, 0]
+mirror = true
+spread = 0
+Thumb = [15, 20, 25]
+ThumbTurn = [-15, 40]
+
 [poses.idle]      # the free hand at rest, placed after the engineer's rest reference (art#136 round 2, grids p2grida-d):
                   # low and a little right of the middle, the forearm out through the bottom edge (the wrist at 55 %
                   # across on it), the fingers toward the upper left (their tips solved to about 30 % / 68 %), the back
@@ -241,6 +253,22 @@ crystal = { cap = [50.0, 50.0], dist = 0.50, tilt = 0.0, lean = 40.0, yaw = 0.0 
 [poses.crystal_follow]   # the follow-through: on down past the contact (g3hit f2)
 crystal = { cap = [49.0, 60.0], dist = 0.50, tilt = -5.0, lean = 60.0, yaw = 0.0 }
 
+[poses.mug]       # the M8 beer mug held in the right hand (art#392; assets/prop/mug, the contract with the game: one
+                  # GLB, its Grip marker on MugSocket): upright, low right in the view like a held item, the handle
+                  # pointing right and a little toward the eye, so the eye sees the back of the hand and the knuckles
+                  # over the handle, the glass to their left. `mug`: the Grip (the handle's middle) in the view and
+                  # the way the handle points out; `hand`: the wrist in MugSocket's space before fit_mug (which
+                  # replaces it); `bend`: the wrist bent toward the little finger, so the forearm comes up from the
+                  # frame's bottom. The left fist as in [poses.idle]
+mug = { grip = [0.20, 0.45, -0.15], out = [1.0, -0.25, 0.0] }
+hand = { t = [-0.10, -0.02, 0.0], around = 0.0 }
+bend = [0.0, -20.0]
+L = { p = [-0.3009, 0.55, -0.2308], f = [0.3225, 0.4834, 0.8138], n = [-0.4327, -0.6894, 0.581], bend = [0.0, 0.0] }
+grip_R = "mug"
+grip_L = "fist"
+fist = 0.0
+fist_L = 1.0
+
 [clips.Idle_Loop]           # breathing: a slow drift of the hand, a few millimetres and about a degree
 pose = "idle"
 seconds = 3.0
@@ -293,6 +321,53 @@ keys = [
   { t = 0.26, crystal = "crystal_follow", ease = "out" },
   { t = 0.5, ease = "inout" },
 ]
+
+[clips.Mug_Idle_Loop]       # the mug held at rest: Idle_Loop's breathing about Idle_Loop's own pivot (the right wrist
+                            # at rest), so the left fist moves exactly as in Idle_Loop
+pose = "mug"
+seconds = 3.0
+pivot = "idle"
+sway = { pos = [0.0025, 0.0015, 0.004], rot = [1.0, 0.6, 0.8], cycles = [1, 1, 1] }
+
+[clips.Mug_Run_Loop]        # the mug held on the run: Run_Loop's bob and swing about the same pivot
+pose = "mug"
+seconds = 0.9167
+pivot = "idle"
+run = { bob = 0.022, side = 0.020, fwd = 0.010, roll = 5.0, pitch = 3.0, yaw = 2.0, lift = [0.0, -0.01, 0.01] }
+
+[mug]
+# the M8 beer mug (art#392, assets/prop/mug: the engineer kept concept 3 as it stands): MugSocket on the right hand's
+# bone, where the mug's Grip goes (the game: the mug GLB under MugSocket with Grip.transform.affine_inverse()); its
+# own scale draws the mug bigger in first person, as CrystalSocket's does the crystal (the same 1.3): at true size
+# the handle's opening (2.1 x 9 cm) is narrower than this hand's fingers
+glb = "assets/prop/mug/export/mug.glb"
+bone = "RightHand"
+scale = 1.3
+
+[mug.shapes]
+# fit_mug's quick stand-in of the mug in its own glTF space (m, unscaled), read off the GLB: the glass a cylinder
+# (radius 0.0455, 0.1515 tall), the handle's upright bar (x 0.066-0.081, z +-0.008) and its two arms as capsules
+body = { r = 0.0455, h = 0.1515 }
+capsules = [
+  { a = [0.0735, 0.045, 0.0], b = [0.0745, 0.115, 0.0], r = 0.0072 },
+  { a = [0.044, 0.030, 0.0], b = [0.0735, 0.045, 0.0], r = 0.0072 },
+  { a = [0.044, 0.135, 0.0], b = [0.0745, 0.115, 0.0], r = 0.0072 },
+]
+
+[mug.fit]
+# fit_mug's search: the wrist in MugSocket's space (m: x along the fingers, so the wrist behind the bar is below 0; y
+# toward the mug's axis, so the wrist on the back of the hand's side is below 0; z up the bar; [from, to, step]), its turn about the bar (degrees), the fingers' curl scale and the right
+# fist morph's weight; every `every`-th point of the hand
+# mug1 (the three fingers one curl, x -0.14..-0.06, z +-0.03, around +-20, curl 0.7-1.3): the pick on the edges
+# (around 20, curl 1.3, z 0.035), the middle finger on the handle, the index 5 mm and the ring 12 mm off it; mug2 (a
+# curl per finger, the stand-in only): z -0.05 and around 40 on the edges, each finger 2-3 mm off the mesh
+x = [-0.16, -0.08, 0.01]
+y = [-0.05, 0.01, 0.01]
+z = [-0.08, 0.04, 0.01]
+around = [0.0, 10.0, 20.0, 30.0, 40.0]
+curl = [0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.35]
+fist = [0.0, 0.5, 1.0]
+every = 5
 
 [look]
 # the hands' look in the shots, which the game copies (assets/body/fp_hands/HANDOFF.md): the skin's texture is a

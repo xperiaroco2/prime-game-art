@@ -22,6 +22,9 @@ var _cam: Camera3D
 var _player: AnimationPlayer
 var _arms: MeshInstance3D
 var _socket: Node3D
+var _mug: Node3D      # the M8 beer mug (art#392) under MugSocket, its Grip on the socket; hidden but in the Mug clips
+var _beer: Node3D
+var _msock: Node3D
 var _vcam: Camera3D
 var _fill: DirectionalLight3D
 var _skin: Array = []   # [material, its imported albedo_color] per FPArms surface: the body colour's slot
@@ -118,6 +121,26 @@ func _run() -> void:
 	var look: Dictionary = Crystal.apply(crystal)
 	Crystal.set_charge(look, 1.0)
 	(look["omni"] as OmniLight3D).light_cull_mask &= ~bit   # the crystal's glow lights the world, not the hands
+	var mug_info: Dictionary = {}
+	if _req.has("mug"):   # as the game places it (art#392): the mug GLB under MugSocket, Grip.transform.affine_inverse()
+		_msock = hands.find_child("MugSocket", true, false) as Node3D
+		if _msock == null:
+			_fail("the hands lack MugSocket")
+			return
+		_mug = (load(_req["mug"]) as PackedScene).instantiate() as Node3D
+		_msock.add_child(_mug)
+		var grip: Node3D = _mug.find_child("Grip", true, false) as Node3D
+		_beer = _mug.find_child("Beer", true, false) as Node3D
+		if grip == null or _beer == null:
+			_fail("the mug lacks Grip %s or Beer %s" % [grip, _beer])
+			return
+		_mug.transform = grip.transform.affine_inverse()
+		var names: Array = []
+		for ch: Node in _mug.get_children():
+			names.append(String(ch.name))
+		mug_info = {"socket_parent": _msock.get_parent().get_class(), "socket_scale": _msock.scale.x, "nodes": names,
+			"grip": _xf(grip.transform), "grip_class": grip.get_class()}
+		_show_mug(false)
 	for n: Node in hands.find_children("*", "VisualInstance3D", true, false) + crystal.find_children("*", "VisualInstance3D", true, false):
 		if n is Light3D:
 			continue
@@ -130,7 +153,7 @@ func _run() -> void:
 		await _variants(crystal)
 		quit(0)
 		return
-	var check: Dictionary = {"socket_parent": _socket.get_parent().get_class(), "animations": Array(_player.get_animation_list()), "clips": {}}
+	var check: Dictionary = {"socket_parent": _socket.get_parent().get_class(), "animations": Array(_player.get_animation_list()), "clips": {}, "mug": mug_info}
 	var vp: RID = root.get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp, true)
 	for w: int in 60:  # warm up: shaders compiled and the exposure settled before the first frame is kept
@@ -142,12 +165,15 @@ func _run() -> void:
 			return
 		var anim: Animation = _player.get_animation(name)
 		crystal.visible = bool(c["crystal"])
+		_show_mug(bool(c.get("mug", false)))
 		var info: Dictionary = {"length": anim.length, "loop": anim.loop_mode}
 		_player.play(name)
 		_player.seek(0.0, true)
 		_player.pause()
 		await process_frame
 		info["socket"] = _xf(_vcam.global_transform.affine_inverse() * _socket.global_transform)
+		if _msock != null:
+			info["mug_socket"] = _xf(_vcam.global_transform.affine_inverse() * _msock.global_transform)
 		if c.has("hit") and c["hit"] != null:
 			_player.seek(float(c["hit"]), true)
 			await process_frame
@@ -180,6 +206,7 @@ func _run() -> void:
 		DirAccess.make_dir_recursive_absolute(sdir)
 		for s: Dictionary in _req["stills"]:
 			crystal.visible = bool(s.get("crystal", false))
+			_show_mug(bool(s.get("mug", false)), bool(s.get("beer", true)))
 			_player.play(String(s["clip"]))
 			_player.seek(float(s["t"]), true)
 			_player.pause()
@@ -205,6 +232,7 @@ func _run() -> void:
 	# at each level of the request, for the look question
 	if _req.has("light_levels"):
 		crystal.visible = true
+		_show_mug(false)
 		_player.play("Crystal_Idle")
 		_player.seek(0.0, true)
 		_player.pause()
@@ -233,6 +261,7 @@ func _run() -> void:
 		var keep_xf: Transform3D = _cam.global_transform
 		for c: Dictionary in _req["closeups"]:
 			crystal.visible = bool(c.get("crystal", false))
+			_show_mug(bool(c.get("mug", false)), bool(c.get("beer", true)))
 			_player.play(String(c["clip"]))
 			_player.seek(float(c["t"]), true)
 			_player.pause()
@@ -300,6 +329,7 @@ func _variants(crystal: Node3D) -> void:
 		_look(l)
 		for s: Dictionary in _req["variant_shots"]:
 			crystal.visible = bool(s.get("crystal", false))
+			_show_mug(bool(s.get("mug", false)), bool(s.get("beer", true)))
 			_player.play(String(s["clip"]))
 			_player.seek(float(s["t"]), true)
 			_player.pause()
@@ -323,6 +353,13 @@ func _xf(t: Transform3D) -> Dictionary:
 
 func _v(a: Variant) -> Vector3:
 	return Vector3(float(a[0]), float(a[1]), float(a[2]))
+
+
+## The held mug shown or hidden, with or without its beer (`Beer` hidden: the game's mug_empty).
+func _show_mug(on: bool, beer: bool = true) -> void:
+	if _mug != null:
+		_mug.visible = on
+		_beer.visible = beer
 
 
 func _fail(why: String) -> void:

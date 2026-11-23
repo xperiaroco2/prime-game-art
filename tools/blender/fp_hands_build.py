@@ -44,6 +44,10 @@ BEND_MAX = [20.0]   # [view] bend_max_deg, set by main
 CRYSTAL_SCALE = [1.0]   # [view] crystal_scale, set by main: the held crystal's size in first person
 CAP_Z = [0.30]          # [view] cap_z_m, set by main: the crystal's cap point (the top disc under the loop) above its tip
 CRYSTAL_R_M = 0.065     # the crystal's half-width in the frame's measures (the cap 13.5 cm across flats, unscaled)
+MUG_SCALE = [1.0]       # [mug] scale, set by main: the held mug's first-person size (MugSocket's own scale)
+MUG_PARTS = ("Index", "Middle", "Ring", "Thumb")   # the digits whose contact with the mug's handle is reported
+# glTF's axes (y up, the mug's own) from Blender's (z up) and back: (x, y, z)_blender = C (x, y, z)_gltf
+C_GLTF = Matrix(((1, 0, 0, 0), (0, 0, -1, 0), (0, 1, 0, 0), (0, 0, 0, 1)))
 ASPECT = 16.0 / 9.0     # the shots' frame (1280 x 720)
 THUMB_ROLLS = range(-30, 91, 15)   # fit_hold's thumb search: the thumb's roll about its length
 THUMB_SWINGS = range(-40, 61, 10)  # and its swing toward the palm
@@ -182,11 +186,37 @@ def crystal_matrix(c: dict) -> Matrix:
     return m
 
 
+def mug_frame(m: dict) -> Matrix:
+    """The mug's Grip frame in the view (art#392), as MugSocket's local axes in Blender: x the Grip's x (up x out),
+    y the Grip's -z (from the handle toward the mug's axis, -out), z the Grip's +y (up the handle, the view's up);
+    `grip` the handle's middle in the view, `out` the way the handle points out of the mug (made level)."""
+    up = Vector((0.0, 0.0, 1.0))
+    out = V(m["out"])
+    out = (out - up * out.dot(up)).normalized()
+    g = Matrix((up.cross(out), -out, up)).transposed().to_4x4()
+    g.translation = V(m["grip"])
+    return g
+
+
+# the right hand's frame (columns x, f, n) in MugSocket's space before `around`: the fingers along the Grip's x (the
+# hand's length square to the handle's bar), the back of the hand out (the palm toward the mug), the little finger down
+HAND_IN_MUG = Matrix(((0, 1, 0), (0, 0, -1), (-1, 0, 0)))
+
+
+def hand_in_mug(t, around: float) -> Matrix:
+    """The wrist's frame in MugSocket's space: at t, turned `around` degrees about the handle's bar."""
+    m = (Matrix.Rotation(math.radians(around), 3, "Z") @ HAND_IN_MUG).to_4x4()
+    m.translation = V(t)
+    return m
+
+
 class Poses:
     def __init__(self, cfg: dict, grips: dict):
         self.cfg, self.grips = cfg, grips
         # the held hands' fit (fit_hold): per side the palm's shift out from `r` (m) and each digit's curl scale
         self.fit = {side: {"dr": 0.0, "scale": {}, "turn": None, "roll": 0.0} for side in SIDES}
+        # the mug's fit (fit_mug): the wrist in MugSocket's space, its turn about the bar, the curl scale, the morph
+        self.mug_fit = {"t": None, "around": 0.0, "scale": {}, "fist": None}
 
     def grip(self, name: str, side: str, scale: dict | None = None, turn=None) -> dict:
         g = dict(self.grips[name])
@@ -277,6 +307,15 @@ class Poses:
                 for side in s.home:
                     s.home[side] = home.home[side]
                     s.fore[side] = seat_fore(s.home[side], s.q[side])
+        if "mug" in pose:   # the right hand round the mug's handle (art#392): placed from the mug's Grip frame
+            mf = self.mug_fit
+            hm = pose["hand"]
+            h = mug_frame(pose["mug"]) @ hand_in_mug(mf["t"] or hm["t"], mf["around"] if mf["t"] else hm["around"])
+            s.p["Right"], s.q["Right"] = h.translation.copy(), h.to_quaternion()
+            s.grip["Right"] = self.grip(pose.get("grip_R", "relaxed"), "Right", mf["scale"])
+            if mf["fist"] is not None:
+                s.fist = mf["fist"]
+            s.fore["Right"] = fore_dir(s.q["Right"], pose.get("bend", [0.0, 0.0]))
         if "R" in pose:
             s.p["Right"], s.q["Right"] = self.hand(pose["R"])
             spec = self.resolve(pose["R"])
@@ -370,6 +409,8 @@ class Clip:
         s = self.poses.state(self.spec["pose"])
         sides = SIDES if self.held else ("Right",)
         pivot = s.crystal @ Vector((0, 0, 0.17)) if self.held else s.p["Right"]
+        if "pivot" in self.spec:   # another pose's right wrist (the mug clips sway about the idle's: the left as Idle's)
+            pivot = V(self.poses.resolve(self.spec["pivot"])["p"])
         ph = 2.0 * math.pi * t / self.seconds
         # a pose with the left hand in view too (the static two-hand rest): it moves as the right's mirror
         free_L = not self.held and "L" in self.base
@@ -777,6 +818,216 @@ def pose_now(rig: Rig, s: State) -> None:
     bpy.context.view_layer.update()
 
 
+# ---------------------------------------------------------------------------------- the mug (art#392)
+def glb_grip(path: Path) -> Matrix:
+    """The mug GLB's `Grip` marker's local transform, in glTF's axes (the mug's own: y up, the handle on +x)."""
+    data = path.read_bytes()
+    n = int.from_bytes(data[12:16], "little")
+    node = next(x for x in json.loads(data[20:20 + n])["nodes"] if x.get("name") == "Grip")
+    q = node.get("rotation", [0.0, 0.0, 0.0, 1.0])
+    m = Quaternion((q[3], q[0], q[1], q[2])).to_matrix().to_4x4()
+    m.translation = V(node.get("translation", [0.0, 0.0, 0.0]))
+    return m
+
+
+def mug_socket(arm, rig: Rig, poses: Poses, cfg: dict):
+    """`MugSocket` on the right hand's bone, set where the Grip lands in the mug pose (with [mug] scale: a child of
+    the socket takes it, like CrystalSocket's)."""
+    pose_now(rig, poses.state("mug"))
+    ms = bpy.data.objects.new("MugSocket", None)
+    bpy.context.scene.collection.objects.link(ms)
+    ms.empty_display_type, ms.empty_display_size = "ARROWS", 0.05
+    ms.parent, ms.parent_type, ms.parent_bone = arm, "BONE", cfg["mug"]["bone"]
+    bpy.context.view_layer.update()
+    ms.matrix_parent_inverse = Matrix.Identity(4)
+    ms.matrix_world = mug_frame(cfg["poses"]["mug"]["mug"]) @ Matrix.Scale(MUG_SCALE[0], 4)
+    bpy.context.view_layer.update()
+    return ms
+
+
+def load_mug(path: Path, ms) -> tuple[list, list]:
+    """The mug's GLB under MugSocket as the game places it, its Grip on the socket (`Grip.transform.affine_inverse()`
+    in Godot): every new object and the glass's mesh (`Mug`; the beer and its foam inside it are left out)."""
+    place = C_GLTF @ glb_grip(path).inverted() @ C_GLTF.inverted()
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=str(path))
+    new = [o for o in bpy.data.objects if o not in before]
+    for o in [o for o in new if o.parent is None]:
+        basis = o.matrix_basis.copy()
+        o.parent = ms
+        o.matrix_parent_inverse = Matrix.Identity(4)
+        o.matrix_basis = place @ basis
+    bpy.context.view_layer.update()
+    return new, [o for o in new if o.type == "MESH" and o.name.startswith("Mug")]
+
+
+def hand_parts(body, side: str = "Right") -> list:
+    """Per vertex of the mesh, its part on `side` (the digit's name, `Hand` for the palm, `LowerArm`), or None."""
+    groups = {g.index: g.name for g in body.vertex_groups}
+    out = []
+    for vo in body.data.vertices:
+        best = max(vo.groups, key=lambda g: g.weight, default=None)
+        name = groups[best.group] if best is not None else ""
+        part = name[len(side):] if name.startswith(side) else ""
+        hit = next((f for f in PM.FINGERS if part.startswith(f)), None)
+        out.append(hit or (part if part in ("Hand", "LowerArm") else None))
+    return out
+
+
+def world_points(body, idx) -> list:
+    dg = bpy.context.evaluated_depsgraph_get()
+    ev = body.evaluated_get(dg)
+    me = ev.to_mesh()
+    mw = ev.matrix_world
+    pts = [mw @ me.vertices[i].co for i in idx]
+    ev.to_mesh_clear()
+    return pts
+
+
+def mug_contact(body, solid: "Solid", parts: list) -> dict:
+    """Per digit of MUG_PARTS, the palm (`Hand`) and every part together (`all`): the deepest point inside the
+    mug's glass and the nearest gap, mm, in metres of the view (the socket's scale undone)."""
+    idx = [i for i, p in enumerate(parts) if p is not None]
+    inv = solid.sock.matrix_world.inverted()
+    k = MUG_SCALE[0]
+    res = {p: [0.0, 1e9] for p in MUG_PARTS + ("Hand", "all")}
+    for i, w in zip(idx, world_points(body, idx)):
+        p = inv @ w
+        loc, nrm, _, dist = solid.tree.find_nearest(p)
+        if loc is None:
+            continue
+        inside = (p - loc).dot(nrm) < 0
+        for key in (parts[i], "all"):
+            if key not in res:
+                continue
+            r = res[key]
+            if inside:
+                r[0], r[1] = max(r[0], dist * k), 0.0
+            else:
+                r[1] = min(r[1], dist * k)
+    return {p: {"deepest_inside": round(r[0] * 1000, 1), "nearest_gap": round(r[1] * 1000, 1)} for p, r in res.items()}
+
+
+def mug_sdf(pg, shapes: dict):
+    """The mug's signed distance (m, its own glTF space unscaled) at points pg (N x 3, numpy), from fp_hands.toml
+    [mug.shapes]: the body a cylinder, the handle's bar and arms capsules (the fit's quick stand-in; the reported
+    contact is measured on the mesh)."""
+    import numpy as np
+    b = shapes["body"]
+    rr = np.hypot(pg[:, 0], pg[:, 2])
+    d = np.maximum(rr - b["r"], np.abs(pg[:, 1] - b["h"] / 2) - b["h"] / 2)
+    for c in shapes["capsules"]:
+        a, e = np.array(c["a"]), np.array(c["b"])
+        ab = e - a
+        t = np.clip(((pg - a) @ ab) / (ab @ ab), 0.0, 1.0)
+        d = np.minimum(d, np.linalg.norm(pg - (a + t[:, None] * ab), axis=1) - c["r"])
+    return d
+
+
+def fit_mug(rig: Rig, poses: Poses, body, cfg: dict, parts: list, solid: "Solid") -> dict:
+    """The right hand round the handle (art#392): searches the wrist's place in MugSocket's space, its turn about the
+    bar and the fist morph's weight, and per finger (index, middle, ring) its curl scale ([mug.fit]), for the least
+    cost: no point of the hand inside the mug, each finger touching it with its tip past the bar toward the mug's axis
+    (through the handle, or tucked under it), the palm near the bar. A finger's points move only with its own curl, so
+    each finger takes its best curl at each place. The search runs on a stand-in ([mug.shapes]); a last pass round
+    its pick measures the mug's own mesh (`solid`, in MugSocket's space). Sets poses.mug_fit; returns the pick."""
+    import numpy as np
+    mug, fit = cfg["mug"], cfg["mug"]["fit"]
+    k = MUG_SCALE[0]
+    fingers = ("Index", "Middle", "Ring")
+    to_mug = glb_grip(HERE.parents[1] / mug["glb"]) @ C_GLTF.inverted()
+    A, a0 = np.array(to_mug.to_3x3()), np.array(to_mug.translation)
+    idx = [i for i, p in enumerate(parts) if p is not None][::int(fit.get("every", 3))]
+    lab = np.array([parts[i] for i in idx])
+    gname = {g.index: g.name for g in body.vertex_groups}
+    distal = np.array(["Distal" in gname[max(body.data.vertices[i].groups, key=lambda g: g.weight).group] for i in idx])
+    fm = {f: lab == f for f in fingers}
+    tips = {f: distal[fm[f]] for f in fingers}
+    other = ~np.logical_or.reduce([fm[f] for f in fingers])
+    palm = lab[other] == "Hand"
+    kb = body.data.shape_keys.key_blocks
+    curls = [float(c) for c in fit["curl"]]
+    mid = curls[len(curls) // 2]
+
+    def sdf_stand_in(v):
+        return mug_sdf((A @ (v / k).T).T + a0, mug["shapes"]) * k
+
+    def sdf_mesh(v):
+        out = np.empty(len(v))
+        for i, q in enumerate(v / k):
+            loc, nrm, _, dist = solid.tree.find_nearest(Vector(q))
+            out[i] = 1.0 if loc is None else (-dist if (Vector(q) - loc).dot(nrm) < 0 else dist) * k
+        return out
+
+    sdf = sdf_stand_in
+
+    def evaluate(vr: dict, t) -> tuple:
+        t = np.array(t)
+        sd = sdf(vr[mid][other] + t)
+        pen = max(0.0, -float(sd.min()))
+        cost = 20.0 * max(pen - 0.0005, 0.0) + 0.5 * max(float(sd[palm].min()) - 0.004, 0.0)
+        pick = {}
+        for f in fingers:
+            best_f = None
+            for c in curls:
+                v = vr[c][fm[f]] + t
+                s = sdf(v)
+                pf = max(0.0, -float(s.min()))
+                fc = 20.0 * max(pf - 0.0005, 0.0) + max(float(s.min()), 0.0) + max(0.004 - float(v[tips[f], 1].mean()), 0.0)
+                if best_f is None or fc < best_f[0]:
+                    best_f = (fc, c, pf)
+            cost += best_f[0]
+            pick[f] = best_f[1]
+            pen = max(pen, best_f[2])
+        return cost, pen, pick
+
+    def grid(lo, hi, step):
+        n = int(round((hi - lo) / step))
+        return [lo + step * i for i in range(n + 1)]
+
+    best = None
+    for w in fit["fist"]:
+        vh = {}
+        for c in curls:
+            poses.mug_fit.update(t=None, around=0.0, scale={f: c for f in fingers + ("Little",)}, fist=float(w))
+            s = poses.state("mug")
+            pose_now(rig, s)
+            kb["fist"].value = float(w)
+            bpy.context.view_layer.update()
+            H0 = (Matrix.Translation(s.p["Right"]) @ s.q["Right"].to_matrix().to_4x4()).inverted()
+            vh[c] = np.array([list(H0 @ p) for p in world_points(body, idx)])
+        for ar in fit["around"]:
+            R = np.array((Matrix.Rotation(math.radians(ar), 3, "Z") @ HAND_IN_MUG))
+            vr = {c: v @ R.T for c, v in vh.items()}
+            for x in grid(*fit["x"]):
+                for y in grid(*fit["y"]):
+                    for z in grid(*fit["z"]):
+                        cost, pen, pick = evaluate(vr, (x, y, z))
+                        if best is None or cost < best[0]:
+                            best = (cost, pen, pick, float(w), float(ar), [x, y, z], vr)
+    cost, pen, pick, w, ar, t, vr = best
+    stand_in = round(cost, 5)
+    sdf = sdf_mesh   # the last pass on the mesh itself
+    cost, pen, pick = evaluate(vr, t)
+    fine = float(fit["x"][2]) / 4.0   # a finer pass round the pick
+    t0 = list(t)
+    for dx in range(-2, 3):
+        for dy in range(-2, 3):
+            for dz in range(-2, 3):
+                tt = [t0[0] + dx * fine, t0[1] + dy * fine, t0[2] + dz * fine]
+                cc, pp, pk = evaluate(vr, tt)
+                if cc < cost:
+                    cost, pen, pick, t = cc, pp, pk, tt
+    poses.mug_fit.update(t=[round(v, 4) for v in t], around=ar, scale={**pick, "Little": 1.0}, fist=w)
+    kb["fist"].value = 0.0
+    edges = [f"{n} {v:g} on its search's edge" for n, v, rng in
+             (("x", t[0], fit["x"]), ("y", t[1], fit["y"]), ("z", t[2], fit["z"])) if not rng[0] + fine < v < rng[1] - fine]
+    edges += [f"around {ar:g} on its search's edge"] if ar in (min(fit["around"]), max(fit["around"])) else []
+    edges += [f"{f} curl {c:g} on its search's edge" for f, c in pick.items() if c in (curls[0], curls[-1])]
+    return {"wrist_in_socket_m": poses.mug_fit["t"], "around_deg": ar, "curl_scale": pick, "fist": w,
+            "cost": round(cost, 5), "stand_in_cost": stand_in, "inside_mm": round(pen * 1000, 1), "edges": edges}
+
+
 def fit_hold(rig: Rig, poses: Poses, body, solid: Solid, base: str = "crystal", roll_span: float | None = None,
              seat_by: tuple = PALM) -> dict:
     """Seats each held hand on the crystal in the pose `base`: the palm moves out along the back of the hand from
@@ -1148,6 +1399,7 @@ def main(argv) -> None:
     CRYSTAL_SCALE[0] = float(cfg["view"].get("crystal_scale", 1.0))
     CAP_Z[0] = float(cfg["view"].get("cap_z_m", CAP_Z[0]))
     BEND_MAX[0] = float(cfg["view"]["bend_max_deg"])
+    MUG_SCALE[0] = float(cfg.get("mug", {}).get("scale", 1.0))
     fitted = json.loads(FITTED.read_text(encoding="utf-8")) if FITTED.exists() else {}
     for name, fields in fitted.get("poses", {}).items():
         if cfg["poses"].get(name, {}).get("keep"):   # set from the eye in the toml: the old fit never replaces it
@@ -1175,14 +1427,38 @@ def main(argv) -> None:
         hit_grid(out, rig, poses, body, solid, json.loads(Path(a.hit_grid).read_text(encoding="utf-8")), crystal_objs)
         return
     clips, plans, report = {}, {}, {}
+    msock, mug_objs, mug_solid, parts = None, [], None, None
     for name, spec in cfg["clips"].items():
+        holds_mug = "mug" in cfg["poses"][spec["pose"]]
+        if holds_mug and msock is None:   # after the clips before it are keyed: the fit leaves them as they were
+            parts = hand_parts(body)
+            tmp = bpy.data.objects.new("MugFit", None)   # the socket's place before the hand exists to carry it
+            bpy.context.scene.collection.objects.link(tmp)
+            tmp.matrix_world = mug_frame(cfg["poses"]["mug"]["mug"]) @ Matrix.Scale(MUG_SCALE[0], 4)
+            bpy.context.view_layer.update()
+            mug_objs, mug_meshes = load_mug(HERE.parents[1] / cfg["mug"]["glb"], tmp)
+            mug_solid = Solid(mug_meshes, tmp)
+            stats["mug_fit"] = fit_mug(rig, poses, body, cfg, parts, mug_solid)
+            msock = mug_socket(arm, rig, poses, cfg)
+            for o in [o for o in mug_objs if o.parent == tmp]:
+                basis = o.matrix_basis.copy()
+                o.parent = msock
+                o.matrix_parent_inverse = Matrix.Identity(4)
+                o.matrix_basis = basis
+            bpy.data.objects.remove(tmp, do_unlink=True)
+            bpy.context.view_layer.update()
+            mug_solid.sock = msock
+            body.data.shape_keys.key_blocks["fist"].value = poses.mug_fit["fist"]
+            bpy.context.view_layer.update()
+            stats["mug_fit"]["contact_mm"] = mug_contact(body, mug_solid, parts)
+            body.data.shape_keys.key_blocks["fist"].value = 0.0
         clip = Clip(name, spec, poses, run_seconds)
         rig.short = {}
         act, n, fist = key_clip(rig, clip, fps)
         clips[name] = (act, n, fist)
         plans[name] = fist
         report[name] = {"seconds": round(clip.seconds, 4), "frames": n + 1, "loop": clip.loop,
-                        "hit_s": spec.get("hit"), "holds_crystal": clip.held,
+                        "hit_s": spec.get("hit"), "holds_crystal": clip.held, "holds_mug": holds_mug,
                         "out_of_reach_mm": {k: round(max(v, 0.0) * 1000, 1) for k, v in rig.short.items()}}
         if clip.held and clip.keys:   # a held hit's keys as read from the eye (view_reads)
             report[name]["keys_from_eye"] = {f"{t:g}": view_reads(st, float(cfg["rig"]["reach_m"]))
@@ -1194,6 +1470,14 @@ def main(argv) -> None:
         bpy.context.view_layer.update()
         socket[name] = [round(x, 5) for x in sock.matrix_world.translation]
     stats["socket_in_view"] = socket
+    if msock is not None:   # MugSocket per mug clip at its first frame, as CrystalSocket's
+        mugs = {}
+        for name, (act, n, fist) in clips.items():
+            if report[name]["holds_mug"]:
+                set_frame(arm, act, 0)
+                bpy.context.view_layer.update()
+                mugs[name] = [round(x, 5) for x in msock.matrix_world.translation]
+        stats["mug_socket_in_view"] = mugs
     for name, (act, n, fist) in clips.items():
         worst = {s: [0.0, 1e9] for s in SIDES}
         step = max(1, n // 30)
@@ -1204,11 +1488,17 @@ def main(argv) -> None:
                 for s in SIDES:
                     deep, gap = contact(body, solid, s)
                     worst[s] = [max(worst[s][0], deep), min(worst[s][1], gap)]
+            if report[name]["holds_mug"]:
+                for part, r in mug_contact(body, mug_solid, parts).items():
+                    w = report[name].setdefault("mug_contact_mm", {}).setdefault(part, {"deepest_inside": 0.0,
+                                                                                         "nearest_gap": 0.0})
+                    w["deepest_inside"] = max(w["deepest_inside"], r["deepest_inside"])
+                    w["nearest_gap"] = max(w["nearest_gap"], r["nearest_gap"])   # the worst frame's gap
         if name in held:
             report[name]["crystal_contact_mm"] = {s: {"deepest_inside": worst[s][0], "nearest_gap": worst[s][1]} for s in SIDES}
     if a.preview:
         preview(out, arm, body, clips, crystal_objs, held)
-    for o in crystal_objs:
+    for o in crystal_objs + mug_objs:
         bpy.data.objects.remove(o, do_unlink=True)
     for o in list(bpy.data.objects):
         if o.type == "CAMERA":
@@ -1219,7 +1509,7 @@ def main(argv) -> None:
     arm.animation_data.action = clips["Idle_Loop"][0]
     sc.frame_set(0)
     bpy.ops.object.select_all(action="DESELECT")
-    for o in [x for x in (arm, body, top, sock) if x is not None]:
+    for o in [x for x in (arm, body, top, sock, msock) if x is not None]:
         o.select_set(True)
     for _ in range(3):  # the character's unused head maps, actions and meshes: the .blend keeps only the hands
         bpy.data.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=True)
