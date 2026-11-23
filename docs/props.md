@@ -940,7 +940,7 @@ with a dark screen in a cyan line, the night Earth on the playfield; the hall's 
    review (prime-game d643623a; Gate 1 had 1.6 m on a line 55 degrees down), its pitch 37 rather than the greybox's 42
    because the cabinet's screen stands higher over the table than the greybox's `Display`, so at 42 its top line left
    the frame. The top rails have two looks (`[body] rails`, the build's `--rails`): `copper` (Gate 3 step 2) and
-   `dark` (the concept's: the dark rail with a copper strip `rail_edge` wide along each top edge); the engineer picks. In the lobby the cabinet's origin (the floor
+   `dark` (the concept's: the dark rail with a copper strip `rail_edge` wide along each top edge); the engineer picked `dark` (2026-11-24), the default since. In the lobby the cabinet's origin (the floor
    under the footprint's middle) stands at (18, 0, 3.44): its front 40 cm from the greybox's `PinballSpot` (18, 0,
    2.2). `tools/blender/pinball_drawing.py` draws the front, side and top in cm from the model's own feature edges
    (`features.json`) with the spec's dimensions: `drawing.svg` on paper, `drawing_model.svg` over the model's
@@ -988,7 +988,9 @@ with a dark screen in a cyan line, the night Earth on the playfield; the hall's 
 5. **The driver**: `$PYTHON_BIN tools/blender/pinball_run.py [--tag v2] [--no-build] [--no-shots] [--no-video]` runs
    the build, glTF-Validator on both GLBs, the drawing, the clearances in the hall (the east wall, its pilasters, door
    D2: `clearances.json`), the shots and the video into `<raw>/lobby/pinball/<tag>/`. Background only (about 10
-   minutes with the hall's first import).
+   minutes with the hall's first import). `--asset assets/prop/pinball [--approved LOGIN,DATE,PR]` then writes the package from the
+   build: `export/` (both GLBs), `source/pinball.blend`, `report.json` (triangles, markers, sizes, validator,
+   clearances) and `manifest.toml`; `HANDOFF.md` is written by hand (the package of 2026-11-24: tag `v4`).
    The inputs were lost with D: (2026-11-18); for the rebuild of 2026-11-23 the hall's pieces were rebuilt
    (`lobby --build`), NASA's three maps downloaded again from NASA's own `assets.science.nasa.gov` (the Black Marble
    and the December topography with the record's hashes), the concept and the game's contract copied back into

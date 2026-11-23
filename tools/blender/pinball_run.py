@@ -13,13 +13,17 @@
 6. the MP4 (10 s, 1280x720) from the CloseUp camera: the flippers at the contract's swing and speed, a ball on a
    scripted path; frames from the off-screen window, encoded by the ship's ship_video.py in headless Blender; every
    30th frame and the flicks' frames (KEY_S) are kept.
-Everything goes under <raw>/lobby/pinball/<tag>/.
+Everything goes under <raw>/lobby/pinball/<tag>/. --asset DIR then writes the asset folder (assets/prop/pinball):
+export/ (both GLBs), source/ (the .blend), report.json and manifest.toml (HANDOFF.md is written by hand);
+--approved LOGIN,DATE,PR fills the manifest's approval.
 
-    $PYTHON_BIN tools/blender/pinball_run.py [--tag v1] [--no-build] [--no-shots] [--no-video]
+    $PYTHON_BIN tools/blender/pinball_run.py [--tag v1] [--no-build] [--no-shots] [--no-video] [--asset DIR]
 """
 from __future__ import annotations
 
 import argparse
+import datetime
+import hashlib
 import json
 import shutil
 import sys
@@ -123,6 +127,8 @@ def main() -> int:
     ap.add_argument("--no-shots", action="store_true")
     ap.add_argument("--no-video", action="store_true")
     ap.add_argument("--px", type=int, default=4, help="the orthographic renders' pixels per cm")
+    ap.add_argument("--asset", type=Path, help="write the asset folder here from the build (assets/prop/pinball)")
+    ap.add_argument("--approved", help="LOGIN,DATE,PR_URL: the manifest's approval")
     args = ap.parse_args()
     out = BASE / args.tag
     out.mkdir(parents=True, exist_ok=True)
@@ -160,7 +166,90 @@ def main() -> int:
                 if int(f.stem) % 30 and int(f.stem) not in {round(k * VIDEO["fps"]) for k in KEY_S}:
                     f.unlink()
         print(f"godot video: exit {code}", flush=True)
+    if args.asset and ok and code == 0:
+        approved = args.approved.split(",", 2) if args.approved else None
+        write_asset(args.asset, out, args.tag, approved)
+        print(f"asset: {args.asset.as_posix()}", flush=True)
     return 0 if ok and code == 0 else 1
+
+
+def sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def write_asset(asset: Path, out: Path, tag: str, approved: list | None = None) -> None:
+    """The asset folder from the build in out: export/ (both GLBs), source/ (the .blend), report.json, manifest.toml."""
+    asset = asset if asset.is_absolute() else ROOT / asset
+    (asset / "export").mkdir(parents=True, exist_ok=True)
+    (asset / "source").mkdir(parents=True, exist_ok=True)
+    for g in GLBS:
+        shutil.copyfile(out / f"{g}.glb", asset / "export" / f"{g}.glb")
+    shutil.copyfile(out / "pinball.blend", asset / "source" / "pinball.blend")
+    build = json.loads((out / "build.json").read_text(encoding="utf-8"))
+    clear = json.loads((out / "clearances.json").read_text(encoding="utf-8"))
+    validator = {}
+    for g in GLBS:
+        issues = json.loads((out / f"{g}.validator.json").read_text(encoding="utf-8")).get("issues", {})
+        validator[g] = {k: issues.get(k, 0) for k in ("numErrors", "numWarnings", "numInfos", "numHints")}
+    cab, table = build["cabinet"], build["table"]
+    report = {
+        "asset": "pinball",
+        "built_by": f"tools/blender/pinball_run.py --tag {tag} --asset {asset.relative_to(ROOT).as_posix()}",
+        "cabinet": {"triangles": cab["triangles"], "triangles_by_material": cab["triangles_by_material"],
+                    "triangles_by_part": cab["triangles_by_part"], "bounds_cm": cab["bounds_cm"],
+                    "origin": "the floor under the footprint's middle", "player_side": "-Z",
+                    "rails": DIMS["body"]["rails"]},
+        "table": {"triangles": table["triangles"], "nodes": sorted(table["nodes"]), "playfield_cm": table["playfield_cm"]},
+        "markers": build["markers"],
+        "measured": build["measured"],
+        "lobby_placement_m": [18.0, 0.0, 3.44],
+        "clearances_m": clear,
+        "gltf_validator": validator,
+        "review": f"<raw>/lobby/pinball/{tag}/",
+    }
+    (asset / "report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8", newline="\n")
+    raws = ["lobby/pinball/ref/concept_p2.png", f"lobby/pinball/{tag}/pinball.glb", f"lobby/pinball/{tag}/pinball_table.glb",
+            f"lobby/pinball/{tag}/pinball.blend", "lobby/hall/v11/earth/earth_night_cap.jpg"]
+    today = datetime.date.today().isoformat()
+    lines = [
+        "# The lobby's pinball machine (art #374).",
+        f"# Built by tools/blender/pinball_run.py --tag {tag} --asset {asset.relative_to(ROOT).as_posix()}; a rebuild",
+        "# changes the hashes below.",
+        'id = "pinball"',
+        'kind = "prop"',
+        'slot = ""',
+        "title = \"The lobby's pinball machine\"",
+        ("notes = \"The lobby's playable pinball machine for prime-game's table contract (scenes/pinball/"
+         "pinball_table.tscn, PinballTableSpec): export/pinball.glb, the cabinet as one mesh of "
+         f"{cab['triangles']:,} triangles with the markers TableMount, CloseUp and Display, origin on the floor under "
+         "its middle, the player on -Z; export/pinball_table.glb, the table's art in the contract's frame, one mesh "
+         f"per contract body ({table['triangles']:,} triangles). Built from code in headless Blender "
+         "(tools/blender/pinball_build.py) from its drawing tools/blender/pinball_dims.toml, fitted to the concept "
+         "lobby/pinball/ref/concept_p2.png (our own OpenAI generation, used only as a reference: no part of the model "
+         "was generated); the dark rails with copper edges are the engineer's pick. The playfield and side art are "
+         "cut from NASA's Black Marble (sources/nasa_earth_lobby.toml).\""),
+        'tools = ["blender 5.2.2", "prime-game-art pinball_build.py, pinball_art.py, pinball_run.py", '
+        '"glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (shots)"]',
+        'licence = "own-work"',
+        'licence_url = "https://github.com/xperiaroco2/prime-game"',
+        'credit = "Earth imagery: NASA"',
+        "public_repo_ok = true",
+        "ai_generated = false",
+        f'approved_by = ["{approved[0]}"]' if approved else "approved_by = []",
+        f"approved_at = {approved[1]}" if approved else 'approved_at = ""',
+        f'approval_pr = "{approved[2]}"' if approved else 'approval_pr = ""',
+        "",
+        "[source]",
+        'service = "own"',
+        'plan = "own-work"',
+        'model_version = ""',
+        "task_ids = []",
+        f"generated_at = {today}",
+        'url = "https://github.com/xperiaroco2/prime-game-art/issues/374"',
+    ]
+    for rel in raws:
+        lines += ["", "[[raw]]", f'file = "{rel}"', f'sha256 = "{sha256(RAW / rel)}"']
+    (asset / "manifest.toml").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
 if __name__ == "__main__":
