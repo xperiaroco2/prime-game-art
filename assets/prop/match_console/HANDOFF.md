@@ -1,6 +1,6 @@
 # The lobby's match console: handoff to the game (art#391)
 
-Built from code (`tools/blender/lobby_furniture_build.py --piece match_console` from its drawing `tools/blender/match_console_dims.toml`), build `v6`, packed unchanged. Not approved yet.
+Built from code (`tools/blender/lobby_furniture_build.py --piece match_console` from its drawing `tools/blender/match_console_dims.toml`), build `v6`, packed unchanged. Approved by xperiaroco2 on 2026-11-23 (https://github.com/xperiaroco2/prime-game-art/pull/406).
 
 ## Files
 

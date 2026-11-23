@@ -1,6 +1,6 @@
 # The lobby's mirror: handoff to the game (art#390)
 
-Built from code (`tools/blender/lobby_furniture_build.py --piece mirror` from its drawing `tools/blender/mirror_dims.toml`), build `v6`, packed unchanged. Not approved yet.
+Built from code (`tools/blender/lobby_furniture_build.py --piece mirror` from its drawing `tools/blender/mirror_dims.toml`), build `v6`, packed unchanged. Approved by xperiaroco2 on 2026-11-23 (https://github.com/xperiaroco2/prime-game-art/pull/406).
 
 ## Files
 

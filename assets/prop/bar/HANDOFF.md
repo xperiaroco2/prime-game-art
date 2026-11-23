@@ -1,6 +1,6 @@
 # The lobby's bar: handoff to the game (art#389)
 
-Built from code (`tools/blender/lobby_furniture_build.py --piece bar` from its drawing `tools/blender/bar_dims.toml`), build `v6`, packed unchanged. Not approved yet.
+Built from code (`tools/blender/lobby_furniture_build.py --piece bar` from its drawing `tools/blender/bar_dims.toml`), build `v6`, packed unchanged. Approved by xperiaroco2 on 2026-11-23 (https://github.com/xperiaroco2/prime-game-art/pull/406).
 
 ## Files
 
