@@ -1,6 +1,6 @@
 {
   "asset": "start_console",
-  "built_by": "tools/blender/console_run.py --tag holo-v8 --asset assets/prop/start_console",
+  "built_by": "tools/blender/console_run.py --tag steel --asset assets/prop/start_console",
   "mesh": {
     "triangles": 71746,
     "vertices": 42486,
@@ -290,10 +290,10 @@
   },
   "godot_cost": {
     "draw_calls_console": 13,
-    "gpu_ms_console": 0.134,
-    "gpu_ms_with": 0.667,
-    "gpu_ms_without": 0.533,
+    "gpu_ms_console": -0.397,
+    "gpu_ms_with": 2.967,
+    "gpu_ms_without": 3.364,
     "view": "1280x720, eye 1.6 m, 2.1 m away"
   },
-  "review": "<raw>/start-console/holo-v8/godot/sheet.png"
+  "review": "<raw>/start-console/steel/godot/sheet.png"
 }
