@@ -1061,7 +1061,7 @@ narrow close-ups, the nose and the ramp's lamps) are `<raw>/ship/v4/fix2/views.j
 `<raw>/ship/v4/fix2/mkviews.py`.
 
 ## Station 1: the throat vents (step 2, 2026-10-23)
-**No bronze since 2026-11-23** (the engineer: cold steel, no copper or bronze; he approved the steel shots the same day, "Так", PR #402): `ship_vent_b.py`'s body, panel tone, chamfers, recesses, blade undersides and hinge caps are steels (the names `vent_b_bronze`, `vent_b_copper` kept), and the calm seams `vent_anim.gd` `SEAM_DARK` a dark steel. The bronze below is the history. The vents are not in the ship's layout or package today; their steel build is `<raw>/ship/v6/vents-steel/steel/`, the bronze one beside it in `bronze-before/` (the v4 raw folder was lost with `D:`).
+**No bronze since 2026-11-23** (the engineer: cold steel, no copper or bronze; he approved the steel shots the same day, "Так", PR #402): `ship_vent_b.py`'s body, panel tone, chamfers, recesses, blade undersides and hinge caps are steels (the names `vent_b_bronze`, `vent_b_copper` kept), and the calm seams `vent_anim.gd` `SEAM_DARK` a dark steel. The bronze below is the history. The vents are not in the ship's layout or package today; their steel build is `<raw>/ship/v6/vents-steel/steel/`, the bronze one beside it in `bronze-before/` (the v4 raw folder was lost with `D:`). **The rest, 2026-11-23** (the engineer's yes the same day, art#263): the lens rooms' and the workshop's metal, `ship.gd` `LENS_BRONZE` (`lens_bronze` the steel sRGB (0.547, 0.575, 0.593), `lens_bronze2` and `ws_bronze` the darker steel (0.496, 0.522, 0.542), `lens_edge` the bright worn steel (0.854, 0.876, 0.896), `ws_bronze2` a dark steel-graphite (0.22, 0.235, 0.25), all metallic 0.85 to 0.9, the roughness kept) and the same colours as the GLBs' fallback in `ship_interior_lens.py` and `ship_interior_workshop.py`; the names kept, the game's surfaces find them. `ws_olive`, the fronts' raised panels, stays a matte olive green paint (not a metal). The 23 pieces with those materials were rebuilt into a copy of the pieces, `<raw>/ship/v5/steel/pieces/` (`ship --build --only ... --out`; `v5/pieces` untouched), and the package v12 written from it (`ship --out <raw>/ship/v5/steel/pieces --export <raw>/ship/v5/export/v12`). The crystal socket, breaker board and crystal charger turned steel the same day (`docs/props.md`). Before and after: `<raw>/ship/v5/shots/bronze-before/` and `steel/` (the views `tools/out/steel2/views.json` of the PR, also in each folder's `views.json` when written).
 The first station (art #263, the design session's item 1, comment 6361476098): `station_vent_e` and `station_vent_w`
 (`tools/blender/ship_interior_vent.py`, interior lane pieces placed by `ship_interior_place.py`, so `interior.toml`
 lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`pieces/`, `motion/`, `shots/`,
@@ -1506,7 +1506,7 @@ built from the design's cm drawing (prime-game-design `ideas/ship-components/len
 `tools/tests/test_ship_lens.py`. (History, step 1's plan: the charger unit itself, a faceted pedestal under the
 unchanged head, came in step 2: `assets/prop/crystal_charger`, `tools/blender/charger_*.py`.)
 
-The bronze (jambs, conduits, sofa, table, lamp, plant pot) is the stations' shared bronze: `lens_bronze`,
+The metal (jambs, conduits, sofa, table, lamp, plant pot; bronze until 2026-11-23, cold steel since: "Station 1"'s note) is the stations' shared metal: `lens_bronze`,
 `lens_bronze2` and `lens_edge` in `ship_interior_lens.py`, which `godot/ship/ship.gd` swaps by name (`LENS_BRONZE`)
 for `godot/console/console_metal.gdshader`. (Built on the gills branch with its `gill_*` materials; those were
 rejected, and the lens rooms came to `main` with the same values under their own names.) `ship --export` ships
@@ -1729,7 +1729,7 @@ point [x, y, h], `godot/ship/ship.gd`), a little omni in each open drawer (range
 (their cyan boards; omnis there washed the shells' insides green).
 The strips, pulls, rims, the drawers' liners, the lamp's lens and the sleepers' eye arcs are `ws_green__*` glows
 (`[light.mats]`, `l` 0: they light nothing); the eyes' and the bays' cyan `ws_cyan__*`, the eye's highlight
-`ws_glint`. The cabinetry's dark olive bronze `ws_bronze` and its near-graphite second tone `ws_bronze2` are the
+`ws_glint`. The cabinetry's `ws_bronze` (a dark olive bronze until 2026-11-23, the darker cold steel since) and its second tone `ws_bronze2` (a dark steel-graphite since) are the
 stations' bronze shader with darker colours (`ship.gd` `LENS_BRONZE`; step 1's lens bronze read orange plastic under
 the floor lights).
 

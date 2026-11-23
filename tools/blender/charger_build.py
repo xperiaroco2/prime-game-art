@@ -892,9 +892,11 @@ def emissive(name: str, colour, strength: float):
 
 
 def build_materials() -> None:
-    MATS["charger_bronze"] = metal_material("charger_bronze", (0.56, 0.27, 0.10, 1.0), (1.0, 0.70, 0.40, 1.0), 0.28, 1.0)
-    # step 3: the pedestal's plates a darker, rougher bronze (the bright one read hot orange under the lens lamp)
-    MATS["charger_bronze2"] = metal_material("charger_bronze2", (0.34, 0.17, 0.07, 1.0), (0.62, 0.42, 0.24, 1.0), 0.4,
+    # cold steel since 2026-11-23 (art#263: no copper or bronze; the names kept for the game's look); was the bronze
+    # 0.56/0.27/0.10 worn 1.0/0.70/0.40 and the plates' 0.34/0.17/0.07 worn 0.62/0.42/0.24
+    MATS["charger_bronze"] = metal_material("charger_bronze", (0.26, 0.29, 0.31, 1.0), (0.70, 0.74, 0.78, 1.0), 0.28, 1.0)
+    # step 3: the pedestal's plates a darker, rougher metal (now the darker steel)
+    MATS["charger_bronze2"] = metal_material("charger_bronze2", (0.21, 0.235, 0.255, 1.0), (0.55, 0.58, 0.62, 1.0), 0.4,
                                              0.9)
     MATS["charger_graphite"] = metal_material("charger_graphite", (0.06, 0.062, 0.07, 1.0), (0.36, 0.35, 0.34, 1.0),
                                               0.38, 0.85)
@@ -1148,8 +1150,8 @@ def open_edges(ob) -> int:
 
 # --- export --------------------------------------------------------------------------------------------------------
 PLAIN = {
-    "charger_bronze": dict(base=(0.50, 0.30, 0.15, 1.0), metallic=1.0, rough=0.3),
-    "charger_bronze2": dict(base=(0.26, 0.15, 0.07, 1.0), metallic=0.9, rough=0.42),
+    "charger_bronze": dict(base=(0.26, 0.29, 0.31, 1.0), metallic=1.0, rough=0.3),     # cold steel (2026-11-23)
+    "charger_bronze2": dict(base=(0.21, 0.235, 0.255, 1.0), metallic=0.9, rough=0.42),  # the darker steel
     "charger_graphite": dict(base=(0.07, 0.072, 0.08, 1.0), metallic=0.85, rough=0.38),
     "charger_steel": dict(base=(0.55, 0.57, 0.6, 1.0), metallic=1.0, rough=0.18),
     "charger_amber": dict(base=(0.05, 0.03, 0.01, 1.0), metallic=0.0, rough=0.25, emit=AMBER[:3], strength=5.0),

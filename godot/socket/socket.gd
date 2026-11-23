@@ -20,13 +20,16 @@ const BAY := preload("socket_bay.gdshader")
 const CYAN := Color(0.0, 0.62, 1.0)
 const AMBER := Color(1.0, 0.5, 0.0)   # socket-3: sRGB; red-heavy reads pink, bright reads cream under AgX (step 2: peach)
 const RED := Color(1.0, 0.05, 0.02)
-const BRONZE := Color(0.5, 0.38, 0.24)        # sRGB: socket-3 a warmer, darker gold (b5: (0.56, 0.46, 0.32))
-const BRONZE_EDGE := Color(1.0, 0.9, 0.7)
+# the cold steel since 2026-11-23 (art#263, the engineer: no copper or bronze; the hall's, the console's and the
+# crystal's steel, linear (0.26, 0.29, 0.31) and the worn edges (0.70, 0.74, 0.78)); the names kept, the game's look
+# mirrors them. Was the bronze (0.5, 0.38, 0.24) and its edge (1.0, 0.9, 0.7), metallic 0.75.
+const BRONZE := Color(0.547, 0.575, 0.593)        # sRGB
+const BRONZE_EDGE := Color(0.854, 0.876, 0.896)
 ## socket-3: the bronze's finish on the shared metal shader (the board and the charger match these): the faces
 ## lighter or darker by their facing, a broad wave in the normal (gradients and glints; the hammered dent showed its
 ## noise cells as squares, so it is off), more
 ## roughness variation, the broad chamfers worn bright, the worn edges polished
-const BRONZE_FINISH := {"metallic": 0.75, "roughness": 0.3, "wear": 1.4, "lift": 0.08, "mottle": 0.3, "grain": 0.06,
+const BRONZE_FINISH := {"metallic": 0.85, "roughness": 0.3, "wear": 1.4, "lift": 0.08, "mottle": 0.3, "grain": 0.06,
 	"rough_grain": 0.06, "rough_mottle": 0.15, "edge_polish": 0.25, "shade": 0.3, "dent": 0.0, "dent_scale": 45.0,
 	"wave": 0.3, "wave_scale": 8.0}
 const CYAN_ENERGY := 5.0         # socket-3: bright with a bloom (socket-2: 4.0)

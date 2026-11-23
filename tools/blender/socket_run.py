@@ -295,7 +295,7 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
         'kind = "prop"',
         'slot = ""',
         "title = \"The ship's crystal socket\"",
-        ("notes = \"The wall socket that holds one energy crystal, four of them on the ship's hall walls: a bronze and "
+        ("notes = \"The wall socket that holds one energy crystal, four of them on the ship's hall walls: a cold steel and "
          f'graphite frame {size["u"]:.1f} cm wide and {size["h"]:.1f} cm tall with its red problem-lamp, '
          f'{size["d"]:.1f} cm out of the wall, two claws (claw_r, claw_l) holding the built crystal\'s cap that '
          f'open round their hinges, a cyan strip round the bay and amber windows; {build["triangles"]:,} triangles in six surfaces, convex colliders, the '

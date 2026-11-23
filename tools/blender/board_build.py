@@ -533,8 +533,10 @@ def principled(name: str, base, metallic=0.0, rough=0.4, emit=None, strength=0.0
 
 
 def build_materials() -> None:
-    principled("board_bronze", (0.50, 0.30, 0.15), 1.0, 0.32)
-    principled("board_panel", (0.22, 0.12, 0.06), 1.0, 0.36)  # board-3: the darker inner panel behind the shells
+    # cold steel since 2026-11-23 (art#263: no copper or bronze; the names kept for the game's look): was the bronze
+    # 0.50/0.30/0.15 and the panel 0.22/0.12/0.06
+    principled("board_bronze", (0.26, 0.29, 0.31), 1.0, 0.32)
+    principled("board_panel", (0.21, 0.235, 0.255), 1.0, 0.36)  # board-3: the darker inner panel behind the shells
     principled("board_graphite", (0.07, 0.072, 0.08), 0.85, 0.4)
     principled("board_cyan", (0.02, 0.05, 0.06), 0.0, 0.2, CYAN, 6.0)
     principled("board_cable", (0.03, 0.03, 0.032), 0.0, 0.45)

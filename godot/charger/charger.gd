@@ -39,17 +39,19 @@ const STATES := {"idle": [2.4, 2.2, 2.2, 0.0], "charging": [3.2, 2.4, 1.2, 0.5],
 ## the bronze: the crystal socket's step 3 (art#263 socket-3: socket.gd BRONZE and BRONZE_FINISH on the shared
 ## console_metal.gdshader), so the three stations match: a warmer polished copper-bronze, the faces lighter or darker
 ## by their facing, a broad wave for glints, the chamfers worn bright
-const BRONZE := Color(0.5, 0.38, 0.24)
-const BRONZE_EDGE := Color(1.0, 0.9, 0.7)
-const BRONZE_FINISH := {"metallic": 0.75, "roughness": 0.3, "wear": 1.4, "lift": 0.08, "mottle": 0.3, "grain": 0.06,
+# the cold steel since 2026-11-23 (art#263: no copper or bronze; socket.gd's), was (0.5, 0.38, 0.24), (1.0, 0.9, 0.7)
+const BRONZE := Color(0.547, 0.575, 0.593)
+const BRONZE_EDGE := Color(0.854, 0.876, 0.896)
+const BRONZE_FINISH := {"metallic": 0.85, "roughness": 0.3, "wear": 1.4, "lift": 0.08, "mottle": 0.3, "grain": 0.06,
 	"rough_grain": 0.06, "rough_mottle": 0.15, "edge_polish": 0.25, "shade": 0.3, "dent": 0.0, "dent_scale": 45.0,
 	"wave": 0.3, "wave_scale": 8.0}
 
 ## lens C step 3 (art#263): the pedestal's plates, the same bronze family a value darker and rougher, so the big flat
 ## faces hold under the lens room's warm lamp (the bright bronze read hot orange there); the deck and head keep BRONZE
 ## step 4: lighter, toward the head's bronze, and the mottle low (0.3 read as brown marble on the big plates)
-const BRONZE2 := Color(0.42, 0.31, 0.2)
-const BRONZE2_FINISH := {"metallic": 0.72, "roughness": 0.4, "wear": 1.0, "lift": 0.04, "mottle": 0.1, "rough_mottle": 0.06,
+# since 2026-11-23 a darker steel of the same family (linear (0.21, 0.235, 0.255); was (0.42, 0.31, 0.2), metallic 0.72)
+const BRONZE2 := Color(0.496, 0.522, 0.542)
+const BRONZE2_FINISH := {"metallic": 0.82, "roughness": 0.4, "wear": 1.0, "lift": 0.04, "mottle": 0.1, "rough_mottle": 0.06,
 	"wave": 0.15}
 
 

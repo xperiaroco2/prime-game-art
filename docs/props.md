@@ -638,6 +638,8 @@ spin-up's ids in UV0, the report's stations against `ship.toml` and `console.gd`
 
 ## A wall station from its drawing: the ship's crystal socket (art#263)
 
+**No bronze since 2026-11-23** (the engineer's yes, art#263: cold steel, no copper or bronze). The frame is cold steel: `socket.gd` `BRONZE`, `BRONZE_EDGE`, `BRONZE_FINISH` and `socket_build.py`'s `socket_bronze`; the steel is the console's and the crystal's: in Godot sRGB (0.547, 0.575, 0.593), the worn edges (0.854, 0.876, 0.896), metallic 0.85 (was 0.75), the rest of the finish kept; in Blender linear (0.26, 0.29, 0.31). The names kept (the game's look finds `socket_bronze` and mirrors the constants: the package's `HANDOFF.md`, "For the game"). Asset from `socket_run.py --tag steel`; the bronze shots in `<raw>/ship/v4/socket/bronze-before/`.
+
 `assets/prop/crystal_socket/`: the wall socket that holds one energy crystal, four of them on the ship's hall walls
 (`layouts/ship/ship.toml` spots `socket_e`, `socket_w`, `socket_fe`, `socket_fw`). The engineer picked the sheet on
 2026-10-25 (prime-game-design `ideas/ship-components/stations-final/socket.jpg`: charged, spent with the lamp lit,
@@ -712,6 +714,8 @@ built cap, the claws' hinge, angle and pull against the drawing and `socket.gd`,
 the claws' nodes and colliders, the report's checks).
 
 ## A station with moving leaves: the ship's breaker board, the shells (art#263)
+
+**No bronze since 2026-11-23** (the engineer's yes, art#263). The board is cold steel (`board.gd` `BRONZE`, `BRONZE_EDGE`, `BRONZE_FINISH`, `board_build.py`'s `board_bronze`; the steel is the console's and the crystal's: in Godot sRGB (0.547, 0.575, 0.593), the worn edges (0.854, 0.876, 0.896), metallic 0.85 (was 0.75), the rest of the finish kept; in Blender linear (0.26, 0.29, 0.31)) and its inner panel a darker steel of the family (`PANEL` sRGB (0.496, 0.522, 0.542), `PANEL_EDGE` (0.76, 0.785, 0.81); `board_panel` linear (0.21, 0.235, 0.255)). The names kept; the game's constants: the package's `HANDOFF.md`, "For the game". Asset from `board_run.py --tag steel`; the bronze shots in `<raw>/ship/v4/board/bronze-before/`.
 
 `assets/prop/breaker_board/`: the board on each corridor's front wall (`breaker_e`, `breaker_w`) where a tripped
 breaker is switched back on by lifting its shell. The engineer picked variant 3, the shells, on 2026-10-25
@@ -791,6 +795,8 @@ breaker is switched back on by lifting its shell. The engineer picked variant 3,
 sweep, the mount and the committed asset.
 
 ## A station from its drawing: the ship's crystal charger (art#263)
+
+**No bronze since 2026-11-23** (the engineer's yes, art#263). The deck, head and antennas are cold steel (`charger.gd` `BRONZE`, `BRONZE_EDGE`, `BRONZE_FINISH`, `charger_build.py`'s `charger_bronze`; the steel is the console's and the crystal's: in Godot sRGB (0.547, 0.575, 0.593), the worn edges (0.854, 0.876, 0.896), metallic 0.85 (was 0.75), the rest of the finish kept; in Blender linear (0.26, 0.29, 0.31)) and the pedestal's plates the darker steel (`BRONZE2` sRGB (0.496, 0.522, 0.542), `BRONZE2_FINISH` metallic 0.82; `charger_bronze2` linear (0.21, 0.235, 0.255), its worn (0.55, 0.58, 0.62)). The names kept; the game's constants: the package's `HANDOFF.md`, "For the game". Asset from `charger_run.py --tag steel` (into `<raw>/ship/v4/charger/steel/`); the bronze shots in `<raw>/ship/v4/charger/bronze-before/`.
 
 `assets/prop/crystal_charger/`: two of them, one on each lens room's aft wall (`layouts/ship/ship.toml`
 `[[stations.spot]]` `renewer_e`, `renewer_w`), where a player recharges a spent energy crystal. The engineer's pick of

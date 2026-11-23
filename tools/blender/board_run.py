@@ -286,7 +286,7 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
         'kind = "prop"',
         'slot = ""',
         "title = \"The ship's breaker board, the shells\"",
-        ("notes = \"The breaker board on each corridor's front wall (breaker_e, breaker_w): an octagonal bronze board "
+        ("notes = \"The breaker board on each corridor's front wall (breaker_e, breaker_w): an octagonal cold steel board "
          f'{build["size_m"][0]:.2f} m wide on a graphite wall plate, four bays left to right red, yellow, green, blue, '
          'in each a glowing crystal core behind an enamel shell on a bottom hinge (four leaves shell_<colour>, their '
          'origin on the hinge axis, local X rotation 0 closed, 110 degrees tripped, each with its convex collider), a '

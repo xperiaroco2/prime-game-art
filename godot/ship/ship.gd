@@ -68,16 +68,20 @@ const METALS: Dictionary = {
 	"ext_seam": [Color(0.035, 0.037, 0.04), 0.6, 0.6, 0.0, 0.0, 0.0, 0.0],
 }
 const METAL_KEYS: Array = ["metallic", "roughness", "grain", "seams", "scratches", "grime"]
-## lens room C (art #263): the alcove's, conduits' and lounge's bronze is the stations' shared bronze, console.gd's
-## `bronze` on console_metal.gdshader (its metallic, roughness, wear and lift); the second tone a little darker, the
+## lens room C (art #263): the alcove's, conduits' and lounge's metal (bronze until 2026-11-23, cold steel since) is
+## the stations' shared metal, console.gd's on console_metal.gdshader (its metallic, roughness, wear and lift); the second tone a little darker, the
 ## edges a glossy bevel. By glTF material name: [base sRGB, metallic, roughness, wear, lift].
 const LENS_BRONZE: Dictionary = {
-	"lens_bronze": [Color(0.64, 0.42, 0.22), 0.70, 0.30, 1.0, 0.06],
-	"lens_bronze2": [Color(0.58, 0.38, 0.20), 0.70, 0.32, 1.0, 0.03],
-	"lens_edge": [Color(0.86, 0.64, 0.40), 0.85, 0.14, 0.6, 0.10],
-	# the workshop's cabinetry (art #263 step 2): a dark olive bronze and its darker second tone
-	"ws_bronze": [Color(0.26, 0.22, 0.14), 0.55, 0.40, 0.8, 0.02],
-	"ws_bronze2": [Color(0.08, 0.15, 0.11), 0.0, 0.75, 0.3, 0.0],
+	# cold steel since 2026-11-23 (art#263, the engineer: no copper or bronze; the stations' steel, sRGB; the names kept,
+	# the game's surfaces find them). Was lens_bronze (0.64, 0.42, 0.22) 0.70, lens_bronze2 (0.58, 0.38, 0.20) 0.70,
+	# lens_edge (0.86, 0.64, 0.40), ws_bronze (0.26, 0.22, 0.14) 0.55, ws_bronze2 (0.08, 0.15, 0.11) 0.0
+	"lens_bronze": [Color(0.547, 0.575, 0.593), 0.85, 0.30, 1.0, 0.06],
+	"lens_bronze2": [Color(0.496, 0.522, 0.542), 0.85, 0.32, 1.0, 0.03],
+	"lens_edge": [Color(0.854, 0.876, 0.896), 0.90, 0.14, 0.6, 0.10],
+	# the workshop's cabinetry (art #263 step 2; a dark olive bronze until 2026-11-23): the darker steel and a dark
+	# steel-graphite second tone
+	"ws_bronze": [Color(0.496, 0.522, 0.542), 0.85, 0.40, 0.8, 0.02],
+	"ws_bronze2": [Color(0.22, 0.235, 0.25), 0.85, 0.75, 0.3, 0.0],
 	# step 4: the fronts' raised panels a dark olive bronze (step 3's ws_bronze on them read warm brown; green enough
 	# to stay olive under the floor lights' orange, matte so they do not mirror the glowing floor, less worn gold)
 	"ws_olive": [Color(0.11, 0.21, 0.14), 0.0, 0.75, 0.3, 0.0],
