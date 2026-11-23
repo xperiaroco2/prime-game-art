@@ -54,7 +54,7 @@ static func apply(root: Node3D) -> Dictionary:
 	# UV0 u 0.5 and 1.0); the vents' family: a dark bronze body, bright edges
 	bronze.set_shader_parameter("base_color", BRONZE)
 	bronze.set_shader_parameter("worn_color", BRONZE_EDGE)
-	for p: String in BRONZE_FINISH:  # metallic 0.75: 0.9 read near-black in the hall (b5)
+	for p: String in BRONZE_FINISH:  # metallic 0.85: the cold steel (#408); 0.9 read near-black in the hall (b5)
 		bronze.set_shader_parameter(p, BRONZE_FINISH[p])
 	var graphite := ShaderMaterial.new()
 	graphite.shader = METAL
