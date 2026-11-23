@@ -61,8 +61,8 @@ bottom_y = -26.0                 # the body's underside (26 cm below the field, 
 rail_y = [10.0, 13.5]            # the copper top rails, over the contract's walls and holding the glass
 rail_in = 30.0                   # the rails' inner edge (x): over the side walls' inner faces
 rail_out = 42.0                  # their outer edge: a 1 cm lip outside the side walls
-rails = "copper"                 # the rails' look: "copper" (Gate 3 step 2) or "dark" (the concept's: teal_dark, a
-                                 # copper strip rail_edge wide along each top edge); the build's --rails overrides it
+rails = "dark"                   # the rails' look: "dark" (the concept's: teal_dark, a copper strip rail_edge wide along each top edge;
+                                 # the engineer's pick of 2026-11-24) or "copper" (Gate 3 step 2); the build's --rails overrides it
 rail_edge = 1.2
 lockdown_z = [65.0, 74.0]        # the copper lockdown bar across the front, at the rails' height
 trim = 1.2                       # the copper trims along the body's edges: width
