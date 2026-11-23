@@ -928,7 +928,7 @@ def fit_mug(rig: Rig, poses: Poses, body, cfg: dict, parts: list, solid: "Solid"
     """The right hand round the handle (art#392): searches the wrist's place in MugSocket's space, its turn about the
     bar and the fist morph's weight, and per finger (index, middle, ring) its curl scale ([mug.fit]), for the least
     cost: no point of the hand inside the mug, each finger touching it with its tip past the bar toward the mug's axis
-    (through the handle, or tucked under it), the palm near the bar. A finger's points move only with its own curl, so
+    (through the handle) and its middle on the bar's straight part ([mug.fit] bar_half_m), the palm near the bar. A finger's points move only with its own curl, so
     each finger takes its best curl at each place. The search runs on a stand-in ([mug.shapes]); a last pass round
     its pick measures the mug's own mesh (`solid`, in MugSocket's space). Sets poses.mug_fit; returns the pick."""
     import numpy as np
@@ -947,6 +947,7 @@ def fit_mug(rig: Rig, poses: Poses, body, cfg: dict, parts: list, solid: "Solid"
     palm = lab[other] == "Hand"
     kb = body.data.shape_keys.key_blocks
     curls = [float(c) for c in fit["curl"]]
+    bar = float(fit["bar_half_m"]) * k   # each finger's middle within this of the Grip up and down the bar
     mid = curls[len(curls) // 2]
 
     def sdf_stand_in(v):
@@ -974,6 +975,7 @@ def fit_mug(rig: Rig, poses: Poses, body, cfg: dict, parts: list, solid: "Solid"
                 s = sdf(v)
                 pf = max(0.0, -float(s.min()))
                 fc = 20.0 * max(pf - 0.0005, 0.0) + max(float(s.min()), 0.0) + max(0.004 - float(v[tips[f], 1].mean()), 0.0)
+                fc += max(abs(float(v[:, 2].mean())) - bar, 0.0)   # on the bar, not its arms or under the glass
                 if best_f is None or fc < best_f[0]:
                     best_f = (fc, c, pf)
             cost += best_f[0]

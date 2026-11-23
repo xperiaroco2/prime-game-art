@@ -260,7 +260,7 @@ crystal = { cap = [49.0, 60.0], dist = 0.50, tilt = -5.0, lean = 60.0, yaw = 0.0
                   # the way the handle points out; `hand`: the wrist in MugSocket's space before fit_mug (which
                   # replaces it); `bend`: the wrist bent toward the little finger, so the forearm comes up from the
                   # frame's bottom. The left fist as in [poses.idle]
-mug = { grip = [0.20, 0.45, -0.15], out = [1.0, -0.25, 0.0] }
+mug = { grip = [0.21, 0.45, -0.115], out = [1.0, -0.25, 0.0] }   # mug3: [0.20, 0.45, -0.15], the hand under the frame
 hand = { t = [-0.10, -0.02, 0.0], around = 0.0 }
 bend = [0.0, -20.0]
 L = { p = [-0.3009, 0.55, -0.2308], f = [0.3225, 0.4834, 0.8138], n = [-0.4327, -0.6894, 0.581], bend = [0.0, 0.0] }
@@ -360,11 +360,14 @@ capsules = [
 # fist morph's weight; every `every`-th point of the hand
 # mug1 (the three fingers one curl, x -0.14..-0.06, z +-0.03, around +-20, curl 0.7-1.3): the pick on the edges
 # (around 20, curl 1.3, z 0.035), the middle finger on the handle, the index 5 mm and the ring 12 mm off it; mug2 (a
-# curl per finger, the stand-in only): z -0.05 and around 40 on the edges, each finger 2-3 mm off the mesh
+# curl per finger, the stand-in only): z -0.05 and around 40 on the edges, each finger 2-3 mm off the mesh; mug3
+# (the mesh's last pass): touching, but the hand slid down round the handle's lower arm under the glass (z -0.045,
+# around 40): each finger now held on the bar, the turn kept within 20 degrees
 x = [-0.16, -0.08, 0.01]
 y = [-0.05, 0.01, 0.01]
-z = [-0.08, 0.04, 0.01]
-around = [0.0, 10.0, 20.0, 30.0, 40.0]
+z = [-0.06, 0.04, 0.01]
+around = [-10.0, 0.0, 10.0, 20.0]
+bar_half_m = 0.035   # the handle's straight bar runs 3.5 cm up and down from the Grip (unscaled)
 curl = [0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.35]
 fist = [0.0, 0.5, 1.0]
 every = 5
