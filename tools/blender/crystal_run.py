@@ -127,7 +127,7 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict, approved: lis
         'slot = ""',
         "title = \"The ship engine's energy crystal\"",
         ("notes = \"The engine's cartridge: "
-         'a faceted energy crystal in a bronze and graphite cap with a hexagonal carry '
+         'a faceted energy crystal in a cold steel and graphite cap with a hexagonal carry '
          f'loop, {size[2]:.3f} m tall, {size[0]:.3f} x {size[1]:.3f} m across the octagonal cap, one mesh of '
          f'{build["triangles"]:,} '
          'triangles in five surfaces (hero class), front +Z, origin at the tip. Two states on one mesh: '

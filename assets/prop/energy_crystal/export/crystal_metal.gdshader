@@ -1,12 +1,13 @@
-// The energy crystal's cap metal, warm bronze or graphite (crystal.gd sets the colours): a fine brushed grain and
+// The energy crystal's cap metal, cold steel or graphite (crystal.gd sets the colours): a fine brushed grain and
 // a broad mottle in model space (the grain stays put when the crystal is carried), and the bright worn edges the
 // stations' concepts show: the build's chamfer faces (UV0 u = 1), broken up a little. No textures.
 shader_type spatial;
 render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley, specular_schlick_ggx;
 
-// sRGB (source_color): the Blender look's linear bronze (0.42, 0.29, 0.17) and worn edge (0.92, 0.74, 0.52)
-uniform vec3 base_color : source_color = vec3(0.68, 0.578, 0.454);
-uniform vec3 worn_color : source_color = vec3(0.965, 0.88, 0.755);
+// sRGB (source_color): the Blender look's linear cold steel (0.26, 0.29, 0.31) and worn edge (0.70, 0.74, 0.78);
+// no bronze since 2026-11-23 (the engineer; was 0.68, 0.578, 0.454 / 0.965, 0.88, 0.755)
+uniform vec3 base_color : source_color = vec3(0.547, 0.575, 0.593);
+uniform vec3 worn_color : source_color = vec3(0.854, 0.876, 0.896);
 uniform float metallic : hint_range(0.0, 1.0) = 1.0;
 uniform float roughness : hint_range(0.0, 1.0) = 0.36;
 uniform float wear : hint_range(0.0, 1.0) = 0.85;
