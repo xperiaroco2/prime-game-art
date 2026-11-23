@@ -1061,6 +1061,7 @@ narrow close-ups, the nose and the ramp's lamps) are `<raw>/ship/v4/fix2/views.j
 `<raw>/ship/v4/fix2/mkviews.py`.
 
 ## Station 1: the throat vents (step 2, 2026-10-23)
+**No bronze since 2026-11-23** (the engineer: cold steel, no copper or bronze; he approved the steel shots the same day, "Так", PR #402): `ship_vent_b.py`'s body, panel tone, chamfers, recesses, blade undersides and hinge caps are steels (the names `vent_b_bronze`, `vent_b_copper` kept), and the calm seams `vent_anim.gd` `SEAM_DARK` a dark steel. The bronze below is the history. The vents are not in the ship's layout or package today; their steel build is `<raw>/ship/v6/vents-steel/steel/`, the bronze one beside it in `bronze-before/` (the v4 raw folder was lost with `D:`).
 The first station (art #263, the design session's item 1, comment 6361476098): `station_vent_e` and `station_vent_w`
 (`tools/blender/ship_interior_vent.py`, interior lane pieces placed by `ship_interior_place.py`, so `interior.toml`
 lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`pieces/`, `motion/`, `shots/`,

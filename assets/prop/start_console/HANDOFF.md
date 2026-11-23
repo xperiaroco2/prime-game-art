@@ -1,6 +1,6 @@
 # The start console: handoff to the game
 
-The ship engine's start console (art#263's stations): a round bronze and graphite pedestal, 1.2 m across and 1.1 m
+The ship engine's start console (art#263's stations): a round cold steel and graphite pedestal, 1.2 m across and 1.1 m
 tall, with the orange start button at hip height (its centre 0.814 m over the floor: the drawing's 0.854, lowered
 4 cm on the engineer's review so its collar clears the joint under the rim), three stage strips on the rim, two cyan
 strips either side of the button, the hologram emitter on top, and over it the hologram of the ship, made from the
@@ -17,7 +17,7 @@ lens wings and #370's round nozzle pods. The fans' centres and axis did not move
 |---|---|
 | `export/start_console.glb` | One mesh, thirteen surfaces by material name; the plain-PBR fallback (idle) |
 | `export/console.gd` | The look: `apply(model)` puts the materials on and adds two small lights; the states |
-| `export/console_metal.gdshader` | Bronze and graphite with the bright chamfered edges (UV0 u) |
+| `export/console_metal.gdshader` | Cold steel (the shader's defaults, since 2026-11-23; the surface keeps its name `console_bronze`) and graphite with the bright chamfered edges (UV0 u) |
 | `export/console_signal.gdshader` | The stage strips and the order lamps (their index in UV0 v) |
 | `export/console_holo.gdshader` | The hologram's lines and shell, the light column and the spin-up's parts (turbines, wiring, ring, countdown): additive, both sides, no depth write |
 | `source/start_console.blend` | The Blender look (node group `console_state`) |

@@ -478,6 +478,8 @@ reads in full from 10 degrees below, mostly its corners from above, where the pl
 
 ## A hero prop from code: the ship engine's energy crystal (art#263)
 
+**No bronze since 2026-11-23** (the engineer, via the director: no copper or bronze, cold steel and teal light lines; art#263). The cap's bronze parts (lip, rim, band, dome, loop) are cold steel: `crystal_build.py` and the default of `godot/crystal/crystal_metal.gdshader`, which `crystal.gd` leaves unset. The material keeps its name `crystal_bronze`, which the game's look finds it by; the steel is the hall's and the pinball's: linear (0.26, 0.29, 0.31), the worn edges (0.70, 0.74, 0.78), in Godot sRGB (0.547, 0.575, 0.593) and (0.854, 0.876, 0.896). The bronze shots stay in `<raw>/energy-crystal/bronze-before/` for the before views.
+
 `assets/prop/energy_crystal/`: the cartridge of the ship's engine (prime-game#1033, the engineer's comment
 6361383461): a faceted energy crystal in a bronze and graphite cap with a hexagonal carry loop. Players pull a spent
 one from its socket, recharge it at a charger and put it back; the sockets and chargers are built later to fit it.
@@ -548,6 +550,8 @@ view, and `sheet.png`, the concept beside Blender's and Godot's views. `tools/te
 checks the committed asset.
 
 ## A station from its drawing: the ship engine's start console (art#263)
+
+**No bronze since 2026-11-23** (the engineer, via the director: no copper or bronze, cold steel and teal light lines; art#263). The plinth, body and rim are cold steel: `console_build.py` and the default `base_color` and `worn_color` of the shared `console_metal.gdshader` (all seven copies, `test_props_metal_shader`). The game's console look keeps the shader's default, so the ship package's copy carries the change into the game; the socket, board and charger set their own colours and do not change. The material keeps its name `console_bronze`, which the game's look finds it by; the steel is the hall's and the pinball's: linear (0.26, 0.29, 0.31), the worn edges (0.70, 0.74, 0.78), in Godot sRGB (0.547, 0.575, 0.593) and (0.854, 0.876, 0.896). The bronze shots stay in `<raw>/start-console/bronze-before/` for the before views.
 
 `assets/prop/start_console/`: the console in the middle of the ship's hall where a player presses the start button
 and, while breakers are tripped, the hologram plays the order to switch them back on, one lamp at a time. The

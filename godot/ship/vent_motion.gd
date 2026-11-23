@@ -162,7 +162,7 @@ func _calm(id: String, calm: bool) -> void:
 			lm.emission_energy_multiplier *= 0.1
 			_dim[id + ":lamp"] = lm
 		lamp.material_override = _dim[id + ":lamp"] if calm else null
-	# step 4: each blade's lit seam strip (`int_halo__vent_seam`) glows with the heat, dark bronze when calm
+	# step 4: each blade's lit seam strip (`int_halo__vent_seam`) glows with the heat, dark steel when calm
 	for k: int in range(1, int(_req["slats"]) + 1):
 		var slat: MeshInstance3D = _leaf(id, "slat%d" % k) as MeshInstance3D
 		for i: int in slat.mesh.get_surface_count():
