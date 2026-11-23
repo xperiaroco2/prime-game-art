@@ -112,6 +112,36 @@ What moved the scores, and what did not:
   foam seem to top out here. The proposed next step is baked glass: Cycles renders the glass's light and refraction
   into textures, and only the beer, the level and the foam stay live in Godot.
 
+## Rounds 12-14: baked glass and an Opus critic (the director's choice, 2026-11-23)
+- **Baked glass** (`tools/blender/mug_lab_bake.py`, `mug_lab_run.py --bake`):
+  - Real refraction depends on the view, so it stays live. Cycles bakes what does not: R the thickness (inside
+    AO, 2.5 cm), G the edges (bevel normal against face normal), B a glossy bake of a drawn studio (an equirect
+    image: a warm ring, a softbox toward the holder, a cold window, a strip).
+  - The three go into one 1024² map on the glass's own UVs, carried in the GLB as its base colour and read by
+    `glass.gdshader`.
+  - Cost: 3-4 minutes of Cycles on the CPU per mug.
+  - Gain: crisp ridges, a thick glass read and a clear base.
+- **Two Opus critics a round**, absolute and pairwise against the last round.
+  - Opus names defects with pixel positions and rarely flip-flops.
+  - Two Opus critics still differ by up to 4 points (27 and 23 on round 13).
+- **Scores** stayed in a band:
+  - round 12: 26 and 26;
+  - round 13: 27 and 23;
+  - round 14: 25 and 27.
+
+  With both models and with baking, the loop plateaued at 25-27 of 45: the technique sets the ceiling, not the judge.
+  The director's rule applies: stop, and put the best mug (round 14, `b35`) to the engineer's own look. From here the
+  rubric is advice.
+- **Still named by both critics:**
+  - the beer reads orange, not a light golden lager, with bubbles like dust;
+  - the empty glass reads as smoked chrome;
+  - the base reads milky;
+  - the head reads bun-like;
+  - the handle is plainer than the concept's.
+- **Budget:** the judged round-14 mug was 10,370 triangles; the build for the game is trimmed to 9,954 (`b36`).
+- **The next technique, if he wants more:** two-layer glass with a separate back-wall pass, and the liquid drawn to its
+  own buffer. That is days of work.
+
 ## Next, for the mug (if the engineer takes pipeline A)
 - A thick wall as in C: the inner wall deeper and the glass edge visible.
 - Foam with larger bubbles and shadowed crevices.

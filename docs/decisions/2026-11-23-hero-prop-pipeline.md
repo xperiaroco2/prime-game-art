@@ -51,10 +51,13 @@ Every hero prop (held items, then weapons) goes through one pipeline, inside the
 6. **Calibration and measurement**: before the loop, a critic scores the approved concept itself, and the rubric is
    fixed until the concept passes. A script measures the concept's colours and values per material
    (`godot/mug_lab/_probe.gd`), and the look is fitted to those numbers before any critic sees it.
-7. **Critic loop**: a fresh Sonnet critic with the rubric (`docs/research/2026-11-23-prop-critic-rubric.md`), the
+7. **Bake what does not depend on the view**: Cycles bakes the thickness, edges and studio light of glass-like
+   materials into one map (`tools/blender/mug_lab_bake.py`); live shaders keep the states and the refraction.
+8. **Critic loop**: two fresh Opus critics a round, scored absolute and pairwise, with the rubric (`docs/research/2026-11-23-prop-critic-rubric.md`), the
    concept and the renders, never the code. From round 2, pairwise against the last round. Measurable items (sizes,
    triangles, levels) go to scripts. At most 5 rounds; a round that scores lower is reverted.
-8. **The engineer's look** (Gate 5) on a private page, with the clip.
+9. **The engineer's look** (Gate 5) on a private page, with the clip. The rubric advises him and does not gate:
+   after 14 rounds the stein plateaued at 25-27 of 45 with every judge and technique tried.
 
 ## Consequences
 - No new tool or service. Meshy stays under the existing standing permission for blockouts and textures of opaque

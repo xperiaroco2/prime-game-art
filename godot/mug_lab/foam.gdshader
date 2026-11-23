@@ -21,7 +21,7 @@ uniform float head_top = 0.182;
 uniform float lump = 0.0036;
 uniform vec3 cream : source_color = vec3(0.94, 0.87, 0.73);   // round 10: measured on the concept's head, 238,205,170 (h 0.09, s 0.3)
 uniform vec3 pressed : source_color = vec3(0.86, 0.72, 0.55);   // seen through the glass under the rim
-uniform vec3 wet : source_color = vec3(0.86, 0.62, 0.30);
+uniform vec3 wet : source_color = vec3(0.9, 0.76, 0.55);
 uniform float glow = 0.03;                         // round 9: a brighter stage made the foam bloom into a halo
 
 varying vec3 obj;
@@ -57,9 +57,9 @@ vec2 profile(float t) {
 	vec2 q0 = vec2(ri, level);
 	vec2 q1 = mix(vec2(ri, top - 0.002), vec2(ri, rim - 0.003), c);
 	vec2 q2 = mix(vec2(ri * 0.985, top), vec2(mix(ri, rim_r, 0.45), rim + 0.0045), c);
-	vec2 q3 = mix(vec2(ri * 0.94, top + 0.0012), vec2(rim_r - 0.0002, rim + 0.0016), c);
-	vec2 q4 = mix(vec2(ri * 0.85, top + 0.0022), vec2(rim_r + 0.0004, rim + 0.0065), c);
-	vec2 q5 = mix(vec2(ri * 0.70, top + 0.0045), vec2(rim_r - 0.0002, rim + d * 0.48), c);
+	vec2 q3 = mix(vec2(ri * 0.94, top + 0.0012), vec2(rim_r * 0.985, rim + 0.0018), c);   // round 13: on the rim, no lid
+	vec2 q4 = mix(vec2(ri * 0.85, top + 0.0022), vec2(rim_r * 0.99, rim + 0.0065), c);
+	vec2 q5 = mix(vec2(ri * 0.70, top + 0.0045), vec2(rim_r * 0.95, rim + d * 0.48), c);
 	vec2 q6 = mix(vec2(ri * 0.48, top + 0.0058), vec2(rim_r * 0.80, rim + d * 0.80), c);
 	vec2 q7 = mix(vec2(ri * 0.24, top + 0.0066), vec2(rim_r * 0.42, rim + d * 0.96), c);
 	vec2 q8 = mix(vec2(0.0, top + 0.007), vec2(0.0, head_top), c);
@@ -91,7 +91,7 @@ float lumps(float a, float t, vec2 p) {
 	float big = vnoise(vec3(q * 1.6, p.y * 45.0 + 3.0));
 	float mid = vnoise(vec3(q * 4.5 + 4.0, p.y * 130.0));
 	float sml = vnoise(vec3(q * 11.0 + 9.0, p.y * 300.0));
-	float on = smoothstep(rim - 0.006, rim + 0.002, p.y) * crown + (1.0 - crown) * smoothstep(0.1, 0.4, t) * 0.6;
+	float on = smoothstep(rim + 0.002, rim + 0.008, p.y) * crown + (1.0 - crown) * smoothstep(0.1, 0.4, t) * 0.2;
 	return lump * (1.0 * big + 0.45 * mid + 0.18 * sml) * on * (1.0 - smoothstep(0.86, 0.99, t));   // none at the pole: one vertex, one angle
 }
 
@@ -107,6 +107,9 @@ vec3 pos(float a, float t) {
 		q.y += 0.0022 * (0.5 + 0.5 * vnoise(vec3(cos(a) * 5.0, sin(a) * 5.0, 3.0)));
 	}
 	q.x = max(q.x, 0.0);
+	// round 14: never outside the glass's rim, and pulled in over the handle (+x), where the critics saw a flap
+	float handle_side = smoothstep(0.6, 1.0, cos(a));
+	q.x = min(q.x, rim_r * (1.0 - 0.05 * handle_side));
 	return vec3(cos(a) * q.x, q.y, sin(a) * q.x);
 }
 
@@ -122,9 +125,9 @@ void vertex() {
 	if (dot(n, outward) < 0.0) {
 		n = -n;
 	}
-	if (t > 0.99) {
-		n = normalize(mix(vec3(0.0, 1.0, 0.0), n, 0.3));
-	}
+	// round 14: toward the pole the profile's own normal, so the fan of the last rings shows no star of creases
+	vec3 base_n = normalize(outward + vec3(0.0, 1e-6, 0.0));
+	n = normalize(mix(n, base_n, smoothstep(0.7, 0.95, t)));
 	VERTEX = p;
 	NORMAL = n;
 	obj = p;
@@ -161,7 +164,7 @@ vec2 worley(vec3 p) {
 void fragment() {
 	// under the rim the foam presses on the glass: bigger, flatter bubbles, a deeper cream
 	float under = 1.0 - smoothstep(rim - 0.004, rim + 0.001, obj.y);
-	float cell = mix(0.0028, 0.0026, under);
+	float cell = mix(0.0013, 0.0018, under);   // round 13: fine micro-bubbles, not plaster cells
 	vec3 p = obj / cell;
 	vec2 w = worley(p);
 	float wall = smoothstep(0.0, mix(0.32, 0.18, under), w.y - w.x);
@@ -193,11 +196,11 @@ void fragment() {
 	float crown_h = smoothstep(rim, rim + (head_top - rim) * 0.9, obj.y);
 	col *= mix(0.74, 1.04, crown_h * crown + (1.0 - crown) * 0.8);
 	float low = 1.0 - smoothstep(level, level + 0.012, obj.y);
-	col = mix(col, vec3(0.62, 0.38, 0.16), low * 0.45 * under);
+	col = mix(col, vec3(0.88, 0.74, 0.54), low * 0.35 * under);   // a light bubbly band into the beer, not a dark ring
 	ALBEDO = col;
 	float sparkle = glint * lens * step(0.6, h33(floor(p)).y);                  // a wet glint on some bubbles
 	EMISSION = col * glow + vec3(1.0, 0.6, 0.15) * wetness * 0.10 + vec3(1.0) * (ringb * 0.25 + glint * lens * 0.2) * under
 			+ vec3(1.0, 0.97, 0.9) * sparkle * 0.35 * (1.0 - under);
-	ROUGHNESS = mix(0.62, 0.3, wetness);
-	SPECULAR = 0.35;
+	ROUGHNESS = mix(0.42, 0.3, wetness);   // a wet sheen
+	SPECULAR = 0.5;
 }

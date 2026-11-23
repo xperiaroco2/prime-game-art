@@ -53,6 +53,12 @@ cannot reach are a flaw in the rubric, not in the build: fix the rubric first. O
 scored 4-5 on every item except style (2: "photoreal, not cartoon"). Generic words like "adult cartoon" made the
 critic mark down the very look the engineer had approved, so item 8 now takes the approved concept as its anchor.
 
+## The critic's model
+Use Opus, two per round. Sonnet critics on the same renders differed by about 3 points and sometimes praised what the
+next critic blamed. Opus names its defects by position and keeps to them, though two Opus critics still differed by up
+to 4 (the stein, rounds 12-14).
+
 ## Stop rule
-Stop when the pass holds in two critics in a row, or after 5 rounds; then the engineer's look (Gate 5). A round that
+Stop when the pass holds in two critics in a row, or after 5 rounds, or when the scores plateau for 3 rounds; then the
+engineer's look (Gate 5), with the rubric as advice. A round that
 scores lower than the one before is reverted, not built on.

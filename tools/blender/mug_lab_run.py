@@ -6,7 +6,7 @@
 4. the first-person drink clip, drink.mp4, from the frames (encode_clips.py in headless Blender).
 Everything goes under <raw>/research/mug-lab/<tag>/.
 
-    $PYTHON_BIN tools/blender/mug_lab_run.py --tag a1 [--glb FILE] [--plain] [--quick] [--no-build]
+    $PYTHON_BIN tools/blender/mug_lab_run.py --tag a1 [--glb FILE] [--plain] [--quick] [--no-build] [--bake]
 """
 from __future__ import annotations
 
@@ -32,6 +32,8 @@ def main() -> int:
     ap.add_argument("--quick", action="store_true", help="the full state only, no drink clip")
     ap.add_argument("--no-build", action="store_true")
     ap.add_argument("--spec", type=Path, default=ROOT / "tools" / "blender" / "mug_lab.toml")
+    ap.add_argument("--bake", action="store_true", help="bake the glass in Cycles (mug_lab_bake.py) before the shots")
+    ap.add_argument("--bake-res", type=int, default=1024)
     args = ap.parse_args()
     out = RAW / "research" / "mug-lab" / args.tag
     out.mkdir(parents=True, exist_ok=True)
@@ -49,6 +51,10 @@ def main() -> int:
             r = blender.run_script("mug_lab_build.py", ["--out", str(out), "--spec", str(args.spec)], timeout=600)
             print(*[x for x in (r.stdout or "").splitlines() if x.startswith("MUG_LAB")][-1:], sep="\n", flush=True)
         levels = json.loads((out / "build.json").read_text(encoding="utf-8"))["levels_cm"]
+        if args.bake:
+            r = blender.run_script("mug_lab_bake.py", ["--blend", str(out / "mug.blend"), "--out", str(out),
+                                                       "--res", str(args.bake_res)], timeout=1500)
+            print(*[x for x in (r.stdout or "").splitlines() if x.startswith("MUG_BAKE")][-1:], flush=True)
     report = _export.validate(glb, out / "mug.validator.json")
     ok, text = _export.verdict(report)
     print(f"validator: {text}", flush=True)
@@ -60,7 +66,7 @@ def main() -> int:
     shots.mkdir()
     code, output = _godot.window(["--path", str(_godot.PROJECT), "-s", "res://mug_lab/shots.gd", "--", res,
                                   str(shots), json.dumps(levels), "plain" if args.plain else "look",
-                                  "quick" if args.quick else "all"], (1280, 720), 600, log=out / "godot_shots.log")
+                                  "quick" if args.quick else "all"], (1280, 720), 1200, log=out / "godot_shots.log")
     print(*[x for x in output.splitlines() if x.startswith("MUGLAB") or "ERROR" in x or "SCRIPT" in x][:40], sep="\n")
     print(f"godot shots: exit {code} {shots}", flush=True)
     drink = shots / "drink"

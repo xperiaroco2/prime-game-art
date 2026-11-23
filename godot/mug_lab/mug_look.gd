@@ -28,10 +28,18 @@ static func apply(model: Node, levels: Dictionary = {}) -> Dictionary:
 	beer.set_shader_parameter("inner_r", look["inner_r"] - 0.0004)
 	var foam := ShaderMaterial.new()
 	foam.shader = FOAM
-	foam.set_shader_parameter("inner_r", look["inner_r"] - 0.0008)
+	foam.set_shader_parameter("inner_r", look["inner_r"] - 0.0002)   # round 13: no gap at the wall
 	foam.set_shader_parameter("rim", look["rim"])
 	foam.set_shader_parameter("rim_r", look["rim_r"])
 	foam.set_shader_parameter("head_top", look["head_top"])
+	# round 12: a glass baked by mug_lab_bake.py carries its map as the imported material's base colour
+	var mug_mi := model.find_child("Mug", true, false) as MeshInstance3D
+	if mug_mi != null:
+		var src := mug_mi.get_active_material(0) as BaseMaterial3D
+		if src != null and src.albedo_texture != null:
+			glass.set_shader_parameter("glass_map", src.albedo_texture)
+			glass.set_shader_parameter("baked", 1.0)
+			look["baked"] = true
 	for pair: Array in [["Mug", glass], ["Liquid", beer], ["Foam", foam]]:
 		var mi := model.find_child(pair[0], true, false) as MeshInstance3D
 		if mi == null:
@@ -74,8 +82,8 @@ static func set_fill(look: Dictionary, f: float) -> void:
 	glass.set_shader_parameter("level", level)
 	# the foam: one volume from the surface (foam.gdshader's profile); full, the column fills the glass to the rim and
 	# the crown domes over it to head_top; the first sip takes the crown, then the layer thins as the level goes down
-	var crown: float = smoothstep(0.86, 1.0, f)
-	var layer: float = lerpf(0.008, 0.014, smoothstep(0.0, 0.7, f))   # the foam stays on to the last sip
+	var crown: float = smoothstep(0.68, 1.0, f)   # round 14: the head settles over the first third of the drink
+	var layer: float = lerpf(0.009, 0.015, f)   # thins steadily with the level, never thicker as it drops
 	var fm: ShaderMaterial = look["foam_mat"]
 	fm.set_shader_parameter("level", level)
 	fm.set_shader_parameter("layer", layer)

@@ -266,7 +266,7 @@ func _stage() -> void:
 	probe.size = Vector3(6.0, 3.0, 5.0)
 	probe.position = Vector3(0.0, BAR_Y + 0.25, 0.0)
 	probe.update_mode = ReflectionProbe.UPDATE_ALWAYS
-	probe.intensity = 1.0
+	probe.intensity = 0.6
 	probe.box_projection = true
 	root.add_child(probe)
 	var wash := OmniLight3D.new()
