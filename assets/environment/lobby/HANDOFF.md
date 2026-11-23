@@ -2,8 +2,9 @@
 
 The lobby's hall of art#356 (a 40 x 40 m hall with a bowed window to the night Earth, a ribbed vault, the entrance
 arch, four sealed doors, art#263's ship docked on a floor ring) as the game's package. Written by
-`tools/run.sh lobby --export <raw>/lobby/hall/v19/export` (2026-11-01, branch feat/lobby-ship-v8-356, steps 5b-5c2,
-follow-up #366 and the ship package v8 (art PR #370, raw `ship/v5/export/v8`);
+`tools/run.sh lobby --export <raw>/lobby/hall/v21/export` (2026-11-23: the hall without copper, cold steel trim, PR
+#400; the light strips R, teal with neutral pendants, PR #404; the ship package v11 with the steel console, PR #402,
+raw `ship/v5/export/v11`; approved by the engineer on 2026-11-23; before it v19 of 2026-11-01 with the ship v8;
 `docs/lobby.md` "The export"); the files and their hashes are in `manifest.toml` and `package.json`, the check's
 numbers in `report.json`. The binaries are not committed here: the package lives in the raw folder until approved (as
 the ship's).
