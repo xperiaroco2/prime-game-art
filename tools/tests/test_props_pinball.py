@@ -125,7 +125,8 @@ class PinballGlbs(unittest.TestCase):
             self.assertIn("baseColorTexture", m["pbrMetallicRoughness"], mat)
             self.assertIn("emissiveTexture", m, mat)
         names = {m["name"] for m in glb_json(BUILD / "pinball.glb")["materials"]}
-        trims = "pinball_steel" if BUILD.name >= "v5" else "pinball_copper"   # v5 on: the trims' metal switch, steel since B
+        tag = int(re.match(r"v(\d+)", BUILD.name).group(1))
+        trims = "pinball_steel" if tag >= 5 else "pinball_copper"   # v5 on: the trims' metal switch, steel since B
         self.assertTrue({"pinball_teal_dark", "pinball_teal_light", trims, "pinball_lens"} <= names, names)
 
     def test_table_nodes(self) -> None:

@@ -12,16 +12,17 @@ come out in Godot's frame. The tilted parts are written in the contract's table 
 
 Two GLBs into --out:
 - pinball.glb: the cabinet as one mesh `pinball` (the body with its rails, lockdown bar, front medallion, side buttons,
-  side panels, legs with copper collars, cyan rings and pads, the backbox with its screen, cyan frame line, medallion,
+  side panels, legs with trim-metal collars, cyan rings and pads, the backbox with its screen, cyan frame line, medallion,
   trims and rivets), and the markers TableMount, CloseUp and Display as empties (the game's greybox markers);
 - pinball_table.glb: in the table frame, one mesh per contract body named as its node (WallLeft, WallRight, WallTop,
   InlaneLeft, InlaneRight, FlipperLeft, FlipperRight, Bumper, Kicker, Target) at the node's transform, the flippers'
   pivots at their origins, plus Playfield (the board) and Glass, and the markers BallStart and Drain.
-Materials (Gate 3): pinball_teal_dark and pinball_teal_light with a roughness break-up texture, pinball_copper,
+Materials (Gate 3): pinball_teal_dark and pinball_teal_light with a roughness break-up texture, pinball_steel (the
+trims' metal, [body] metal: pinball_copper before the engineer's no-copper pick B, 2026-11-23),
 pinball_cyan (emissive), pinball_screen (dark glass), pinball_lens (the medallions' dark lenses), pinball_glass,
 pinball_field and pinball_side_art (the night Earth: pinball_art.py's textures, --earth the night map), pinball_ivory
-(the flippers), pinball_chrome (the domes). Bevels: a chamfer on every edge over 30 degrees, 2 segments (3 on the
-copper). Rivets are flattened domes in rows.
+(the flippers), pinball_chrome (the domes). Bevels: a chamfer on every edge over 30 degrees, 2 segments (3 on
+the trims). Rivets are flattened domes in rows.
 Also build.json (triangles, bounds, the measured numbers), features.json (the model's feature edges for the drawing,
 in the cabinet frame, cm) and renders/ortho_<front|side|top>.png (Workbench, orthographic, --px pixels per cm, framed
 as pinball_drawing.py's views).
