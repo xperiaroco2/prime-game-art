@@ -1000,3 +1000,34 @@ with a dark screen in a cyan line, the night Earth on the playfield; the hall's 
    the pinball's art. `tools/tests/test_props_pinball.py` checks the spec's contract numbers and
    sums, the front's V and, with the raw build present (the newest of v4, v3d, v3, v2, v1; v4 is the package's build), the GLBs' node names, the table
    nodes' transforms and the art's textures.
+
+## The lobby's bar, mirror and match console (art #389, #390, #391)
+
+The engineer picked these concepts on 2026-11-23 (`<raw>/2026-11-22-lobby-bar-mirror-console-concepts/`): bar 2
+`bar2_galley`, mirror 3 `mir3_fins` and console 2 `con2_monolith`. All three are without copper: copper reads as retro
+to him, so the concepts' copper is the hall's cold steel and their light lines are cyan.
+
+- **Gate 1:** each piece has its numbers in cm, in Godot's axes, with the origin on the floor and the player side +z:
+  `tools/blender/bar_dims.toml`, `mirror_dims.toml` and `match_console_dims.toml`. `console_dims.toml` is the ship's
+  start console. The game's greybox wins where it and the concept disagree:
+  - `Bar` is 1 x 1.1 x 6 m, with its `Tap` spot 1.5 m out from the tap;
+  - `Mirror` is 2 x 2.5 m of glass on the west wall, with `MirrorPlace1..3` in front;
+  - `match_console.tscn` is 1.2 x 1.6 x 0.3 m, with `Screen` at (0, 1.15, 0.16).
+- **Gate 2:** `tools/blender/lobby_furniture_build.py --piece bar|mirror|match_console --out DIR` builds each piece
+  from code in headless Blender.
+  - Each piece is one mesh named after it, plus a separate mesh for a surface the game draws on: `MirrorGlass` and
+    `ConsoleScreen`.
+  - The game's markers are empties: `TapSpot` and `TapSpout` on the bar, `Screen` on the console, `MirrorFace` on the
+    mirror.
+- **The driver:** `$PYTHON_BIN tools/blender/lobby_furniture_run.py [--tag vN] [--only ...]` writes everything into
+  `<raw>/lobby/furniture/<tag>/`. It runs:
+  - the builds and glTF-Validator;
+  - the clearances against the hall's walls, the pilasters with their plinths and the doors' openings, failing on a
+    clash;
+  - the shots in the hall: `godot/lobby_furniture/shots.gd` extends `hall.gd` and runs off-screen. Each piece gets a
+    3/4 view, a front view, the player's eye view, close-ups, the hall view and a sheet beside its concept.
+- **The mirror's wall:** the west wall's panels stand 8 to 12 cm proud of `x0`, and the pilaster at z 6 has a plinth
+  out to z 6.5 (measured on `walls.glb`, v20). The mirror's origin is on the panels, and its fins fit within 1.45 m of
+  the glass's middle. The concept's fan is wider than that space allows.
+- **Tests:** `tools/tests/test_lobby_furniture.py` checks the specs against the greybox, that no look is coppery, the
+  placement maths and the clearance check.
