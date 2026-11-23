@@ -1046,5 +1046,6 @@ in `lobby/hall/v21` (`lobby --build`, the accent baked into the GLBs); v20 stays
 reads the ship package v11 since (the start console in steel, art #263, PR #402).
 
 The game's package `assets/environment/lobby/` is `lobby/hall/v21/export` (PR #407, approved 2026-11-23). It stays
-on the ship package v11: v12 (PR #408) changes only the lens rooms' and the workshop's metal, inside the wing tips
-(from the hall seen at most through the tip windows); the lobby moves to v12 with its next `lobby --export`.
+on the ship package v11. v12 (PR #408) changes only the metal of the lens rooms and the workshop inside the hull.
+The hall shows the interior only through the canopies' glass, and the hall's views were not checked for it. The
+lobby moves to v12 with its next `lobby --export`.
