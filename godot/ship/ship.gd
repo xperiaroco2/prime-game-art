@@ -729,7 +729,7 @@ func _shoot() -> void:
 ## {piece: {"slats": t, "show": [suffix], "hide": [suffix], "dim": [suffix], "dark": [suffix]}} and "open_rad": each placed piece's leaves `<piece>_slat<k>`
 ## turned to rotation.x = -open_rad * t, its `<piece>_<suffix>` nodes hidden (the calm glow `cool` for the problem),
 ## dimmed (a lamp's glow at a tenth, calm; "<part>:<material suffix>" one surface) or dark (vents-b3: the glow off and
-## the colour dark bronze, the blades' seams calm, as vent_anim.gd's SEAM_DARK), as the game drives them.
+## the colour dark steel (bronze until 2026-11-23), the blades' seams calm, as vent_anim.gd's SEAM_DARK), as the game drives them.
 func _stations(ship: Node3D) -> void:
 	var states: Dictionary = _req.get("stations", {})
 	for node: Node in ship.get_children():

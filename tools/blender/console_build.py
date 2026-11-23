@@ -1304,7 +1304,9 @@ def blended(mat) -> None:
 
 def build_materials() -> None:
     state_group()
-    MATS["console_bronze"] = metal_material("console_bronze", (0.56, 0.27, 0.10, 1.0), (1.0, 0.70, 0.40, 1.0),
+    # the cold steel since 2026-11-23 (the engineer: no copper or bronze; the hall's and the pinball's steel); the
+    # material keeps its name "console_bronze", the game's look finds it by that name (was 0.56, 0.27, 0.10 / 1.0, 0.70, 0.40)
+    MATS["console_bronze"] = metal_material("console_bronze", (0.26, 0.29, 0.31, 1.0), (0.70, 0.74, 0.78, 1.0),
                                             0.34, 1.0)
     MATS["console_graphite"] = metal_material("console_graphite", (0.06, 0.062, 0.07, 1.0), (0.36, 0.35, 0.34, 1.0),
                                               0.38, 0.85)
@@ -1507,7 +1509,7 @@ def build(pieces: Path) -> bpy.types.Object:
 def plain_materials() -> dict:
     """Plain Principled copies for the GLB's fallback (idle): the exporter reads only plain BSDFs."""
     spec = {
-        "console_bronze": dict(base=(0.50, 0.30, 0.15, 1.0), metallic=1.0, rough=0.3),
+        "console_bronze": dict(base=(0.26, 0.29, 0.31, 1.0), metallic=1.0, rough=0.3),   # the cold steel
         "console_graphite": dict(base=(0.07, 0.072, 0.08, 1.0), metallic=0.85, rough=0.38),
         "console_cyan": dict(base=(0.02, 0.05, 0.06, 1.0), metallic=0.0, rough=0.2, emit=CYAN[:3], strength=6.0),
         "console_button": dict(base=(0.9, 0.25, 0.02, 1.0), metallic=0.0, rough=0.18, emit=ORANGE[:3], strength=4.0),

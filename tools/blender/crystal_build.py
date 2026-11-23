@@ -489,7 +489,9 @@ def metal_material(name: str, base, worn, rough: float, metallic: float) -> bpy.
 
 def build_materials() -> None:
     charge_group()
-    MATS["crystal_bronze"] = metal_material("crystal_bronze", (0.42, 0.29, 0.17, 1.0), (0.92, 0.74, 0.52, 1.0),
+    # the cold steel since 2026-11-23 (the engineer: no copper or bronze); the name "crystal_bronze" kept for the
+    # game's look (was 0.42, 0.29, 0.17 / 0.92, 0.74, 0.52)
+    MATS["crystal_bronze"] = metal_material("crystal_bronze", (0.26, 0.29, 0.31, 1.0), (0.70, 0.74, 0.78, 1.0),
                                             0.36, 1.0)
     MATS["crystal_graphite"] = metal_material("crystal_graphite", (0.075, 0.075, 0.082, 1.0),
                                               (0.42, 0.40, 0.37, 1.0), 0.42, 0.8)
@@ -635,7 +637,7 @@ def plain_materials() -> dict:
         "crystal_shell": dict(base=(0.10, 0.62, 0.92, 0.72), metallic=0.0, rough=0.06, emit=CYAN[:3], strength=1.2,
                               blend=True),
         "crystal_core": dict(base=(0.10, 0.11, 0.12, 1.0), metallic=0.0, rough=0.5, emit=CYAN[:3], strength=4.0),
-        "crystal_bronze": dict(base=(0.50, 0.32, 0.17, 1.0), metallic=1.0, rough=0.36),
+        "crystal_bronze": dict(base=(0.26, 0.29, 0.31, 1.0), metallic=1.0, rough=0.36),   # the cold steel
         "crystal_graphite": dict(base=(0.08, 0.08, 0.088, 1.0), metallic=0.8, rough=0.42),
         "crystal_light": dict(base=(0.02, 0.05, 0.06, 1.0), metallic=0.0, rough=0.2, emit=CYAN[:3], strength=6.0),
     }

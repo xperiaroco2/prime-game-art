@@ -1,4 +1,4 @@
-// The start console's metal, warm bronze or graphite (console.gd sets the colours): a fine brushed grain and a broad
+// The start console's metal, cold steel or graphite (console.gd sets the colours): a fine brushed grain and a broad
 // mottle in model space, and the bright edges the stations' concepts show: the build's chamfer faces (UV0 u = 1),
 // broken up a little. No textures. The stations share it byte for byte (art#263; test_props_metal_shader.py): the
 // start console's export copy, the crystal socket's socket_metal.gdshader, the breaker board's board_metal.gdshader
@@ -7,15 +7,16 @@
 shader_type spatial;
 render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley, specular_schlick_ggx;
 
-// sRGB (source_color): the Blender look's linear bronze (0.56, 0.27, 0.10) and bright edge (1.0, 0.70, 0.40)
-uniform vec3 base_color : source_color = vec3(0.774, 0.556, 0.349);
-uniform vec3 worn_color : source_color = vec3(1.0, 0.854, 0.665);
+// sRGB (source_color): the Blender look's linear cold steel (0.26, 0.29, 0.31) and bright edge (0.70, 0.74, 0.78);
+// no bronze since 2026-11-23 (the engineer: cold steel, no copper or bronze; was 0.774, 0.556, 0.349 / 1.0, 0.854, 0.665)
+uniform vec3 base_color : source_color = vec3(0.547, 0.575, 0.593);
+uniform vec3 worn_color : source_color = vec3(0.854, 0.876, 0.896);
 uniform float metallic : hint_range(0.0, 1.0) = 1.0;
 uniform float roughness : hint_range(0.0, 1.0) = 0.34;
 // the edges' wear: UV0 u (0 flat, 1 the bright bevels) times this; over 1 the broad chamfers wear bright too
 uniform float wear : hint_range(0.0, 2.0) = 0.9;
 // a faint glow of its own colour: the hall lights its middle little (its lamps stand at the wall), and a metal with
-// nothing to mirror reads black there; the concept's bronze stays warm and bright
+// nothing to mirror reads black there; the steel stays bright
 uniform float lift : hint_range(0.0, 0.5) = 0.0;
 // socket-3: the strengths the console had built in (its defaults), now parameters: the colour's broad mottle and
 // brushed grain, the roughness's grain and mottle, and how much smoother (polished) the worn edges are

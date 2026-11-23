@@ -61,7 +61,7 @@ const LAMP_PULSE_HZ := 1.3
 const BAR_CALM := 0.6               # the bar's amber when calm; 1 with the problem
 const BAND_GAIN := 1.6              # the green band brightens by up to this as the marker nears it
 const BAR_PARTS := ["bar", "bar_top"]   # the amber segments (ship_interior_vent.BAR); "bar_hot" is _bar_hot, "band" _band
-const SEAM_DARK := Color(0.16, 0.09, 0.05)   # the blades' seam strips, unlit (calm)
+const SEAM_DARK := Color(0.09, 0.10, 0.11)   # the blades' seam strips, unlit (calm): a dark steel (2026-11-23; was bronze 0.16, 0.09, 0.05)
 
 var vent_id: String = ""
 var problem: bool = false
@@ -319,7 +319,7 @@ func _apply() -> void:
 		(e[0] as BaseMaterial3D).emission_energy_multiplier = float(e[1]) * _flash
 	for e: Array in hl:
 		(e[0] as OmniLight3D).light_energy = float(e[1]) * _flash
-	# the seams glow with the heat, dark bronze when calm
+	# the seams glow with the heat, dark steel when calm
 	for e: Array in _seams:
 		var m: BaseMaterial3D = e[0]
 		m.emission_enabled = heat_mix > 0.01

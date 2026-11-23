@@ -1,8 +1,8 @@
 """The throat vent, way B (art #263 station 1, vents-b1; docs/ship.md "Station 1"): the body and the gill blade built
 in Blender from the concept's views (prime-game-design ideas/ship-components/vent-v2) and the traced numbers of
 art#263 comment 6363433518, with way A's Meshy body only as the to-scale guide. Every shape is a flat-faceted solid
-with crisp 45 deg chamfers (no rounded bevels, no baked texture): the chamfer faces carry a lighter polished bronze
-(`vent_b_edge`), so each edge catches the light as the concept's do.
+with crisp 45 deg chamfers (no rounded bevels, no baked texture): the chamfer faces carry a lighter polished steel
+(`vent_b_edge`; bronze until 2026-11-23), so each edge catches the light as the concept's do.
     blender -b --python ship_vent_b.py -- --out <dir> [--guide <way A body.glb>] [--preview]
 The piece's frame (as ship_interior_vent.py): u along the wall (+u toward the column), v out of the wall, h over the
 deck; Blender (x, y, z) = (u, -v, h), the GLB's origin on the spot.
@@ -94,12 +94,16 @@ OPEN = [(-0.49 + D, OPEN_FLOOR), (0.33 + D, OPEN_FLOOR), (0.388 + D, OPEN_FLOOR 
 MATS = {  # name: (base colour linear, metallic, roughness, emission, strength)
     # vents-b3: a dark patinated bronze (the concept's; b2's 0.15/0.08/0.032 read copper), a second panel tone for
     # the panels' variation, duller chamfers (b2's 0.18 roughness blew white diamonds), an olive tarnish
-    "vent_b_bronze": ((0.085, 0.052, 0.024), 0.78, 0.46, None, 0.0),
-    "vent_b_bronze2": ((0.072, 0.047, 0.024), 0.74, 0.52, None, 0.0),
-    "vent_b_edge": ((0.42, 0.26, 0.11), 0.95, 0.30, None, 0.0),
-    "vent_b_tarnish": ((0.035, 0.028, 0.015), 0.6, 0.58, None, 0.0),
-    "vent_b_under": ((0.11, 0.08, 0.055), 0.45, 0.42, None, 0.0),   # the blades' undersides: catch the well's glow
-    "vent_b_copper": ((0.40, 0.10, 0.035), 1.0, 0.26, None, 0.0),
+    # 2026-11-23 (the engineer: no copper or bronze, cold steel): the hall's cold steel on the body, a darker second
+    # panel tone, bright steel chamfers and caps, a cold dark grey in the recesses; the names kept (ship.toml's lifts
+    # and the game's surfaces find them). Was bronze 0.085/0.052/0.024, bronze2 0.072/0.047/0.024, edge
+    # 0.42/0.26/0.11, tarnish 0.035/0.028/0.015, under 0.11/0.08/0.055, copper caps 0.40/0.10/0.035.
+    "vent_b_bronze": ((0.26, 0.29, 0.31), 0.85, 0.40, None, 0.0),
+    "vent_b_bronze2": ((0.21, 0.235, 0.255), 0.82, 0.46, None, 0.0),
+    "vent_b_edge": ((0.62, 0.66, 0.70), 0.95, 0.30, None, 0.0),
+    "vent_b_tarnish": ((0.05, 0.055, 0.06), 0.6, 0.58, None, 0.0),
+    "vent_b_under": ((0.12, 0.13, 0.14), 0.45, 0.42, None, 0.0),   # the blades' undersides: catch the well's glow
+    "vent_b_copper": ((0.50, 0.53, 0.56), 1.0, 0.26, None, 0.0),   # the hinge caps: polished steel
     "vent_b_dark": ((0.035, 0.03, 0.028), 0.85, 0.42, None, 0.0),
     "vent_b_well": ((0.03, 0.05, 0.07), 0.7, 0.38, None, 0.0),
     "vent_a_body__band": ((0.03, 0.025, 0.02), 0.0, 0.4, None, 0.0),
