@@ -6,8 +6,9 @@
 # `lobby` command builds and shoots it.
 
 version = 3
-raw_dir = "lobby/hall/v20"         # under the raw folder: pieces/, plan/, logs/, shots/ (v20: the ship package v10,
-                                   # the ring at z -13.24, the spawns at z 2.52; v19 the game's current package's)
+raw_dir = "lobby/hall/v21"         # under the raw folder: pieces/, plan/, logs/, shots/ (v21: the strips R, teal, and
+                                   # the ship package v11, the steel console (art #263); v20: v10, the ring at z -13.24, the spawns at
+                                   # z 2.52, the warm strips; v19 the game's current package's)
 # The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
 # their walls by the `lobby` command from [door] doors)
 place = [
@@ -94,7 +95,7 @@ stand_in = []                      # step 4c: the ramp is gone (the jaw nose, sh
 # shadowed suns that would light the hall's walls and cast two more ship shadows against the Earth's light). The
 # ship's 105 own lamps and its 7 interior probes stay.
 # The package v10 (art #386, the game's ship) since v8 was lost with D: (art #374).
-package = { dir = "ship/v5/export/v10", nose = ["jaw_lower", "jaw_upper", "jaw_root"], use = true, free = ["Clearing", "Environment", "Lights:DirectionalLight3D"], keep = ["Lights", "Probes", "Pieces", "Nose", "Stations", "Markers"] }
+package = { dir = "ship/v5/export/v11", nose = ["jaw_lower", "jaw_upper", "jaw_root"], use = true, free = ["Clearing", "Environment", "Lights:DirectionalLight3D"], keep = ["Lights", "Probes", "Pieces", "Nose", "Stations", "Markers"] }
 # The forest clearing (layouts/ship/exterior.toml), not in the lobby
 drop = ["ground", "pine_a", "pine_b", "pine_c", "pine_d", "pine_e", "pine_f", "pine_g", "pine_s", "rock_a", "rock_b",
         "rock_c", "rock_pile_a", "rock_pile_b", "ground_lamp", "dirt_patch", "dirt_path", "tuft_a", "tuft_b",
@@ -181,7 +182,7 @@ panel = [0.35, 0.42, 0.42]
 frame = [0.25, 0.3, 0.31]
 trim = [0.6, 0.64, 0.66]
 floor = [0.27, 0.31, 0.315]
-accent = [1.0, 0.52, 0.26]
+accent = [0.15, 0.85, 0.95]      # the strips R, teal (the engineer, 2026-11-23); was [1.0, 0.52, 0.26]
 metallic = 0.45
 trim_metallic = 0.85
 
@@ -527,6 +528,33 @@ window_specular = 0.1
 wash = { at = [0.0, 5.0, -12.0], rgb = [0.55, 0.68, 1.0], energy = 0.22, range = 26.0, angle = 38.0 }
 probes = [["hall", [0.0, 8.0, -8.0], [42.0, 16.5, 48.0], false], ["corridor", [0.0, 3.2, -34.0], [6.4, 6.6, 8.4], true]]
 
+# The light strips' colour (the engineer, 2026-11-23: "show the options" beside today's warm light): `lobby
+# --strip-grid DIR` shoots each set over the mood and the scheme; a set gives the strips' material colour (`accent`, on
+# lobby_strip and lobby_ring), their omnis' colour (`strip_rgb`) and may give the pendants' (`pendant_rgb`). Nothing
+# here changes the hall until he picks: the mood's and the scheme's own colours stand.
+strips_grid = ["corner_nw", "spawn_eye", "c_back", "a_entrance"]
+
+[light.strips.W]
+title = "today: warm amber strips, warm pendants"
+accent = [1.0, 0.52, 0.26]
+strip_rgb = [1.0, 0.56, 0.28]
+
+[light.strips.C]
+title = "cold white strips, warm pendants"
+accent = [0.86, 0.93, 1.0]
+strip_rgb = [0.82, 0.9, 1.0]
+
+[light.strips.T]
+title = "teal strips (the pinball's and the furniture's cyan), warm pendants"
+accent = [0.15, 0.85, 0.95]
+strip_rgb = [0.35, 0.85, 1.0]
+
+[light.strips.R]
+title = "the engineer's pick (2026-11-23): teal strips, neutral pendants (less amber); the hall's since"
+accent = [0.15, 0.85, 0.95]
+strip_rgb = [0.35, 0.85, 1.0]
+pendant_rgb = [1.0, 0.88, 0.76]
+
 [light.moods.L1]
 title = "balanced, as the drawing"
 exposure = 1.1
@@ -631,12 +659,12 @@ exposure = 1.15
 ambient_rgb = [0.66, 0.58, 0.5]
 ambient_energy = 0.3
 probe_intensity = 1.0
-pendant_rgb = [1.0, 0.7, 0.45]
+pendant_rgb = [1.0, 0.88, 0.76]     # the strips R: more neutral pendants (the engineer, 2026-11-23); was [1.0, 0.7, 0.45]
 pendant_energy = 18.0
 pendant_range = 20.0
 pendant_angle = 55.0
 bulb_emit = 12.0
-strip_rgb = [1.0, 0.56, 0.28]
+strip_rgb = [0.35, 0.85, 1.0]       # the strips R, teal (2026-11-23); was [1.0, 0.56, 0.28]
 strip_energy = 2.4
 strip_range = 7.0
 strip_emit = 1.4

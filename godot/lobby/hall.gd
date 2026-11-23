@@ -980,6 +980,9 @@ func _emit(l: Dictionary) -> void:
 			else:
 				var k: float = float(l["door_emit"]) if mname == "lobby_lamp" else float(l["strip_emit"])
 				mat.emission_energy_multiplier = orig.emission_energy_multiplier * k
+				if l.has("strip_accent") and mname != "lobby_lamp":   # the strip grid: the strips' and ring's colour
+					mat.emission = _c(l["strip_accent"])
+					mat.albedo_color = _c(l["strip_accent"])
 			made[mname] = mat
 		(e[0] as MeshInstance3D).set_surface_override_material(int(e[1]), made[mname])
 
