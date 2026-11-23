@@ -1,11 +1,11 @@
 # The lobby's pinball machine (art #374).
-# Built by tools/blender/pinball_run.py --tag v4 --asset assets/prop/pinball; a rebuild
+# Built by tools/blender/pinball_run.py --tag v6 --asset assets/prop/pinball; a rebuild
 # changes the hashes below.
 id = "pinball"
 kind = "prop"
 slot = ""
 title = "The lobby's pinball machine"
-notes = "The lobby's playable pinball machine for prime-game's table contract (scenes/pinball/pinball_table.tscn, PinballTableSpec): export/pinball.glb, the cabinet as one mesh of 36,680 triangles with the markers TableMount, CloseUp and Display, origin on the floor under its middle, the player on -Z; export/pinball_table.glb, the table's art in the contract's frame, one mesh per contract body (4,408 triangles). Built from code in headless Blender (tools/blender/pinball_build.py) from its drawing tools/blender/pinball_dims.toml, fitted to the concept lobby/pinball/ref/concept_p2.png (our own OpenAI generation, used only as a reference: no part of the model was generated); the dark rails with copper edges are the engineer's pick. The playfield and side art are cut from NASA's Black Marble (sources/nasa_earth_lobby.toml)."
+notes = "The lobby's playable pinball machine for prime-game's table contract (scenes/pinball/pinball_table.tscn, PinballTableSpec): export/pinball.glb, the cabinet as one mesh of 36,680 triangles with the markers TableMount, CloseUp and Display, origin on the floor under its middle, the player on -Z; export/pinball_table.glb, the table's art in the contract's frame, one mesh per contract body (4,408 triangles). Built from code in headless Blender (tools/blender/pinball_build.py) from its drawing tools/blender/pinball_dims.toml, fitted to the concept lobby/pinball/ref/concept_p2.png (our own OpenAI generation, used only as a reference: no part of the model was generated); without copper, the engineer's pick B: the dark rails with teal edges, every trim cold steel. The playfield and side art are cut from NASA's Black Marble (sources/nasa_earth_lobby.toml)."
 tools = ["blender 5.2.2", "prime-game-art pinball_build.py, pinball_art.py, pinball_run.py", "glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (shots)"]
 licence = "own-work"
 licence_url = "https://github.com/xperiaroco2/prime-game"
@@ -14,7 +14,7 @@ public_repo_ok = true
 ai_generated = false
 approved_by = ["xperiaroco2"]
 approved_at = 2026-11-23
-approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/399"
+approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/401"
 
 [source]
 service = "own"
@@ -29,16 +29,16 @@ file = "lobby/pinball/ref/concept_p2.png"
 sha256 = "675dc86f59f4c0a39b3f6962da12279aae8eb8fccde86dcd0aa856fd5b2ac7c5"
 
 [[raw]]
-file = "lobby/pinball/v4/pinball.glb"
-sha256 = "6f9accf310198f84902f4a0af2d4fa390e8fa48a49d276c5807a93f06650704d"
+file = "lobby/pinball/v6/pinball.glb"
+sha256 = "4072a7ed3add2766ec80c5798b1aea6eaeacdb486b40788624fee810fb49cc4e"
 
 [[raw]]
-file = "lobby/pinball/v4/pinball_table.glb"
-sha256 = "2b39c75b0c6e17704ce44c1eeca4ca9c18a281721a95a803b212d25b1d9d28fb"
+file = "lobby/pinball/v6/pinball_table.glb"
+sha256 = "d54832e636f19570209275ebad033a5033795f52b283dc0fcf51e9cdcd607109"
 
 [[raw]]
-file = "lobby/pinball/v4/pinball.blend"
-sha256 = "ff912f132ae59aa0370c267f54b8ac9ffc3b5eb3f2208a89fe41994ab4b34387"
+file = "lobby/pinball/v6/pinball.blend"
+sha256 = "6768f1e33ff5d6ae51ddef9337ccfeb4fd7b4113b3336d47d104937a5fefe56b"
 
 [[raw]]
 file = "lobby/hall/v11/earth/earth_night_cap.jpg"

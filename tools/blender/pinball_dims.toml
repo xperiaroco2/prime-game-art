@@ -58,23 +58,23 @@ wall_t = 5.0                     # the side walls: x 36..41 (the inside exactly 
 front_z = 73.0                   # the front end (table z): the field's 65 + an 8 cm apron with the lockdown bar
 back_z = -95.0                   # the back end, under the backbox
 bottom_y = -26.0                 # the body's underside (26 cm below the field, as the concept's body depth)
-rail_y = [10.0, 13.5]            # the copper top rails, over the contract's walls and holding the glass
+rail_y = [10.0, 13.5]            # the top rails, over the contract's walls and holding the glass
 rail_in = 30.0                   # the rails' inner edge (x): over the side walls' inner faces
 rail_out = 42.0                  # their outer edge: a 1 cm lip outside the side walls
-rails = "dark"                   # the rails' look: "teal" (the dark rail with a teal_light strip rail_edge wide along each top edge),
+rails = "teal"                   # the rails' look (the engineer's pick B, 2026-11-23: no copper): "teal" (the dark rail with a teal_light strip rail_edge wide along each top edge),
                                  # "dark" (the concept's: teal_dark, a trim-metal strip rail_edge wide along each top edge;
                                  # the engineer's pick of 2026-11-23) or "copper" (Gate 3 step 2); the build's --rails overrides it
 rail_edge = 1.2
-metal = "copper"                 # the trims' metal: "copper" (Gate 3) or "steel" (a cold brushed steel, no copper:
+metal = "steel"                  # the trims' metal (his pick B): "copper" (Gate 3) or "steel" (a cold brushed steel, no copper:
                                  # the engineer, 2026-11-23, copper reads as retro); the build's --metal overrides it
-lockdown_z = [65.0, 74.0]        # the copper lockdown bar across the front, at the rails' height
-trim = 1.2                       # the copper trims along the body's edges: width
+lockdown_z = [65.0, 74.0]        # the trim-metal lockdown bar across the front, at the rails' height
+trim = 1.2                       # the trims along the body's edges ([body] metal): width
 chamfer = 0.6                    # the edge chamfer on the body, legs and backbox
 
 [front]                          # the front panel's features (the concept: a medallion between two buttons)
-medallion_r = [9.5, 7.5, 6.5, 5.0]   # copper ring outer, cyan ring outer, cyan inner, the dark dome's radius
+medallion_r = [9.5, 7.5, 6.5, 5.0]   # trim-metal ring outer, cyan ring outer, cyan inner, the dark dome's radius
 medallion_y = -12.0              # its middle below the field's plane (table y)
-button_r = [3.4, 2.6, 1.8]       # the side buttons: copper body, cyan ring outer, inner
+button_r = [3.4, 2.6, 1.8]       # the side buttons: trim-metal body, cyan ring outer, inner
 button_len = 3.0                 # how far each stands out of its side wall
 button_z = 64.0                  # table z (8 cm behind the front face) and y of their middle
 button_y = -6.0

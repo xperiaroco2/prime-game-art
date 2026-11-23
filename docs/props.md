@@ -939,8 +939,14 @@ with a dark screen in a cyan line, the night Earth on the playfield; the hall's 
    `TableMount` and 1.30 m toward the player, pitched 37 degrees down, fov 50: the greybox's place after the engineer's M8
    review (prime-game d643623a; Gate 1 had 1.6 m on a line 55 degrees down), its pitch 37 rather than the greybox's 42
    because the cabinet's screen stands higher over the table than the greybox's `Display`, so at 42 its top line left
-   the frame. The top rails have two looks (`[body] rails`, the build's `--rails`): `copper` (Gate 3 step 2) and
-   `dark` (the concept's: the dark rail with a copper strip `rail_edge` wide along each top edge); the engineer picked `dark` (2026-11-23), the default since. He re-picked the same day: dark rails without copper ("copper reads as retro"). So `teal` is a third look: the dark rail with a `teal_light` strip. `[body] metal` (the build's `--metal`) gives every copper part, the trims and the table's caps, flippers and targets, as `copper` or `steel`: a cold brushed steel, the hall's no-copper trim (`docs/lobby.md`, "No copper"). The two variants shown to him are `v5a` (`--rails teal --metal copper`, what he asked) and `v5b` (`--rails teal --metal steel`, no copper at all). In the lobby the cabinet's origin (the floor
+   the frame. The top rails have three looks (`[body] rails`, the build's `--rails`): `copper` (Gate 3 step 2),
+   `dark` (the concept's: the dark rail with a trim-metal strip `rail_edge` wide along each top edge) and `teal` (the
+   dark rail with a `teal_light` strip). The trims' metal is `[body] metal` (the build's `--metal`): every former copper
+   part, the trims and the table's caps, pivots and targets, is `copper` or `steel` (a cold brushed steel, the hall's
+   no-copper trim: `docs/lobby.md`, "No copper"). The engineer first picked `dark` with copper (2026-11-23), then
+   the same day no copper ("copper reads as retro"): of `v5a` (`--rails teal --metal copper`) and `v5b` (`--rails
+   teal --metal steel`) he picked B, `v5b`; `rails = "teal"` and `metal = "steel"` are the defaults since, and the
+   package is rebuilt from them as tag `v6`. In the lobby the cabinet's origin (the floor
    under the footprint's middle) stands at (18, 0, 3.44): its front 40 cm from the greybox's `PinballSpot` (18, 0,
    2.2). `tools/blender/pinball_drawing.py` draws the front, side and top in cm from the model's own feature edges
    (`features.json`) with the spec's dimensions: `drawing.svg` on paper, `drawing_model.svg` over the model's
