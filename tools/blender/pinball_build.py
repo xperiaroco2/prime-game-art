@@ -59,6 +59,9 @@ MATS = {  # name: (base RGB linear, metallic, roughness, emission strength, alph
     "teal_dark": ((0.020, 0.060, 0.080), 0.12, 0.52, 0.0, 1.0),
     "teal_light": ((0.090, 0.200, 0.230), 0.20, 0.42, 0.0, 1.0),
     "copper": ((0.32, 0.17, 0.105), 0.9, 0.40, 0.0, 1.0),    # step 1's 0.78/0.40/0.22 at 0.28 glared orange
+    # the trims without copper (the engineer, 2026-11-23: copper reads as retro): a cold brushed steel, the hall's S4
+    # trim (sRGB 0.6, 0.64, 0.66) a little darker, so it does not glare under the pendants
+    "steel": ((0.26, 0.29, 0.31), 0.85, 0.38, 0.0, 1.0),
     "cyan": ((0.10, 0.80, 0.90), 0.0, 0.30, 1.4, 1.0),       # step 1's strength 5 bloomed to white
     "screen": ((0.008, 0.010, 0.014), 0.0, 0.08, 0.0, 1.0),
     "lens": ((0.090, 0.110, 0.125), 1.0, 0.14, 0.0, 1.0),    # the medallions' dark lenses (a dark chrome)
@@ -74,6 +77,12 @@ UV_CM = 40.0              # the box-projected UVs: one texture tile per 40 cm (t
 TEXDIR: list = []         # [the folder of the generated textures] (main sets it)
 FEATURES: list = []       # [[a, b], [normals]] in the cabinet frame, cm
 RAILS: list = []          # [the top rails' look] (main sets it: --rails, else [body] rails)
+METAL: list = []          # [the trims' metal: "copper" or "steel"] (main sets it: --metal, else [body] metal)
+
+
+def trim() -> str:
+    """The trims' material: copper (Gate 3) or the cold steel without copper."""
+    return METAL[0]
 
 
 def argv() -> dict:
@@ -252,16 +261,18 @@ def body_parts() -> list:
     dark.box((-(w - t), by, bz), (w - t, -T["field_thick"] - 0.5, fz), MOUNT)          # the floor under the board
     dark.box((-(w - t), -T["field_thick"] - 0.5, K["field"][1] / 2), (w - t, ry[0], fz), MOUNT)   # the front block
     dark.box((-(w - t), -T["field_thick"] - 0.5, bz), (w - t, ry[0], -K["field"][1] / 2 - 1.0), MOUNT)  # the back
-    copper = Part("trims", "copper", bevel=0.3, segs=3)
+    copper = Part("trims", trim(), bevel=0.3, segs=3)
     rails = Part("rails", "teal_dark", bevel=0.3, segs=3)
+    edge = Part("rail_edges", "teal_light", bevel=0.3, segs=3)
     for sx in (-1, 1):   # the top rails over the contract's walls, holding the glass
         a, b = sorted((sx * B["rail_in"], sx * B["rail_out"]))
         if RAILS[0] == "copper":   # Gate 3 step 2: solid copper
             copper.box((a, ry[0], bz), (b, ry[1], fz + 0.6), MOUNT)
-        else:                      # "dark" (the concept's): the dark rail, a copper strip along each top edge
-            rails.box((a, ry[0], bz), (b, ry[1], fz + 0.6), MOUNT)
+        else:                      # "dark" (the concept's): the dark rail, a trim strip along each top edge;
+            rails.box((a, ry[0], bz), (b, ry[1], fz + 0.6), MOUNT)   # "teal": the strip in the lighter teal-grey
             for e0, e1 in ((a - 0.1, a + B["rail_edge"]), (b - B["rail_edge"], b + 0.1)):
-                copper.box((e0, ry[1] - 1.0, bz - 0.1), (e1, ry[1] + 0.3, fz + 0.7), MOUNT)
+                (edge if RAILS[0] == "teal" else copper).box((e0, ry[1] - 1.0, bz - 0.1), (e1, ry[1] + 0.3, fz + 0.7),
+                                                             MOUNT)
         xb = sorted((sx * (w - 1.0), sx * (w + 0.3)))   # the trim along the side's bottom edge
         copper.box((xb[0], by - 0.3, bz), (xb[1], by + tr, fz + 0.3), MOUNT)
         for z in (fz, bz):        # the vertical corner trims
@@ -306,14 +317,14 @@ def body_parts() -> list:
             c0, c1 = sorted((sx * (w - F["cap"]), sx * (w + 0.5)))
             z0, z1 = (zc - F["cap"], zc + 0.8) if zc == fz else (zc - 0.8, zc + F["cap"])
             copper.box((c0, ry[0] - F["cap"], z0), (c1, ry[1] + 0.4, z1), MOUNT)
-    return [dark, copper, light, art] + ([rails] if RAILS[0] != "copper" else [])
+    return [dark, copper, light, art] + ([rails] if RAILS[0] != "copper" else []) + ([edge] if RAILS[0] == "teal" else [])
 
 
 def front_parts() -> list:
     """The front medallion and the side buttons (the concept's cyan rings), rivets on the front's corners."""
     fz = B["front_z"]
     r = F["medallion_r"]
-    cop, cy = Part("medallion", "copper", 0.2, segs=3), Part("rings", "cyan", 0.1)
+    cop, cy = Part("medallion", trim(), 0.2, segs=3), Part("rings", "cyan", 0.1)
     dome = Part("domes", "lens", 0.0)
     y = F["medallion_y"]
     cop.cyl((0, y, fz + 0.8), "z", r[0], 1.6, 40, frame=MOUNT)
@@ -329,7 +340,7 @@ def front_parts() -> list:
         ra, rb = (br[2], br[2] * 0.6) if sx > 0 else (br[2] * 0.6, br[2])
         dome.cyl((sx * (w + F["button_len"] + 0.6), F["button_y"], F["button_z"]), "x", ra, 0.9, 24, r2=rb,
                  frame=MOUNT)
-    riv = Part("rivets", "copper", 0.0, features=False)
+    riv = Part("rivets", trim(), 0.0, features=False)
     rr, pitch = F["rivet_r"], F["rivet_pitch"]
     yt, yb = B["rail_y"][0] - 3.0, B["bottom_y"] + 3.6
     run = B["front_z"] - B["back_z"] - 12.0
@@ -347,7 +358,7 @@ def front_parts() -> list:
 
 def leg_parts() -> list:
     w = B["outer_w"] / 2
-    steel, cop = Part("legs", "teal_light", 0.5), Part("leg_collars", "copper", 0.3, segs=3)
+    steel, cop = Part("legs", "teal_light", 0.5), Part("leg_collars", trim(), 0.3, segs=3)
     cy = Part("leg_rings", "cyan", 0.1)
     for sx in (-1, 1):
         for zt in (B["front_z"] - L["inset"][1], B["back_z"] + L["inset"][1]):
@@ -384,7 +395,7 @@ def backbox_parts() -> list:
     y0, y1 = BB["y"]
     cap = BB["cap_h"]
     dark = Part("backbox", "teal_dark", 0.8).box((-w, y0, z0), (w, y1 - cap, z1))
-    cop = Part("backbox_trims", "copper", 0.4, segs=3)
+    cop = Part("backbox_trims", trim(), 0.4, segs=3)
     cop.box((-w - 0.4, y1 - cap, z0 - 0.4), (w + 0.4, y1, z1 + 0.4))         # the cap
     for sx in (-1, 1):   # the copper edges of the side faces, front and back
         xe = sorted((sx * (w + 0.3), sx * (w - 1.5)))
@@ -411,7 +422,7 @@ def backbox_parts() -> list:
     for sx in (-1, 1):   # the copper wings either side of the medallion (the concept's chevrons)
         cop.prism([(sx * (r[0] + 1.5), my - 1.0, z0), (sx * (r[0] + 22.0), my + 4.0, z0), (sx * (r[0] + 22.0), my + 5.5, z0),
                    (sx * (r[0] + 1.5), my + 1.5, z0)], (0, 0, -0.5))
-    riv = Part("backbox_rivets", "copper", 0.0, features=False)
+    riv = Part("backbox_rivets", trim(), 0.0, features=False)
     for sx in (-1, 1):   # rows up the backbox's front corners and along its side faces' front edges
         for i in range(7):
             yy = y0 + 4.0 + i * (y1 - cap - 7.5 - y0) / 6
@@ -468,14 +479,14 @@ def table_nodes() -> list:
     for name, sx in (("WallLeft", -1), ("WallRight", 1)):
         nodes.append((name, node_matrix(sx * K["wall_side_x"], 0.0), [
             Part(name, "teal_dark", 0.4).box((-sw[0] / 2, -sw[1] / 2, -sw[2] / 2), (sw[0] / 2, sw[1] / 2 - 1.2, sw[2] / 2)),
-            Part(name + "_cap", "copper", 0.3).box((-sw[0] / 2, sw[1] / 2 - 1.2, -sw[2] / 2), (sw[0] / 2, sw[1] / 2, sw[2] / 2))]))
+            Part(name + "_cap", trim(), 0.3).box((-sw[0] / 2, sw[1] / 2 - 1.2, -sw[2] / 2), (sw[0] / 2, sw[1] / 2, sw[2] / 2))]))
     nodes.append(("WallTop", node_matrix(0.0, K["wall_top_z"]), [
         Part("WallTop", "teal_dark", 0.4).box((-st[0] / 2, -st[1] / 2, -st[2] / 2), (st[0] / 2, st[1] / 2 - 1.2, st[2] / 2)),
-        Part("WallTop_cap", "copper", 0.3).box((-st[0] / 2, st[1] / 2 - 1.2, -st[2] / 2), (st[0] / 2, st[1] / 2, st[2] / 2))]))
+        Part("WallTop_cap", trim(), 0.3).box((-st[0] / 2, st[1] / 2 - 1.2, -st[2] / 2), (st[0] / 2, st[1] / 2, st[2] / 2))]))
     il = K["inlane"]
     for name, sx in (("InlaneLeft", -1), ("InlaneRight", 1)):
         nodes.append((name, node_matrix(sx * K["inlane_at"][0], K["inlane_at"][1], sx * K["inlane_yaw"]), [
-            Part(name, "copper", 0.3).box((-il[0] / 2, -by, -il[2] / 2), (il[0] / 2, il[1] / 2 - 2.0, il[2] / 2)),
+            Part(name, trim(), 0.3).box((-il[0] / 2, -by, -il[2] / 2), (il[0] / 2, il[1] / 2 - 2.0, il[2] / 2)),
             Part(name + "_light", "cyan", 0.0).box((-il[0] / 2 + 1.0, il[1] / 2 - 2.0, -0.4), (il[0] / 2 - 1.0, il[1] / 2 - 1.4, 0.4))]))
     fl = K["flipper"]
     for name, sx in (("FlipperLeft", -1), ("FlipperRight", 1)):
@@ -488,11 +499,11 @@ def table_nodes() -> list:
                 for yy in (bot, top):
                     pts.append(v3((cx + r * math.cos(a), yy, r * math.sin(a))))
         lx = sorted((-sx * 1.6, -sx * (length - r1 - 0.2)))   # the inlay: a thin cyan line on top (step 1: a blob)
-        pivot = Part(name + "_pivot", "copper", 0.0).cyl((0, top + 0.6, 0), "y", 0.6, 0.8, 16)
+        pivot = Part(name + "_pivot", trim(), 0.0).cyl((0, top + 0.6, 0), "y", 0.6, 0.8, 16)
         nodes.append((name, node_matrix(sx * K["flipper_at"][0], K["flipper_at"][1], sx * K["flipper_rest_deg"]),
                       [Part(name, "ivory", 0.25).hull(pts), Part(name + "_inlay", "cyan", 0.0).box((lx[0], top - 0.1, -0.2), (lx[1], top + 0.25, 0.2)), pivot]))
     for name, (r, _h), at in (("Bumper", K["bumper"], K["bumper_at"]), ("Kicker", K["kicker"], K["kicker_at"])):
-        parts = [Part(name, "copper", 0.2).cyl((0, -by + 0.75, 0), "y", r, 1.5, 32)
+        parts = [Part(name, trim(), 0.2).cyl((0, -by + 0.75, 0), "y", r, 1.5, 32)
                  .cyl((0, 4.7, 0), "y", r * 0.92, 1.4, 32),
                  Part(name + "_body", "teal_dark", 0.2).cyl((0, 1.0, 0), "y", r * 0.82, 4.5, 32),
                  Part(name + "_ring", "cyan", 0.0).cyl((0, 3.6, 0), "y", r, 0.9, 32),
@@ -500,7 +511,7 @@ def table_nodes() -> list:
         nodes.append((name, node_matrix(at[0], at[1]), parts))
     tg = K["target"]
     nodes.append(("Target", node_matrix(0.0, K["target_z"]), [
-        Part("Target", "copper", 0.3).box((-tg[0] / 2, -by, -tg[2] / 2), (tg[0] / 2, tg[1] / 2 - 2.0, tg[2] / 2)),
+        Part("Target", trim(), 0.3).box((-tg[0] / 2, -by, -tg[2] / 2), (tg[0] / 2, tg[1] / 2 - 2.0, tg[2] / 2)),
         Part("Target_face", "cyan", 0.0).box((-tg[0] / 2 + 1.2, -by + 1.5, tg[2] / 2), (tg[0] / 2 - 1.2, tg[1] / 2 - 3.2, tg[2] / 2 + 0.4))]))
     fw, fl_ = K["field"]
     zt = K["wall_top_z"] - K["wall_top"][2] / 2
@@ -595,6 +606,7 @@ def main() -> None:
     for ob in list(bpy.data.objects):
         bpy.data.objects.remove(ob)
     RAILS.append(args.get("rails") or B["rails"])
+    METAL.append(args.get("metal") or B.get("metal", "copper"))
     TEXDIR.append(out / "tex")      # Gate 3's art: the night Earth and the roughness break-up (pinball_art.py)
     tex = pinball_art.make(TEXDIR[0], Path(args["earth"]),
                            {f: (MATS[m][2], amp) for m, (f, amp) in ROUGH.items()})
