@@ -2,7 +2,7 @@
 
 The lobby's playable pinball machine (art #374), the art for prime-game's greybox `levels/lobby/lobby.tscn` `Pinball`
 and its table contract (`scenes/pinball/pinball_table.tscn`, `PinballTableSpec`). The engineer approved the look on
-2026-11-24 with the dark rails and their copper edges. This package carries the art only. The table's physics, the
+2026-11-23 with the dark rails and their copper edges. This package carries the art only. The table's physics, the
 flippers' input, the score and the display's text stay the game's.
 
 ## Files

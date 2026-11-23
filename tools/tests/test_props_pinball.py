@@ -16,7 +16,7 @@ from runner import common
 
 DIMS = tomllib.loads((common.ROOT / "tools" / "blender" / "pinball_dims.toml").read_text(encoding="utf-8"))
 RAW = common.raw_dir() / "lobby" / "pinball"
-BUILD = next((RAW / t for t in ("v2", "v1") if (RAW / t / "pinball.glb").is_file()), RAW / "v2")   # the newest
+BUILD = next((RAW / t for t in ("v4", "v3d", "v3", "v2", "v1") if (RAW / t / "pinball.glb").is_file()), RAW / "v4")  # the newest; v4 the package
 CONTRACT_BODIES = ("WallLeft", "WallRight", "WallTop", "InlaneLeft", "InlaneRight", "FlipperLeft", "FlipperRight",
                    "Bumper", "Kicker", "Target")
 # the contract's node origins (x, y, z in m) and yaw (deg), from pinball_table.tscn at prime-game 77ac43d5

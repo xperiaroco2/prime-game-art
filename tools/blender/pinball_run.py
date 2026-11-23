@@ -202,7 +202,7 @@ def write_asset(asset: Path, out: Path, tag: str, approved: list | None = None) 
         "table": {"triangles": table["triangles"], "nodes": sorted(table["nodes"]), "playfield_cm": table["playfield_cm"]},
         "markers": build["markers"],
         "measured": build["measured"],
-        "lobby_placement_m": [18.0, 0.0, 3.44],
+        "lobby_placement_m": [c / 100.0 for c in DIMS["placement"]["origin"]],
         "clearances_m": clear,
         "gltf_validator": validator,
         "review": f"<raw>/lobby/pinball/{tag}/",
