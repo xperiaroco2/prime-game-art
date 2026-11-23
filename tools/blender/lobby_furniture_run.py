@@ -95,8 +95,14 @@ def clearances(piece: str, bounds: dict, layout: dict) -> dict:
     return out
 
 
-def views(piece: str, b: dict) -> list:
-    """Per piece: [name, title, eye, target, fov] in the hall's frame."""
+def mirror_style(style: str | None = None) -> str:
+    """The mirror's style: the run's --style, else its spec's [style] pick."""
+    return style or dims("mirror")["style"]["pick"]
+
+
+def views(piece: str, b: dict, style: str | None = None) -> list:
+    """Per piece: [name, title, eye, target, fov] in the hall's frame; the mirror's close-up captions follow its style
+    (the run's --style or the spec's pick): fins for spikes and soft, slabs for flat, the frame for frame."""
     lo, hi = b["min"], b["max"]
     cx, cy = (lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2
     w = hi[0] - lo[0]
@@ -111,11 +117,14 @@ def views(piece: str, b: dict) -> list:
                 ["bar_end", "an end and the plinth's glow", T((380, 60, 160)), T((260, 50, 20)), 40.0],
                 ["bar_hall", "in the hall by the west wall, from its south end", T((-760, 260, 300)), T((0, 60, 0)), 55.0]]
     if piece == "mirror":
+        side, top = {"frame": ("the frame's left side close up", "the frame's top right corner and light strip"),
+                     "flat": ("the left slabs close up", "the slabs' tops")}.get(
+            mirror_style(style), ("the left fins close up", "the fins' steel tips"))
         return [["mirror_q34", "the mirror, 3/4 (the concept's side)", T((-260, 165, 420)), T((0, 125, 0)), 50.0],
                 ["mirror_front", "the mirror from the players' places", T((0, 165, 520)), T((0, 125, 0)), 50.0],
                 ["mirror_eye", "a player's eye at MirrorPlace2 (1.65 m)", T((0, 165, 60)), T((0, 150, 0)), 75.0],
-                ["mirror_fins", "the left fins close up", T((-90, 120, 150)), T((-135, 110, 6)), 40.0],
-                ["mirror_tips", "the fins' steel tips", T((90, 220, 120)), T((130, 235, 6)), 35.0],
+                ["mirror_fins", side, T((-90, 120, 150)), T((-135, 110, 6)), 40.0],
+                ["mirror_tips", top, T((90, 220, 120)), T((130, 235, 6)), 35.0],
                 ["mirror_hall", "on the west wall, between the pilaster and the corner", T((250, 380, 1100)), T((0, 120, 0)), 55.0]]
     if piece == "mug":   # close views (cm, the mug's frame: the holder's side +z, the handle +x on its right); the
         # empty mug 25 cm to its left
@@ -134,7 +143,7 @@ def views(piece: str, b: dict) -> list:
             ["con_hall", "in the hall behind the spawns", T((400, 400, 900)), T((0, 80, 0)), 55.0]]
 
 
-def request(layout: dict, out: Path, built: dict) -> tuple[dict, dict]:
+def request(layout: dict, out: Path, built: dict, style: str | None = None) -> tuple[dict, dict]:
     place = lobby_cmd.ship_scene(layout)[0]
     pieces = lobby_cmd.raw(layout) / "pieces"
     req, staged, _want = lobby_cmd.scene_request(layout, pieces, place, lobby_layout.ship_report(layout))
@@ -147,7 +156,7 @@ def request(layout: dict, out: Path, built: dict) -> tuple[dict, dict]:
         if piece == "mug":   # an empty one beside it, its Beer hidden (shots.gd "hide")
             req["place"].append([f"furn_{piece}", to_hall("mug", (-25.0, 0.0, 0.0)), yaw])
             req.setdefault("hide", []).append([f"furn_{piece}", 1, "Beer"])
-        v = views(piece, b)
+        v = views(piece, b, style)
         vs += v
         n = [x[0] for x in v]
         sheets.append([f"{piece}_sheet.png", (CONCEPT_DIRS.get(piece, CONCEPTS) / PIECES[piece][1] / "image-0.png").as_posix(),
@@ -197,7 +206,7 @@ def main() -> int:
     (out / "clearances.json").write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8")
     code = 0
     if not args.no_shots and built:
-        req, staged = request(layout, out, built)
+        req, staged = request(layout, out, built, args.style)
         for line in lobby_cmd._stage(staged)[:5]:
             print(f"  import: {line}")
         shots = out / "shots"
