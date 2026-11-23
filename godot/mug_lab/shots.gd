@@ -27,6 +27,7 @@ var _env: Environment
 var _mug: Node3D
 var _look: Dictionary = {}
 var _plain := false
+var _attr: CameraAttributesPractical
 
 
 func _initialize() -> void:
@@ -116,8 +117,9 @@ func _fp(size: Vector2i = WIDE, settle: int = 12) -> Image:
 	_cam.fov = 50.0
 	_cam.transform = Transform3D(Basis.from_euler(Vector3(deg_to_rad(-6.0), 0.0, 0.0)), Vector3(0.0, EYE, 0.6))
 	var local := Transform3D(Basis.from_euler(Vector3(deg_to_rad(4.0), deg_to_rad(-28.0), deg_to_rad(-3.0))),
-			Vector3(0.1, -0.13, -0.37))
+			Vector3(0.095, -0.125, -0.33))
 	_mug.transform = _cam.transform * local
+	_attr.dof_blur_far_enabled = false   # games do not blur the room behind the held item; DOF also haloed the glass
 	return await _frame(size, settle)
 
 
@@ -125,6 +127,8 @@ func _view(eye: Vector3, at: Vector3, fov: float, size: Vector2i) -> Image:
 	_cam.fov = fov
 	_cam.position = eye
 	_cam.look_at(at)
+	_attr.dof_blur_far_enabled = true
+	_attr.dof_blur_far_distance = eye.distance_to(at) + 0.2
 	return await _frame(size, 12)
 
 
@@ -162,7 +166,7 @@ func _stage() -> void:
 	root.screen_space_aa = Viewport.SCREEN_SPACE_AA_SMAA
 	_env = Environment.new()
 	_env.background_mode = Environment.BG_COLOR
-	_env.background_color = Color(0.03, 0.04, 0.05)
+	_env.background_color = Color(0.12, 0.15, 0.16)
 	var sky := Sky.new()
 	var sm := ShaderMaterial.new()
 	sm.shader = preload("res://mug_lab/studio_sky.gdshader")
@@ -170,14 +174,14 @@ func _stage() -> void:
 	sky.radiance_size = Sky.RADIANCE_SIZE_512
 	_env.sky = sky
 	_env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	_env.ambient_light_energy = 0.6
+	_env.ambient_light_energy = 0.9
 	_env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	_env.tonemap_mode = Environment.TONE_MAPPER_AGX
-	_env.tonemap_exposure = 1.0
+	_env.tonemap_exposure = 1.35   # round 8: high key, as the concept is lit
 	_env.glow_enabled = true
-	_env.glow_intensity = 0.5
-	_env.glow_bloom = 0.02
-	_env.glow_hdr_threshold = 1.2
+	_env.glow_intensity = 0.2
+	_env.glow_bloom = 0.0
+	_env.glow_hdr_threshold = 2.4
 	_env.ssr_enabled = true
 	_env.ssao_enabled = true
 	_env.ssao_radius = 0.3
@@ -187,6 +191,12 @@ func _stage() -> void:
 	root.add_child(we)
 	_cam = Camera3D.new()
 	_cam.near = 0.02
+	# round 6: a soft background as in the concept (the far blur set per view, behind the mug)
+	_attr = CameraAttributesPractical.new()
+	_attr.dof_blur_far_enabled = true
+	_attr.dof_blur_far_transition = 0.6
+	_attr.dof_blur_amount = 0.12
+	_cam.attributes = _attr
 	root.add_child(_cam)
 	_cam.make_current()
 	# the bar top: dark polished steel
@@ -207,9 +217,9 @@ func _stage() -> void:
 	wm.size = Vector3(8.0, 4.0, 0.1)
 	wall.mesh = wm
 	var wmat := StandardMaterial3D.new()
-	wmat.albedo_color = Color(0.13, 0.17, 0.18)
-	wmat.metallic = 0.5
-	wmat.roughness = 0.45
+	wmat.albedo_color = Color(0.34, 0.42, 0.44)
+	wmat.metallic = 0.6
+	wmat.roughness = 0.38
 	wall.material_override = wmat
 	wall.position = Vector3(0.0, 1.5, -2.2)
 	root.add_child(wall)
@@ -229,10 +239,48 @@ func _stage() -> void:
 		root.add_child(strip)
 	var key := DirectionalLight3D.new()
 	key.light_color = Color(1.0, 0.86, 0.68)
-	key.light_energy = 1.6
+	key.light_energy = 2.2
 	key.shadow_enabled = true
 	key.rotation_degrees = Vector3(-62.0, 25.0, 0.0)
 	root.add_child(key)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	for i: int in 18:
+		var b := MeshInstance3D.new()
+		var sp := SphereMesh.new()
+		sp.radius = rng.randf_range(0.02, 0.045)
+		sp.height = sp.radius * 2.0
+		b.mesh = sp
+		var bm2 := StandardMaterial3D.new()
+		bm2.albedo_color = Color(0, 0, 0)
+		bm2.emission_enabled = true
+		var warm: bool = rng.randf() < 0.7
+		bm2.emission = Color(1.0, 0.68, 0.35) if warm else Color(0.45, 0.72, 1.0)
+		bm2.emission_energy_multiplier = rng.randf_range(2.0, 5.0)
+		b.material_override = bm2
+		b.position = Vector3(rng.randf_range(-1.0, 1.0), rng.randf_range(1.12, 1.7), rng.randf_range(-2.1, -1.2))
+		root.add_child(b)
+	# round 11: a reflection probe of the stage itself, so the glass mirrors the warm wall, the lights and the bar
+	# (the critics' constant "grey plastic" handle had only a procedural sky to reflect)
+	var probe := ReflectionProbe.new()
+	probe.size = Vector3(6.0, 3.0, 5.0)
+	probe.position = Vector3(0.0, BAR_Y + 0.25, 0.0)
+	probe.update_mode = ReflectionProbe.UPDATE_ALWAYS
+	probe.intensity = 1.0
+	probe.box_projection = true
+	root.add_child(probe)
+	var wash := OmniLight3D.new()
+	wash.light_color = Color(1.0, 0.74, 0.48)
+	wash.light_energy = 2.5
+	wash.omni_range = 2.2
+	wash.position = Vector3(0.2, BAR_Y + 0.5, -1.4)
+	root.add_child(wash)
+	var fill := OmniLight3D.new()
+	fill.light_color = Color(1.0, 0.82, 0.62)
+	fill.light_energy = 1.4
+	fill.omni_range = 2.5
+	fill.position = Vector3(-0.3, BAR_Y + 0.4, 0.8)
+	root.add_child(fill)
 	var rim := OmniLight3D.new()
 	rim.light_color = Color(0.55, 0.75, 1.0)
 	rim.light_energy = 2.5

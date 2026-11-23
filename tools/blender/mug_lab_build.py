@@ -198,8 +198,8 @@ def body(S: dict):
         rim.append(ring(rc, top + lip * math.sin(a)))
     inner = [ring(ri, top), ring(ri, top - 1.0)]
     y = top - 1.0
-    while y - 1.2 > Bd["floor_y"] + Bd["floor_round"]:
-        y -= 1.2
+    while y - Bd["inner_step"] > Bd["floor_y"] + Bd["floor_round"]:
+        y -= Bd["inner_step"]
         inner.append(ring(ri, y))
     fr = Bd["floor_round"]
     for k in range(1, 5):                      # the inside floor's rounded corner
@@ -299,7 +299,7 @@ def union(base, others):
 def liquid(S: dict):
     L, Bd = S["beer"], S["body"]
     r = Bd["inner_r"] - L["inset"]
-    n = 48
+    n = L["segments"]
     ys = [Bd["floor_y"] + 0.02]
     y = ys[0]
     while y < Bd["rim_y"] - 0.2:
@@ -314,38 +314,32 @@ def liquid(S: dict):
 
 
 def foam_unit(S: dict):
-    """The foam as one canonical mesh (art: the critic's round 1: the head and the layer must be one volume). The
-    Godot foam shader builds its shape from the fill: a side from the beer's level to the column's top, a dome over
-    it that swells over the rim when the column passes it. Here: a unit cylinder (radius 1, y 0..1) and a dome cap on
-    it; UV.x is the dome's share from its edge (0) to its pole (1), UV.y the side's share from the bottom (0)."""
+    """The foam as one canonical mesh (round 5): `rows` rings at UV.y = t along one profile and a pole at t = 1. The
+    Godot foam shader (godot/mug_lab/foam.gdshader) evaluates the profile for the fill and puts every ring on it; the
+    angle comes from the vertex's position, so the rings here are unit circles at any height."""
     F = S["foam"]
-    n, side, dome = F["segments"], F["side_rows"], F["dome_rows"]
+    n, rows = F["segments"], F["rows"]
     me = bpy.data.meshes.new("Foam")
     bm = bmesh.new()
     uv = bm.loops.layers.uv.new("UVMap")
-    rows = []          # (verts, uv) per row
-    for j in range(side + 1):
-        t = j / side
-        rows.append(([bm.verts.new(B((math.cos(2 * math.pi * k / n), t, -math.sin(2 * math.pi * k / n))))
-                      for k in range(n)], (0.0, t)))
-    for j in range(1, dome):
-        sd = j / dome
-        rr = math.cos(sd * math.pi / 2)
-        rows.append(([bm.verts.new(B((rr * math.cos(2 * math.pi * k / n), 1 + sd, -rr * math.sin(2 * math.pi * k / n))))
-                      for k in range(n)], (sd, 1.0)))
-    pole = bm.verts.new(B((0.0, 2.0, 0.0)))
-    for (ra, ua), (rb, ub) in zip(rows, rows[1:]):
+    ring = []
+    for j in range(rows):
+        t = j / rows
+        ring.append(([bm.verts.new(B((math.cos(2 * math.pi * k / n), t, -math.sin(2 * math.pi * k / n))))
+                      for k in range(n)], t))
+    pole = bm.verts.new(B((0.0, 1.0, 0.0)))
+    for (ra, ta), (rb, tb) in zip(ring, ring[1:]):
         for k in range(n):
             q = (k + 1) % n
             f = bm.faces.new((ra[k], ra[q], rb[q], rb[k]))
-            for lp, u in zip(f.loops, (ua, ua, ub, ub)):
-                lp[uv].uv = u
-    last, ul = rows[-1]
+            for lp, t in zip(f.loops, (ta, ta, tb, tb)):
+                lp[uv].uv = (0.0, t)
+    last, tl = ring[-1]
     for k in range(n):
         q = (k + 1) % n
         f = bm.faces.new((last[k], last[q], pole))
-        for lp, u in zip(f.loops, (ul, ul, (1.0, 1.0))):
-            lp[uv].uv = u
+        for lp, t in zip(f.loops, (tl, tl, 1.0)):
+            lp[uv].uv = (0.0, t)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     bm.to_mesh(me)
     bm.free()

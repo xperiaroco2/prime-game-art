@@ -25,7 +25,7 @@ notice up close; **3** reads correctly but looks cheap or unfinished (a demo); *
 | 5 | Construction and defects | Nothing crooked, floating, intersecting, z-fighting or seamed; no shading artefacts | Visible gaps, a crooked part, faceting where it should be smooth, flicker |
 | 6 | First-person read | Within a second at hand distance it reads as the object, at the right size in the hand | Too big or small; unreadable against the room |
 | 7 | States (here: full, half, empty, drinking) | Each state reads; the change between them is believable (the level goes down, the foam rides on it, the empty glass is still glass) | A state reads wrong; the foam floats or vanishes oddly |
-| 8 | Style fit | The house style: stylised adult cartoon, clean bold readable shapes, crisp bevels, rich materials; sits in the dark teal-grey steel lobby | Photoreal clutter, toy-like, or clashing colours |
+| 8 | Style fit | Matches the approved concept's own level of stylisation and its materials (the engineer approved that look: it is the style anchor), with clean readable shapes and crisp bevels; sits in the dark teal-grey steel lobby | Simpler or more toy-like than the concept, or clashing colours; never mark a render down for being as realistic as the approved concept |
 | 9 | Release polish | A Steam player would take it for finished release art | Reads as a prototype or a demo |
 
 **Pass:** every item at 4 or more, and no blocker. A blocker is any defect a player would notice in normal play.
@@ -46,6 +46,12 @@ notice up close; **3** reads correctly but looks cheap or unfinished (a demo); *
 From round 2 on the critic also answers, per item: is round N better, worse or the same as round N-1? The images go
 in both orders (two critic calls); a change counts as better only when both orders agree. Measurable items (sizes,
 triangle counts, the fill levels, overlap with the concept's silhouette) go to scripts, not to the critic.
+
+## Calibration
+Before a prop's loop starts, one critic scores the approved concept itself as if it were a render. Items the concept
+cannot reach are a flaw in the rubric, not in the build: fix the rubric first. On the stein (2026-11-23) the concept
+scored 4-5 on every item except style (2: "photoreal, not cartoon"). Generic words like "adult cartoon" made the
+critic mark down the very look the engineer had approved, so item 8 now takes the approved concept as its anchor.
 
 ## Stop rule
 Stop when the pass holds in two critics in a row, or after 5 rounds; then the engineer's look (Gate 5). A round that

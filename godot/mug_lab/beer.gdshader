@@ -6,10 +6,10 @@ shader_type spatial;
 render_mode cull_disabled, diffuse_lambert_wrap;
 
 uniform float level = 0.126;                       // the surface, object-space metres
-uniform vec3 deep : source_color = vec3(0.30, 0.08, 0.01);
-uniform vec3 bright : source_color = vec3(1.0, 0.56, 0.06);
+uniform vec3 deep : source_color = vec3(0.34, 0.13, 0.004);   // round 10: measured on the concept: dark amber, s 0.99, v 0.33
+uniform vec3 bright : source_color = vec3(0.95, 0.56, 0.01);   // the concept's bright beer: 242,151,2
 uniform vec3 surface_col : source_color = vec3(0.98, 0.78, 0.38);
-uniform float glow = 0.6;                         // the light the beer passes on (a faked transmission)
+uniform float glow = 0.16;                         // the light the beer passes on (a faked transmission)
 uniform float bubbles = 1.0;
 uniform float bubble_speed = 0.035;                // m/s
 uniform float inner_r = 0.0381;
@@ -36,11 +36,11 @@ float bubble_mask(vec3 o) {
 	float cell = 0.007;
 	float y = (o.y - TIME * sp) / cell;
 	float row = floor(y);
-	float on = step(0.8, h21(vec2(col, row))) * step(0.35, h21(vec2(col, 9.7)));   // some columns stream, most rest
+	float on = step(0.58, h21(vec2(col, row))) * step(0.35, h21(vec2(col, 9.7)));   // some columns stream, most rest
 	vec2 c = vec2(0.3 + 0.4 * h21(vec2(row, col)), 0.5);
 	vec2 f = vec2(fract(u), fract(y));
 	vec2 d = (f - c) * vec2(6.2831853 * r / cols, cell);   // cells in metres, so the dots stay round
-	float rad = 0.0003 + 0.0003 * h21(vec2(col + 7.0, row));
+	float rad = 0.00022 + 0.0005 * pow(h21(vec2(col + 7.0, row)), 2.0);
 	return on * smoothstep(rad, rad * 0.4, length(d));
 }
 
@@ -50,15 +50,18 @@ void fragment() {
 	}
 	if (FRONT_FACING) {
 		float facing = clamp(dot(NORMAL, VIEW), 0.0, 1.0);
-		vec3 col = mix(deep, bright, smoothstep(0.25, 0.92, facing));
-		col = mix(col, vec3(1.0, 0.8, 0.35), pow(facing, 6.0) * 0.35);   // the bright core the light comes through
-		float under = smoothstep(level - 0.01, level - 0.001, obj.y);   // a lit band just under the surface
-		col = mix(col, surface_col, under * 0.55);
+		vec3 col = mix(deep, bright, pow(smoothstep(0.2, 1.0, facing), 3.0) * 0.55);   // mostly dark amber; the glass's panel lenses add the gold
+		col *= mix(0.85, 1.12, smoothstep(0.03, level, obj.y));        // lit from above through the foam
+
+		float under = smoothstep(level - 0.012, level - 0.002, obj.y);  // a lit band just under the surface
+		col = mix(col, surface_col, under * 0.45);
+		float men = smoothstep(level - 0.0012, level - 0.0002, obj.y);   // the meniscus: a thin bright line at the top
+		col += vec3(1.0, 0.85, 0.5) * men * 0.2;
 		if (obj.y < 0.0235) {                                               // the bottom, seen through the heavy base: lit
 			col = bright * 0.9;
 		}
 		float b = bubble_mask(obj) * bubbles;
-		ALBEDO = col * 0.35;
+		ALBEDO = col * 0.1;    // round 8: AgX washes a bright amber out; a darker beer keeps its gold
 		EMISSION = col * glow + vec3(1.0, 0.85, 0.55) * b * 0.9;
 		ROUGHNESS = 0.12;
 		SPECULAR = 0.4;

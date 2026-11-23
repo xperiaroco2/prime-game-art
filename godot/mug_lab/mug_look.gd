@@ -31,6 +31,7 @@ static func apply(model: Node, levels: Dictionary = {}) -> Dictionary:
 	foam.set_shader_parameter("inner_r", look["inner_r"] - 0.0008)
 	foam.set_shader_parameter("rim", look["rim"])
 	foam.set_shader_parameter("rim_r", look["rim_r"])
+	foam.set_shader_parameter("head_top", look["head_top"])
 	for pair: Array in [["Mug", glass], ["Liquid", beer], ["Foam", foam]]:
 		var mi := model.find_child(pair[0], true, false) as MeshInstance3D
 		if mi == null:
@@ -40,6 +41,10 @@ static func apply(model: Node, levels: Dictionary = {}) -> Dictionary:
 		look[pair[0]] = mi
 	# the foam's mesh is canonical (a 1 cm unit): its shader places it, so its box is the glass's
 	(look["Foam"] as MeshInstance3D).custom_aabb = AABB(Vector3(-0.06, 0.0, -0.06), Vector3(0.12, 0.2, 0.12))
+	# ...and its import LODs are useless: every ring of the canonical mesh lies on one cylinder, so Godot's mesh
+	# simplifier drops the middle rings and the shader gets a cone (round 5). Keep the full mesh at every distance; in
+	# the game's import, turn LOD generation off for this mesh.
+	(look["Foam"] as MeshInstance3D).lod_bias = 128.0
 	look["glass"] = glass
 	look["beer"] = beer
 	look["foam_mat"] = foam
@@ -66,15 +71,16 @@ static func set_fill(look: Dictionary, f: float) -> void:
 	glass.set_shader_parameter("beer_in", 1.0)
 	var level: float = floor_y + f * (full - floor_y)
 	(look["beer"] as ShaderMaterial).set_shader_parameter("level", level)
-	# the foam: one volume from the surface; full, its column reaches the rim and its crown domes to head_top; the
-	# first sip takes the crown, then the layer thins as the level goes down
+	glass.set_shader_parameter("level", level)
+	# the foam: one volume from the surface (foam.gdshader's profile); full, the column fills the glass to the rim and
+	# the crown domes over it to head_top; the first sip takes the crown, then the layer thins as the level goes down
 	var crown: float = smoothstep(0.86, 1.0, f)
-	var layer: float = lerpf(0.006, 0.016, smoothstep(0.0, 0.7, f))
-	var col_top: float = lerpf(level + layer, rim + 0.003, crown)
-	var dome: float = lerpf(0.0035, look["head_top"] - rim - 0.003, crown)
+	var layer: float = lerpf(0.008, 0.014, smoothstep(0.0, 0.7, f))   # the foam stays on to the last sip
 	var fm: ShaderMaterial = look["foam_mat"]
 	fm.set_shader_parameter("level", level)
-	fm.set_shader_parameter("top", col_top)
-	fm.set_shader_parameter("dome_h", dome)
+	fm.set_shader_parameter("layer", layer)
+	fm.set_shader_parameter("crown", crown)
+	var col_top: float = lerpf(level + layer, rim, crown)
+	var dome: float = lerpf(0.004, look["head_top"] - rim, crown)
 	glass.set_shader_parameter("lace", clampf((1.0 - f) * 4.0, 0.0, 1.0))
 	glass.set_shader_parameter("lace_bottom", col_top + dome * 0.5)
