@@ -1025,6 +1025,16 @@ to him, so the concepts' copper is the hall's cold steel and their light lines a
     `ConsoleScreen`.
   - The game's markers are empties: `TapSpot` and `TapSpout` on the bar, `Screen` on the console, `MirrorFace` on the
     mirror.
+- **Gate 3 (detail), the bar and the console** (the engineer approved their shapes on 2026-11-23): each spec's
+  `[detail]` section holds the numbers; no Gate 2 size moves.
+  - Textures made in Blender with numpy (`make_textures`), tiling on the parts' box UVs (`Part(uv_m=...)`, u always
+    horizontal): the bar top's dark marble (`bar_stone.png`, soft cool veins: v4's sharp veins read as cracks), and
+    brushed roughness break-ups on the bar's shell and lower panel and on the console's body, facets and base.
+  - The bar's tap: a steel drip tray with a dark grate under the spout, a steel bezel round the beer window, a dark
+    knob on the lever. The steel sweep stays a flat ribbon (a bevel broke it into dashes at the joints, v4).
+  - The console: the concept's metal lines along the front's outer edges and its screen frame in steel, a dark gasket
+    inside the frame, a steel lip round the base plate; the body and facets less metallic (0.35), as they read black.
+  - The shots: `lobby_furniture_run.py --tag v5 --only bar,match_console`.
 - **The driver:** `$PYTHON_BIN tools/blender/lobby_furniture_run.py [--tag vN] [--only ...]` writes everything into
   `<raw>/lobby/furniture/<tag>/`. It runs:
   - the builds and glTF-Validator;
