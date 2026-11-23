@@ -1034,3 +1034,12 @@ never the hall's scheme again. The accent (the warm light strips) is unchanged; 
 The pieces are rebuilt in `lobby/hall/v20` (the steel baked into the GLBs). The before-and-after views were shot by
 `lobby --shoot` with `scheme` S4 and S4c into `<raw>/lobby/nocopper/hall_after` and `hall_before`. The ship's own
 bronze (the start console, the vents, the crystal's cap) is not the hall's and is left as it is.
+
+## The light strips R (2026-11-23)
+
+The engineer picked R from `lobby --strip-grid`'s sets (#356, relayed by the director: "R"): teal strips and more
+neutral pendants. The hall's own colours now carry it: S4's `accent` (the strips' and the floor ring's material) is
+teal (0.15, 0.85, 0.95), and the mood L3's `strip_rgb` (the strips' omnis) (0.35, 0.85, 1.0) and `pendant_rgb`
+(1.0, 0.88, 0.76), less amber. `[light.strips.W]` keeps today's warm values for the before views. The pieces are rebuilt
+in `lobby/hall/v21` (`lobby --build`, the accent baked into the GLBs); v20 stays as the warm before. The hall still
+reads the ship package v10 until v11 (the start console in steel, art #263) merges.

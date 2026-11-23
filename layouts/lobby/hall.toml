@@ -6,8 +6,9 @@
 # `lobby` command builds and shoots it.
 
 version = 3
-raw_dir = "lobby/hall/v20"         # under the raw folder: pieces/, plan/, logs/, shots/ (v20: the ship package v10,
-                                   # the ring at z -13.24, the spawns at z 2.52; v19 the game's current package's)
+raw_dir = "lobby/hall/v21"         # under the raw folder: pieces/, plan/, logs/, shots/ (v21: the strips R, teal; still
+                                   # the ship package v10 until v11, the steel console, merges; v20: the ring at z -13.24, the spawns at
+                                   # z 2.52, the warm strips; v19 the game's current package's)
 # The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
 # their walls by the `lobby` command from [door] doors)
 place = [
@@ -181,7 +182,7 @@ panel = [0.35, 0.42, 0.42]
 frame = [0.25, 0.3, 0.31]
 trim = [0.6, 0.64, 0.66]
 floor = [0.27, 0.31, 0.315]
-accent = [1.0, 0.52, 0.26]
+accent = [0.15, 0.85, 0.95]      # the strips R, teal (the engineer, 2026-11-23); was [1.0, 0.52, 0.26]
 metallic = 0.45
 trim_metallic = 0.85
 
@@ -549,7 +550,7 @@ accent = [0.15, 0.85, 0.95]
 strip_rgb = [0.35, 0.85, 1.0]
 
 [light.strips.R]
-title = "the art lane's pick: teal strips, neutral pendants (less amber)"
+title = "the engineer's pick (2026-11-23): teal strips, neutral pendants (less amber); the hall's since"
 accent = [0.15, 0.85, 0.95]
 strip_rgb = [0.35, 0.85, 1.0]
 pendant_rgb = [1.0, 0.88, 0.76]
@@ -658,12 +659,12 @@ exposure = 1.15
 ambient_rgb = [0.66, 0.58, 0.5]
 ambient_energy = 0.3
 probe_intensity = 1.0
-pendant_rgb = [1.0, 0.7, 0.45]
+pendant_rgb = [1.0, 0.88, 0.76]     # the strips R: more neutral pendants (the engineer, 2026-11-23); was [1.0, 0.7, 0.45]
 pendant_energy = 18.0
 pendant_range = 20.0
 pendant_angle = 55.0
 bulb_emit = 12.0
-strip_rgb = [1.0, 0.56, 0.28]
+strip_rgb = [0.35, 0.85, 1.0]       # the strips R, teal (2026-11-23); was [1.0, 0.56, 0.28]
 strip_energy = 2.4
 strip_range = 7.0
 strip_emit = 1.4
