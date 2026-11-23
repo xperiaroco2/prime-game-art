@@ -1,0 +1,197 @@
+{
+  "asset": "pinball",
+  "built_by": "tools/blender/pinball_run.py --tag v4 --asset assets/prop/pinball",
+  "cabinet": {
+    "triangles": 36680,
+    "triangles_by_material": {
+      "pinball_teal_dark": 1132,
+      "pinball_copper": 28840,
+      "pinball_teal_light": 864,
+      "pinball_side_art": 216,
+      "pinball_cyan": 5120,
+      "pinball_lens": 400,
+      "pinball_screen": 108
+    },
+    "triangles_by_part": {
+      "body": 648,
+      "trims": 4888,
+      "panels": 324,
+      "side_art": 216,
+      "rails": 376,
+      "medallion": 2160,
+      "rings": 1140,
+      "domes": 308,
+      "rivets": 8960,
+      "legs": 432,
+      "leg_collars": 7872,
+      "leg_rings": 3808,
+      "backbox": 108,
+      "backbox_trims": 1824,
+      "screen": 108,
+      "bezel": 108,
+      "screen_line": 172,
+      "backbox_dome": 92,
+      "backbox_rivets": 3136
+    },
+    "bounds_cm": {
+      "min": [
+        -45.05,
+        -0.0,
+        -85.95
+      ],
+      "max": [
+        45.05,
+        190.0,
+        86.67
+      ]
+    },
+    "origin": "the floor under the footprint's middle",
+    "player_side": "-Z",
+    "rails": "dark"
+  },
+  "table": {
+    "triangles": 4408,
+    "nodes": [
+      "Bumper",
+      "FlipperLeft",
+      "FlipperRight",
+      "Glass",
+      "InlaneLeft",
+      "InlaneRight",
+      "Kicker",
+      "Playfield",
+      "Target",
+      "WallLeft",
+      "WallRight",
+      "WallTop"
+    ],
+    "playfield_cm": [
+      72.0,
+      131.0
+    ]
+  },
+  "markers": {
+    "TableMount": {
+      "at_cm": [
+        0.0,
+        99.36,
+        -10.93
+      ],
+      "basis_rows": [
+        [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.9936,
+          -0.1132
+        ],
+        [
+          0.0,
+          -0.1132,
+          -0.9936
+        ]
+      ]
+    },
+    "CloseUp": {
+      "at_cm": [
+        0.0,
+        228.36,
+        -140.93
+      ],
+      "basis_rows": [
+        [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.7986,
+          0.6018
+        ],
+        [
+          0.0,
+          0.6018,
+          -0.7986
+        ]
+      ]
+    },
+    "Display": {
+      "at_cm": [
+        0.0,
+        162.0,
+        57.6
+      ],
+      "basis_rows": [
+        [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0
+        ]
+      ]
+    }
+  },
+  "measured": {
+    "field_front_y_cm": 92.0,
+    "field_far_y_cm": 106.72,
+    "tilt_deg": 6.5,
+    "top_y_cm": 190.0,
+    "width_cm": 90.1,
+    "depth_cm": 172.62,
+    "screen_cm": [
+      66.0,
+      38.0
+    ],
+    "front_z_cm": -85.95
+  },
+  "lobby_placement_m": [
+    18.0,
+    0.0,
+    3.44
+  ],
+  "clearances_m": {
+    "footprint_x": [
+      17.549,
+      18.451
+    ],
+    "footprint_z": [
+      2.58,
+      4.307
+    ],
+    "east_wall": 1.549,
+    "pilasters": {
+      "z 0": 2.378,
+      "z 6": 1.604
+    },
+    "door D2 (z 0.5..3.5)": 1.549,
+    "spot_to_front": 0.38
+  },
+  "gltf_validator": {
+    "pinball": {
+      "numErrors": 0,
+      "numWarnings": 0,
+      "numInfos": 8,
+      "numHints": 0
+    },
+    "pinball_table": {
+      "numErrors": 0,
+      "numWarnings": 0,
+      "numInfos": 24,
+      "numHints": 0
+    }
+  },
+  "review": "<raw>/lobby/pinball/v4/"
+}
