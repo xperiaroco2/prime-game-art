@@ -1,0 +1,50 @@
+# The lobby's match console (art #391): Gate 1's drawing as numbers, every size in cm. The engineer's pick of
+# 2026-11-23: concept 2 "monolith" (<raw>/2026-11-22-lobby-bar-mirror-console-concepts/con2_monolith/image-0.png),
+# without copper (the concept's copper seams are cold steel here). The greybox wins where they disagree (prime-game
+# levels/lobby/match_console.tscn: a 1.2 x 1.6 x 0.3 m box on the floor; its `Screen` marker at (0, 1.15, 0.16);
+# placed in lobby.tscn at (-7, 0, 7.2) turned 180 degrees). (Not the ship's start console: console_dims.toml.)
+#
+# The frame (Godot axes): the origin on the floor under the body's middle, y up, the screen on +z (the greybox's).
+
+[body]
+w = 120.0
+h = 160.0
+d = 30.0
+top_chamfer = 16.0      # the top corners cut (the concept's monolith)
+waist_in = 5.0          # the lower body narrows by this much each side toward the floor (the concept's taper)
+waist_y = 72.0          # where the taper starts
+
+[screen]                # the greybox's Screen: its centre at y 115, its face at z +16 (the body's face plus 1 cm)
+w = 96.0
+h = 54.0
+centre_y = 115.0
+bezel = 3.0             # the frame round the screen, standing 1 cm proud of the body
+line_w = 0.8            # the cyan line round the screen (the concept's)
+corner = 5.0            # the screen's cut corners
+
+[front]                 # the lower front's faceted V panel (the concept's)
+v_top_w = 56.0          # its width at the top (under the screen)
+v_bottom_w = 30.0
+v_top_y = 84.0
+v_bottom_y = 8.0
+proud = 2.0
+seams_x = [-44.0, 44.0] # the two vertical steel seams beside the V (the concept's copper seams)
+seam_w = 2.2
+
+[base]                  # the round floor plate with its cyan ring
+r = 78.0
+h = 2.0
+ring_r = 72.0
+ring_w = 2.0
+
+[look]                  # base sRGB, metallic, roughness, emission
+body = [[0.24, 0.30, 0.31], 0.5, 0.4, 0.0]        # the dark teal-grey monolith
+facet = [[0.30, 0.37, 0.38], 0.5, 0.36, 0.0]
+steel = [[0.60, 0.64, 0.66], 0.85, 0.38, 0.0]
+screen = [[0.02, 0.05, 0.10], 0.0, 0.08, 0.35]    # a dark blue glass; the game draws the match setup here
+glow = [[0.45, 0.92, 1.0], 0.0, 0.3, 2.0]
+floor = [[0.20, 0.22, 0.23], 0.6, 0.3, 0.0]
+
+[placement]
+origin = [-700.0, 0.0, 720.0]
+yaw_deg = 180.0
