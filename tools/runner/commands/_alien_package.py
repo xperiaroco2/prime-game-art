@@ -120,7 +120,10 @@ def clean(gltf: dict[str, Any], blob: bytes) -> tuple[dict[str, Any], bytes, lis
             a["bufferView"] = view_map[a["bufferView"]]
         accessors.append(a)
     g["accessors"], g["bufferViews"] = accessors, views
-    g["buffers"] = [{"byteLength": len(out)}]
+    if out:
+        g["buffers"] = [{"byteLength": len(out)}]
+    else:  # glTF wants byteLength >= 1: no buffer at all
+        g.pop("buffers", None)
     for mesh in g.get("meshes", []):
         for prim in mesh["primitives"]:
             prim["attributes"] = {k: acc_map[i] for k, i in prim["attributes"].items()}
@@ -151,7 +154,9 @@ def glb_bytes(gltf: dict[str, Any], blob: bytes) -> bytes:
 
 # ---- clips: forward kinematics of the feet --------------------------------------------------------------------------
 
-def _sample(times: list[float], values: list[tuple[float, ...]], t: float, rotation: bool) -> tuple[float, ...]:
+def _sample(times: list[float], values: list[tuple[float, ...]], step: bool, t: float,
+            rotation: bool) -> tuple[float, ...]:
+    """A channel's value at t: LINEAR (rotations normalised lerp) or STEP (the key at or before t)."""
     if t <= times[0]:
         return values[0]
     if t >= times[-1]:
@@ -163,6 +168,8 @@ def _sample(times: list[float], values: list[tuple[float, ...]], t: float, rotat
             lo = mid
         else:
             hi = mid
+    if step:
+        return values[lo]
     u = (t - times[lo]) / ((times[hi] - times[lo]) or 1.0)
     a, b = values[lo], values[hi]
     if rotation and sum(x * y for x, y in zip(a, b)) < 0.0:
@@ -175,9 +182,16 @@ def _sample(times: list[float], values: list[tuple[float, ...]], t: float, rotat
 
 
 def _channels(gltf: dict[str, Any], blob: bytes, anim: dict[str, Any]):
-    return {(ch["target"]["node"], ch["target"]["path"]): (
-        [x[0] for x in R.accessor(gltf, blob, anim["samplers"][ch["sampler"]]["input"])],
-        R.accessor(gltf, blob, anim["samplers"][ch["sampler"]]["output"])) for ch in anim["channels"]}
+    """(node, path) -> (key times, values, STEP?); a CUBICSPLINE sampler is refused (three values a key)."""
+    out = {}
+    for ch in anim["channels"]:
+        s = anim["samplers"][ch["sampler"]]
+        mode = s.get("interpolation", "LINEAR")
+        if mode not in ("LINEAR", "STEP"):
+            raise ValueError(f"{anim.get('name')}: {mode} samplers are not read")
+        out[(ch["target"]["node"], ch["target"]["path"])] = (
+            [x[0] for x in R.accessor(gltf, blob, s["input"])], R.accessor(gltf, blob, s["output"]), mode == "STEP")
+    return out
 
 
 def _world(gltf: dict[str, Any], chans: dict):
@@ -217,10 +231,10 @@ def clip_rows(gltf: dict[str, Any], blob: bytes) -> list[dict[str, Any]]:
         chans = _channels(gltf, blob, anim)
         times: set[float] = set()
         step = math.inf
-        for t, _ in chans.values():
+        for t, *_ in chans.values():
             times.update(t)
             if len(t) > 2:
-                step = min(step, min(b - a for a, b in zip(t, t[1:]) if b > a))
+                step = min(step, min((b - a for a, b in zip(t, t[1:]) if b > a), default=math.inf))
         frames = sorted(times)
         length = frames[-1] if frames else 0.0
         fps = round(1.0 / step) if step < math.inf else None
@@ -287,7 +301,15 @@ def _mid_z(verts, y: float) -> float:
     return (zs[int(0.02 * (len(zs) - 1))] + zs[int(0.98 * (len(zs) - 1))]) * 0.5
 
 
+def _unit_scale(m: list[list[float]], what: str) -> None:
+    for c in range(3):
+        n = math.sqrt(sum(m[r][c] ** 2 for r in range(3)))
+        if abs(n - 1.0) > 1e-3:
+            raise ValueError(f"{what}: scale {n:.4f}; the sockets need unit-scale bones (rigid inverses)")
+
+
 def _local(m: list[list[float]], p) -> tuple[float, ...]:
+    _unit_scale(m, "a socket's bone")
     inv = R.rigid_inverse(m)
     return tuple(round(x, 4) for x in R.apply(inv, p))
 
@@ -317,6 +339,7 @@ def sockets(alien: tuple[dict, bytes], slice_m1: tuple[dict, bytes]) -> dict[str
             heads = [world(b, 0.0) for b in ("RightMiddleProximal", "RightMiddleIntermediate", "RightMiddleDistal")]
             centre = tuple(sum(h[i] for h in heads) / 3.0 for i in range(3))
             hand = world("RightHand", 0.0, matrix=True)
+            _unit_scale(hand, "RightHand at the Idle's first frame")
             q = R.apply(R.mul(aglob["RightHand"], R.rigid_inverse(hand)), centre)
             how = "the middle finger's curl centre at the Idle's first frame (the alien has no grip pose)"
         elif name == "Belt":

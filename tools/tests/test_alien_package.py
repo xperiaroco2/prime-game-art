@@ -113,6 +113,18 @@ class ClipRowsTest(unittest.TestCase):
         self.assertAlmostEqual(row["speed_m_s"], 2.0, places=2)
         self.assertAlmostEqual(row["seconds"], 1.0)
 
+    def test_step_and_cubic_samplers(self):
+        self.assertEqual(P._sample([0.0, 1.0], [(0.0,), (1.0,)], True, 0.6, False), (0.0,))
+        self.assertEqual(P._sample([0.0, 1.0], [(0.0,), (1.0,)], False, 0.5, False), (0.5,))
+        g, b = P.clean(*toy())[:2]
+        g["animations"][0]["samplers"][0]["interpolation"] = "CUBICSPLINE"
+        with self.assertRaises(ValueError):
+            P.clip_rows(g, b)
+
+    def test_sockets_refuse_a_scaled_bone(self):
+        with self.assertRaises(ValueError):
+            P._local(R.mat(s=(1.2, 1.2, 1.2)), (0.0, 0.0, 0.0))
+
 
 @unittest.skipUnless(HAVE_GLB, "needs alien_chameleon.glb (Git LFS)")
 class CommittedPackageTest(unittest.TestCase):

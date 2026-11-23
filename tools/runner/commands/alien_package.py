@@ -232,7 +232,10 @@ def build(args: argparse.Namespace) -> int:
         raise common.Failure("--name and --id are needed to build the package")
     asset = args.asset.resolve()
     export = asset / "export"
-    if export.exists():
+    if export.exists():  # only a package folder's export/ is rebuilt: never another folder's
+        if not (asset / "package.json").is_file() and any(export.iterdir()):
+            raise common.Failure(f"{export.as_posix()} is not empty and {asset.as_posix()} has no package.json: "
+                                 "refusing to replace it")
         shutil.rmtree(export)
     export.mkdir(parents=True)
     gltf, blob = _ragdoll.read_glb(glb)
