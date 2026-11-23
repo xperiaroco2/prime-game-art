@@ -16,7 +16,7 @@ from runner import common
 
 DIMS = tomllib.loads((common.ROOT / "tools" / "blender" / "pinball_dims.toml").read_text(encoding="utf-8"))
 RAW = common.raw_dir() / "lobby" / "pinball"
-BUILD = next((RAW / t for t in ("v4", "v3d", "v3", "v2", "v1") if (RAW / t / "pinball.glb").is_file()), RAW / "v4")  # the newest; v4 the package
+BUILD = next((RAW / t for t in ("v6", "v4", "v3d", "v3", "v2", "v1") if (RAW / t / "pinball.glb").is_file()), RAW / "v6")  # the newest; v6 the package
 CONTRACT_BODIES = ("WallLeft", "WallRight", "WallTop", "InlaneLeft", "InlaneRight", "FlipperLeft", "FlipperRight",
                    "Bumper", "Kicker", "Target")
 # the contract's node origins (x, y, z in m) and yaw (deg), from pinball_table.tscn at prime-game 77ac43d5
@@ -125,7 +125,9 @@ class PinballGlbs(unittest.TestCase):
             self.assertIn("baseColorTexture", m["pbrMetallicRoughness"], mat)
             self.assertIn("emissiveTexture", m, mat)
         names = {m["name"] for m in glb_json(BUILD / "pinball.glb")["materials"]}
-        self.assertTrue({"pinball_teal_dark", "pinball_teal_light", "pinball_copper", "pinball_lens"} <= names, names)
+        tag = int(re.match(r"v(\d+)", BUILD.name).group(1))
+        trims = "pinball_steel" if tag >= 5 else "pinball_copper"   # v5 on: the trims' metal switch, steel since B
+        self.assertTrue({"pinball_teal_dark", "pinball_teal_light", trims, "pinball_lens"} <= names, names)
 
     def test_table_nodes(self) -> None:
         g = glb_json(BUILD / "pinball_table.glb")

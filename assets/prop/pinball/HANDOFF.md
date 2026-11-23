@@ -2,14 +2,14 @@
 
 The lobby's playable pinball machine (art #374), the art for prime-game's greybox `levels/lobby/lobby.tscn` `Pinball`
 and its table contract (`scenes/pinball/pinball_table.tscn`, `PinballTableSpec`). The engineer approved the look on
-2026-11-23 with the dark rails and their copper edges. This package carries the art only. The table's physics, the
+2026-11-23 without copper (his pick B): the dark rails with teal edges, every trim the hall's cold steel. This package carries the art only. The table's physics, the
 flippers' input, the score and the display's text stay the game's.
 
 ## Files
 
 | File | What |
 |---|---|
-| `export/pinball.glb` | The cabinet: one mesh `pinball` (36,680 triangles, 7 materials, textures embedded), its origin on the floor under the footprint's middle, the player on -Z. Three empties at the greybox's roles: `TableMount`, `CloseUp` and `Display` |
+| `export/pinball.glb` | The cabinet: one mesh `pinball` (36,680 triangles, 7 materials, textures embedded; no copper: `pinball_steel` trims), its origin on the floor under the footprint's middle, the player on -Z. Three empties at the greybox's roles: `TableMount`, `CloseUp` and `Display` |
 | `export/pinball_table.glb` | The table's art in the contract's frame, one mesh per contract body, named as the node it dresses: `WallLeft`, `WallRight`, `WallTop`, `InlaneLeft`, `InlaneRight`, `FlipperLeft`, `FlipperRight`, `Bumper`, `Kicker`, `Target`. Also `Playfield` (the night Earth art), `Glass` and the markers `BallStart` and `Drain`. 4,408 triangles; each flipper's pivot is at its origin |
 | `source/pinball.blend` | The Blender build |
 | `report.json` | Triangles by part and material, the markers' transforms, the measured sizes, glTF-Validator, the clearances in the hall |

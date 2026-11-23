@@ -123,7 +123,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", default="v1", help="the output folder under <raw>/lobby/pinball/")
     ap.add_argument("--no-build", action="store_true")
-    ap.add_argument("--rails", choices=("copper", "dark"), help="the top rails' look (default: [body] rails)")
+    ap.add_argument("--rails", choices=("copper", "dark", "teal"), help="the top rails' look (default: [body] rails)")
+    ap.add_argument("--metal", choices=("copper", "steel"), help="the trims' metal (default: [body] metal)")
     ap.add_argument("--no-shots", action="store_true")
     ap.add_argument("--no-video", action="store_true")
     ap.add_argument("--px", type=int, default=4, help="the orthographic renders' pixels per cm")
@@ -133,7 +134,7 @@ def main() -> int:
     out = BASE / args.tag
     out.mkdir(parents=True, exist_ok=True)
     if not args.no_build:
-        r = blender.run_script("pinball_build.py", ["--out", str(out), "--px", str(args.px), "--earth", str(EARTH)] + (["--rails", args.rails] if args.rails else []), timeout=900)
+        r = blender.run_script("pinball_build.py", ["--out", str(out), "--px", str(args.px), "--earth", str(EARTH)] + (["--rails", args.rails] if args.rails else []) + (["--metal", args.metal] if args.metal else []), timeout=900)
         print(*[x for x in (r.stdout or "").splitlines() if x.startswith("PINBALL_BUILD")], sep="\n", flush=True)
     ok = True
     for g in GLBS:
@@ -198,7 +199,7 @@ def write_asset(asset: Path, out: Path, tag: str, approved: list | None = None) 
         "cabinet": {"triangles": cab["triangles"], "triangles_by_material": cab["triangles_by_material"],
                     "triangles_by_part": cab["triangles_by_part"], "bounds_cm": cab["bounds_cm"],
                     "origin": "the floor under the footprint's middle", "player_side": "-Z",
-                    "rails": DIMS["body"]["rails"]},
+                    "rails": DIMS["body"]["rails"], "metal": DIMS["body"]["metal"]},
         "table": {"triangles": table["triangles"], "nodes": sorted(table["nodes"]), "playfield_cm": table["playfield_cm"]},
         "markers": build["markers"],
         "measured": build["measured"],
@@ -226,7 +227,7 @@ def write_asset(asset: Path, out: Path, tag: str, approved: list | None = None) 
          f"per contract body ({table['triangles']:,} triangles). Built from code in headless Blender "
          "(tools/blender/pinball_build.py) from its drawing tools/blender/pinball_dims.toml, fitted to the concept "
          "lobby/pinball/ref/concept_p2.png (our own OpenAI generation, used only as a reference: no part of the model "
-         "was generated); the dark rails with copper edges are the engineer's pick. The playfield and side art are "
+         "was generated); without copper, the engineer's pick B: the dark rails with teal edges, every trim cold steel. The playfield and side art are "
          "cut from NASA's Black Marble (sources/nasa_earth_lobby.toml).\""),
         'tools = ["blender 5.2.2", "prime-game-art pinball_build.py, pinball_art.py, pinball_run.py", '
         '"glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (shots)"]',
