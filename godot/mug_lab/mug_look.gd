@@ -5,9 +5,9 @@ extends RefCounted
 ## The levels (object space, cm in `levels`) come from the build: the inside floor, the full level, the rim, the
 ## inner and the rim's outer radius, the crown's top when full.
 
-const GLASS := preload("res://mug_lab/glass.gdshader")
-const BEER := preload("res://mug_lab/beer.gdshader")
-const FOAM := preload("res://mug_lab/foam.gdshader")
+const GLASS := preload("glass.gdshader")  # relative: the same file works where the game keeps it
+const BEER := preload("beer.gdshader")
+const FOAM := preload("foam.gdshader")
 
 
 static func apply(model: Node, levels: Dictionary = {}) -> Dictionary:
@@ -35,11 +35,12 @@ static func apply(model: Node, levels: Dictionary = {}) -> Dictionary:
 	# round 12: a glass baked by mug_lab_bake.py carries its map as the imported material's base colour
 	var mug_mi := model.find_child("Mug", true, false) as MeshInstance3D
 	if mug_mi != null:
-		var src := mug_mi.get_active_material(0) as BaseMaterial3D
-		if src != null and src.albedo_texture != null:
-			glass.set_shader_parameter("glass_map", src.albedo_texture)
-			glass.set_shader_parameter("baked", 1.0)
-			look["baked"] = true
+		for si: int in mug_mi.mesh.get_surface_count():
+			var src := mug_mi.mesh.surface_get_material(si) as BaseMaterial3D
+			if src != null and src.albedo_texture != null:
+				glass.set_shader_parameter("glass_map", src.albedo_texture)
+				glass.set_shader_parameter("baked", 1.0)
+				look["baked"] = true
 	for pair: Array in [["Mug", glass], ["Liquid", beer], ["Foam", foam]]:
 		var mi := model.find_child(pair[0], true, false) as MeshInstance3D
 		if mi == null:

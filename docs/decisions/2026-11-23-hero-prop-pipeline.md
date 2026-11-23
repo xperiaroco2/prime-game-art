@@ -57,7 +57,11 @@ Every hero prop (held items, then weapons) goes through one pipeline, inside the
    concept and the renders, never the code. From round 2, pairwise against the last round. Measurable items (sizes,
    triangles, levels) go to scripts. At most 5 rounds; a round that scores lower is reverted.
 9. **The engineer's look** (Gate 5) on a private page, with the clip. The rubric advises him and does not gate:
-   after 14 rounds the stein plateaued at 25-27 of 45 with every judge and technique tried.
+   after 14 rounds the stein plateaued at 25-27 of 45 with every judge tried (the bake, by a material-slot bug, was
+   never in the judged renders; its effect is untested).
+10. **A package check before any handoff**: the game's own load of the package folder, headless, checks the nodes,
+   the marker frames, the states and the triangles (`godot/mug_lab/package_check.gd`). It caught two bugs that
+   fourteen rounds of renders and critics did not: a glass mesh without a material and a turned marker frame.
 
 ## Consequences
 - No new tool or service. Meshy stays under the existing standing permission for blockouts and textures of opaque

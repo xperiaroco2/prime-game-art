@@ -120,7 +120,11 @@ What moved the scores, and what did not:
   - The three go into one 1024² map on the glass's own UVs, carried in the GLB as its base colour and read by
     `glass.gdshader`.
   - Cost: 3-4 minutes of Cycles on the CPU per mug.
-  - Gain: crisp ridges, a thick glass read and a clear base.
+  - **Correction (the package check, after round 14): the bake never reached the shader in rounds 12-14.** The
+    boolean union of the handle left the glass mesh an empty first material slot, every face used it, and the GLB's
+    glass had no material, so `mug_look.gd` found no map and `baked` stayed 0. The critics of rounds 12-14 judged the
+    shader edits of those rounds without the bake. The build now keeps one slot (`mug_lab_build.py`,
+    `mug_lab_bake.py`), and the bake itself is still untested.
 - **Two Opus critics a round**, absolute and pairwise against the last round.
   - Opus names defects with pixel positions and rarely flip-flops.
   - Two Opus critics still differ by up to 4 points (27 and 23 on round 13).
@@ -129,7 +133,7 @@ What moved the scores, and what did not:
   - round 13: 27 and 23;
   - round 14: 25 and 27.
 
-  With both models and with baking, the loop plateaued at 25-27 of 45: the technique sets the ceiling, not the judge.
+  With both models the loop plateaued at 25-27 of 45 without a bake; whether the bake lifts the ceiling is open.
   The director's rule applies: stop, and put the best mug (round 14, `b35`) to the engineer's own look. From here the
   rubric is advice.
 - **Still named by both critics:**
@@ -138,7 +142,11 @@ What moved the scores, and what did not:
   - the base reads milky;
   - the head reads bun-like;
   - the handle is plainer than the concept's.
-- **Budget:** the judged round-14 mug was 10,370 triangles; the build for the game is trimmed to 9,954 (`b36`).
+- **Budget:** the judged round-14 mug was 10,370 triangles; the packaged build is trimmed to 9,954.
+- **The package check also caught the Grip's frame** built column by column in Blender: its +Y ran along +x. The
+  glTF exporter changes the basis of a node's axes as it does positions, so the frame is now `G2B @ M_godot @ G2B^-1`.
+- **Packaged on the research branch only** (`assets/prop/mug_research`, `tools/blender/mug_lab_package.py --check`):
+  M8 ships the art lane's mug (`assets/prop/mug`). The engineer found the research mug "more or less fine".
 - **The next technique, if he wants more:** two-layer glass with a separate back-wall pass, and the liquid drawn to its
   own buffer. That is days of work.
 

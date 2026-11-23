@@ -384,7 +384,12 @@ def main() -> None:
         parts.append(thumb_rest(S))
     glass = union(glass, parts)
     smooth(glass, S["body"]["sharp_deg"])
+    # one slot, every face on it: the boolean union leaves an empty first slot, and the GLB's glass then had no
+    # material at all (so the baked map of rounds 12-14 never reached the shader; found by the package check)
+    glass.data.materials.clear()
     glass.data.materials.append(mat("mug_glass", (0.8, 0.88, 0.9, 0.2), 0.03, True))
+    for p in glass.data.polygons:
+        p.material_index = 0
 
     beer = bpy.data.objects.new("Beer", None)
     bpy.context.scene.collection.objects.link(beer)
@@ -400,12 +405,12 @@ def main() -> None:
     grip = bpy.data.objects.new("Grip", None)
     bpy.context.scene.collection.objects.link(grip)
     G = S["grip"]
-    m = Matrix.Identity(4)
-    m.translation = B(G["at"])
-    # the Grip's +Y (Godot) up the bar = Blender +Z; its -Z (Godot) toward the mug's axis (-x) => Godot +Z = +x
-    # Godot basis columns (x, y, z) = (0,0,-1)?: x = y cross z = (0,1,0) x (1,0,0) = (0,0,-1)
-    gx, gy, gz = B((0, 0, -100)), B((0, 100, 0)), B((100, 0, 0))
-    m.col[0][:3], m.col[1][:3], m.col[2][:3] = gx, gy, gz
+    # The Grip's frame in Godot axes: +Y up the bar, -Z toward the mug's axis (-x), so +Z = +x and X = Y x Z = -z.
+    # The glTF exporter turns Blender's local axes into Godot's by the same change of basis as positions, so the
+    # Blender matrix is G2B @ M_godot @ G2B^-1 (the package check caught a frame built column by column: its +Y ran +x)
+    g2b = Matrix(((1, 0, 0, 0), (0, 0, -1, 0), (0, 1, 0, 0), (0, 0, 0, 1)))   # Godot (x, y, z) -> Blender (x, -z, y)
+    mg = Matrix(((0, 0, 1, G["at"][0] * CM), (0, 1, 0, G["at"][1] * CM), (-1, 0, 0, G["at"][2] * CM), (0, 0, 0, 1)))
+    m = g2b @ mg @ g2b.inverted()
     grip.matrix_world = m
 
     counts = {o.name: tris(o) for o in (glass, liq, fl)}

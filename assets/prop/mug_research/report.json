@@ -1,0 +1,117 @@
+{
+  "asset": "mug_research",
+  "built_by": "tools/blender/mug_lab_run.py --tag m3; tools/blender/mug_lab_package.py --tag m3",
+  "mesh": {
+    "triangles": 9954,
+    "by_mesh": {
+      "Mug": 7466,
+      "Liquid": 448,
+      "Foam": 2040
+    },
+    "budget_triangles": 10000,
+    "levels_cm": {
+      "floor": 2.2,
+      "full": 12.6,
+      "rim": 15.0,
+      "inner_r": 3.62,
+      "rim_r": 4.5,
+      "head_top": 18.2
+    },
+    "front": "+Z (the holder's side)",
+    "handle": "+X",
+    "origin": "the middle of the base's underside"
+  },
+  "bake": null,
+  "states": {
+    "full": "mug_look.gd set_fill(look, 1.0)",
+    "half": "set_fill(look, 0.5)",
+    "empty": "set_fill(look, 0.0): Beer hidden, lacing on the glass"
+  },
+  "gltf_validator": {
+    "numErrors": 0,
+    "numWarnings": 0,
+    "numInfos": 2,
+    "numHints": 0
+  },
+  "godot_gpu_ms_first_person_1280x720": {
+    "gpu_ms_fp_1280x720_median": 12.9549999237061,
+    "renderer": "AMD Radeon(TM) 860M Graphics"
+  },
+  "package_check": {
+    "baked": false,
+    "bounds_cm": {
+      "max": [
+        8.43,
+        15.25,
+        4.62
+      ],
+      "min": [
+        -4.62,
+        0.0,
+        -4.62
+      ]
+    },
+    "grip_cm": [
+      7.45,
+      8.0,
+      0.0
+    ],
+    "grip_minus_z": [
+      -1.0,
+      0.0,
+      0.0
+    ],
+    "grip_up": [
+      0.0,
+      1.0,
+      0.0
+    ],
+    "problems": [],
+    "states": {
+      "0.0": {
+        "beer_visible": false,
+        "crown": 0.0
+      },
+      "0.5": {
+        "beer_visible": true,
+        "crown": 0.0
+      },
+      "1.0": {
+        "beer_visible": true,
+        "crown": 1.0
+      }
+    },
+    "triangles": {
+      "Foam": 2040,
+      "Liquid": 448,
+      "Mug": 7466
+    },
+    "triangles_total": 9954,
+    "exit": 0
+  },
+  "critics_round_14_opus": {
+    "r14a_b35_opus.json": {
+      "1": 3,
+      "2": 2,
+      "3": 3,
+      "4": 3,
+      "5": 2,
+      "6": 3,
+      "7": 3,
+      "8": 3,
+      "9": 3
+    },
+    "r14b_b35_opus.json": {
+      "1": 3,
+      "2": 3,
+      "3": 3,
+      "4": 3,
+      "5": 2,
+      "6": 4,
+      "7": 3,
+      "8": 3,
+      "9": 3
+    }
+  },
+  "review": "<raw>/research/mug-lab/m3/godot/ and https://claude.ai/artifact/8JSFkeqdCA2EQuhnnDc2vU"
+}

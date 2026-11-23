@@ -115,7 +115,6 @@ def main() -> None:
     sc.cycles.device = "CPU"
     sc.cycles.samples = samples
     glass = bpy.data.objects["Mug"]
-    keep = list(glass.data.materials)
     unwrap(glass)
     lights()
 
@@ -166,12 +165,11 @@ def main() -> None:
     img.file_format = "PNG"
     img.save()
     # back to the glass material, now with the map as its base colour (the GLB carries it; Godot's look reads it)
+    gm = bpy.data.materials["mug_glass"]
     glass.data.materials.clear()
-    for mt in keep:
-        glass.data.materials.append(mt)
-    gm = bpy.data.materials["mug_glass"]   # by name: the boolean union can leave an empty first slot
-    if gm.name not in [m.name for m in glass.data.materials if m]:
-        glass.data.materials.append(gm)
+    glass.data.materials.append(gm)
+    for p in glass.data.polygons:
+        p.material_index = 0
     bsdf = gm.node_tree.nodes.get("Principled BSDF")
     tex = gm.node_tree.nodes.new("ShaderNodeTexImage")
     tex.image = bpy.data.images.load(str(out / "glass_map.png"))
@@ -182,6 +180,8 @@ def main() -> None:
                               export_apply=True, export_normals=True, export_texcoords=True,
                               export_materials="EXPORT", export_extras=False, export_cameras=False,
                               export_lights=False)
+    tex.image.pack()   # the .blend carries its baked map (the package's source)
+    bpy.ops.wm.save_as_mainfile(filepath=str(out / "mug_baked.blend"))
     stats = {"res": res, "samples": samples,
              "thick_mean": round(float(r.mean()), 3), "edge_mean": round(float(g.mean()), 3),
              "light_p99": round(float(np.percentile(b, 99)), 3)}

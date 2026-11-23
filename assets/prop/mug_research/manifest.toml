@@ -1,0 +1,37 @@
+# The AI-art pipeline research's round-14 mug of beer (art#392 follow-up), packaged on the research branch only:
+# M8 ships the art lane's mug (assets/prop/mug). The engineer found this one "more or less fine" (2026-11-23).
+# Built by tools/blender/mug_lab_run.py --tag m3 and
+# tools/blender/mug_lab_package.py --tag m3; a rebuild changes the hashes below.
+id = "mug_research"
+kind = "prop"
+slot = ""
+title = "Mug of beer (pipeline research)"
+notes = "A faceted glass stein of beer, 15 cm tall and 9 cm across, the handle on +X reaching 8 cm, the foam head to 18.2 cm; 9,954 triangles (glass 7,466, beer 448, foam 2,040; the held-prop budget 10,000). Meshes Mug and Beer (holding Liquid and Foam), the Grip marker; origin at the middle of the base underside. The look is export/mug_look.gd with three shaders, as the engineer approved it in round 14 (set_fill 1 full, 0.5, 0 empty; HANDOFF.md); no baked map. Built from code in headless Blender (mug_lab_build.py, mug_lab.toml): no part of the model was generated or downloaded. The concept the engineer picked (art#392 concept 3, gpt-image-2.5-sunburst, batch 2026-11-23-lobby-mug-concepts) was a reference for the shape and, measured by script, for the colours."
+tools = ["blender 5.2.2", "prime-game-art mug_lab_build.py, mug_lab_run.py, mug_lab_package.py", "glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (shots, package check)"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game"
+public_repo_ok = true
+ai_generated = false
+approved_by = []
+approved_at = ""
+approval_pr = ""
+
+[source]
+service = "own"
+plan = "own-work"
+model_version = ""
+task_ids = []
+generated_at = 2026-11-23
+url = "https://github.com/xperiaroco2/prime-game-art/issues/392"
+
+[[raw]]
+file = "2026-11-23-lobby-mug-concepts/mug3_stein/image-0.png"
+sha256 = "13f8d63fb3ab149c2c18eee48a13b42ef96f9a046118cea9dd4989f47d15dd49"
+
+[[raw]]
+file = "research/mug-lab/m3/mug.glb"
+sha256 = "ec99ef6d53b5d1a88e2be408a5e27ca3cfbb64df6bddfb57cd9a9dbda1a1125f"
+
+[[raw]]
+file = "research/mug-lab/m3/mug.blend"
+sha256 = "c69357918cd100ca0e4b7b38396880bbaf13dd09c2166fc06e0725df81ebac23"
