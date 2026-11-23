@@ -168,6 +168,7 @@ def main() -> int:
     ap.add_argument("--only", default=",".join(PIECES))
     ap.add_argument("--no-build", action="store_true")
     ap.add_argument("--no-shots", action="store_true")
+    ap.add_argument("--style", help="the mirror's variant (mirror_dims.toml [style]): spikes, soft, flat, frame")
     args = ap.parse_args()
     out = BASE / args.tag
     only = [p for p in args.only.split(",") if p]
@@ -177,7 +178,8 @@ def main() -> int:
     for piece in only:
         folder = out / piece
         if not args.no_build:
-            r = blender.run_script("lobby_furniture_build.py", ["--piece", piece, "--out", str(folder)], timeout=600)
+            r = blender.run_script("lobby_furniture_build.py", ["--piece", piece, "--out", str(folder)]
+                                   + (["--style", args.style] if args.style and piece == "mirror" else []), timeout=600)
             print(*[x for x in (r.stdout or "").splitlines() if x.startswith("FURNITURE_BUILD")], sep="\n", flush=True)
         passed, text = _export.verdict(_export.validate(folder / f"{piece}.glb", folder / f"{piece}.validator.json"))
         print(f"validator {piece}.glb: {text}", flush=True)

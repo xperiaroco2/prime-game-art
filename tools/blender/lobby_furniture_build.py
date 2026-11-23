@@ -30,6 +30,7 @@ G2B = Matrix(((1, 0, 0, 0), (0, 0, -1, 0), (0, 1, 0, 0), (0, 0, 0, 1)))   # Godo
 SPECS = {"bar": "bar_dims.toml", "mirror": "mirror_dims.toml", "match_console": "match_console_dims.toml",
          "mug": "mug_dims.toml"}
 PIECE: list = []
+STYLE: list = []   # --style: a piece's variant (the mirror's)
 LOOK: dict = {}
 _MATS: dict = {}
 
@@ -274,24 +275,107 @@ def mirror(D: dict) -> tuple[list, dict]:
     for s in (-1, 1):
         a, b = sorted((s * gx, s * (gx + L["w"])))
         glow.box((a, y0, zf0), (b, y1, zf0 + L["d"] + 2.0))
-    fins = Part("fins", "fin", bevel=0.25)
-    tips = Part("fin_tips", "steel", bevel=0.2)
+    style = STYLE[0] if STYLE else D["style"]["pick"]
     base_x = gx + L["w"] + 1.0
-    for s in (-1, 1):
-        for xo, fy0, fy1, bw, d, lean in N["left"]:
-            x = s * (base_x + xo)
-            def section(y: float, k: float) -> list:   # a faceted crystal section: a back edge and a forward ridge
-                shift = s * math.tan(math.radians(lean)) * (y - fy0)
-                c = x + shift
-                ridge = c + s * bw * (N["facet"] - 0.5) * k   # the front face off-centre, outward: a faceted look
-                return [(c - bw / 2 * k, y, 0.0), (c + bw / 2 * k, y, 0.0), (ridge + bw * 0.1 * k, y, d * k),
-                        (ridge - bw * 0.1 * k, y, d * k)]
-            yt = fy1 - N["tip"]
-            k_t = N["tip_width"]
-            fins.loft([section(fy0, 1.0), section(yt, k_t)])
-            tips.loft([section(yt, k_t), section(fy1, 0.04)])
-    return [back, fr, glow, fins, tips, glass], {"markers": {"MirrorFace": ((0.0, G["bottom"] + G["h"] / 2, G["front"]), 0.0)},
+    extra_parts = mirror_dressing(D, style, base_x, hw, y1, zf0)
+    return [back, fr, glow, *extra_parts, glass], {"markers": {"MirrorFace": ((0.0, G["bottom"] + G["h"] / 2, G["front"]), 0.0)},
                                                   "separate": ["MirrorGlass"]}
+
+
+def _lens(cx: float, y: float, w: float, d: float, n: int = 12) -> list:
+    """A rounded fin section at height y: a half ellipse w wide bulging d out of the wall (z 0), its back flat."""
+    return [(cx + w / 2 * math.cos(math.pi * i / (n - 1)), y, max(0.0, d * math.sin(math.pi * i / (n - 1))))
+            for i in range(n)]
+
+
+def mirror_dressing(D: dict, style: str, base_x: float, hw: float, y_top: float, z0: float) -> list:
+    """The mirror's sides by style (the engineer rejected the first build's spiky fins, 2026-11-23):
+    "spikes" the first build's faceted fins with steel tips; "soft" broad rounded fins with domed steel caps, the
+    concept's sheaf without points; "flat" low stepped slabs, a relief with steel inner edges; "frame" no fins: a wide
+    rounded steel frame with a cyan line round the glass and a light bar on top."""
+    S = D["style"][style] if style in D["style"] else {}
+    parts = []
+    if style == "spikes":
+        N = D["fins"]
+        fins, tips = Part("fins", "fin", bevel=0.25), Part("fin_tips", "steel", bevel=0.2)
+        for s in (-1, 1):
+            for xo, fy0, fy1, bw, d, lean in N["left"]:
+                x = s * (base_x + xo)
+                def section(y: float, k: float) -> list:
+                    c = x + s * math.tan(math.radians(lean)) * (y - fy0)
+                    ridge = c + s * bw * (N["facet"] - 0.5) * k
+                    return [(c - bw / 2 * k, y, 0.0), (c + bw / 2 * k, y, 0.0), (ridge + bw * 0.1 * k, y, d * k),
+                            (ridge - bw * 0.1 * k, y, d * k)]
+                yt = fy1 - N["tip"]
+                fins.loft([section(fy0, 1.0), section(yt, N["tip_width"])])
+                tips.loft([section(yt, N["tip_width"]), section(fy1, 0.04)])
+        return [fins, tips]
+    if style == "soft":   # leaf blades: flat layered fins with a rounded tip, the concept's sheaf without points
+        fins, edges = Part("fins", "fin", bevel=S["round_edge"], segs=4), Part("fin_edges", "steel", bevel=0.0)
+        for s in (-1, 1):
+            for xo, fy0, fy1, w, d, lean in S["fins"]:
+                h = fy1 - fy0
+                xi = base_x + xo
+                xo_top = xi + w + math.tan(math.radians(lean)) * h * 0.6   # the outer edge, leaning out a little
+                tip = (xi + w * 0.45 + math.tan(math.radians(lean)) * h, fy1)
+                inner = (xi, fy0 + h * S["inner_to"])
+                pts = [(xi, fy0), (xi + w, fy0), (xo_top, fy0 + h * 0.6)]
+                for i in range(1, 9):   # a quadratic curve over the tip from the outer edge round to the inner one
+                    t = i / 9
+                    c1 = (tip[0] + w * 0.35, tip[1])
+                    q0x = (1 - t) * xo_top + t * c1[0]
+                    q0y = (1 - t) * (fy0 + h * 0.6) + t * c1[1]
+                    q1x = (1 - t) * c1[0] + t * tip[0]
+                    q1y = (1 - t) * c1[1] + t * tip[1]
+                    pts.append(((1 - t) * q0x + t * q1x, (1 - t) * q0y + t * q1y))
+                pts.append(tip)
+                for i in range(1, 6):
+                    t = i / 6
+                    pts.append((tip[0] + (inner[0] - tip[0]) * t - math.sin(math.pi * t) * w * 0.12,
+                                tip[1] + (inner[1] - tip[1]) * t))
+                pts = [(s * px, py) for px, py in pts]
+                fins.face(pts if s > 0 else pts[::-1], z0, z0 + d)
+                ex = s * xi
+                edges.box((min(ex, ex + s * 1.2), fy0, z0 + d - 0.3), (max(ex, ex + s * 1.2), inner[1], z0 + d + 0.3))
+        return [fins, edges]
+    if style == "flat":
+        slabs, edges = Part("slabs", "fin", bevel=0.6, segs=3), Part("slab_edges", "steel", bevel=0.0)
+        for s in (-1, 1):
+            for xo, w, h, d in S["slabs"]:
+                x0, x1 = base_x + xo, base_x + xo + w
+                r = min(S["round"], w * 0.9)
+                pts = [(x0, 0.0), (x1, 0.0), (x1, h - r)]
+                for i in range(1, 7):   # the outer top corner rounded, the inner edge stands straight
+                    a = math.pi / 2 * i / 6
+                    pts.append((x1 - r + r * math.cos(a), h - r + r * math.sin(a)))
+                pts.append((x0, h))
+                pts = [(s * px, py) for px, py in pts]
+                slabs.face(pts if s > 0 else pts[::-1], z0, z0 + d)
+                edges.box((min(s * x0, s * (x0 + 1.4)), 0.0, z0 + d - 0.3), (max(s * x0, s * (x0 + 1.4)), h, z0 + d + 0.4))
+        return [slabs, edges]
+    # "frame": no fins
+    fw, fd, r = S["width"], S["depth"], S["round"]
+    frame = Part("wide_frame", "steel", bevel=0.0)
+    line = Part("frame_line", "glow", bevel=0.0)
+    hx, h0, h1 = hw + fw / 2 + 0.5, fw / 2, y_top + fw / 2 + 0.5   # its foot on the floor
+    path = [(-hx, h0), (-hx, h1 - r)]
+    for i in range(1, 8):
+        a = math.pi - math.pi / 2 * i / 8
+        path.append((-hx + r + r * math.cos(a), h1 - r + r * math.sin(a)))
+    path += [(hx - r, h1)]
+    for i in range(1, 8):
+        a = math.pi / 2 - math.pi / 2 * i / 8
+        path.append((hx - r + r * math.cos(a), h1 - r + r * math.sin(a)))
+    path.append((hx, h0))
+    frame.ribbon(path, fw, z0, z0 + fd)
+    line.ribbon(path, S["line"], z0 + fd, z0 + fd + 0.3)   # the cyan line along the frame's middle
+    bar = Part("light_bar", "glow", bevel=0.0)
+    bw = S["bar_w"]
+    bar.box((-bw / 2, h1 + fw / 2 + 3.0, z0), (bw / 2, h1 + fw / 2 + 3.0 + S["bar_h"], z0 + S["bar_d"]))
+    housing = Part("light_housing", "steel", bevel=0.4)
+    housing.box((-bw / 2 - 3, h1 + fw / 2 + 1.5, z0), (bw / 2 + 3, h1 + fw / 2 + 3.0, z0 + S["bar_d"] + 2))
+    housing.box((-bw / 2 - 3, h1 + fw / 2 + 3.0 + S["bar_h"], z0), (bw / 2 + 3, h1 + fw / 2 + 4.5 + S["bar_h"], z0 + S["bar_d"] + 2))
+    return [frame, line, bar, housing]
 
 
 # --- the match console ----------------------------------------------------------------------------------------------
@@ -409,6 +493,8 @@ def main() -> None:
     out.mkdir(parents=True, exist_ok=True)
     D = tomllib.loads((HERE / SPECS[piece]).read_text(encoding="utf-8"))
     PIECE.append(piece)
+    if args.get("style"):
+        STYLE.append(args["style"])
     LOOK.update(D["look"])
     for ob in list(bpy.data.objects):
         bpy.data.objects.remove(ob)

@@ -40,6 +40,30 @@ tip = 22.0              # each fin's top this long is a steel tip (the concept's
 tip_width = 0.45        # the fin's section where the tip starts, against its base
 facet = 0.35            # the fin's front ridge stands this share of its width forward (a faceted crystal section)
 
+[style]                 # the sides' variant (the engineer rejected "spikes", 2026-11-23: "why are there spikes")
+pick = "spikes"         # the build's default until he picks; --style overrides it: spikes, soft, flat, frame
+
+[style.soft]            # A: the concept's sheaf as leaf blades: flat layered fins with rounded tips, no points
+# each fin: [x from the glow line's outer edge to its inner side, bottom y, top y, width, depth, lean outward]; the
+# deepest in front, so the sheaf reads in layers (the first try, rounded columns with steel domes, read as shells)
+fins = [[1.0, 0.0, 258.0, 22.0, 8.0, 2.0], [11.0, 0.0, 208.0, 18.0, 7.0, 3.0], [20.0, 0.0, 140.0, 15.0, 6.0, 3.0]]
+inner_to = 0.8          # the inner edge rises straight to this share of the height, then curves over to the tip
+round_edge = 1.6        # the blades' edges rounded (cm)
+
+[style.flat]            # B: a low relief: stepped flat slabs with a rounded outer corner and a steel inner edge
+# each slab: [x from the glow line's outer edge, width, height, depth]
+slabs = [[1.0, 14.0, 250.0, 7.0], [13.0, 13.0, 205.0, 5.0], [24.0, 12.0, 150.0, 3.5]]
+round = 12.0
+
+[style.frame]           # C: no fins: a wide rounded steel frame with a cyan line, and a light bar over the glass
+width = 9.0
+depth = 4.0
+round = 14.0
+line = 1.2
+bar_w = 150.0
+bar_h = 3.0
+bar_d = 6.0
+
 [look]
 fin = [[0.30, 0.36, 0.37], 0.35, 0.42, 0.0]       # stone-like teal-grey
 steel = [[0.60, 0.64, 0.66], 0.85, 0.38, 0.0]
