@@ -214,8 +214,9 @@ def _noise(n: int, seed: int, power: float, stretch: float = 1.0):
 def brushed(path: Path, base: float, amp: float, seed: int, n: int = 512) -> None:
     """A brushed metal's roughness: long streaks along u over soft blotches, in [base - amp, base + amp]."""
     import numpy as np
-    val = base + amp * (0.55 * _noise(n, seed, 1.6, stretch=24.0) + 0.45 * _noise(n, seed + 1, 1.8))
-    _save(np.repeat(np.clip(val, 0.05, 0.95)[..., None], 3, axis=2), path)
+    val = np.clip(base + amp * (0.55 * _noise(n, seed, 1.6, stretch=24.0) + 0.45 * _noise(n, seed + 1, 1.8)), 0.05, 0.95)
+    # roughness in G only; R and B 1: the GLB's metallicRoughness image multiplies metallicFactor by B
+    _save(np.stack([np.ones_like(val), val, np.ones_like(val)], axis=2), path)
 
 
 def marble(path: Path, base_srgb, vein_srgb, seed: int, n: int = 1024) -> None:
@@ -351,7 +352,7 @@ def bar(D: dict) -> tuple[list, dict]:
         bezel = Part("bezel", "steel", bevel=0.0).ribbon(
             [(-ww - bw / 2, wy0 - bw / 2), (ww + bw / 2, wy0 - bw / 2), (ww * 0.95 + bw / 2, wy0 + wh + bw / 2),
              (-ww * 0.95 - bw / 2, wy0 + wh + bw / 2)], bw, wz - 0.2, wz + 0.4 + X["bezel_proud"], closed=True)
-        knob = Part("knob", "stone", bevel=0.4, segs=3).cyl(
+        knob = Part("knob", "stone", bevel=0.4, segs=3, uv_m=X["stone_tile"] * CM).cyl(
             (0, sy + K["handle_h"] + 1.0 + X["knob_h"] / 2, cz + cd / 2 + 2.5), "y", X["knob_r"], X["knob_h"], 24,
             X["knob_r"] * 0.8)
         parts += [tray, slots, bezel, knob]
@@ -495,7 +496,8 @@ def match_console(D: dict) -> tuple[list, dict]:
     body = Part("body", "body", bevel=0.8, segs=3, uv_m=X["body_tile"] * CM).face(outline, -d / 2, d / 2)
     zf = d / 2
     facet = Part("facets", "facet", bevel=0.4, uv_m=X["body_tile"] * CM)
-    bezel = Part("bezel", X.get("bezel_mat", "facet"), bevel=0.4, segs=2)   # Gate 3: the concept's metal frame, steel
+    # Gate 3: the concept's metal frame in steel, a part of its own; without [detail] bezel_mat it stays in `facets`
+    bezel = Part("bezel", X["bezel_mat"], bevel=0.4, segs=2) if "bezel_mat" in X else facet
     bezel.face(cut_rect(S["w"] + 2 * S["bezel"], S["h"] + 2 * S["bezel"], S["corner"] + 1.5, S["centre_y"]), zf - 0.1, zf + 1.0)
     vt, vb = F["v_top_w"] / 2, F["v_bottom_w"] / 2
     facet.face([(-vb, F["v_bottom_y"] + y0), (vb, F["v_bottom_y"] + y0), (vt, F["v_top_y"]), (-vt, F["v_top_y"])],
@@ -516,7 +518,7 @@ def match_console(D: dict) -> tuple[list, dict]:
     screen = Part("ConsoleScreen", "screen", bevel=0.0).face(cut_rect(S["w"], S["h"], S["corner"], S["centre_y"]),
                                                             zf + 0.95, zf + 1.2)
     marker = (0.0, S["centre_y"], zf + 1.2)
-    parts = [body, facet, bezel, steel, glow, base, screen]
+    parts = [body, facet, *([bezel] if bezel is not facet else []), steel, glow, base, screen]
     if "edge_in" in X:   # Gate 3: the concept's metal lines along the front's outer edges (its copper, steel here)
         e = X["edge_in"]
         lo = y0 + 6.0
