@@ -241,7 +241,7 @@ triplanar, generated at run time; the GLBs carried plain colours (step 2c moved 
 | S1 | cool blue-grey | dark graphite | graphite | warm orange (the current direction) |
 | S2 | off-white | dark graphite | mid grey | cyan |
 | S3 | deep navy | darker navy | brushed brass (metallic 0.9) | warm white |
-| S4 | teal-grey | dark teal-grey | copper (0.85) | copper orange |
+| S4 | teal-grey | dark teal-grey | copper (0.85); cold steel (0.85) since 2026-11-23 | copper orange |
 | S5 | graphite | near black | signal red | orange |
 | S6 | warm bronze-grey | dark bronze | light bronze | cool white |
 
@@ -1022,3 +1022,15 @@ and the spawns at z 2.5 stood 1.99 m from the ship, under the 2 m rule: `spawns_
 The hall's raw folder is `lobby/hall/v20` for builds with these numbers (v19 holds the game's current package's
 hall). The game sees the new spawns and ring only with the next `lobby --export` and its game PR.
 
+## No copper (2026-11-23)
+
+The engineer (2026-11-23, relayed by the director): remove the copper from the hall. In his words, copper gives
+retro and he wants the hall futuristic. S4's `trim` is now a cold brushed steel, sRGB (0.6, 0.64, 0.66) at metallic
+0.85. It is lighter and bluer than the frame (0.25, 0.3, 0.31), so the bands, lips, edges, collars and inlays still
+read. Every copper part of the hall is a `lobby_trim` surface, so the scheme's `trim` is the one switch: the pilasters'
+bands, the window's edge, the doors' and the arch's bevels, the ring's inlays, the pendants' rims and the risers'
+flanges. Their geometry is unchanged. `[look.schemes.S4c]` keeps the copper trim for the before-and-after views and is
+never the hall's scheme again. The accent (the warm light strips) is unchanged; he asked only about the copper.
+The pieces are rebuilt in `lobby/hall/v20` (the steel baked into the GLBs). The before-and-after views were shot by
+`lobby --shoot` with `scheme` S4 and S4c into `<raw>/lobby/nocopper/hall_after` and `hall_before`. The ship's own
+bronze (the start console, the vents, the crystal's cap) is not the hall's and is left as it is.
