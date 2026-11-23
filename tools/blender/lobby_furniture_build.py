@@ -33,6 +33,7 @@ PIECE: list = []
 STYLE: list = []   # --style: a piece's variant (the mirror's)
 LOOK: dict = {}
 _MATS: dict = {}
+TEX: dict = {}      # Gate 3: {"rough": {look key: png}, "albedo": {look key: png}} (make_textures)
 
 
 def argv() -> dict:
@@ -58,6 +59,18 @@ def material(key: str) -> bpy.types.Material:
     if emit:
         p.inputs["Emission Color"].default_value = (*rgb, 1.0)
         p.inputs["Emission Strength"].default_value = emit
+    nt = m.node_tree
+    if key in TEX.get("albedo", {}):     # Gate 3: a base colour image (the bar top's marble)
+        img = nt.nodes.new("ShaderNodeTexImage")
+        img.image = bpy.data.images.load(str(TEX["albedo"][key]))
+        nt.links.new(img.outputs["Color"], p.inputs["Base Color"])
+    if key in TEX.get("rough", {}):      # Gate 3: a roughness break-up in the green channel (stored as data)
+        img = nt.nodes.new("ShaderNodeTexImage")
+        img.image = bpy.data.images.load(str(TEX["rough"][key]))
+        img.image.colorspace_settings.name = "Non-Color"
+        sep = nt.nodes.new("ShaderNodeSeparateColor")
+        nt.links.new(img.outputs["Color"], sep.inputs["Color"])
+        nt.links.new(sep.outputs["Green"], p.inputs["Roughness"])
     if alpha < 1.0:   # glass and beer: alpha-blended in the GLB (Godot imports it as transparent)
         p.inputs["Alpha"].default_value = alpha
         if hasattr(m, "surface_render_method"):
@@ -72,8 +85,8 @@ def material(key: str) -> bpy.types.Material:
 class Part:
     """One material's geometry in Godot axes (cm in, metres out), chamfered on edges over 30 degrees."""
 
-    def __init__(self, name: str, mat: str, bevel: float = 0.4, segs: int = 2) -> None:
-        self.name, self.mat, self.bevel, self.segs = name, mat, bevel, segs
+    def __init__(self, name: str, mat: str, bevel: float = 0.4, segs: int = 2, uv_m: float = 1.0) -> None:
+        self.name, self.mat, self.bevel, self.segs, self.uv_m = name, mat, bevel, segs, uv_m
         self.bm = bmesh.new()
 
     def box(self, lo, hi) -> "Part":
@@ -141,11 +154,14 @@ class Part:
         bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5)
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
         uvl = bm.loops.layers.uv.new("UVMap")
-        for f in bm.faces:   # a box projection, one tile per metre
+        # a box projection, one tile per uv_m metres; u always horizontal (x, or z on the faces facing x), so a
+        # brushed grain runs along the length on every side (Gate 3)
+        uv_axes = {0: (2, 1), 1: (0, 2), 2: (0, 1)}
+        for f in bm.faces:
             ax = max(range(3), key=lambda i: abs(f.normal[i]))
+            ia, ib = uv_axes[ax]
             for lp in f.loops:
-                a, b = [lp.vert.co[i] for i in range(3) if i != ax]
-                lp[uvl].uv = (a, b)
+                lp[uvl].uv = (lp.vert.co[ia] / self.uv_m, lp.vert.co[ib] / self.uv_m)
         bm.transform(G2B)
         me = bpy.data.meshes.new(self.name)
         bm.to_mesh(me)
@@ -170,6 +186,75 @@ class Part:
         return ob
 
 
+# --- Gate 3's textures (numpy in Blender; tiling, so the box UVs repeat without seams) ------------------------------
+def _save(rgb, path: Path) -> None:
+    import numpy as np
+    h, w = rgb.shape[:2]
+    im = bpy.data.images.new(path.stem, w, h, alpha=False)
+    a = np.ones((h, w, 4), dtype=np.float32)
+    a[..., :3] = np.clip(rgb, 0.0, 1.0)
+    im.pixels.foreach_set(np.ascontiguousarray(a[::-1]).ravel())
+    im.filepath_raw = str(path)
+    im.file_format = "PNG"
+    im.save()
+    bpy.data.images.remove(im)
+
+
+def _noise(n: int, seed: int, power: float, stretch: float = 1.0):
+    """Periodic 1/f noise in -1..1; stretch > 1 draws streaks along u (the image's rows)."""
+    import numpy as np
+    rng = np.random.default_rng(seed)
+    fu, fv = np.fft.fftfreq(n)[None, :] * stretch, np.fft.fftfreq(n)[:, None]
+    k = fu ** 2 + fv ** 2
+    k[0, 0] = 1.0
+    f = np.real(np.fft.ifft2(np.fft.fft2(rng.standard_normal((n, n))) / k ** (power / 2)))
+    return (f - f.mean()) / (np.abs(f).max() + 1e-9)
+
+
+def brushed(path: Path, base: float, amp: float, seed: int, n: int = 512) -> None:
+    """A brushed metal's roughness: long streaks along u over soft blotches, in [base - amp, base + amp]."""
+    import numpy as np
+    val = base + amp * (0.55 * _noise(n, seed, 1.6, stretch=24.0) + 0.45 * _noise(n, seed + 1, 1.8))
+    _save(np.repeat(np.clip(val, 0.05, 0.95)[..., None], 3, axis=2), path)
+
+
+def marble(path: Path, base_srgb, vein_srgb, seed: int, n: int = 1024) -> None:
+    """A dark polished stone: a mottled base and thin cool veins along a warped diagonal, tiling."""
+    import numpy as np
+    u = np.arange(n)[None, :] / n
+    v = np.arange(n)[:, None] / n
+    warp = _noise(n, seed, 3.0)          # smooth: a few broad bends, no crack-like zigzags (v4's 2.2 read as cracks)
+    field = np.sin(2 * np.pi * (2 * u + 1 * v) + 3.0 * warp)
+    veins = np.clip((1 - np.abs(field)) ** 7, 0.0, 1.0) * (0.6 + 0.4 * _noise(n, seed + 2, 2.6))
+    mott = 1.0 + 0.22 * _noise(n, seed + 3, 2.4)
+    b, c = np.array(base_srgb)[None, None, :], np.array(vein_srgb)[None, None, :]
+    _save(b * mott[..., None] + (c - b) * (np.clip(veins, 0.0, 1.0)[..., None] * VEIN_MIX[0]), path)
+
+
+VEIN_MIX = [0.45]   # the veins' strength over the base (set from [detail] vein_mix)
+
+
+def make_textures(piece: str, D: dict, folder: Path) -> None:
+    """Gate 3's images for a piece with a [detail] section into folder; fills TEX."""
+    X = D.get("detail")
+    if not X:
+        return
+    folder.mkdir(parents=True, exist_ok=True)
+    rough, albedo = {}, {}
+    if piece == "bar":
+        VEIN_MIX[0] = X.get("vein_mix", VEIN_MIX[0])
+        albedo["stone"] = folder / "bar_stone.png"
+        marble(albedo["stone"], LOOK["stone"][0], X["vein"], 11)
+        for i, key in enumerate(("shell", "shell2")):
+            rough[key] = folder / f"bar_{key}_rough.png"
+            brushed(rough[key], LOOK[key][2], X["shell_rough"], 21 + i)
+    elif piece == "match_console":
+        for i, key in enumerate(("body", "facet", "floor")):
+            rough[key] = folder / f"console_{key}_rough.png"
+            brushed(rough[key], LOOK[key][2], X["body_rough"], 31 + i)
+    TEX.update({"rough": rough, "albedo": albedo})
+
+
 def rounded_rect(hx: float, hz: float, r: float, n: int = 10) -> list:
     """A plan outline (x, z): a rectangle of half sizes hx, hz with corners of radius r, counter-clockwise."""
     r = max(0.5, min(r, hx, hz))
@@ -192,14 +277,15 @@ def cut_rect(w: float, h: float, c: float, cy: float = 0.0) -> list:
 # --- the bar --------------------------------------------------------------------------------------------------------
 def bar(D: dict) -> tuple[list, dict]:
     S, P, B, W, T, K = (D[k] for k in ("size", "plinth", "body", "swoosh", "top", "tap"))
+    X = D.get("detail", {"stone_tile": 100.0, "shell_tile": 100.0, "swoosh_bevel": 0.0})
     hx, hz, H = S["length"] / 2, S["depth"] / 2, S["height"]
 
     def outline(off: float) -> list:
         return rounded_rect(hx - off, hz - off, S["end_r"] - off)
 
     y_top0 = H - T["thick"]
-    top = Part("top", "stone", bevel=T["round"], segs=3).plan(outline(0.0), y_top0, H)
-    shell = Part("shell", "shell", bevel=0.8).plan(outline(B["inset"]), P["height"], y_top0)
+    top = Part("top", "stone", bevel=T["round"], segs=3, uv_m=X["stone_tile"] * CM).plan(outline(0.0), y_top0, H)
+    shell = Part("shell", "shell", bevel=0.8, uv_m=X["shell_tile"] * CM).plan(outline(B["inset"]), P["height"], y_top0)
     steel = Part("trims", "steel", bevel=0.4, segs=3).plan(outline(B["inset"] + P["inset"]), P["glow_h"], P["height"])
     glow = Part("glow", "glow", bevel=0.0)
     glow.plan(outline(B["inset"] + P["inset"] - 0.4), 0.0, P["glow_h"])                       # the floor line
@@ -217,8 +303,8 @@ def bar(D: dict) -> tuple[list, dict]:
         ax = abs(x)
         t = 0.0 if ax <= W["low_x"][1] else min(1.0, (ax - W["low_x"][1]) / (W["ends_x"][1] - W["low_x"][1]))
         pts.append((x, W["low_y"] + (W["top_y"] - W["low_y"]) * (1 - math.cos(math.pi * t)) / 2))
-    steel_line = Part("swoosh", "steel", bevel=0.0).ribbon(pts, W["w"], zf - 0.1, zf + W["panel_proud"] + W["proud"])
-    lower = Part("panel", "shell2", bevel=0.3)   # the swept lower panel: under the line, down to over the plinth
+    steel_line = Part("swoosh", "steel", bevel=X["swoosh_bevel"], segs=2).ribbon(pts, W["w"], zf - 0.1, zf + W["panel_proud"] + W["proud"])
+    lower = Part("panel", "shell2", bevel=0.3, uv_m=X["shell_tile"] * CM)   # the swept lower panel: under the line, down to over the plinth
     foot = P["height"] + W["panel_bottom"]
     lower.face([(pts[0][0], foot)] + [(x, y - W["w"] / 2) for x, y in pts] + [(pts[-1][0], foot)], zf - 0.1,
                zf + W["panel_proud"])
@@ -250,6 +336,25 @@ def bar(D: dict) -> tuple[list, dict]:
                (K["window_w"] / 2 * 0.95, yb + K["base_h"] + K["window_y"] + K["window_h"]),
                (-K["window_w"] / 2 * 0.95, yb + K["base_h"] + K["window_y"] + K["window_h"])], wz - 0.5, wz + 0.4)
     parts = [top, shell, steel, glow, seam, steel_line, lower, tap, beer]
+    if "tray_w" in X:   # Gate 3's hardware: the drip tray's grate, the window's bezel, the lever's knob
+        tz, tw, td = tip[2], X["tray_w"], X["tray_d"]
+        tray = Part("tray", "steel", bevel=0.3, segs=2).box((-tw / 2, H, tz - td / 2),
+                                                            (tw / 2, H + X["tray_h"], tz + td / 2))
+        slots = Part("tray_slots", "dark", bevel=0.0)
+        n = X["tray_slots"]
+        for i in range(n):
+            sx = -tw / 2 + tw * (i + 1) / (n + 1)
+            slots.box((sx - X["slot_w"] / 2, H + X["tray_h"] - 0.15, tz - td / 2 + 1.5),
+                      (sx + X["slot_w"] / 2, H + X["tray_h"] + 0.05, tz + td / 2 - 1.5))
+        wy0 = yb + K["base_h"] + K["window_y"]
+        ww, wh, bw = K["window_w"] / 2, K["window_h"], X["bezel_w"]
+        bezel = Part("bezel", "steel", bevel=0.0).ribbon(
+            [(-ww - bw / 2, wy0 - bw / 2), (ww + bw / 2, wy0 - bw / 2), (ww * 0.95 + bw / 2, wy0 + wh + bw / 2),
+             (-ww * 0.95 - bw / 2, wy0 + wh + bw / 2)], bw, wz - 0.2, wz + 0.4 + X["bezel_proud"], closed=True)
+        knob = Part("knob", "stone", bevel=0.4, segs=3).cyl(
+            (0, sy + K["handle_h"] + 1.0 + X["knob_h"] / 2, cz + cd / 2 + 2.5), "y", X["knob_r"], X["knob_h"], 24,
+            X["knob_r"] * 0.8)
+        parts += [tray, slots, bezel, knob]
     pl = D["placement"]
     spot = [0.0, 0.0, math.hypot(pl["tap_spot"][0] - pl["origin"][0], pl["tap_spot"][2] - pl["origin"][2])]
     markers = {"TapSpout": (tip, 0.0), "TapSpot": (tuple(spot), 0.0)}
@@ -381,34 +486,51 @@ def mirror_dressing(D: dict, style: str, base_x: float, hw: float, y_top: float,
 # --- the match console ----------------------------------------------------------------------------------------------
 def match_console(D: dict) -> tuple[list, dict]:
     B, S, F, BA = D["body"], D["screen"], D["front"], D["base"]
+    X = D.get("detail", {"body_tile": 100.0, "seam_bevel": 0.0, "seam_proud": 0.35})
     w, h, d = B["w"], B["h"], B["d"]
     tc, wi, wy = B["top_chamfer"], B["waist_in"], B["waist_y"]
     y0 = BA["h"]
     outline = [(-w / 2 + wi, y0), (w / 2 - wi, y0), (w / 2, wy), (w / 2, h - tc), (w / 2 - tc, h), (-w / 2 + tc, h),
                (-w / 2, h - tc), (-w / 2, wy)]
-    body = Part("body", "body", bevel=0.8, segs=3).face(outline, -d / 2, d / 2)
+    body = Part("body", "body", bevel=0.8, segs=3, uv_m=X["body_tile"] * CM).face(outline, -d / 2, d / 2)
     zf = d / 2
-    facet = Part("facets", "facet", bevel=0.4)
-    facet.face(cut_rect(S["w"] + 2 * S["bezel"], S["h"] + 2 * S["bezel"], S["corner"] + 1.5, S["centre_y"]), zf - 0.1, zf + 1.0)
+    facet = Part("facets", "facet", bevel=0.4, uv_m=X["body_tile"] * CM)
+    bezel = Part("bezel", X.get("bezel_mat", "facet"), bevel=0.4, segs=2)   # Gate 3: the concept's metal frame, steel
+    bezel.face(cut_rect(S["w"] + 2 * S["bezel"], S["h"] + 2 * S["bezel"], S["corner"] + 1.5, S["centre_y"]), zf - 0.1, zf + 1.0)
     vt, vb = F["v_top_w"] / 2, F["v_bottom_w"] / 2
     facet.face([(-vb, F["v_bottom_y"] + y0), (vb, F["v_bottom_y"] + y0), (vt, F["v_top_y"]), (-vt, F["v_top_y"])],
                zf - 0.1, zf + F["proud"])
-    steel = Part("seams", "steel", bevel=0.0)
+    steel = Part("seams", "steel", bevel=X["seam_bevel"], segs=2)
     for sx in F["seams_x"]:
         lo_y = y0 + 6.0
         frac = lambda y: wi * (1 - min(1.0, (y - y0) / (wy - y0)))   # noqa: E731  (the taper's x at height y)
         s = 1 if sx > 0 else -1
         steel.ribbon([(sx - s * frac(lo_y) * abs(sx) / (w / 2), lo_y), (sx, wy), (sx, S["centre_y"] - S["h"] / 2 - S["bezel"] - 1.5)],
-                     F["seam_w"], zf - 0.1, zf + 0.35)
+                     F["seam_w"], zf - 0.1, zf + X["seam_proud"])
     glow = Part("glow", "glow", bevel=0.0)
     glow.ribbon(cut_rect(S["w"] + S["line_w"] * 2 + 0.6, S["h"] + S["line_w"] * 2 + 0.6, S["corner"] + 0.6, S["centre_y"]),
                 S["line_w"], zf + 1.0, zf + 1.25, closed=True)
     glow.annulus(BA["ring_r"] - BA["ring_w"] / 2, BA["ring_r"] + BA["ring_w"] / 2, BA["h"], BA["h"] + 0.3)
-    base = Part("base", "floor", bevel=0.3).cyl((0, BA["h"] / 2, 0), "y", BA["r"], BA["h"], 64)
+    base = Part("base", "floor", bevel=0.3, uv_m=X["body_tile"] * CM).cyl((0, BA["h"] / 2, 0), "y", BA["r"],
+                                                                           BA["h"], 64)
     screen = Part("ConsoleScreen", "screen", bevel=0.0).face(cut_rect(S["w"], S["h"], S["corner"], S["centre_y"]),
                                                             zf + 0.95, zf + 1.2)
     marker = (0.0, S["centre_y"], zf + 1.2)
-    return [body, facet, steel, glow, base, screen], {"markers": {"Screen": (marker, 0.0)}, "separate": ["ConsoleScreen"]}
+    parts = [body, facet, bezel, steel, glow, base, screen]
+    if "edge_in" in X:   # Gate 3: the concept's metal lines along the front's outer edges (its copper, steel here)
+        e = X["edge_in"]
+        lo = y0 + 6.0
+        x_lo = w / 2 - wi * (1 - min(1.0, (lo - y0) / (wy - y0))) - e
+        side = [(x_lo, lo), (w / 2 - e, wy), (w / 2 - e, h - tc - e * 0.41), (w / 2 - tc - e * 0.41 + e, h - e)]
+        line = [(-x, y) for x, y in side] + [(x, y) for x, y in reversed(side)]
+        steel.ribbon(line, X["edge_w"], zf - 0.1, zf + X["seam_proud"])   # Gate 3: the screen's dark gasket inside its bezel, the base plate's steel lip
+        gw = X["gasket_w"]
+        gasket = Part("gasket", "dark", bevel=0.0).ribbon(
+            cut_rect(S["w"] + gw, S["h"] + gw, S["corner"] + gw / 2, S["centre_y"]), gw, zf + 0.9, zf + 1.1, closed=True)
+        lip = Part("lip", "steel", bevel=0.2, segs=2).annulus(BA["r"] - X["lip_w"], BA["r"] + 0.2, 0.0,
+                                                               BA["h"] + X["lip_h"], 96)
+        parts += [gasket, lip]
+    return parts, {"markers": {"Screen": (marker, 0.0)}, "separate": ["ConsoleScreen"]}
 
 
 # --- the mug of beer ------------------------------------------------------------------------------------------------
@@ -496,6 +618,7 @@ def main() -> None:
     if args.get("style"):
         STYLE.append(args["style"])
     LOOK.update(D["look"])
+    make_textures(piece, D, out / "tex")
     for ob in list(bpy.data.objects):
         bpy.data.objects.remove(ob)
     parts, extra = {"bar": bar, "mirror": mirror, "match_console": match_console, "mug": mug}[piece](D)
