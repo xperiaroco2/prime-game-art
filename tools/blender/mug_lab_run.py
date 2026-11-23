@@ -29,6 +29,10 @@ def main() -> int:
     ap.add_argument("--tag", required=True)
     ap.add_argument("--glb", type=Path, help="shoot this GLB instead of building pipeline A's")
     ap.add_argument("--plain", action="store_true", help="the GLB's own materials, not the lab's shaders")
+    ap.add_argument("--baseline-mats", action="store_true",
+                    help="the art lane's first mug's plain materials on the GLB's meshes (the split's other half)")
+    ap.add_argument("--shaders-on-glb", action="store_true",
+                    help="the lab's glass and beer shaders on the GLB's mug_glass and mug_beer surfaces (the split)")
     ap.add_argument("--quick", action="store_true", help="the full state only, no drink clip")
     ap.add_argument("--no-build", action="store_true")
     ap.add_argument("--spec", type=Path, default=ROOT / "tools" / "blender" / "mug_lab.toml")
@@ -65,7 +69,7 @@ def main() -> int:
         shutil.rmtree(shots)
     shots.mkdir()
     code, output = _godot.window(["--path", str(_godot.PROJECT), "-s", "res://mug_lab/shots.gd", "--", res,
-                                  str(shots), json.dumps(levels), "plain" if args.plain else "look",
+                                  str(shots), json.dumps(levels), "shaders_on_glb" if args.shaders_on_glb else ("baseline_mats" if args.baseline_mats else ("plain" if args.plain else "look")),
                                   "quick" if args.quick else "all"], (1280, 720), 1200, log=out / "godot_shots.log")
     print(*[x for x in output.splitlines() if x.startswith("MUGLAB") or "ERROR" in x or "SCRIPT" in x][:40], sep="\n")
     print(f"godot shots: exit {code} {shots}", flush=True)

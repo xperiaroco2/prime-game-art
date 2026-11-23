@@ -28,7 +28,7 @@ static func apply(model: Node, levels: Dictionary = {}) -> Dictionary:
 	beer.set_shader_parameter("inner_r", look["inner_r"] - 0.0004)
 	var foam := ShaderMaterial.new()
 	foam.shader = FOAM
-	foam.set_shader_parameter("inner_r", look["inner_r"] - 0.0002)   # round 13: no gap at the wall
+	foam.set_shader_parameter("inner_r", look["inner_r"] + 0.0004)   # g2: a touch into the wall, so no gap reads through the glass
 	foam.set_shader_parameter("rim", look["rim"])
 	foam.set_shader_parameter("rim_r", look["rim_r"])
 	foam.set_shader_parameter("head_top", look["head_top"])
@@ -84,7 +84,7 @@ static func set_fill(look: Dictionary, f: float) -> void:
 	# the foam: one volume from the surface (foam.gdshader's profile); full, the column fills the glass to the rim and
 	# the crown domes over it to head_top; the first sip takes the crown, then the layer thins as the level goes down
 	var crown: float = smoothstep(0.68, 1.0, f)   # round 14: the head settles over the first third of the drink
-	var layer: float = lerpf(0.009, 0.015, f)   # thins steadily with the level, never thicker as it drops
+	var layer: float = lerpf(0.004, 0.016, f)   # g2: thins with the level, 1.6 cm full to 0.4 cm near empty
 	var fm: ShaderMaterial = look["foam_mat"]
 	fm.set_shader_parameter("level", level)
 	fm.set_shader_parameter("layer", layer)

@@ -34,7 +34,7 @@ uniform float lace = 0.0;
 // round 12: the Cycles bake on the glass's UVs (mug_lab_bake.py): R thickness, G edges, B studio light; baked 0: off
 uniform sampler2D glass_map : hint_default_black, filter_linear_mipmap, repeat_disable;
 uniform float baked = 0.0;
-uniform float bake_thick = 0.6;                    // how far thick glass shifts toward thick_col
+uniform float bake_thick = 0.9;                    // how far thick glass shifts toward thick_col
 uniform float bake_edge = 0.9;                     // the baked ridges' brightness
 uniform float bake_light = 0.55;                   // the baked light shapes' brightness
 uniform vec3 bake_light_col : source_color = vec3(1.0, 0.93, 0.82);
@@ -113,7 +113,10 @@ void fragment() {
 	float k = length(fwidth(NORMAL));
 	col += vec3(0.95, 0.97, 1.0) * crease * smoothstep(0.12, 0.45, k) * (1.0 - edge) * (1.0 - baked);
 	// baked: crisp ridges where the geometry turns, and the studio's light shapes as Cycles lit them
-	col += vec3(0.95, 0.97, 1.0) * bake_edge * gm.g * (0.45 + 0.55 * facing);
+	// a ridge lights only where the studio's light falls on it (g2: an even white rim on every edge read as an outline)
+	vec3 st = studio(NORMAL, VIEW);
+	col += vec3(0.95, 0.97, 1.0) * bake_edge * gm.g * clamp(dot(st, vec3(0.33)) * 1.4, 0.0, 1.0);
+	col *= mix(1.0, 0.7, gm.g * (1.0 - clamp(dot(st, vec3(0.33)) * 1.4, 0.0, 1.0)));   // the unlit ridges darken
 	col += bake_light_col * bake_light * gm.b * gm.b;
 	col += vec3(0.05, 0.06, 0.06) * base;
 	// lacing: thin broken rings at a few old levels and short drips, soft, on the body only

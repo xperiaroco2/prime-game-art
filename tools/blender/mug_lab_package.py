@@ -62,6 +62,7 @@ def main() -> int:
     ap.add_argument("--tag", required=True)
     ap.add_argument("--asset", type=Path, default=Path("assets/prop/mug_research"))
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--check-only", action="store_true", help="the package check alone; no asset folder is written")
     ap.add_argument("--approved", nargs=3, metavar=("LOGIN", "DATE", "PR_URL"))
     args = ap.parse_args()
     build = RAW / "research" / "mug-lab" / args.tag
@@ -69,7 +70,10 @@ def main() -> int:
         if not (build / f).is_file():
             raise common.Failure(f"{build / f} is missing: run mug_lab_run.py --tag {args.tag} first")
     blend = "mug_baked.blend" if (build / "mug_baked.blend").is_file() else "mug.blend"   # --bake builds bake
-    pkg = check(build) if args.check else None
+    pkg = check(build) if (args.check or args.check_only) else None
+    if args.check_only:
+        print("package check: " + json.dumps(pkg), flush=True)
+        return 0 if not pkg["problems"] and pkg["exit"] == 0 else 1
     if pkg is not None:
         print("package check: " + json.dumps(pkg), flush=True)
         if pkg["problems"] or pkg["exit"] != 0:

@@ -109,7 +109,7 @@ vec3 pos(float a, float t) {
 	q.x = max(q.x, 0.0);
 	// round 14: never outside the glass's rim, and pulled in over the handle (+x), where the critics saw a flap
 	float handle_side = smoothstep(0.6, 1.0, cos(a));
-	q.x = min(q.x, rim_r * (1.0 - 0.05 * handle_side));
+	q.x = min(q.x, rim_r * (1.0 - 0.1 * handle_side));
 	return vec3(cos(a) * q.x, q.y, sin(a) * q.x);
 }
 

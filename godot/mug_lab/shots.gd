@@ -43,7 +43,8 @@ func _run() -> void:
 	var a: PackedStringArray = OS.get_cmdline_user_args()
 	var out: String = a[1]
 	var levels: Dictionary = JSON.parse_string(a[2]) if a.size() > 2 else {}
-	_plain = a.size() > 3 and a[3] == "plain"
+	_plain = a.size() > 3 and (a[3] == "plain" or a[3] == "shaders_on_glb" or a[3] == "baseline_mats")
+	var shaders_on_glb: bool = a.size() > 3 and a[3] == "shaders_on_glb"
 	var quick: bool = a.size() > 4 and a[4] == "quick"
 	var scene: PackedScene = load(a[0])
 	if scene == null:
@@ -57,6 +58,10 @@ func _run() -> void:
 	_mug.add_child(model)
 	if not _plain:
 		_look = MugLook.apply(model, levels)
+	if shaders_on_glb:
+		_shaders_on(model)
+	if a.size() > 3 and a[3] == "baseline_mats":
+		_baseline_mats(model)
 	var box := _bounds(model)
 	print("MUGLAB bounds %s" % box)
 	var states: Array = [["full", 1.0]] if _plain else [["full", 1.0], ["half", 0.5], ["empty", 0.0]]
@@ -100,6 +105,52 @@ func _run() -> void:
 			img.save_png(out.path_join("drink/%04d.png" % i))
 	print("MUGLAB done")
 	quit(0)
+
+
+## The shape-versus-materials split (the engineer's question, 2026-11-23): the lab's glass and beer shaders on another
+## build's surfaces by their glTF material names (mug_glass, mug_beer); its foam keeps its own material.
+func _shaders_on(model: Node) -> void:
+	var glass := ShaderMaterial.new()
+	glass.shader = preload("res://mug_lab/glass.gdshader")
+	var beer := ShaderMaterial.new()
+	beer.shader = preload("res://mug_lab/beer.gdshader")
+	beer.set_shader_parameter("level", 0.3)
+	for mi: Node in model.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		for si: int in m.mesh.get_surface_count():
+			var mat := m.mesh.surface_get_material(si)
+			var nm: String = mat.resource_name if mat != null else ""
+			if nm.contains("glass"):
+				m.set_surface_override_material(si, glass)
+			elif nm.contains("beer"):
+				m.set_surface_override_material(si, beer)
+	print("MUGLAB shaders_on_glb applied")
+
+
+## The other half of the split: the art lane's first mug's plain materials (mug_dims.toml [look] on
+## feat/lobby-furniture: base sRGB, metallic, roughness, emission, alpha) on another build's meshes by name.
+func _baseline_mats(model: Node) -> void:
+	var looks := {"glass": [Color(0.55, 0.63, 0.66), 0.0, 0.02, 0.0, 0.14], "beer": [Color(0.60, 0.31, 0.035), 0.0, 0.1, 0.03, 0.94],
+			"foam": [Color(0.97, 0.94, 0.87), 0.0, 0.8, 0.0, 1.0]}
+	var mats := {}
+	for k: String in looks:
+		var l: Array = looks[k]
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(l[0].r, l[0].g, l[0].b, l[4])
+		m.metallic = l[1]
+		m.roughness = l[2]
+		if l[3] > 0.0:
+			m.emission_enabled = true
+			m.emission = l[0]
+			m.emission_energy_multiplier = l[3]
+		if l[4] < 1.0:
+			m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mats[k] = m
+	for mi: Node in model.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		var key: String = "glass" if m.name == "Mug" else ("beer" if m.name == "Liquid" else "foam")
+		m.material_override = mats[key]
+	print("MUGLAB baseline_mats applied")
 
 
 func _fill(f: float) -> void:
