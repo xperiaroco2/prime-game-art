@@ -1,0 +1,142 @@
+{
+ "asset": "match_console",
+ "built_by": "tools/blender/lobby_furniture_build.py --piece match_console (lobby_furniture_run.py --tag v6); packed unchanged from <raw>/lobby/furniture/v6/match_console/match_console.glb by lobby_furniture_run.py --tag v6 --asset assets/prop",
+ "mesh": {
+  "triangles": 5632,
+  "triangles_by_mesh": {
+   "ConsoleScreen": 28,
+   "match_console": 5604
+  },
+  "triangles_by_material": {
+   "match_console_body": 316,
+   "match_console_facet": 108,
+   "match_console_steel": 3712,
+   "match_console_glow": 608,
+   "match_console_floor": 764,
+   "match_console_screen": 28,
+   "match_console_dark": 96
+  },
+  "bounds_cm": {
+   "min": [
+    -78.2,
+    -0.0,
+    -78.2
+   ],
+   "max": [
+    78.2,
+    160.0,
+    78.2
+   ]
+  },
+  "materials": [
+   "match_console_screen",
+   "match_console_body",
+   "match_console_facet",
+   "match_console_steel",
+   "match_console_glow",
+   "match_console_floor",
+   "match_console_dark"
+  ],
+  "textures_embedded": 3,
+  "origin": "on the floor under the piece's middle",
+  "player_side": "+Z"
+ },
+ "style": null,
+ "gltf": {
+  "roots": [
+   "ConsoleScreen",
+   "Screen",
+   "match_console"
+  ],
+  "nodes": {
+   "ConsoleScreen": {
+    "kind": "mesh",
+    "triangles": 28,
+    "at_m": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "match_console": {
+    "kind": "mesh",
+    "triangles": 5604,
+    "at_m": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "Screen": {
+    "kind": "marker",
+    "at_m": [
+     0,
+     1.15,
+     0.162
+    ],
+    "rotation_xyzw": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   }
+  }
+ },
+ "markers_m": {
+  "Screen": [
+   0,
+   1.15,
+   0.162
+  ]
+ },
+ "placement": {
+  "origin_m": [
+   -7.0,
+   0.0,
+   7.2
+  ],
+  "yaw_deg": 180.0,
+  "tscn": "Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -7, 0, 7.2)",
+  "markers_hall_m": {
+   "Screen": [
+    -7.0,
+    1.15,
+    7.038
+   ]
+  }
+ },
+ "clearances_m": {
+  "footprint_x": [
+   -7.782,
+   -6.218
+  ],
+  "footprint_z": [
+   6.418,
+   7.982
+  ],
+  "west_wall": 12.218,
+  "east_wall": 26.218,
+  "south_wall": 2.018,
+  "pilasters": 11.518,
+  "doors": 11.591
+ },
+ "gltf_validator": {
+  "numErrors": 0,
+  "numWarnings": 0,
+  "numInfos": 5,
+  "numHints": 0
+ },
+ "godot": {
+  "from": "godot/lobby_furniture/shots.gd in an off-screen window (lobby_furniture_run.py --tag v6): the GLB imported and placed in the hall by its spec's [placement]",
+  "markers_hall_m": {
+   "Screen": [
+    -7.0,
+    1.15,
+    7.038
+   ]
+  },
+  "max_error_m": 0.0
+ },
+ "review": "<raw>/lobby/furniture/v6/shots/match_console_sheet.png"
+}

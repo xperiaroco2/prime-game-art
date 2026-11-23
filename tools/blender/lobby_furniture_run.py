@@ -7,14 +7,22 @@ pinball_run.py.
 4. the shots in our hall (godot/lobby_furniture/shots.gd, which extends the lobby's hall.gd) in an off-screen window
    (_godot.window()): per piece a 3/4 view, the front, the player's eye and close-ups, and a sheet with the concept.
 Everything goes under <raw>/lobby/furniture/<tag>/.
+--asset DIR packs an existing build instead (no build, no shots, nothing written under <raw>): per piece of PACKED in
+--only, DIR/<piece>/ with export/<piece>.glb (copied unchanged; its textures are embedded), report.json (from the
+build's <piece>.json, validator report, clearances.json and shots/shots.json, the markers as Godot placed them in the
+hall), package.json, HANDOFF.md and manifest.toml; --approved LOGIN,DATE,PR_URL fills the manifest's approval.
 
     $PYTHON_BIN tools/blender/lobby_furniture_run.py [--tag v1] [--only bar,mirror] [--no-build] [--no-shots]
+    $PYTHON_BIN tools/blender/lobby_furniture_run.py --tag v6 --only bar,match_console,mirror --asset assets/prop         --approved xperiaroco2,2026-11-23,<PR URL>
 """
 from __future__ import annotations
 
 import argparse
+import datetime
+import hashlib
 import json
 import math
+import shutil
 import sys
 import tomllib
 from pathlib import Path
@@ -171,6 +179,247 @@ def request(layout: dict, out: Path, built: dict, style: str | None = None) -> t
     return req, staged
 
 
+# The game packages (art #389, #390, #391): per piece its issue, title, what the game draws on its meshes, what its
+# markers mean and the greybox it replaces in prime-game (levels/lobby/lobby.tscn, levels/lobby/match_console.tscn).
+PACKED = {
+    "bar": {
+        "issue": 389, "title": "The lobby's bar",
+        "meshes": {"bar": "the whole bar: the stone top, the shell, the steel sweep and the tap, the light lines, the "
+                          "plinth's glow"},
+        "markers": {"TapSpot": "where a player stands to draw a beer, on the floor 1.5 m out from the tap (the "
+                               "greybox's `Tap`, group `spawn_tap`)",
+                    "TapSpout": "the tap's spout, where the beer leaves it"},
+        "greybox": "levels/lobby/lobby.tscn `Bar` (StaticBody3D at (-17, 0, -13), its box 1 x 1.1 x 6 m centred at "
+                   "(0.5, 0.55, 3) inside it: the floor's middle at (-16.5, 0, -10)) and the marker `Tap` at "
+                   "(-15, 0, -10)",
+        "collision": "the greybox's box (1 x 1.1 x 6 m) still fits the counter; the tap reaches 1.6 m",
+    },
+    "match_console": {
+        "issue": 391, "title": "The lobby's match console",
+        "meshes": {"match_console": "the monolith: body, facets, steel lines, base plate and its light ring",
+                   "ConsoleScreen": "the screen's surface: the game draws the match's screen on it (its material "
+                                    "`match_console_screen` is a dark stand-in)"},
+        "markers": {"Screen": "the screen's centre on its face (the greybox's `Screen` is at (0, 1.15, 0.16); here "
+                              "z 0.162, the built screen's face)"},
+        "greybox": "levels/lobby/match_console.tscn (StaticBody3D `MatchConsole`, its box 1.2 x 1.6 x 0.3 m, `Screen` "
+                   "at (0, 1.15, 0.16)), instanced in levels/lobby/lobby.tscn as `MatchConsole` at (-7, 0, 7.2) "
+                   "turned 180 degrees",
+        "collision": "the greybox's box (1.2 x 1.6 x 0.3 m) covers the monolith's body; the round base plate (1.56 m "
+                     "across, a few cm high) stays walkable",
+    },
+    "mirror": {
+        "issue": 390, "title": "The lobby's mirror",
+        "meshes": {"mirror": "the frame (style `frame`, the engineer's pick C): the back plate, the wide rounded steel "
+                             "frame with its cyan line, the light bar over the glass",
+                   "MirrorGlass": "the glass, 2 x 2.5 m: the game draws the reflection on it (its material "
+                                  "`mirror_glass` is a bright stand-in)"},
+        "markers": {"MirrorFace": "the glass's centre on its face, 1.25 m up"},
+        "greybox": "levels/lobby/lobby.tscn `Mirror` (StaticBody3D at (-20, 0, 7), its box 0.2 x 2.5 x 2 m centred at "
+                   "(0.1, 1.25, 1): the glass on the west wall at x -20..-19.8, z 7..9) and the markers "
+                   "`MirrorPlace1..3` at (-19.2, 0, 7.2), (-19.2, 0, 8), (-19.2, 0, 8.8)",
+        "collision": "the greybox's box reaches x -19.8 and z 7..9, 2.5 m up; the mirror reaches x -19.72 (0.14 m "
+                     "out from its origin on the wall's panels) and z 6.9..9.1, 2.67 m up: a box 0.28 x 2.67 x 2.21 m "
+                     "centred at (-19.86, 1.335, 8) holds it from the wall to the frame's front",
+    },
+}
+
+
+def sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def glb_summary(path: Path) -> dict:
+    """What the GLB holds as the game imports it: per node its kind (a mesh or a marker) and place (m), the triangles
+    per mesh node, the materials, the embedded images."""
+    g = _export.glb_json(path)
+    acc = g.get("accessors", [])
+    tris = []
+    for m in g.get("meshes", []):
+        n = 0
+        for prim in m["primitives"]:
+            if prim.get("mode", 4) == 4:
+                n += acc[prim["indices"] if "indices" in prim else prim["attributes"]["POSITION"]]["count"] // 3
+        tris.append(n)
+    nodes = {}
+    for nd in g.get("nodes", []):
+        t = [round(c, 4) for c in nd.get("translation", [0.0, 0.0, 0.0])]
+        if "mesh" in nd:
+            nodes[nd["name"]] = {"kind": "mesh", "triangles": tris[nd["mesh"]], "at_m": t}
+        else:
+            nodes[nd["name"]] = {"kind": "marker", "at_m": t, "rotation_xyzw": nd.get("rotation", [0.0, 0.0, 0.0, 1.0])}
+    return {"nodes": nodes, "roots": sorted(g["nodes"][i]["name"] for i in g["scenes"][g.get("scene", 0)]["nodes"]),
+            "materials": [m["name"] for m in g.get("materials", [])], "images_embedded": len(g.get("images", [])),
+            "triangles": sum(v["triangles"] for v in nodes.values() if v["kind"] == "mesh")}
+
+
+def tscn_transform(origin_cm: list, yaw_deg: float) -> str:
+    """The placement as a Godot .tscn Transform3D (the basis' columns x, y, z, then the origin in m)."""
+    a = math.radians(yaw_deg)
+    c, s = round(math.cos(a), 6) + 0.0, round(math.sin(a), 6) + 0.0
+    n = [c, 0.0, -s, 0.0, 1.0, 0.0, s, 0.0, c] + [round(v / 100.0, 4) for v in origin_cm]
+    return "Transform3D(" + ", ".join(f"{v + 0.0:g}" for v in n) + ")"
+
+
+def write_asset(asset: Path, out: Path, tag: str, piece: str, approved: list | None = None) -> Path:
+    """One piece's asset folder from the build in out (<raw>/lobby/furniture/<tag>/): export/<piece>.glb copied
+    unchanged, report.json, package.json, HANDOFF.md, manifest.toml. Reads the build; writes nothing under <raw>."""
+    asset = asset if asset.is_absolute() else ROOT / asset
+    info, spec = PACKED[piece], dims(piece)
+    src = out / piece / f"{piece}.glb"
+    (asset / "export").mkdir(parents=True, exist_ok=True)
+    glb = asset / "export" / f"{piece}.glb"
+    shutil.copyfile(src, glb)
+    digest = sha256(glb)
+    if digest != sha256(src):
+        raise SystemExit(f"{glb}: the copy differs from {src}")
+    build = json.loads((out / piece / f"{piece}.json").read_text(encoding="utf-8"))
+    issues = json.loads((out / piece / f"{piece}.validator.json").read_text(encoding="utf-8")).get("issues", {})
+    validator = {k: issues.get(k, 0) for k in ("numErrors", "numWarnings", "numInfos", "numHints")}
+    clear = json.loads((out / "clearances.json").read_text(encoding="utf-8")).get(piece)
+    gl = glb_summary(glb)
+    origin, yaw = placement(piece)
+    markers = {n: v["at_m"] for n, v in gl["nodes"].items() if v["kind"] == "marker"}
+    hall = {n: to_hall(piece, [c * 100.0 for c in p]) for n, p in markers.items()}
+    shots = out / "shots" / "shots.json"
+    godot = None
+    if shots.is_file():   # the markers as Godot placed them in the hall in this build's shots (the same GLB)
+        probe = json.loads(shots.read_text(encoding="utf-8"))["markers"]
+        got = {n: probe[f"furn_{piece}/{n}"] for n in markers if f"furn_{piece}/{n}" in probe}
+        err = max((max(abs(a - b) for a, b in zip(got[n], hall[n])) for n in got), default=None)
+        godot = {"from": f"godot/lobby_furniture/shots.gd in an off-screen window (lobby_furniture_run.py --tag {tag}): "
+                         "the GLB imported and placed in the hall by its spec's [placement]",
+                 "markers_hall_m": got, "max_error_m": round(err, 4) if err is not None else None}
+    style = mirror_style() if piece == "mirror" else None
+    dest = asset.parent.relative_to(ROOT).as_posix()
+    concept = f"{CONCEPTS.name}/{PIECES[piece][1]}/image-0.png"
+    origin_text = ("on the floor at the glass's middle, on the wall's face" if piece == "mirror"
+                   else "on the floor under the piece's middle")
+    report = {
+        "asset": piece,
+        "built_by": f"tools/blender/lobby_furniture_build.py --piece {piece} (lobby_furniture_run.py --tag {tag}); "
+                    f"packed unchanged from <raw>/lobby/furniture/{tag}/{piece}/{piece}.glb by "
+                    f"lobby_furniture_run.py --tag {tag} --asset {dest}",
+        "mesh": {"triangles": build["triangles"],
+                 "triangles_by_mesh": {n: v["triangles"] for n, v in gl["nodes"].items() if v["kind"] == "mesh"},
+                 "triangles_by_material": build["triangles_by_material"], "bounds_cm": build["bounds_cm"],
+                 "materials": gl["materials"], "textures_embedded": gl["images_embedded"],
+                 "origin": origin_text, "player_side": "+Z"},
+        "style": style,
+        "gltf": {"roots": gl["roots"], "nodes": gl["nodes"]},
+        "markers_m": markers,
+        "placement": {"origin_m": [c / 100.0 for c in origin], "yaw_deg": yaw, "tscn": tscn_transform(origin, yaw),
+                      "markers_hall_m": hall},
+        "clearances_m": clear,
+        "gltf_validator": validator,
+        "godot": godot,
+        "review": f"<raw>/lobby/furniture/{tag}/shots/{piece}_sheet.png",
+    }
+    if piece == "mirror":
+        report["placement"]["spots_m"] = [[c / 100.0 for c in s] for s in spec["placement"]["spots"]]
+    (asset / "report.json").write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8", newline="\n")
+    package = {
+        "format": 1, "name": piece, "kind": "prop", "version": tag, "glb": f"export/{piece}.glb",
+        "files": {f"export/{piece}.glb": digest},
+        "units": "m", "up": "+Y", "player_side": "+Z", "origin": origin_text,
+        "meshes": {n: {"triangles": gl["nodes"][n]["triangles"], "what": w} for n, w in info["meshes"].items()},
+        "markers": {n: {"at": markers[n], "what": w} for n, w in info["markers"].items()},
+        "triangles": build["triangles"], "materials": gl["materials"], "textures_embedded": gl["images_embedded"],
+        "placement": {"origin": [c / 100.0 for c in origin], "yaw_deg": yaw, "transform": tscn_transform(origin, yaw),
+                      "markers": hall, "greybox": info["greybox"]},
+    }
+    if style:
+        package["style"] = style
+    (asset / "package.json").write_text(json.dumps(package, indent=1) + "\n", encoding="utf-8", newline="\n")
+    (asset / "HANDOFF.md").write_text(handoff(piece, tag, glb, package, report, approved), encoding="utf-8",
+                                      newline="\n")
+    raws = [f"lobby/furniture/{tag}/{piece}/{piece}.glb", f"lobby/furniture/{tag}/{piece}/{piece}.json", concept]
+    notes = (f"{info['title']} for prime-game's lobby hall (art#{info['issue']}): export/{piece}.glb, "
+             f"{build['triangles']:,} triangles in the meshes {', '.join(info['meshes'])}, the markers "
+             f"{', '.join(info['markers'])}, origin {origin_text}, the player side +Z; it replaces the greybox "
+             f"{info['greybox'].split(' (')[0]} (HANDOFF.md). "
+             + ("The style frame (the engineer's pick C of 2026-11-23): a wide rounded steel frame with a cyan line "
+                "and a light bar over the glass, no fins. " if piece == "mirror" else "")
+             + f"Built from code in headless Blender (tools/blender/lobby_furniture_build.py --piece {piece}, build "
+             f"{tag}) from its drawing tools/blender/{PIECES[piece][0]}, after our own OpenAI concept image "
+             f"<raw>/{concept} (no batch file in this repo; the raw folder {CONCEPTS.name}/ holds the generations "
+             "and their log.csv, kept out of git), used only as a reference: the shapes are modelled by hand-written "
+             "code and the textures made by code in Blender, and no image or mesh of the concept is in the files, "
+             "hence own-work and ai_generated false. Without copper (the engineer, 2026-11-23): cold steel and cyan "
+             "light lines. Approved by the engineer on 2026-11-23 (relayed by the director), in the hall with the "
+             "teal strips R.")
+    lines = [
+        f"# {info['title']} (art #{info['issue']}).",
+        f"# Packed by tools/blender/lobby_furniture_run.py --tag {tag} --asset {dest} from the build below, copied",
+        "# unchanged; a rebuild changes the hashes below.",
+        f'id = "{piece}"',
+        'kind = "prop"',
+        'slot = ""',
+        f'title = "{info["title"]}"',
+        f'notes = "{notes}"',
+        'tools = ["blender 5.2.2", "prime-game-art lobby_furniture_build.py, lobby_furniture_run.py", '
+        '"glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (shots)"]',
+        'licence = "own-work"',
+        'licence_url = "https://github.com/xperiaroco2/prime-game"',
+        "public_repo_ok = true",
+        "ai_generated = false",
+        f'approved_by = ["{approved[0]}"]' if approved else "approved_by = []",
+        f"approved_at = {approved[1]}" if approved else 'approved_at = ""',
+        f'approval_pr = "{approved[2]}"' if approved else 'approval_pr = ""',
+        "",
+        "[source]",
+        'service = "own"',
+        'plan = "own-work"',
+        'model_version = ""',
+        "task_ids = []",
+        f"generated_at = {datetime.date.fromtimestamp(src.stat().st_mtime).isoformat()}",
+        f'url = "https://github.com/xperiaroco2/prime-game-art/issues/{info["issue"]}"',
+    ]
+    for r in raws:
+        lines += ["", "[[raw]]", f'file = "{r}"', f'sha256 = "{sha256(RAW / r)}"']
+    (asset / "manifest.toml").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+    return asset
+
+
+def handoff(piece: str, tag: str, glb: Path, package: dict, report: dict, approved: list | None) -> str:
+    """HANDOFF.md for the game's session: files, meshes, markers, origin and axes, the greybox it replaces."""
+    info, pl = PACKED[piece], package["placement"]
+    v = report["gltf_validator"]
+    f3 = lambda p: ", ".join(f"{c + 0.0:g}" for c in p)   # noqa: E731
+    out = [f"# {info['title']}: handoff to the game (art#{info['issue']})", "",
+           f"Built from code (`tools/blender/lobby_furniture_build.py --piece {piece}` from its drawing "
+           f"`tools/blender/{PIECES[piece][0]}`), build `{tag}`, packed unchanged. "
+           + (f"Approved by {approved[0]} on {approved[1]} ({approved[2]})." if approved else "Not approved yet."),
+           "", "## Files", "", "| File | What |", "|---|---|",
+           f"| `export/{piece}.glb` | One scene, {package['triangles']:,} triangles, {len(package['materials'])} "
+           f"materials, {package['textures_embedded']} textures embedded, {glb.stat().st_size // 1024} KB. SHA-256 "
+           f"`{package['files'][package['glb']]}` |",
+           "| `package.json` | The meshes, markers, origin and placement, for code |",
+           f"| `report.json` | Triangles per mesh and material, bounds, glTF-Validator ({v['numErrors']} errors, "
+           f"{v['numWarnings']} warnings), the clearances in the hall, the markers as Godot placed them |", "",
+           "## Nodes", "", "Units metres, +Y up, the player side +Z. The GLB's root nodes:", ""]
+    for n, m in package["meshes"].items():
+        out.append(f"- `{n}` (MeshInstance3D, {m['triangles']:,} triangles): {m['what']};")
+    for n, m in package["markers"].items():
+        out.append(f"- `{n}` (Node3D, a marker) at ({f3(m['at'])}): {m['what']}.")
+    out += ["", f"**Origin:** {package['origin']}.", "", "## In the lobby", "",
+            f"It replaces the greybox {info['greybox']}.", "",
+            f"- Place the GLB's root at ({f3(pl['origin'])}) in the hall, turned {pl['yaw_deg']:g} degrees about +Y: "
+            f"`{pl['transform']}`.",
+            "- Its markers then land at (the hall's frame, m): "
+            + "; ".join(f"`{n}` ({f3(p)})" for n, p in pl["markers"].items()) + ".",
+            f"- Collision: {info['collision']}."]
+    if piece == "mirror":
+        out.append("- The players' places in front: " + ", ".join(f"({f3(s)})" for s in report["placement"]["spots_m"])
+                   + " (the greybox's `MirrorPlace1..3`).")
+    if piece == "match_console":
+        out.append("- `match_console.tscn` already stands at this transform in `lobby.tscn`: put the GLB in place of "
+                   "its `Mesh`, keep `Shape`, and move `Screen` to the GLB's `Screen` (z 0.162 instead of 0.16).")
+    if piece == "bar":
+        out.append("- The `Tap` marker (group `spawn_tap`) stays where it is: the GLB's `TapSpot` lands on it.")
+    out += ["", "No label, no text, no copper. The look is approved: do not restyle it in the game.", ""]
+    return "\n".join(out)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", default="v1")
@@ -178,9 +427,20 @@ def main() -> int:
     ap.add_argument("--no-build", action="store_true")
     ap.add_argument("--no-shots", action="store_true")
     ap.add_argument("--style", help="the mirror's variant (mirror_dims.toml [style]): spikes, soft, flat, frame")
+    ap.add_argument("--asset", type=Path, help="pack the existing build into DIR/<piece>/ (e.g. assets/prop)")
+    ap.add_argument("--approved", help="LOGIN,DATE,PR_URL: the manifest's approval (with --asset)")
     args = ap.parse_args()
     out = BASE / args.tag
     only = [p for p in args.only.split(",") if p]
+    if args.asset:
+        approved = args.approved.split(",", 2) if args.approved else None
+        for piece in only:
+            if piece not in PACKED:
+                print(f"skip {piece}: not packed here (PACKED: {', '.join(PACKED)})", flush=True)
+                continue
+            folder = write_asset(args.asset / piece, out, args.tag, piece, approved)
+            print(f"asset: {folder.relative_to(ROOT).as_posix()}", flush=True)
+        return 0
     layout = lobby_layout.load()
     ok = True
     built, report = {}, {}

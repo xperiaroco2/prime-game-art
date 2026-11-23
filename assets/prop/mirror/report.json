@@ -1,0 +1,153 @@
+{
+ "asset": "mirror",
+ "built_by": "tools/blender/lobby_furniture_build.py --piece mirror (lobby_furniture_run.py --tag v6); packed unchanged from <raw>/lobby/furniture/v6/mirror/mirror.glb by lobby_furniture_run.py --tag v6 --asset assets/prop",
+ "mesh": {
+  "triangles": 1088,
+  "triangles_by_mesh": {
+   "mirror": 1076,
+   "MirrorGlass": 12
+  },
+  "triangles_by_material": {
+   "mirror_back": 108,
+   "mirror_steel": 728,
+   "mirror_glow": 240,
+   "mirror_glass": 12
+  },
+  "bounds_cm": {
+   "min": [
+    -110.34,
+    -0.01,
+    0.0
+   ],
+   "max": [
+    110.34,
+    267.0,
+    14.0
+   ]
+  },
+  "materials": [
+   "mirror_back",
+   "mirror_steel",
+   "mirror_glow",
+   "mirror_glass"
+  ],
+  "textures_embedded": 0,
+  "origin": "on the floor at the glass's middle, on the wall's face",
+  "player_side": "+Z"
+ },
+ "style": "frame",
+ "gltf": {
+  "roots": [
+   "MirrorFace",
+   "MirrorGlass",
+   "mirror"
+  ],
+  "nodes": {
+   "mirror": {
+    "kind": "mesh",
+    "triangles": 1076,
+    "at_m": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "MirrorFace": {
+    "kind": "marker",
+    "at_m": [
+     0,
+     1.25,
+     0.09
+    ],
+    "rotation_xyzw": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "MirrorGlass": {
+    "kind": "mesh",
+    "triangles": 12,
+    "at_m": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  }
+ },
+ "markers_m": {
+  "MirrorFace": [
+   0,
+   1.25,
+   0.09
+  ]
+ },
+ "placement": {
+  "origin_m": [
+   -19.86,
+   0.0,
+   8.0
+  ],
+  "yaw_deg": 90.0,
+  "tscn": "Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -19.86, 0, 8)",
+  "markers_hall_m": {
+   "MirrorFace": [
+    -19.77,
+    1.25,
+    8.0
+   ]
+  },
+  "spots_m": [
+   [
+    -19.2,
+    0.0,
+    7.2
+   ],
+   [
+    -19.2,
+    0.0,
+    8.0
+   ],
+   [
+    -19.2,
+    0.0,
+    8.8
+   ]
+  ]
+ },
+ "clearances_m": {
+  "footprint_x": [
+   -19.86,
+   -19.72
+  ],
+  "footprint_z": [
+   6.897,
+   9.103
+  ],
+  "west_wall": 0.14,
+  "east_wall": 39.72,
+  "south_wall": 0.897,
+  "pilasters": 0.397,
+  "doors": 3.397
+ },
+ "gltf_validator": {
+  "numErrors": 0,
+  "numWarnings": 0,
+  "numInfos": 5,
+  "numHints": 0
+ },
+ "godot": {
+  "from": "godot/lobby_furniture/shots.gd in an off-screen window (lobby_furniture_run.py --tag v6): the GLB imported and placed in the hall by its spec's [placement]",
+  "markers_hall_m": {
+   "MirrorFace": [
+    -19.77,
+    1.25,
+    8.0
+   ]
+  },
+  "max_error_m": 0.0
+ },
+ "review": "<raw>/lobby/furniture/v6/shots/mirror_sheet.png"
+}

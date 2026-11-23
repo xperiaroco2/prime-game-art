@@ -1049,8 +1049,32 @@ to him, so the concepts' copper is the hall's cold steel and their light lines a
 - **The mirror's wall:** the west wall's panels stand 8 to 12 cm proud of `x0`, and the pilaster at z 6 has a plinth
   out to z 6.5 (measured on `walls.glb`, v20). The mirror's origin is on the panels, and its fins fit within 1.45 m of
   the glass's middle. The concept's fan is wider than that space allows.
+- **The mirror's style:** `mirror_dims.toml` `[style] pick` is `frame`, the engineer's pick C of 2026-11-23: a wide
+  rounded steel frame with a cyan line and a light bar over the glass, no fins. `--style spikes|soft|flat|frame`
+  overrides it for a variant build. The sheet's close-up captions follow the style (`views(..., style)`).
+- **The tags:** `v5` holds Gate 3's bar and console; `v6` is the approved build of all three (the engineer, 2026-11-23,
+  in the hall with the teal strips R), with its shots in `v6/shots/`.
+- **The game packages:** `assets/prop/bar/`, `assets/prop/match_console/` and `assets/prop/mirror/`, packed from `v6`:
+
+  ```
+  $PYTHON_BIN tools/blender/lobby_furniture_run.py --tag v6 --only bar,match_console,mirror --asset assets/prop \
+      --approved xperiaroco2,2026-11-23,<PR URL>
+  ```
+
+  - `--asset` packs an existing build: no Blender, no Godot, and nothing written under `<raw>`.
+  - It copies `<piece>.glb` unchanged into `export/`; the textures are embedded in the GLB.
+  - It reads the build's `<piece>.json`, its validator report, `clearances.json` and `shots/shots.json`.
+  - It writes `report.json` and `package.json`: meshes, markers, origin, the placement as a `.tscn` `Transform3D`, and
+    the markers as Godot placed them in the hall.
+  - It writes `HANDOFF.md`, with the greybox each piece replaces, and `manifest.toml` (own-work, `ai_generated`
+    false).
+  - Packing from the build is exact: the GLBs are byte copies (checked by hash), and the shots' markers come from
+    the same files.
+  - `godot-check` does not fit: it asserts a character's skeleton. The Godot evidence is the shots run's import:
+    `report.json` `godot`, with the markers' error against the spec's placement.
 - **Tests:** `tools/tests/test_lobby_furniture.py` checks the specs against the greybox, that no look is coppery, the
-  placement maths and the clearance check.
+  placement maths and the clearance check, the mirror's captions per style, and the committed packages: nodes,
+  markers, triangles, the placement against the greybox, and the manifest's licence and approval fields.
 
 ## The M8 beer mug (art #392)
 

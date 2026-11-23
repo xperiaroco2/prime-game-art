@@ -1,0 +1,71 @@
+{
+ "format": 1,
+ "name": "bar",
+ "kind": "prop",
+ "version": "v6",
+ "glb": "export/bar.glb",
+ "files": {
+  "export/bar.glb": "fad27ccad47c6a30ac8c98d3569d575a9dc42828a03a83ed44ecf80175e73d25"
+ },
+ "units": "m",
+ "up": "+Y",
+ "player_side": "+Z",
+ "origin": "on the floor under the piece's middle",
+ "meshes": {
+  "bar": {
+   "triangles": 6608,
+   "what": "the whole bar: the stone top, the shell, the steel sweep and the tap, the light lines, the plinth's glow"
+  }
+ },
+ "markers": {
+  "TapSpot": {
+   "at": [
+    0,
+    0,
+    1.5
+   ],
+   "what": "where a player stands to draw a beer, on the floor 1.5 m out from the tap (the greybox's `Tap`, group `spawn_tap`)"
+  },
+  "TapSpout": {
+   "at": [
+    0,
+    1.355,
+    0.425
+   ],
+   "what": "the tap's spout, where the beer leaves it"
+  }
+ },
+ "triangles": 6608,
+ "materials": [
+  "bar_stone",
+  "bar_shell",
+  "bar_steel",
+  "bar_glow",
+  "bar_shell2",
+  "bar_beer",
+  "bar_dark"
+ ],
+ "textures_embedded": 3,
+ "placement": {
+  "origin": [
+   -16.5,
+   0.0,
+   -10.0
+  ],
+  "yaw_deg": 90.0,
+  "transform": "Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -16.5, 0, -10)",
+  "markers": {
+   "TapSpot": [
+    -15.0,
+    0.0,
+    -10.0
+   ],
+   "TapSpout": [
+    -16.075,
+    1.355,
+    -10.0
+   ]
+  },
+  "greybox": "levels/lobby/lobby.tscn `Bar` (StaticBody3D at (-17, 0, -13), its box 1 x 1.1 x 6 m centred at (0.5, 0.55, 3) inside it: the floor's middle at (-16.5, 0, -10)) and the marker `Tap` at (-15, 0, -10)"
+ }
+}

@@ -1,0 +1,36 @@
+# The lobby's match console (art #391).
+# Packed by tools/blender/lobby_furniture_run.py --tag v6 --asset assets/prop from the build below, copied
+# unchanged; a rebuild changes the hashes below.
+id = "match_console"
+kind = "prop"
+slot = ""
+title = "The lobby's match console"
+notes = "The lobby's match console for prime-game's lobby hall (art#391): export/match_console.glb, 5,632 triangles in the meshes match_console, ConsoleScreen, the markers Screen, origin on the floor under the piece's middle, the player side +Z; it replaces the greybox levels/lobby/match_console.tscn (HANDOFF.md). Built from code in headless Blender (tools/blender/lobby_furniture_build.py --piece match_console, build v6) from its drawing tools/blender/match_console_dims.toml, after our own OpenAI concept image <raw>/2026-11-22-lobby-bar-mirror-console-concepts/con2_monolith/image-0.png (no batch file in this repo; the raw folder 2026-11-22-lobby-bar-mirror-console-concepts/ holds the generations and their log.csv, kept out of git), used only as a reference: the shapes are modelled by hand-written code and the textures made by code in Blender, and no image or mesh of the concept is in the files, hence own-work and ai_generated false. Without copper (the engineer, 2026-11-23): cold steel and cyan light lines. Approved by the engineer on 2026-11-23 (relayed by the director), in the hall with the teal strips R."
+tools = ["blender 5.2.2", "prime-game-art lobby_furniture_build.py, lobby_furniture_run.py", "glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (shots)"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game"
+public_repo_ok = true
+ai_generated = false
+approved_by = []
+approved_at = ""
+approval_pr = ""
+
+[source]
+service = "own"
+plan = "own-work"
+model_version = ""
+task_ids = []
+generated_at = 2026-11-23
+url = "https://github.com/xperiaroco2/prime-game-art/issues/391"
+
+[[raw]]
+file = "lobby/furniture/v6/match_console/match_console.glb"
+sha256 = "8e21d94543abc5106ae217aa3d31d3549eddad81fa5a0bfbf5b22bda3a836c9a"
+
+[[raw]]
+file = "lobby/furniture/v6/match_console/match_console.json"
+sha256 = "6c92f2ae051103c519584da78b5df46fabb23accd0bb1e452fd2d381dee2b322"
+
+[[raw]]
+file = "2026-11-22-lobby-bar-mirror-console-concepts/con2_monolith/image-0.png"
+sha256 = "dd5643ffc4fad17dfd6ab826c10d489dd23214d8fd435c697ea7875ebca42e5a"
