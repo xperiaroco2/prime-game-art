@@ -3,6 +3,18 @@
 The wall socket that holds one energy crystal (art#263's stations), four of them on the hall's walls. Not yet approved
 by the engineer: the look is in review (the PR's open questions: MOUNT 140 or 120, the claws' opening angle).
 
+## Cold steel, no bronze (2026-11-23)
+
+The engineer's yes of 2026-11-23 (art#263): no copper or bronze on the ship, cold steel. The surfaces keep their names (the game's look finds them by name); only colours and metallic changed: the steel is the console's and the crystal's (sRGB (0.547, 0.575, 0.593), the worn edges (0.854, 0.876, 0.896), metallic 0.85; the GLB's plain fallback linear (0.26, 0.29, 0.31)). Built by `socket_run.py --tag steel`.
+
+**For the game.** The game's look sets these colours itself, so this package alone does not change them: in `client/world/ship_socket_look.gd` set
+
+- `BRONZE := Color(0.5, 0.38, 0.24)` -> `BRONZE := Color(0.547, 0.575, 0.593)`
+- `BRONZE_EDGE := Color(1.0, 0.9, 0.7)` -> `BRONZE_EDGE := Color(0.854, 0.876, 0.896)`
+- `BRONZE_FINISH` `"metallic": 0.75` -> `"metallic": 0.85` (the board and the charger read this one)
+
+(the art's copy is `export/socket.gd`).
+
 ## Files
 
 | File | What |

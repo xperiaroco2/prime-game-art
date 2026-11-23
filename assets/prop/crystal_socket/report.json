@@ -1,6 +1,6 @@
 {
   "asset": "crystal_socket",
-  "built_by": "tools/blender/socket_run.py --tag b6 --asset assets/prop/crystal_socket",
+  "built_by": "tools/blender/socket_run.py --tag steel --asset assets/prop/crystal_socket",
   "mesh": {
     "triangles": 4466,
     "triangles_by_material": {
@@ -175,5 +175,5 @@
     "numInfos": 9,
     "numHints": 0
   },
-  "review": "<raw>/ship/v4/socket/b6/hall/sheet.png"
+  "review": "<raw>/ship/v4/socket/steel/hall/sheet.png"
 }

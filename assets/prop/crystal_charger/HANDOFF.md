@@ -4,6 +4,20 @@ The charger where a player recharges a spent energy crystal (art#263's stations)
 the aft wall: a faceted bronze pedestal set into the alcove under the head the engineer picked on 2026-10-25
 (prime-game#1095 comment 6401197371). Not yet approved by the engineer: the new pedestal's look waits for his yes.
 
+## Cold steel, no bronze (2026-11-23)
+
+The engineer's yes of 2026-11-23 (art#263): no copper or bronze on the ship, cold steel. The surfaces keep their names (the game's look finds them by name); only colours and metallic changed: the steel is the console's and the crystal's (sRGB (0.547, 0.575, 0.593), the worn edges (0.854, 0.876, 0.896), metallic 0.85; the GLB's plain fallback linear (0.26, 0.29, 0.31)). The pedestal's plates (`charger_bronze2`) the darker steel (sRGB (0.496, 0.522, 0.542), metallic 0.82; linear (0.21, 0.235, 0.255)). The bronze below is the history. Built by `charger_run.py --tag steel`.
+
+**For the game.** The game's look sets these colours itself, so this package alone does not change them: in `client/world/ship_charger_look.gd` set
+
+- `BRONZE := Color(0.5, 0.38, 0.24)` -> `BRONZE := Color(0.547, 0.575, 0.593)`
+- `BRONZE_EDGE := Color(1.0, 0.9, 0.7)` -> `BRONZE_EDGE := Color(0.854, 0.876, 0.896)`
+- `BRONZE2 := Color(0.42, 0.31, 0.2)` -> `BRONZE2 := Color(0.496, 0.522, 0.542)`
+- `BRONZE2_FINISH` `"metallic": 0.72` -> `"metallic": 0.82`
+- `BRONZE_FINISH` is `ShipSocketLook.BRONZE_FINISH`: its `"metallic"` 0.85 (`ship_socket_look.gd`)
+
+(the art's copy is `export/charger.gd`).
+
 ## What changed (antennas round 2 and 2b, 2026-10-29, build `<raw>/ship/v5/charger-antennas/r2b/final2`)
 
 The engineer's note on antennas-1 was "polish the bend and the tip". The outer antennas now rise to 142 (was 139.7)

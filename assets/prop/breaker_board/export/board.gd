@@ -23,14 +23,16 @@ const CYAN := Color(0.0, 0.62, 1.0)
 const CYAN_ENERGY := 2.5         # board-3: saturated, still over the bloom threshold (the socket's 5.0 and 3.5 read white-blue here)
 # board-3: the socket's step 3 bronze (socket.gd BRONZE, BRONZE_FINISH on the shared console_metal.gdshader), so the
 # three stations match: sRGB colours, then the finish's parameters
-const BRONZE := Color(0.5, 0.38, 0.24)
-const BRONZE_EDGE := Color(1.0, 0.9, 0.7)
-const BRONZE_FINISH := {"metallic": 0.75, "roughness": 0.3, "wear": 1.4, "lift": 0.08, "mottle": 0.3, "grain": 0.06,
+# the cold steel since 2026-11-23 (art#263: no copper or bronze; socket.gd's), was (0.5, 0.38, 0.24), (1.0, 0.9, 0.7)
+const BRONZE := Color(0.547, 0.575, 0.593)
+const BRONZE_EDGE := Color(0.854, 0.876, 0.896)
+const BRONZE_FINISH := {"metallic": 0.85, "roughness": 0.3, "wear": 1.4, "lift": 0.08, "mottle": 0.3, "grain": 0.06,
 	"rough_grain": 0.06, "rough_mottle": 0.15, "edge_polish": 0.25, "shade": 0.3, "wave": 0.3, "wave_scale": 8.0,
 	"dent": 0.0}
 # board-3: the inner panel behind the shells, a darker bronze (the sheet's; b4's one tan slab), the same finish
-const PANEL := Color(0.3, 0.22, 0.14)
-const PANEL_EDGE := Color(0.78, 0.64, 0.46)
+# since 2026-11-23 a darker steel of the same family (linear (0.21, 0.235, 0.255); was (0.3, 0.22, 0.14), (0.78, 0.64, 0.46))
+const PANEL := Color(0.496, 0.522, 0.542)
+const PANEL_EDGE := Color(0.76, 0.785, 0.81)
 const LAMP := [Color(0.02, 0.02, 0.02), Color(1.0, 0.55, 0.0), Color(0.0, 1.0, 0.12)]   # dark, yellow, green
 const LAMP_ENERGY := 1.8         # board-3: a saturated green (b4: (0.1, 1.0, 0.22) x 2.2 read pale)
 const BEACON := Color(1.0, 0.02, 0.0)      # board-3: purer and lower (b4 (1.0, 0.06, 0.03) x 3 read salmon under AgX)

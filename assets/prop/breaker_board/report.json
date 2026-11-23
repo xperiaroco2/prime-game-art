@@ -1,6 +1,6 @@
 {
   "asset": "breaker_board",
-  "built_by": "tools/blender/board_run.py --tag b5 --asset assets/prop/breaker_board",
+  "built_by": "tools/blender/board_run.py --tag steel --asset assets/prop/breaker_board",
   "mesh": {
     "triangles": 27726,
     "triangles_by_material": {
@@ -163,5 +163,5 @@
     "numInfos": 26,
     "numHints": 0
   },
-  "review": "<raw>/ship/v4/board/b5/corridor/sheet.png"
+  "review": "<raw>/ship/v4/board/steel/corridor/sheet.png"
 }
