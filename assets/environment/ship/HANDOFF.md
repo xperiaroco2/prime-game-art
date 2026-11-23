@@ -5,7 +5,10 @@ rooms, the vault; the throat walls with the gill set) as the game's package, for
 `tools/run.sh ship --out <raw>/ship/v5/polish/sm/pieces --export <raw>/ship/v5/export/v9` (2026-11-01, branch feat/ship-nozzle-back-263, nb: the old nozzle look back inside the smooth bells, a dark throat with one light ring, a small glowing dot and ten gapped lip segments, no fan blades, glowing from their own materials; polish n1/n2/n3: the hall's relief bays, the vault door, the ramp's hazard stripes, the underbody and chine light lines, the smooth oculus trim, one plate seam family over the jaws) (art#335, `docs/ship.md` "The export"), then v10 by
 `tools/run.sh ship --export <raw>/ship/v5/export/v10` (2026-11-20): v9 without `cup_c` and `spill_c`, the red cup and its
 spill by the console (the M8 review, prime-game#1095 answer 9: not a planned prop); every other file is v9's, byte for
-byte, and only `levels/ship/ship.tscn` changed; the files and their
+byte, and only `levels/ship/ship.tscn` changed; then v11 by `tools/run.sh ship --export <raw>/ship/v5/export/v11`
+(2026-11-23): `console_metal.gdshader`'s default colours in cold steel, no bronze (art #263, the engineer's yes): the
+start console's look keeps the shader's default, so the console turns steel; the lens rooms' bronze sets its own
+colours and is unchanged; every other file is v10's, `ship.tscn` differing only in its nodes' `unique_id`s; the files and their
 hashes are in `manifest.toml` and the package's `package.json`. The GLBs are not committed here: the package lives in
 the raw folder until approved.
 
