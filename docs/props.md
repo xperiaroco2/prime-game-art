@@ -1006,3 +1006,21 @@ with a dark screen in a cyan line, the night Earth on the playfield; the hall's 
    the pinball's art. `tools/tests/test_props_pinball.py` checks the spec's contract numbers and
    sums, the front's V and, with the raw build present (the newest of v4, v3d, v3, v2, v1; v4 is the package's build), the GLBs' node names, the table
    nodes' transforms and the art's textures.
+
+## The M8 beer mug (art #392)
+
+The lobby bar's mug of beer, held in the right hand: concept 3, a faceted glass stein (batch
+`batches/2026-11-23-lobby-mug-concepts.toml`, item `mug3_stein`), kept by the engineer for M8 as it stands. The
+package `assets/prop/mug/` is the raw build `<raw>/lobby/furniture/mug3/mug/mug.glb` copied unchanged: `mug()` in
+`tools/blender/lobby_furniture_build.py` with `tools/blender/mug_dims.toml` (the branch `feat/lobby-furniture`, 9a3bf4d2,
+reaching `main` later) writes it from code, so there is no `.blend`.
+
+- **One GLB for `mug` and `mug_empty`:** `Mug` (the glass and handle), `Beer` (the beer and foam, hidden for
+  `mug_empty`) and the marker `Grip` on the handle's upright bar at (0.074, 0.08, 0) m, its +Y up the handle and its
+  -Z toward the mug's axis. Origin the base's underside, the handle on +X, 0.09 m across, 0.15 m tall; 1,680
+  triangles, three materials, no textures.
+- **In a hand:** the GLB under the hand's socket with `Grip.transform.affine_inverse()`: `MugSocket` in first
+  person (the hands' package, `docs/animations.md`, "The first-person hands", the mug), `Socket_HandR` on other
+  players.
+- **Checks:** glTF-Validator (`report.json`); the import, the nodes and the `Grip` frame in Godot come from the
+  first-person hands' shots (`godot/fp_hands/shots.gd`, `check.json` `mug`), which place it as the game does.
