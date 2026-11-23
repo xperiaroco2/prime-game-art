@@ -160,7 +160,8 @@ ai_generated = true
 task_id = "01a110b7-..."                      # required for an AI-generated clip
 ```
 
-Names are listed once; a record that is not a `batches/` file must be a source record; a `public_repo_ok` asset
+A `CC-BY-4.0` clip also carries `credit`, its attribution line (the 100STYLE backward runs of
+`assets/character/alien_chameleon/`, art #393). Names are listed once; a record that is not a `batches/` file must be a source record; a `public_repo_ok` asset
 carries only public clips (a private clip stays out of the export and is listed in `notes`), and an AI-generated clip
 makes the asset `ai_generated`. The asset's own `licence` covers the art's own work (`own-work`, the game's terms).
 

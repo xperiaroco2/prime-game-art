@@ -49,7 +49,7 @@ CLIP_KINDS = frozenset({"character", "animation"})
 # One clip: its name in the export, whether it loops, its source clip key (ual:Idle_Loop, tm:package-lift), its record
 # (a source record id, or the Meshy batch file batches/<id>.toml), its licence and flags; a Meshy clip's task id.
 CLIP_REQUIRED = ("name", "loop", "source", "record", "licence", "licence_url", "public_repo_ok", "ai_generated")
-CLIP_OPTIONAL = ("task_id",)
+CLIP_OPTIONAL = ("task_id", "credit")  # credit: the attribution line a CC-BY-4.0 clip needs
 SOURCE_REQUIRED = ("service", "plan", "model_version", "task_ids", "generated_at")
 SOURCE_OPTIONAL = ("url",)
 RAW_REQUIRED = ("file", "sha256")

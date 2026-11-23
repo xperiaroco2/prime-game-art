@@ -1,0 +1,213 @@
+# Written by hand (art #393): the provenance of `tools/run.py alien-package`'s package; a rebuild changes the files'
+# hashes in package.json, not this file.
+id = "alien_chameleon"
+kind = "character"
+slot = ""
+title = "The base alien for M8: the chameleon man (body A) of art #196, recovered, with its clips, look and ragdoll"
+notes = "The engineer's pick of 2026-11-23 through the director (prime-game#1095): the recovered chameleon (option A) as M8's base alien, the clips the game lacks (Carry_Upper, Pickup_One, Putdown_One, Pickup_Package, Putdown_Package) skipped in M8. The rigged GLB is the one recovered from the review page 'Alien Bodies A: Step 1' (2026-10-28, updated with the locomotion clips); its build inputs were lost with D: (docs/research/2026-11-18-d-loss.md). The body: Universal Base Characters' male body refitted to the approved concept (tools/blender/alien_body.py, chameleon_a); the head: Meshy multi-image to 3D from our own OpenAI turnaround views, rebuilt in Blender; the paint and the look: own work (art #196). The clips' sources follow anim_sets/alien_loco.toml as committed; the recovered GLB's own build log is lost, so its round is not checked against it. The package drops the GLB's 19 review variants."
+tools = ["blender 5.2.2", "prime-game-art alien_body, alien_loco, alien-package", "Godot 4.7.2 (checks)"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game"
+credit = "Universal Base Characters by Quaternius (CC0 1.0); Universal Animation Library by Quaternius (CC0 1.0); The 100STYLE Dataset - Ian Mason (CC BY 4.0, https://doi.org/10.5281/zenodo.8127870)"
+public_repo_ok = true
+ai_generated = true
+approved_by = ["xperiaroco2"]
+approved_at = 2026-11-23
+approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/398"
+
+[source]
+service = "own"
+plan = "own-work; Meshy paid plan (monthly) for the head (multi-image to 3D) and the crouch run (text to motion); OpenAI gpt-image-2.5-sunburst for the head's concept views"
+model_version = "meshy-7.1 multi-image to 3D; meshy text-to-motion (prime)"
+task_ids = ["batch 2026-10-22-alien-pilot-3d item chameleon: unrecorded: the id was only in the raw run log, lost with D: (docs/research/2026-11-18-d-loss.md); Meshy lists no task of that age", "batch 2026-10-25-alien-locomotion-ttm item crouch-run: unrecorded: the id was only in the raw run log, lost with D: (docs/research/2026-11-18-d-loss.md); Meshy lists no task of that age"]
+generated_at = 2026-10-28
+url = "https://claude.ai/artifact/Ff1dvJw6uG541Z6qvTnNcT"
+
+[[raw]]
+file = "recovered/artifact-Ff1dvJw6uG541Z6qvTnNcT/glb/chameleon.glb"
+sha256 = "acb781d12e2988c3da9476d9e535503079850b10657487bc5caa53880ff9ab12"
+
+[[clips]]
+name = "Crouch_Fwd_Loop"
+loop = true
+source = "tm:crouch-run (stride fitted to 2.0 m/s)"
+record = "batches/2026-10-25-alien-locomotion-ttm.toml"
+licence = "owned-paid-output"
+licence_url = "https://www.meshy.ai/terms-of-use"
+public_repo_ok = true
+ai_generated = true
+task_id = "unrecorded: the id was only in the raw run log, lost with D: (docs/research/2026-11-18-d-loss.md); Meshy lists no task of that age"
+
+[[clips]]
+name = "Crouch_Idle_Loop"
+loop = true
+source = "ual:Crouch_Idle_Loop"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Crouch_Run_Loop"
+loop = true
+source = "tm:crouch-run (2.8 m/s, a higher cadence)"
+record = "batches/2026-10-25-alien-locomotion-ttm.toml"
+licence = "owned-paid-output"
+licence_url = "https://www.meshy.ai/terms-of-use"
+public_repo_ok = true
+ai_generated = true
+task_id = "unrecorded: the id was only in the raw run log, lost with D: (docs/research/2026-11-18-d-loss.md); Meshy lists no task of that age"
+
+[[clips]]
+name = "Idle_Loop"
+loop = true
+source = "ual:Idle_Loop"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Jog_Bwd_Left_Loop"
+loop = true
+source = "100style:Neutral_BR (turned 45 degrees)"
+record = "100style"
+licence = "CC-BY-4.0"
+credit = "The 100STYLE Dataset - Ian Mason (CC BY 4.0, https://doi.org/10.5281/zenodo.8127870)"
+licence_url = "https://creativecommons.org/licenses/by/4.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Jog_Bwd_Loop"
+loop = true
+source = "100style:Neutral_BR (fitted to 2.0 m/s)"
+record = "100style"
+licence = "CC-BY-4.0"
+credit = "The 100STYLE Dataset - Ian Mason (CC BY 4.0, https://doi.org/10.5281/zenodo.8127870)"
+licence_url = "https://creativecommons.org/licenses/by/4.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Jog_Bwd_Right_Loop"
+loop = true
+source = "100style:Neutral_BR (Jog_Bwd_Left mirrored)"
+record = "100style"
+licence = "CC-BY-4.0"
+credit = "The 100STYLE Dataset - Ian Mason (CC BY 4.0, https://doi.org/10.5281/zenodo.8127870)"
+licence_url = "https://creativecommons.org/licenses/by/4.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Jog_Fwd_Left_Loop"
+loop = true
+source = "ual:Jog_Fwd_Loop (turned 45 degrees)"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Jog_Fwd_Loop"
+loop = true
+source = "ual:Jog_Fwd_Loop (fitted to 4.5 m/s)"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Jog_Fwd_Right_Loop"
+loop = true
+source = "ual:Jog_Fwd_Loop (Jog_Fwd_Left mirrored)"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Jump_Air_Loop"
+loop = true
+source = "ual:Jump_Loop"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Jump_Land"
+loop = false
+source = "ual:Jump_Land"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Jump_Start"
+loop = false
+source = "ual:Jump_Start"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Sprint_Fwd_Loop"
+loop = true
+source = "ual:Sprint_Loop (fitted to 7.0 m/s)"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Strafe_Left_Loop"
+loop = true
+source = "ual:Jog_Fwd_Loop (turned to the side, fitted to 3.0 m/s)"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Strafe_Right_Loop"
+loop = true
+source = "ual:Jog_Fwd_Loop (Strafe_Left mirrored)"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Talk_Upper_Loop"
+loop = true
+source = "ual:Idle_Talking_Loop"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false
+
+[[clips]]
+name = "Walk_Loop"
+loop = true
+source = "ual:Walk_Loop"
+record = "quaternius_ual1_standard"
+licence = "CC0-1.0"
+licence_url = "https://creativecommons.org/publicdomain/zero/1.0/"
+public_repo_ok = true
+ai_generated = false

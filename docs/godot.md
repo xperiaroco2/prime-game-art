@@ -1463,6 +1463,35 @@ Idle's first frame, 1280x720 videos of whole loops (at least 3 s; Blender's FFmp
   shows it with that key's shadow and not without, on the shader and on the GLB's own materials; the body mesh has no
   flipped face or hole there, its normals follow its faces and its albedo has no dark texel.
 
+### The alien's game package (`alien-package`, art #393)
+M8's base alien is the recovered chameleon (the engineer, 2026-11-23): `assets/character/alien_chameleon/`.
+`tools/run.py alien-package <glb> --name chameleon --id alien_chameleon --asset assets/character/alien_chameleon`
+(plain Python, about 2 s; `_alien_package.py`, tests `test_alien_package.py`) writes the package from the rigged GLB:
+- `export/<id>.glb`: the clips with `__` in their name (the loco set's review variants) dropped, the kept ones under
+  their set names (`Idle_Loop`, which Godot imports as `Idle`, looping), the binary compacted to what is left;
+- `export/look/`: `alien_dress.gd` (`dress_from(model, look_json)`: `AlienStatic.apply` and `apply_body` with the
+  look file's inputs, exactly `look_shots.gd`'s), copies of `alien_static.gd` and its two shaders with relative
+  preloads, `<id>_look.json` (the stand-ins above, the base skin, the levers) and `<id>_mask.png` with a lossless
+  `.import` ("The colour slots' masks");
+- `export/<id>.ragdoll.json` (the contract rig's table, "The ragdoll");
+- `package.json`: the files and hashes, the game's clips and bones on this skeleton, the sockets, the heights and per
+  clip its ground speed at rate 1.0 (the median horizontal speed of a foot's ball while it is within 2 cm of its
+  lowest), and `HANDOFF.md`.
+
+The game's bones by the humanoid profile (the ragdoll's table): its `Hips`, `Torso`, `Chest` and `Wrist.R` are the
+contract's `Hips`, `Chest`, `UpperChest` and `RightHand`. The sockets: Belt and Carry are slice_m1's points
+(prime-game `character_rig.gd`, #1050) carried over by the bodies' proportions (Belt: the height over `Hips` scaled,
+the same distance outside the trunk's side; Carry: the height under the upper chest scaled, the same distance in front
+of the trunk); Hand is the alien's own, the centre of the middle finger's curl on Idle's first frame (slice_m1's
+point sits in a closed fist; at the knuckle the item stood outside the alien's relaxed hand).
+
+`--check DIR [--compare PNG]` stages `export/` and `package.json` as `res://import/pkg_<id>/` and runs
+`godot/alien/package_check.gd` (extends `char_shots.gd`) in the off-screen window: it dresses the model with the
+package's own `look/` files (failing if a surface took another shader), checks the game's clips (looping) and bones,
+builds the sockets as `character_rig.gd` does (upright at Idle's first frame; there is no `Carry_Upper`, so Carry fits
+on the Idle too), reports their places and shoots `look_turn.png` (diffed against the review page's turnaround:
+0.0 mean difference on 2026-11-23), `sockets_turn.png` and `sockets_hand.png` with stand-in items on the sockets.
+
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
 `tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and
