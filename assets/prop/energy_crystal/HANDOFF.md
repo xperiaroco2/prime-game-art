@@ -12,7 +12,7 @@ lightning and any behaviour; they are built later to fit this crystal.
 | `export/crystal.gd` | `apply(model)`: puts the look on the imported model by its surface names and adds a small cyan OmniLight3D inside; returns the look. `set_charge(look, c)`: 1 charged, 0 spent, values between fade. It preloads the three shaders from its own folder |
 | `export/crystal_shell.gdshader` | The crystal: charged a translucent cyan gem glowing facet by facet, the edges a pale line; spent a matte grey stone, opaque |
 | `export/crystal_core.gdshader` | The glowing core inside the crystal, seen through the charged shell; dark when spent |
-| `export/crystal_metal.gdshader` | The cap's bronze and graphite: a faint grain, bright worn edges |
+| `export/crystal_metal.gdshader` | The cap's cold steel (since 2026-11-23; the surface keeps its name `crystal_bronze`) and graphite: a faint grain, bright worn edges |
 | `source/energy_crystal.blend` | The model with the Blender look; the node group `crystal_charge` switches both states (1 charged, 0 spent) |
 
 ## In the game

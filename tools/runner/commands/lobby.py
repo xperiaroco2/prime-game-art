@@ -39,6 +39,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--earth-tex", action="store_true", help="scale NASA's Earth sources to the window's textures")
     parser.add_argument("--earth-grid", type=Path, metavar="DIR", help="shoot the Earth variants' grid into DIR")
     parser.add_argument("--light-grid", type=Path, metavar="DIR", help="shoot the light moods' grid into DIR (step 4)")
+    parser.add_argument("--strip-grid", type=Path, metavar="DIR",
+                        help="shoot the light strips' colour grid ([light.strips]: today's warm, cold white, teal, ...) into DIR")
     parser.add_argument("--ship-grid", type=Path, metavar="DIR",
                         help="step 5a2: the ship's light sets ([light.ship.sets]) in [light.ship] grid's views into DIR")
     parser.add_argument("--video", type=Path, metavar="DIR", help="the eye-height walk-through MP4 into DIR (step 4)")
@@ -138,6 +140,8 @@ def run(args: argparse.Namespace) -> int:
             return code
     if args.light_grid:
         code = shoot(layout, out, place, args.light_grid.resolve(), grid="light")
+    if args.strip_grid:
+        code = shoot(layout, out, place, args.strip_grid.resolve(), grid="strips")
         if code:
             return code
     if args.distance_grid:
@@ -302,6 +306,18 @@ def ship_light(layout: dict, sid: str | None = None) -> dict | None:
         s[f"{k}_dir"] = _dir(*s[f"{k}_dir"])
     s.update({"id": sid, "probe": sh["probe"]})
     return s
+
+
+def strip_request(layout: dict, key: str) -> dict:
+    """One strip colour set over the mood ([light.strips]): the strips' omnis (and the pendants', when the set gives
+    them) and its accent, the strip and ring surfaces' colour, in its light (hall.gd _emit paints them)."""
+    st = layout["light"]["strips"][key]
+    light = light_request(layout, layout["light"]["mood"])["light"]
+    for k in ("strip_rgb", "pendant_rgb", "bulb_rgb"):
+        if k in st:
+            light[k] = st[k]
+    light["strip_accent"] = st["accent"]   # hall.gd _emit: the strips' and the ring's colour (they are emissive)
+    return {"id": key, "title": st["title"], "light": light}
 
 
 def light_request(layout: dict, mood: str, trial: str | None = None, ship: str | None = None) -> dict:
@@ -605,6 +621,9 @@ def shoot(layout: dict, out: Path, place: list, folder: Path, grid: bool | str =
                     "variants": ([light_request(layout, layout["light"]["mood"], k) for k in layout["light"]["trials"]]
                                  if layout["light"].get("trials") else
                                  [light_request(layout, k) for k in layout["light"]["moods"]])})
+    elif grid == "strips":   # the light strips' colours over the mood and the scheme (the engineer, 2026-11-23)
+        req.update({"mode": "grid", "views": [v[:5] for v in rv["views"] if v[0] in layout["light"]["strips_grid"]],
+                    "variants": [strip_request(layout, k) for k in layout["light"]["strips"] if k != "grid"]})
     elif grid == "ship":   # step 5a2: the ship's light sets over the mood
         sh = layout["light"]["ship"]
         views = [v[:5] for v in rv["views"]] + sh["views"]

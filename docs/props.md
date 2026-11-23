@@ -478,6 +478,8 @@ reads in full from 10 degrees below, mostly its corners from above, where the pl
 
 ## A hero prop from code: the ship engine's energy crystal (art#263)
 
+**No bronze since 2026-11-23** (the engineer, via the director: no copper or bronze, cold steel and teal light lines; art#263). The cap's bronze parts (lip, rim, band, dome, loop) are cold steel: `crystal_build.py` and the default of `godot/crystal/crystal_metal.gdshader`, which `crystal.gd` leaves unset. The material keeps its name `crystal_bronze`, which the game's look finds it by; the steel is the hall's and the pinball's: linear (0.26, 0.29, 0.31), the worn edges (0.70, 0.74, 0.78), in Godot sRGB (0.547, 0.575, 0.593) and (0.854, 0.876, 0.896). The bronze shots stay in `<raw>/energy-crystal/bronze-before/` for the before views.
+
 `assets/prop/energy_crystal/`: the cartridge of the ship's engine (prime-game#1033, the engineer's comment
 6361383461): a faceted energy crystal in a bronze and graphite cap with a hexagonal carry loop. Players pull a spent
 one from its socket, recharge it at a charger and put it back; the sockets and chargers are built later to fit it.
@@ -548,6 +550,8 @@ view, and `sheet.png`, the concept beside Blender's and Godot's views. `tools/te
 checks the committed asset.
 
 ## A station from its drawing: the ship engine's start console (art#263)
+
+**No bronze since 2026-11-23** (the engineer, via the director: no copper or bronze, cold steel and teal light lines; art#263). The plinth, body and rim are cold steel: `console_build.py` and the default `base_color` and `worn_color` of the shared `console_metal.gdshader` (all seven copies, `test_props_metal_shader`). The game's console look keeps the shader's default, so the ship package's copy carries the change into the game; the socket, board and charger set their own colours and do not change. The material keeps its name `console_bronze`, which the game's look finds it by; the steel is the hall's and the pinball's: linear (0.26, 0.29, 0.31), the worn edges (0.70, 0.74, 0.78), in Godot sRGB (0.547, 0.575, 0.593) and (0.854, 0.876, 0.896). The bronze shots stay in `<raw>/start-console/bronze-before/` for the before views.
 
 `assets/prop/start_console/`: the console in the middle of the ship's hall where a player presses the start button
 and, while breakers are tripped, the hologram plays the order to switch them back on, one lamp at a time. The
@@ -1007,13 +1011,53 @@ with a dark screen in a cyan line, the night Earth on the playfield; the hall's 
    sums, the front's V and, with the raw build present (the newest of v4, v3d, v3, v2, v1; v4 is the package's build), the GLBs' node names, the table
    nodes' transforms and the art's textures.
 
+## The lobby's bar, mirror and match console (art #389, #390, #391)
+
+The engineer picked these concepts on 2026-11-23 (`<raw>/2026-11-22-lobby-bar-mirror-console-concepts/`): bar 2
+`bar2_galley`, mirror 3 `mir3_fins` and console 2 `con2_monolith`. All three are without copper: copper reads as retro
+to him, so the concepts' copper is the hall's cold steel and their light lines are cyan.
+
+- **Gate 1:** each piece has its numbers in cm, in Godot's axes, with the origin on the floor and the player side +z:
+  `tools/blender/bar_dims.toml`, `mirror_dims.toml` and `match_console_dims.toml`. `console_dims.toml` is the ship's
+  start console. The game's greybox wins where it and the concept disagree:
+  - `Bar` is 1 x 1.1 x 6 m, with its `Tap` spot 1.5 m out from the tap;
+  - `Mirror` is 2 x 2.5 m of glass on the west wall, with `MirrorPlace1..3` in front;
+  - `match_console.tscn` is 1.2 x 1.6 x 0.3 m, with `Screen` at (0, 1.15, 0.16).
+- **Gate 2:** `tools/blender/lobby_furniture_build.py --piece bar|mirror|match_console --out DIR` builds each piece
+  from code in headless Blender.
+  - Each piece is one mesh named after it, plus a separate mesh for a surface the game draws on: `MirrorGlass` and
+    `ConsoleScreen`.
+  - The game's markers are empties: `TapSpot` and `TapSpout` on the bar, `Screen` on the console, `MirrorFace` on the
+    mirror.
+- **Gate 3 (detail), the bar and the console** (the engineer approved their shapes on 2026-11-23): each spec's
+  `[detail]` section holds the numbers; no Gate 2 size moves.
+  - Textures made in Blender with numpy (`make_textures`), tiling on the parts' box UVs (`Part(uv_m=...)`, u always
+    horizontal): the bar top's dark marble (`bar_stone.png`, soft cool veins: v4's sharp veins read as cracks), and
+    brushed roughness break-ups on the bar's shell and lower panel and on the console's body, facets and base.
+  - The bar's tap: a steel drip tray with a dark grate under the spout, a steel bezel round the beer window, a dark
+    knob on the lever. The steel sweep stays a flat ribbon (a bevel broke it into dashes at the joints, v4).
+  - The console: the concept's metal lines along the front's outer edges and its screen frame in steel, a dark gasket
+    inside the frame, a steel lip round the base plate; the body and facets less metallic (0.35), as they read black.
+  - The shots: `lobby_furniture_run.py --tag v5 --only bar,match_console`.
+- **The driver:** `$PYTHON_BIN tools/blender/lobby_furniture_run.py [--tag vN] [--only ...]` writes everything into
+  `<raw>/lobby/furniture/<tag>/`. It runs:
+  - the builds and glTF-Validator;
+  - the clearances against the hall's walls, the pilasters with their plinths and the doors' openings, failing on a
+    clash;
+  - the shots in the hall: `godot/lobby_furniture/shots.gd` extends `hall.gd` and runs off-screen. Each piece gets a
+    3/4 view, a front view, the player's eye view, close-ups, the hall view and a sheet beside its concept.
+- **The mirror's wall:** the west wall's panels stand 8 to 12 cm proud of `x0`, and the pilaster at z 6 has a plinth
+  out to z 6.5 (measured on `walls.glb`, v20). The mirror's origin is on the panels, and its fins fit within 1.45 m of
+  the glass's middle. The concept's fan is wider than that space allows.
+- **Tests:** `tools/tests/test_lobby_furniture.py` checks the specs against the greybox, that no look is coppery, the
+  placement maths and the clearance check.
+
 ## The M8 beer mug (art #392)
 
 The lobby bar's mug of beer, held in the right hand: concept 3, a faceted glass stein (batch
 `batches/2026-11-23-lobby-mug-concepts.toml`, item `mug3_stein`), kept by the engineer for M8 as it stands. The
 package `assets/prop/mug/` is the raw build `<raw>/lobby/furniture/mug3/mug/mug.glb` copied unchanged: `mug()` in
-`tools/blender/lobby_furniture_build.py` with `tools/blender/mug_dims.toml` (the branch `feat/lobby-furniture`, 9a3bf4d2,
-reaching `main` later) writes it from code, so there is no `.blend`.
+`tools/blender/lobby_furniture_build.py` with `tools/blender/mug_dims.toml` (on `main` since PR #405) writes it from code, so there is no `.blend`.
 
 - **One GLB for `mug` and `mug_empty`:** `Mug` (the glass and handle), `Beer` (the beer and foam, hidden for
   `mug_empty`) and the marker `Grip` on the handle's upright bar at (0.074, 0.08, 0) m, its +Y up the handle and its

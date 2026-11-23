@@ -1,0 +1,79 @@
+# The lobby's mirror (art #390): Gate 1's drawing as numbers, every size in cm. The engineer's pick of 2026-11-23:
+# concept 3 "fins" (<raw>/2026-11-22-lobby-bar-mirror-console-concepts/mir3_fins/image-0.png: "I like these fins"),
+# without copper (his word of the same day: the fins' tips cold steel, not copper). The greybox wins where they
+# disagree (prime-game levels/lobby/lobby.tscn `Mirror`: a 0.2 x 2.5 x 2 m box on the west wall at x -20..-19.8,
+# z 7..9; `MirrorPlace1..3` at x -19.2, z 7.2, 8, 8.8, where players stand).
+#
+# The frame (Godot axes): the origin on the floor at the glass's middle on the wall's face, y up, the glass along x,
+# the room on +z. Placed on the west wall turned 90 degrees (+z faces the hall's +x).
+
+[glass]                 # the mirror itself: the greybox's 2 x 2.5 m; the game puts its mirror surface here
+w = 200.0
+h = 250.0
+bottom = 0.0            # at the floor, as the concept
+front = 9.0             # its face this far out from the wall
+thick = 1.0
+
+[frame]                 # a thin steel frame round the glass and a dark back plate behind the whole mirror
+w = 2.2
+d = 2.0
+back_w = 214.0
+back_h = 256.0
+back_d = 6.0
+
+[glow]                  # the cyan light line down each side of the glass (the concept's)
+w = 1.6
+d = 1.6
+gap = 0.6
+
+[fins]                  # on each side a sheaf of tall faceted fins fanning outward and up, like a sculpted crystal
+# each fin (mirrored on the right): [x offset from the glow line's outer edge, bottom y, top y, base width, depth, lean outward in degrees]
+left = [
+  [2.0, 0.0, 262.0, 20.0, 26.0, 2.0],
+  [11.0, 0.0, 228.0, 18.0, 24.0, 5.0],
+  [17.0, 24.0, 180.0, 16.0, 22.0, 7.0],
+  [18.0, 0.0, 110.0, 20.0, 20.0, 10.0],
+]
+# the sheaf fits the wall between the pilaster at z 6 (its plinth to z 6.5) and the corner at z 10: at most 1.45 m
+# from the glass's middle either side (the concept's fans reach further; the wall wins)
+tip = 22.0              # each fin's top this long is a steel tip (the concept's copper tips)
+tip_width = 0.45        # the fin's section where the tip starts, against its base
+facet = 0.35            # the fin's front ridge stands this share of its width forward (a faceted crystal section)
+
+[style]                 # the sides' variant (the engineer rejected "spikes", 2026-11-23: "why are there spikes")
+pick = "frame"          # the engineer's pick C, 2026-11-23 ("C, рамка"): a wide steel frame, a teal line, a light strip on
+                        # top, no fins; --style overrides it: spikes, soft, flat, frame
+
+[style.soft]            # A: the concept's sheaf as leaf blades: flat layered fins with rounded tips, no points
+# each fin: [x from the glow line's outer edge to its inner side, bottom y, top y, width, depth, lean outward]; the
+# deepest in front, so the sheaf reads in layers (the first try, rounded columns with steel domes, read as shells)
+fins = [[1.0, 0.0, 258.0, 22.0, 8.0, 2.0], [11.0, 0.0, 208.0, 18.0, 7.0, 3.0], [20.0, 0.0, 140.0, 15.0, 6.0, 3.0]]
+inner_to = 0.8          # the inner edge rises straight to this share of the height, then curves over to the tip
+round_edge = 1.6        # the blades' edges rounded (cm)
+
+[style.flat]            # B: a low relief: stepped flat slabs with a rounded outer corner and a steel inner edge
+# each slab: [x from the glow line's outer edge, width, height, depth]
+slabs = [[1.0, 14.0, 250.0, 7.0], [13.0, 13.0, 205.0, 5.0], [24.0, 12.0, 150.0, 3.5]]
+round = 12.0
+
+[style.frame]           # C: no fins: a wide rounded steel frame with a cyan line, and a light bar over the glass
+width = 9.0
+depth = 4.0
+round = 14.0
+line = 1.2
+bar_w = 150.0
+bar_h = 3.0
+bar_d = 6.0
+
+[look]
+fin = [[0.30, 0.36, 0.37], 0.35, 0.42, 0.0]       # stone-like teal-grey
+steel = [[0.60, 0.64, 0.66], 0.85, 0.38, 0.0]
+back = [[0.17, 0.21, 0.22], 0.45, 0.5, 0.0]
+glass = [[0.92, 0.94, 0.95], 1.0, 0.02, 0.0]      # a mirror stand-in: the game draws the real reflection
+glow = [[0.45, 0.92, 1.0], 0.0, 0.3, 2.0]
+
+[placement]
+origin = [-1986.0, 0.0, 800.0]   # on the west wall's panels (their face at x -19.88; x0 -20 is the wall behind them), 2 cm
+                                 # off them, the greybox's middle (z 8)
+yaw_deg = 90.0
+spots = [[-1920.0, 0.0, 720.0], [-1920.0, 0.0, 800.0], [-1920.0, 0.0, 880.0]]

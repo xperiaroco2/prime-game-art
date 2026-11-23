@@ -414,7 +414,7 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict, approved: lis
         'kind = "prop"',
         'slot = ""',
         "title = \"The ship engine's start console\"",
-        ("notes = \"The engine's start console in the ship's hall: a round bronze and graphite pedestal "
+        ("notes = \"The engine's start console in the ship's hall: a round cold steel and graphite pedestal "
          f'({build["pedestal_size_m"][0]:.2f} m across, {build["pedestal_size_m"][2]:.3f} m tall) with the orange '
          'start button at hip height, three stage strips, two cyan strips and the hologram emitter, and over it the '
          "hologram of the ship from the built hull's own mesh at 1:16.3 (lines, a faint shell, eight order lamps), "
