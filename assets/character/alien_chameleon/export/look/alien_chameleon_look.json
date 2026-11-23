@@ -1,0 +1,39 @@
+{
+ "mask": "alien_chameleon_mask.png",
+ "base_skin": [
+  0.435294,
+  0.74902,
+  0.745098
+ ],
+ "detail": [
+  1.0,
+  0.0,
+  0.0,
+  0.0
+ ],
+ "body_mask": [
+  1.0,
+  0.501961,
+  1.0,
+  1.0
+ ],
+ "body_detail": [
+  1.0,
+  0.0,
+  0.0,
+  0.0
+ ],
+ "params": {
+  "alive_mix": 1.0,
+  "specular_level": 0.18,
+  "sss": 0.85,
+  "transmission": 1.5,
+  "fuzz": 0.3,
+  "fuzz_power": 2.5,
+  "sheen": 0.3,
+  "eye_coat": 1.0,
+  "eye_coat_rough": 0.02,
+  "eye_under_rough": 0.3,
+  "limbal": 0.8
+ }
+}

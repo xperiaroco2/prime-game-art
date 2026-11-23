@@ -104,6 +104,10 @@ tests = ["test_ragdoll_*", "test_slice_*"]
 sources = ["faces/*", "tools/blender/faces_*", "tools/runner/commands/faces.py"]
 tests = ["test_faces_*"]
 
+[area.alien_package]
+sources = ["tools/runner/commands/_alien_package.py", "tools/runner/commands/alien_package.py", "godot/alien/alien_dress.gd", "godot/alien/package_check.gd"]  # the alien's game package (#393); before light's alien_*
+tests = ["test_alien_package*"]
+
 [area.alien_stride]
 sources = ["tools/blender/alien_stride.py", "tools/blender/alien_stride_math.py", "tools/blender/anim_edit_math.py", "tools/blender/alien_clip_edit.py"]  # the alien locomotion clip tool (#196, option A); before light's alien_*
 tests = ["test_alien_stride_*", "test_alien_poses_*"]  # the poses build on its FK

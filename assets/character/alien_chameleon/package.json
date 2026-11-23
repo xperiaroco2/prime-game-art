@@ -1,0 +1,291 @@
+{
+ "asset": "alien_chameleon",
+ "game_dir": "assets/characters/alien_chameleon",
+ "files": [
+  {
+   "name": "alien_chameleon.glb",
+   "bytes": 9375908,
+   "sha256": "e8a5c3bdf766dd2ddc0d33f4042025b7a8ba59b3a50286fe9818bf05d26ef55d"
+  },
+  {
+   "name": "look/alien_chameleon_look.json",
+   "bytes": 479,
+   "sha256": "97d347936afd62f0433cdeb2846bcef9c7f94d05af9f4be5ff0af9cdd71e7f48"
+  },
+  {
+   "name": "look/alien_chameleon_mask.png",
+   "bytes": 508668,
+   "sha256": "b2f26c256effa0ef0aaa60fdd1da2d458322d3e70d38b3901788754e258bf8f5"
+  },
+  {
+   "name": "look/alien_chameleon_mask.png.import",
+   "bytes": 254,
+   "sha256": "012b0ae70f9d399a7b24e8ec1bbeccdc731a7514cc0473cf21a58eb5e70211da"
+  },
+  {
+   "name": "look/alien_dress.gd",
+   "bytes": 2886,
+   "sha256": "5745b0c974bbb84a9f1d0e5263082dc10898117f9fec38470f6136a13cec7e40"
+  },
+  {
+   "name": "look/alien_static.gd",
+   "bytes": 15727,
+   "sha256": "e467d68966759f77f15b59195c83f7e2523390d1a3d1fc00ec8a4a508fe3998a"
+  },
+  {
+   "name": "look/alien_static.gdshader",
+   "bytes": 24089,
+   "sha256": "4f77041144e31c7f0cacdf277acc206be6e35c793a468fdb5188f62c6190d411"
+  },
+  {
+   "name": "look/alien_static_288.gdshader",
+   "bytes": 2540,
+   "sha256": "f166c3a568881167febbcffc96382f4d18b4c6c129caba0f5f3c4cb34a065cea"
+  },
+  {
+   "name": "alien_chameleon.ragdoll.json",
+   "bytes": 10547,
+   "sha256": "0c6870292b7453ffdfe7e88cc4d0311193848e0cc0ef1444aa2404c09604d105"
+  }
+ ],
+ "game": {
+  "clips": [
+   "Idle",
+   "Jog_Fwd",
+   "Jog_Bwd",
+   "Strafe_Left",
+   "Strafe_Right",
+   "Sprint_Fwd",
+   "Crouch_Idle",
+   "Crouch_Fwd"
+  ],
+  "missing_clips": [
+   "Carry_Upper",
+   "Pickup_One",
+   "Putdown_One",
+   "Pickup_Package",
+   "Putdown_Package"
+  ],
+  "bones": {
+   "Hips": "Hips",
+   "Torso": "Chest",
+   "Chest": "UpperChest",
+   "Wrist.R": "RightHand"
+  }
+ },
+ "sockets": {
+  "Hand": {
+   "bone": "RightHand",
+   "point": [
+    -0.0262,
+    0.1645,
+    0.0123
+   ],
+   "fitted_carrying": false,
+   "rest_skeleton_m": [
+    -0.8267,
+    1.2642,
+    -0.052
+   ],
+   "slice_rest_skeleton_m": [
+    -0.6525,
+    1.3336,
+    0.0854
+   ],
+   "how": "the middle finger's curl centre at the Idle's first frame (the alien has no grip pose)"
+  },
+  "Belt": {
+   "bone": "Hips",
+   "point": [
+    0.181,
+    0.0455,
+    -0.0533
+   ],
+   "fitted_carrying": false,
+   "rest_skeleton_m": [
+    0.181,
+    0.9283,
+    -0.0809
+   ],
+   "slice_rest_skeleton_m": [
+    0.1897,
+    0.887,
+    -0.0129
+   ],
+   "how": "+5.3 cm off the trunk's left side, -5.8 cm against its middle in depth"
+  },
+  "Carry": {
+   "bone": "UpperChest",
+   "point": [
+    0.0147,
+    -0.3519,
+    0.4038
+   ],
+   "fitted_carrying": true,
+   "rest_skeleton_m": [
+    0.0147,
+    0.9222,
+    0.4793
+   ],
+   "slice_rest_skeleton_m": [
+    0.0147,
+    1.005,
+    0.5576
+   ],
+   "how": "+40.8 cm in front of the trunk's front"
+  }
+ },
+ "heights": {
+  "top_m": 1.938,
+  "feet_m": -0.0,
+  "eyes_m": 1.702,
+  "head_joint_m": 1.508,
+  "hips_joint_m": 0.87
+ },
+ "clip_rows": [
+  {
+   "set_name": "Crouch_Fwd_Loop",
+   "godot_name": "Crouch_Fwd",
+   "loop": true,
+   "seconds": 0.875,
+   "fps": 24,
+   "speed_m_s": 2.07
+  },
+  {
+   "set_name": "Crouch_Idle_Loop",
+   "godot_name": "Crouch_Idle",
+   "loop": true,
+   "seconds": 2.9167,
+   "fps": 24,
+   "speed_m_s": null
+  },
+  {
+   "set_name": "Crouch_Run_Loop",
+   "godot_name": "Crouch_Run",
+   "loop": true,
+   "seconds": 0.6667,
+   "fps": 24,
+   "speed_m_s": 2.89
+  },
+  {
+   "set_name": "Idle_Loop",
+   "godot_name": "Idle",
+   "loop": true,
+   "seconds": 7.5,
+   "fps": 24,
+   "speed_m_s": null
+  },
+  {
+   "set_name": "Jog_Bwd_Left_Loop",
+   "godot_name": "Jog_Bwd_Left",
+   "loop": true,
+   "seconds": 0.5833,
+   "fps": 24,
+   "speed_m_s": 2.0
+  },
+  {
+   "set_name": "Jog_Bwd_Loop",
+   "godot_name": "Jog_Bwd",
+   "loop": true,
+   "seconds": 0.5833,
+   "fps": 24,
+   "speed_m_s": 2.0
+  },
+  {
+   "set_name": "Jog_Bwd_Right_Loop",
+   "godot_name": "Jog_Bwd_Right",
+   "loop": true,
+   "seconds": 0.5833,
+   "fps": 24,
+   "speed_m_s": 2.0
+  },
+  {
+   "set_name": "Jog_Fwd_Left_Loop",
+   "godot_name": "Jog_Fwd_Left",
+   "loop": true,
+   "seconds": 0.9167,
+   "fps": 24,
+   "speed_m_s": 3.8
+  },
+  {
+   "set_name": "Jog_Fwd_Loop",
+   "godot_name": "Jog_Fwd",
+   "loop": true,
+   "seconds": 0.9167,
+   "fps": 24,
+   "speed_m_s": 4.74
+  },
+  {
+   "set_name": "Jog_Fwd_Right_Loop",
+   "godot_name": "Jog_Fwd_Right",
+   "loop": true,
+   "seconds": 0.9167,
+   "fps": 24,
+   "speed_m_s": 3.88
+  },
+  {
+   "set_name": "Jump_Air_Loop",
+   "godot_name": "Jump_Air",
+   "loop": true,
+   "seconds": 2.5,
+   "fps": 24,
+   "speed_m_s": null
+  },
+  {
+   "set_name": "Jump_Land",
+   "godot_name": "Jump_Land",
+   "loop": false,
+   "seconds": 1.25,
+   "fps": 24,
+   "speed_m_s": null
+  },
+  {
+   "set_name": "Jump_Start",
+   "godot_name": "Jump_Start",
+   "loop": false,
+   "seconds": 1.3333,
+   "fps": 24,
+   "speed_m_s": 1.53
+  },
+  {
+   "set_name": "Sprint_Fwd_Loop",
+   "godot_name": "Sprint_Fwd",
+   "loop": true,
+   "seconds": 0.6667,
+   "fps": 24,
+   "speed_m_s": 7.0
+  },
+  {
+   "set_name": "Strafe_Left_Loop",
+   "godot_name": "Strafe_Left",
+   "loop": true,
+   "seconds": 0.9167,
+   "fps": 24,
+   "speed_m_s": 3.17
+  },
+  {
+   "set_name": "Strafe_Right_Loop",
+   "godot_name": "Strafe_Right",
+   "loop": true,
+   "seconds": 0.9167,
+   "fps": 24,
+   "speed_m_s": 3.26
+  },
+  {
+   "set_name": "Talk_Upper_Loop",
+   "godot_name": "Talk_Upper",
+   "loop": true,
+   "seconds": 2.9167,
+   "fps": 24,
+   "speed_m_s": null
+  },
+  {
+   "set_name": "Walk_Loop",
+   "godot_name": "Walk",
+   "loop": true,
+   "seconds": 1.3333,
+   "fps": 24,
+   "speed_m_s": 0.9
+  }
+ ]
+}
