@@ -1033,7 +1033,8 @@ trims and collars and the pendants' rims (the risers' flanges, the doors' frames
 never the hall's scheme again. The accent (the warm light strips) is unchanged; he asked only about the copper.
 The pieces are rebuilt in `lobby/hall/v20` (the steel baked into the GLBs). The before-and-after views were shot by
 `lobby --shoot` with `scheme` S4 and S4c into `<raw>/lobby/nocopper/hall_after` and `hall_before`. The ship's own
-bronze (the start console, the vents, the crystal's cap) is not the hall's and is left as it is.
+bronze (the start console, the vents, the crystal's cap) was not the hall's and was left here; it turned cold steel
+in the ship's own packages the same day (art #263, PRs #402 and #408, `docs/ship.md`).
 
 ## The light strips R (2026-11-23)
 
@@ -1043,3 +1044,8 @@ teal (0.15, 0.85, 0.95), and the mood L3's `strip_rgb` (the strips' omnis) (0.35
 (1.0, 0.88, 0.76), less amber. `[light.strips.W]` keeps today's warm values for the before views. The pieces are rebuilt
 in `lobby/hall/v21` (`lobby --build`, the accent baked into the GLBs); v20 stays as the warm before. The hall
 reads the ship package v11 since (the start console in steel, art #263, PR #402).
+
+The game's package `assets/environment/lobby/` is `lobby/hall/v21/export` (PR #407, approved 2026-11-23). It stays
+on the ship package v11. v12 (PR #408) changes only the metal of the lens rooms and the workshop inside the hull.
+The hall shows the interior only through the canopies' glass, and the hall's views were not checked for it. The
+lobby moves to v12 with its next `lobby --export`.
