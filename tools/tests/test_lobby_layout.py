@@ -248,7 +248,7 @@ class LobbyLayoutTest(unittest.TestCase):
 
     def test_less_copper_and_a_lighter_ceiling(self) -> None:
         """Step 3: the engineer's notes on 2c: a dark metal for the frames, the copper desaturated, the vault lighter."""
-        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v20")   # ship v10 (v19: ship v8, #366 c: v18, #366: v17, step 5c: v16)
+        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v21")   # the strips R and ship v11 (v20: ship v10; v19: ship v8, #366 c: v18, #366: v17, step 5c: v16)
         mats = lobby_layout.look_materials(self.layout, "S4")
         metal, pil = mats["lobby_metal"]["rgb"], mats["lobby_pilaster"]["rgb"]
         self.assertLess(max(metal), max(pil))   # the frames' metal darker than the pilasters' shaft, same hue
