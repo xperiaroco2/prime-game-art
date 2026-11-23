@@ -1464,7 +1464,7 @@ Idle's first frame, 1280x720 videos of whole loops (at least 3 s; Blender's FFmp
   flipped face or hole there, its normals follow its faces and its albedo has no dark texel.
 
 ### The alien's game package (`alien-package`, art #393)
-M8's base alien is the recovered chameleon (the engineer, 2026-11-24): `assets/character/alien_chameleon/`.
+M8's base alien is the recovered chameleon (the engineer, 2026-11-23): `assets/character/alien_chameleon/`.
 `tools/run.py alien-package <glb> --name chameleon --id alien_chameleon --asset assets/character/alien_chameleon`
 (plain Python, about 2 s; `_alien_package.py`, tests `test_alien_package.py`) writes the package from the rigged GLB:
 - `export/<id>.glb`: the clips with `__` in their name (the loco set's review variants) dropped, the kept ones under
@@ -1490,7 +1490,7 @@ point sits in a closed fist; at the knuckle the item stood outside the alien's r
 package's own `look/` files (failing if a surface took another shader), checks the game's clips (looping) and bones,
 builds the sockets as `character_rig.gd` does (upright at Idle's first frame; there is no `Carry_Upper`, so Carry fits
 on the Idle too), reports their places and shoots `look_turn.png` (diffed against the review page's turnaround:
-0.0 mean difference on 2026-11-24), `sockets_turn.png` and `sockets_hand.png` with stand-in items on the sockets.
+0.0 mean difference on 2026-11-23), `sockets_turn.png` and `sockets_hand.png` with stand-in items on the sockets.
 
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from

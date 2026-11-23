@@ -1,6 +1,6 @@
 # alien_chameleon: handoff to the game (art #393)
 
-The base alien for M8 (prime-game#1095, the engineer's pick of 2026-11-24: the recovered chameleon, body A): the
+The base alien for M8 (prime-game#1095, the engineer's pick of 2026-11-23: the recovered chameleon, body A): the
 chameleon man of art #196 rebuilt from the review page "Alien Bodies A: Step 1" (2026-10-28, recovered after the D:
 loss, `docs/research/2026-11-18-d-loss.md`), one skinned mesh on the art contract's humanoid skeleton (59 bones: the
 contract's 56 and three crest springs under `Head`) with its locomotion clips, the approved static look (art #196) as
@@ -19,7 +19,7 @@ ragdoll are in the bones' frames and scale with it).
   #373): those builds were lost with D: and come back after M8.
 - The look lacks what was lost with D: the stripes and colour accents (only the base teal is left), the thin parts'
   translucency (crest, gills, lips), the iris ring and the eye controller (the eyes do not look around or blink).
-- No `Carry_Upper`, `Pickup_One`, `Putdown_One`, `Pickup_Package` or `Putdown_Package` (the engineer, 2026-11-24:
+- No `Carry_Upper`, `Pickup_One`, `Putdown_One`, `Pickup_Package` or `Putdown_Package` (the engineer, 2026-11-23:
   skipped in M8). The game plays the base clip instead: the character holds an item with no arm pose of its own.
 - The locomotion clips cover their own speeds at rate 1.0 (the table below), not the game's assumed ones.
 

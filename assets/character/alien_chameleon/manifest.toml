@@ -4,7 +4,7 @@ id = "alien_chameleon"
 kind = "character"
 slot = ""
 title = "The base alien for M8: the chameleon man (body A) of art #196, recovered, with its clips, look and ragdoll"
-notes = "The engineer's pick of 2026-11-24 through the director (prime-game#1095): the recovered chameleon (option A) as M8's base alien, the clips the game lacks (Carry_Upper, Pickup_One, Putdown_One, Pickup_Package, Putdown_Package) skipped in M8. The rigged GLB is the one recovered from the review page 'Alien Bodies A: Step 1' (2026-10-28, updated with the locomotion clips); its build inputs were lost with D: (docs/research/2026-11-18-d-loss.md). The body: Universal Base Characters' male body refitted to the approved concept (tools/blender/alien_body.py, chameleon_a); the head: Meshy multi-image to 3D from our own OpenAI turnaround views, rebuilt in Blender; the paint and the look: own work (art #196). The clips' sources follow anim_sets/alien_loco.toml as committed; the recovered GLB's own build log is lost, so its round is not checked against it. The package drops the GLB's 19 review variants."
+notes = "The engineer's pick of 2026-11-23 through the director (prime-game#1095): the recovered chameleon (option A) as M8's base alien, the clips the game lacks (Carry_Upper, Pickup_One, Putdown_One, Pickup_Package, Putdown_Package) skipped in M8. The rigged GLB is the one recovered from the review page 'Alien Bodies A: Step 1' (2026-10-28, updated with the locomotion clips); its build inputs were lost with D: (docs/research/2026-11-18-d-loss.md). The body: Universal Base Characters' male body refitted to the approved concept (tools/blender/alien_body.py, chameleon_a); the head: Meshy multi-image to 3D from our own OpenAI turnaround views, rebuilt in Blender; the paint and the look: own work (art #196). The clips' sources follow anim_sets/alien_loco.toml as committed; the recovered GLB's own build log is lost, so its round is not checked against it. The package drops the GLB's 19 review variants."
 tools = ["blender 5.2.2", "prime-game-art alien_body, alien_loco, alien-package", "Godot 4.7.2 (checks)"]
 licence = "own-work"
 licence_url = "https://github.com/xperiaroco2/prime-game"
@@ -12,7 +12,7 @@ credit = "Universal Base Characters by Quaternius (CC0 1.0); Universal Animation
 public_repo_ok = true
 ai_generated = true
 approved_by = ["xperiaroco2"]
-approved_at = 2026-11-24
+approved_at = 2026-11-23
 approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/398"
 
 [source]
