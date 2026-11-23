@@ -36,8 +36,8 @@ const AMBER := Color(1.0, 0.42, 0.0)  # charger-3: toward the socket's (1, 0.5, 
 ## per state: the cyan lights' energy, the amber lights', the button lens's, the glow light's
 ## (charger-2: 3 to 4.6 bleached the wide strips white under AgX; charger-3: brighter again, a deeper cyan)
 const STATES := {"idle": [2.4, 2.2, 2.2, 0.0], "charging": [3.2, 2.4, 1.2, 0.5], "charged": [3.0, 1.6, 2.6, 0.25]}
-## the bronze: the crystal socket's step 3 (art#263 socket-3: socket.gd BRONZE and BRONZE_FINISH on the shared
-## console_metal.gdshader), so the three stations match: a warmer polished copper-bronze, the faces lighter or darker
+## the metal (a polished copper-bronze until 2026-11-23, cold steel since): the crystal socket's step 3 (art#263 socket-3: socket.gd BRONZE and BRONZE_FINISH on the shared
+## console_metal.gdshader), so the three stations match: the faces lighter or darker
 ## by their facing, a broad wave for glints, the chamfers worn bright
 # the cold steel since 2026-11-23 (art#263: no copper or bronze; socket.gd's), was (0.5, 0.38, 0.24), (1.0, 0.9, 0.7)
 const BRONZE := Color(0.547, 0.575, 0.593)
