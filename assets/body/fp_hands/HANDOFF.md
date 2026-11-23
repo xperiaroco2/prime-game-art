@@ -197,7 +197,7 @@ crystal hit. The polish to final quality is art#388.
   ideal"; the crystal hit reads as a small push). Exported by run g5, which matches the golden frames (0.0 changed in
   each); the polish is art#388.
 
-## The mug (run mug4, art#392; the look waits for the engineer)
+## The mug (run mug4, art#392; approved by the engineer on 2026-11-23)
 - The clips `Mug_Idle` and `Mug_Run` and `MugSocket` added; every other clip, bone, morph and socket as in g5: the
   four golden frames (hold, punch contact, idle, run) of run mug4 match g4's with 0.0 of their boxes changed.
 - The hold (`fp_hands.toml [poses.mug]`, fitted by `fit_mug`): the mug's Grip at (0.21, 0.45, -0.115) m in the
@@ -215,4 +215,4 @@ crystal hit. The polish to final quality is art#388.
   switches (about 0.15 s) and play the hits on the left mouse button.
 - The held crystal: instance the energy crystal's package under `CrystalSocket` with its `crystal.gd` look; hide it
   when no crystal is held.
-- The look waits for the engineer's yes at the next review; see the PR.
+- The engineer approved the hold as shot (2026-11-23, "Так", relayed by the director), socket scale 1.3 included.
