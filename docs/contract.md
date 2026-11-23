@@ -219,6 +219,12 @@ lying-downed and get-up clips are gone. Idle, walk, run, carry, pick up and put 
   parent: `cone` (`swing_deg`, `twist_deg`), `hinge` (`axis` in the bone frame, `min_deg`..`max_deg`, positive the
   anatomical bend) or `pin`, with its `anchor` in the bone frame. `material` holds friction, bounce and damping;
   `collision` the layer rule. Units are metres, kilograms and degrees; limits are from the standing pose.
+- *The contract's skeleton* (the aliens, art #393): `ragdoll` tells the rig from the bone names. On the contract's
+  humanoid skeleton the same 16 bodies, shapes, shares and joints sit on the profile names (`Hips` the root body,
+  `Spine`, `Chest`, `Neck`, per side `LeftUpperArm` ... `LeftHand`, `LeftUpperLeg` ... `LeftFoot`); `UpperChest`,
+  the shoulders, toes and fingers follow; the data adds `"rig": "contract"` (the UM data keeps its shipped form). The
+  Godot fall proof (`--fall`, `--shots`, `godot/ragdoll/fall.gd`) still names the UM bones (`Foot.`, `Wrist.`,
+  `Torso`): UM only until it is taught the contract's names.
 - *Collision.* Every body is on the `downed` layer (3) with the `world` mask (1) only: a ragdoll never collides with
   players or other ragdolls (prime-game#754).
 - *Sockets.* No socket changes: the BoneAttachment3D sockets (the carried package, hair and hats) follow their bones,

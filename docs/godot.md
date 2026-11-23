@@ -1442,6 +1442,27 @@ pilot's static premium heads"):
       R2b left) the opening reads wider, and new: a notch in the chameleon's right lower lid at rest, bright
       specks on its left upper lid's edge.
     - `alien_char_run.py --lively head=DIR` builds the character on a candidate's lively build.
+
+### The recovered aliens under the approved look (art #393)
+The review GLBs recovered after the D: loss (`<raw>/recovered/artifact-Ff1dvJw6uG541Z6qvTnNcT/glb/`) carry the
+head's albedo, normal, coat and mask (`<name>_mask`, the head material's metallicRoughness texture: the shader's
+mask) and the body's albedo and normal, but none of `char_shots.gd`'s sidecar maps. `tools/blender/alien_look_run.py
+--glb name=<glb>... --out DIR` (plain Python; tests `test_alien_look_run.py`) extracts the embedded images, stands in
+for the rest and runs `godot/alien/look_shots.gd` (extends `char_shots.gd`: its studio, the `--fix` shadow quality 5,
+`AlienStatic.apply` and `apply_body`) in the off-screen window: frame sheets per clip and yaw, the turnaround on
+Idle's first frame, 1280x720 videos of whole loops (at least 3 s; Blender's FFmpeg) and a thigh diagnosis sheet.
+- **Stand-ins:** the body mask R 1 with the head mask's median G and B over its skin texels (the build took them at
+  the neck cut); both detail maps the constant [1, 0, 0, 0] (no transmission, no painted limbal ring; the white
+  default would read the whole skin as thin); no accent, gill or region bases, so only the build's own paint (the
+  identity recolour) is exact and the colour presets cannot be reproduced; the base skin the body albedo's median;
+  the alive levers `alien_static_review.PICK` through column F; the studio HDRI is gone too, so `char_shots.gd`'s
+  procedural sky lights the ambient. No lively controller (its `lively.json` and sclera are gone): the painted eyes
+  as built.
+- **The chameleon's thigh patch** in the 2026-11-23 `frames` sheets (on its right thigh, image left from the front)
+  is the right hand's cast shadow under the frames rig turned -35 degrees (`light_turn_deg`): the diagnosis sheet
+  shows it with that key's shadow and not without, on the shader and on the GLB's own materials; the body mesh has no
+  flipped face or hole there, its normals follow its faces and its albedo has no dark texel.
+
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
 `tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and

@@ -6,7 +6,8 @@
 # `lobby` command builds and shoots it.
 
 version = 3
-raw_dir = "lobby/hall/v19"         # under the raw folder: pieces/, plan/, logs/, shots/
+raw_dir = "lobby/hall/v20"         # under the raw folder: pieces/, plan/, logs/, shots/ (v20: the ship package v10,
+                                   # the ring at z -13.24, the spawns at z 2.52; v19 the game's current package's)
 # The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
 # their walls by the `lobby` command from [door] doors)
 place = [
@@ -60,8 +61,10 @@ doors = [["D1", "W", 2.0], ["D2", "E", 2.0], ["D3", "N", -11.0], ["D4", "N", 11.
 
 [floor]
 ring_r = 15.0                      # H.ring: the floor ring round the ship
-spawns_z = 2.5                     # H.spawns: ten markers, x -9..9 step 2; step 5a (the engineer, art#356 comment
-                                   # 6536044954): at z 2.5 (was the greybox's 0), 2 m from the engine pods, facing the window
+spawns_z = 2.52                    # H.spawns: ten markers, x -9..9 step 2; step 5a (the engineer, art#356 comment
+                                   # 6536044954): at z 2.5 (was the greybox's 0), 2 m from the engine pods, facing the window;
+                                   # 2.52 since the ship's package v10 (its pods end 5 cm further aft than nose/b4's): the
+                                   # two middle spawns were 1.99 m from it (art #374's rebuild found it)
 spawns_x = [-9.0, -7.0, -5.0, -3.0, -1.0, 1.0, 3.0, 5.0, 7.0, 9.0]
 spawn_ship_m = 2.0                 # the least gap between a spawn and the ship's footprint
 ship_wall_m = 3.0                  # the least gap between the ship's footprint and every wall and door
