@@ -1,0 +1,62 @@
+{
+ "format": 1,
+ "name": "match_console",
+ "kind": "prop",
+ "version": "v6",
+ "glb": "export/match_console.glb",
+ "files": {
+  "export/match_console.glb": "8e21d94543abc5106ae217aa3d31d3549eddad81fa5a0bfbf5b22bda3a836c9a"
+ },
+ "units": "m",
+ "up": "+Y",
+ "player_side": "+Z",
+ "origin": "on the floor under the piece's middle",
+ "meshes": {
+  "match_console": {
+   "triangles": 5604,
+   "what": "the monolith: body, facets, steel lines, base plate and its light ring"
+  },
+  "ConsoleScreen": {
+   "triangles": 28,
+   "what": "the screen's surface: the game draws the match's screen on it (its material `match_console_screen` is a dark stand-in)"
+  }
+ },
+ "markers": {
+  "Screen": {
+   "at": [
+    0,
+    1.15,
+    0.162
+   ],
+   "what": "the screen's centre on its face (the greybox's `Screen` is at (0, 1.15, 0.16); here z 0.162, the built screen's face)"
+  }
+ },
+ "triangles": 5632,
+ "materials": [
+  "match_console_screen",
+  "match_console_body",
+  "match_console_facet",
+  "match_console_steel",
+  "match_console_glow",
+  "match_console_floor",
+  "match_console_dark"
+ ],
+ "textures_embedded": 3,
+ "placement": {
+  "origin": [
+   -7.0,
+   0.0,
+   7.2
+  ],
+  "yaw_deg": 180.0,
+  "transform": "Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -7, 0, 7.2)",
+  "markers": {
+   "Screen": [
+    -7.0,
+    1.15,
+    7.038
+   ]
+  },
+  "greybox": "levels/lobby/match_console.tscn (StaticBody3D `MatchConsole`, its box 1.2 x 1.6 x 0.3 m, `Screen` at (0, 1.15, 0.16)), instanced in levels/lobby/lobby.tscn as `MatchConsole` at (-7, 0, 7.2) turned 180 degrees"
+ }
+}

@@ -1,0 +1,60 @@
+{
+ "format": 1,
+ "name": "mirror",
+ "kind": "prop",
+ "version": "v6",
+ "glb": "export/mirror.glb",
+ "files": {
+  "export/mirror.glb": "c03caf1a484a2093a85786519709c94f2e84eeeb9fe0856dc95d550ecab4c2d9"
+ },
+ "units": "m",
+ "up": "+Y",
+ "player_side": "+Z",
+ "origin": "on the floor at the glass's middle, on the wall's face",
+ "meshes": {
+  "mirror": {
+   "triangles": 1076,
+   "what": "the frame (style `frame`, the engineer's pick C): the back plate, the wide rounded steel frame with its cyan line, the light bar over the glass"
+  },
+  "MirrorGlass": {
+   "triangles": 12,
+   "what": "the glass, 2 x 2.5 m: the game draws the reflection on it (its material `mirror_glass` is a bright stand-in)"
+  }
+ },
+ "markers": {
+  "MirrorFace": {
+   "at": [
+    0,
+    1.25,
+    0.09
+   ],
+   "what": "the glass's centre on its face, 1.25 m up"
+  }
+ },
+ "triangles": 1088,
+ "materials": [
+  "mirror_back",
+  "mirror_steel",
+  "mirror_glow",
+  "mirror_glass"
+ ],
+ "textures_embedded": 0,
+ "placement": {
+  "origin": [
+   -19.86,
+   0.0,
+   8.0
+  ],
+  "yaw_deg": 90.0,
+  "transform": "Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -19.86, 0, 8)",
+  "markers": {
+   "MirrorFace": [
+    -19.77,
+    1.25,
+    8.0
+   ]
+  },
+  "greybox": "levels/lobby/lobby.tscn `Mirror` (StaticBody3D at (-20, 0, 7), its box 0.2 x 2.5 x 2 m centred at (0.1, 1.25, 1): the glass on the west wall at x -20..-19.8, z 7..9) and the markers `MirrorPlace1..3` at (-19.2, 0, 7.2), (-19.2, 0, 8), (-19.2, 0, 8.8)"
+ },
+ "style": "frame"
+}

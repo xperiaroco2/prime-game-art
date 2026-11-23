@@ -5,6 +5,7 @@ build is present."""
 
 import json
 import sys
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -123,6 +124,89 @@ class BuildTest(unittest.TestCase):
         markers = {p: json.loads((BUILD / p / f"{p}.json").read_text(encoding="utf-8"))["markers"] for p in cl}
         self.assertIn("TapSpot", markers.get("bar", {"TapSpot": 1}))
         self.assertIn("Screen", markers.get("match_console", {"Screen": 1}))
+
+
+class CaptionTest(unittest.TestCase):
+    B = {"min": [-110.0, 0.0, 0.0], "max": [110.0, 267.0, 14.0]}
+
+    def test_the_mirror_captions_follow_its_style(self):
+        titles = lambda style: " ".join(v[1] for v in R.views("mirror", self.B, style))   # noqa: E731
+        self.assertNotIn("fin", titles("frame"))
+        self.assertIn("the frame's left side", titles("frame"))
+        self.assertIn("fins", titles("spikes"))
+        self.assertEqual(R.mirror_style(), R.dims("mirror")["style"]["pick"])
+
+
+ASSETS = common.ROOT / "assets" / "prop"
+# the game's greybox (prime-game levels/lobby/lobby.tscn, match_console.tscn), m: where each package's markers land
+GREYBOX = {"bar": {"TapSpot": [-15.0, 0.0, -10.0]}, "match_console": {"Screen": [-7.0, 1.15, 7.04]},
+           "mirror": {"MirrorFace": [-19.77, 1.25, 8.0]}}
+
+
+class PackageTest(unittest.TestCase):
+    """The committed game packages (art #389, #390, #391), packed by lobby_furniture_run.py --asset."""
+
+    def load(self, piece: str) -> tuple[dict, dict, dict]:
+        a = ASSETS / piece
+        return (json.loads((a / "package.json").read_text(encoding="utf-8")),
+                json.loads((a / "report.json").read_text(encoding="utf-8")),
+                tomllib.loads((a / "manifest.toml").read_text(encoding="utf-8")))
+
+    def test_the_glbs_carry_their_meshes_and_markers(self):
+        want = {"bar": ({"bar"}, {"TapSpot", "TapSpout"}),
+                "match_console": ({"match_console", "ConsoleScreen"}, {"Screen"}),
+                "mirror": ({"mirror", "MirrorGlass"}, {"MirrorFace"})}
+        for piece, (meshes, markers) in want.items():
+            glb = ASSETS / piece / "export" / f"{piece}.glb"
+            g = R.glb_summary(glb)
+            self.assertEqual({n for n, v in g["nodes"].items() if v["kind"] == "mesh"}, meshes, piece)
+            self.assertEqual({n for n, v in g["nodes"].items() if v["kind"] == "marker"}, markers, piece)
+            self.assertEqual(set(g["roots"]), meshes | markers, piece)
+            pkg, rep, _man = self.load(piece)
+            self.assertEqual(pkg["files"][f"export/{piece}.glb"], R.sha256(glb), piece)
+            self.assertEqual(set(pkg["meshes"]), meshes, piece)
+            self.assertEqual(set(pkg["markers"]), markers, piece)
+            self.assertEqual(g["triangles"], pkg["triangles"], piece)
+            self.assertEqual(rep["mesh"]["triangles"], pkg["triangles"], piece)
+            self.assertLessEqual(pkg["triangles"], 8000, piece)
+            self.assertFalse([m for m in g["materials"] if "copper" in m or "bronze" in m], piece)
+            self.assertEqual(rep["gltf_validator"]["numErrors"], 0, piece)
+            self.assertEqual(rep["gltf_validator"]["numWarnings"], 0, piece)
+
+    def test_the_markers_land_on_the_greybox(self):
+        for piece, marks in GREYBOX.items():
+            pkg, rep, _man = self.load(piece)
+            o, yaw = R.placement(piece)
+            self.assertEqual(pkg["placement"]["origin"], [c / 100.0 for c in o], piece)
+            self.assertEqual(pkg["placement"]["yaw_deg"], yaw, piece)
+            self.assertEqual(pkg["placement"]["transform"], R.tscn_transform(o, yaw), piece)
+            for n, at in marks.items():
+                for a, b in zip(pkg["placement"]["markers"][n], at):
+                    self.assertAlmostEqual(a, b, delta=0.003, msg=f"{piece} {n}")
+            self.assertIsNotNone(rep["godot"], piece)   # Godot's import in the shots placed them where we compute
+            self.assertLessEqual(rep["godot"]["max_error_m"], 0.002, piece)
+        self.assertEqual(R.tscn_transform([-700.0, 0.0, 720.0], 180.0), "Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -7, 0, 7.2)")
+        # the basis by rows: a yaw of +90 maps +Z to +X (the greybox's Glass marker reads this basis in lobby.tscn)
+        self.assertEqual(R.tscn_transform([100.0, 0.0, 200.0], 90.0), "Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 1, 0, 2)")
+        self.assertEqual(self.load("mirror")[0]["style"], "frame")
+
+    def test_the_manifests(self):
+        for piece in GREYBOX:
+            _pkg, _rep, man = self.load(piece)
+            self.assertEqual(man["id"], piece)
+            self.assertEqual(man["kind"], "prop")
+            self.assertEqual(man["licence"], "own-work")
+            self.assertIs(man["public_repo_ok"], True)
+            self.assertIs(man["ai_generated"], False)
+            self.assertEqual(man["approved_by"], ["xperiaroco2"])
+            self.assertEqual(str(man["approved_at"]), "2026-11-23")
+            self.assertRegex(man["approval_pr"], r"^https://github.com/xperiaroco2/prime-game-art/pull/\d+$")
+            raws = [r["file"] for r in man["raw"]]
+            self.assertIn(f"lobby/furniture/v6/{piece}/{piece}.glb", raws)
+            self.assertTrue(any(r.startswith("2026-11-22-lobby-bar-mirror-console-concepts/") for r in raws), piece)
+            handoff = (ASSETS / piece / "HANDOFF.md").read_text(encoding="utf-8")
+            for n in R.PACKED[piece]["meshes"] | R.PACKED[piece]["markers"]:
+                self.assertIn(f"`{n}`", handoff, piece)
 
 
 if __name__ == "__main__":
