@@ -367,6 +367,8 @@ def build_checks(build: dict) -> list[str]:
                 bad.append(f"{name}: the {side} hand is {cc['deepest_inside']} mm inside the crystal")
             if cc["nearest_gap"] > 4.0:
                 bad.append(f"{name}: the {side} hand floats {cc['nearest_gap']} mm off the crystal")
+        if toml_cfg()["clips"].get(name, {}).get("pose") == "mug" and not c.get("mug_contact_mm"):
+            bad.append(f"{name}: holds the mug but has no mug_contact_mm")
         for part, cc in c.get("mug_contact_mm", {}).items():
             if cc["deepest_inside"] > MUG_INSIDE_MM:
                 bad.append(f"{name}: the right {part} is {cc['deepest_inside']} mm inside the mug")

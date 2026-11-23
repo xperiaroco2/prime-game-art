@@ -32,8 +32,9 @@ No `.blend`: the mug is built from code (`mug()` in `tools/blender/lobby_furnitu
 - **Placing it in a hand:** instance the GLB under the socket and set its transform to
   `Grip.transform.affine_inverse()`, so `Grip` lands on the socket:
   - first person: under the hands' `MugSocket` (`fp_hands.glb`), on the hands' render layer, no shadow; the socket's
-    own scale (1.3) draws the mug bigger in first person, like `CrystalSocket` the crystal; play `Mug_Idle` or
-    `Mug_Run` while a `mug` or `mug_empty` is held;
+    own scale (1.3) draws the mug bigger in first person, like `CrystalSocket` the crystal; keep that scale on the
+    socket as imported and give the mug only `Grip.transform.affine_inverse()` (never reset the socket's scale or
+    apply 1.3 to the mug again); play `Mug_Idle` or `Mug_Run` while a `mug` or `mug_empty` is held;
   - other players: under `Socket_HandR` (the art contract, `contract/contract.toml`) at true size; the body's clips
     do not change for it in M8.
 - **Budget:** 1,680 triangles with the beer, no textures (10 players may each hold one). No label, no text.
