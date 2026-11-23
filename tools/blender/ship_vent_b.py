@@ -92,8 +92,8 @@ OPEN = [(-0.49 + D, OPEN_FLOOR), (0.33 + D, OPEN_FLOOR), (0.388 + D, OPEN_FLOOR 
         (0.33 + D, 1.408), (-0.46 + D, 1.408), (-0.56 + D, 1.31), (-0.56 + D, 0.80), (-0.56 + D, OPEN_FLOOR + 0.07)]
 
 MATS = {  # name: (base colour linear, metallic, roughness, emission, strength)
-    # vents-b3: a dark patinated bronze (the concept's; b2's 0.15/0.08/0.032 read copper), a second panel tone for
-    # the panels' variation, duller chamfers (b2's 0.18 roughness blew white diamonds), an olive tarnish
+    # vents-b3 (history): a dark patinated bronze, a second panel tone for the panels' variation, duller chamfers
+    # (b2's 0.18 roughness blew white diamonds), an olive tarnish; the steels below replaced them
     # 2026-11-23 (the engineer: no copper or bronze, cold steel): the hall's cold steel on the body, a darker second
     # panel tone, bright steel chamfers and caps, a cold dark grey in the recesses; the names kept (ship.toml's lifts
     # and the game's surfaces find them). Was bronze 0.085/0.052/0.024, bronze2 0.072/0.047/0.024, edge

@@ -1,5 +1,5 @@
 """The ship engine's energy crystal (art#263's station props; the cartridge decided on prime-game#1033): a faceted
-crystal in a bronze and graphite cap with a hexagonal carry loop, built from code in headless Blender (no Meshy).
+crystal in a cold steel and graphite cap (bronze until 2026-11-23) with a hexagonal carry loop, built from code in headless Blender (no Meshy).
 The driver (crystal_run.py) calls it; by hand, background only:
 
   blender -b --factory-startup --python-exit-code 1 --python tools/blender/crystal_build.py -- \
@@ -14,13 +14,13 @@ sheet prime-game-design ideas/ship-components/cartridge-v2/crystal-views.jpg; cr
   into the cap above; every facet edge a thin chamfer;
 - the core: a slimmer copy turned 30 degrees inside the crystal; seen through the charged crystal it is the inner
   glow and the second set of facet lines the concept paints;
-- the cap, an octagon with a flat to the front: a bronze lip and a graphite hexagonal skirt with inset panels over
-  the crystal's shoulder, a bronze rim, a dark groove, the upright bronze band (four cyan windows on its diagonal
-  faces, a graphite notch at the foot of each straight face), a bevelled bronze dome, the graphite top disc with a
+- the cap, an octagon with a flat to the front: a steel lip and a graphite hexagonal skirt with inset panels over
+  the crystal's shoulder, a steel rim, a dark groove, the upright steel band (four cyan windows on its diagonal
+  faces, a graphite notch at the foot of each straight face), a bevelled steel dome, the graphite top disc with a
   cyan lens, and the hexagonal carry loop, a chunky bar.
 
 Every metal edge over 30 degrees gets a 1.2 mm chamfer (0.6 mm on the crystal); the chamfer faces are marked in UV0
-(u = 1) so the materials brighten them (the worn bronze edges, the crystal's glinting edges); UV0's v holds a
+(u = 1) so the materials brighten them (the worn steel edges, the crystal's glinting edges); UV0's v holds a
 per-facet random value for the crystal's facet-by-facet shade. No textures.
 
 The two states are one mesh and one charge value: 1 charged (cyan, translucent, glowing from the core, the cap's
@@ -278,7 +278,7 @@ def skirt_panels(bm) -> None:
 
 
 def build_lip(bm) -> None:
-    # the bronze lip at the skirt's foot, where the crystal meets the cap
+    # the steel lip at the skirt's foot, where the crystal meets the cap
     s = DIMS["skirt"]
     r = s["corners_bottom"] * 0.5 * CM
     lathe(bm, [(r - 0.001, s["z_bottom"] * CM), (r + 0.0015, (s["z_bottom"] + 0.05) * CM),

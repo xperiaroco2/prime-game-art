@@ -1,5 +1,5 @@
-"""The ship engine's start console (art#263's stations; the engineer picked it on 2026-10-24): a round bronze and
-graphite pedestal with the orange start button, three stage strips, two cyan strips and the hologram emitter, and
+"""The ship engine's start console (art#263's stations; the engineer picked it on 2026-10-24): a round cold steel and
+graphite pedestal (bronze until 2026-11-23) with the orange start button, three stage strips, two cyan strips and the hologram emitter, and
 over it the hologram of the ship, built from code in headless Blender (no Meshy). The driver (console_run.py) calls
 it; by hand, background only:
 
@@ -10,7 +10,7 @@ it; by hand, background only:
 Blender axes: Z up, the front (the button) -Y (glTF: Y up, front +Z); the origin on the floor under the middle.
 
 The shape is the drawing tools/blender/console_dims.toml (centimetres; console_drawing.py draws it):
-- the plinth, the body and the rim: rings of bronze blocks round a graphite drum (the drum shows in the joints and in
+- the plinth, the body and the rim: rings of steel blocks round a graphite drum (the drum shows in the joints and in
   the dark rings between the parts); each block a swept profile with flat (chord) faces, every edge over 30 degrees a
   crisp chamfer (UV0 u = 1 there, so the material brightens it); the body's front block wide and flat for the button,
   a cyan channel either side of it;
