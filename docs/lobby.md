@@ -245,7 +245,7 @@ triplanar, generated at run time; the GLBs carried plain colours (step 2c moved 
 | S5 | graphite | near black | signal red | orange |
 | S6 | warm bronze-grey | dark bronze | light bronze | cool white |
 
-`lobby --grid DIR` shoots `corner_nw` and `door_d3` once per scheme into `grid.png` (1280 px, a row each, labelled) and
+`lobby --grid DIR` shoots `corner_nw` and `door_d3` once per scheme (S4c, the copper S4, included) into `grid.png` (1280 px, a row each, labelled) and
 `<scheme>_<view>.png` at 1920 x 1080.
 
 Measured (step 2b, S1):
@@ -1028,8 +1028,8 @@ The engineer (2026-11-23, relayed by the director): remove the copper from the h
 retro and he wants the hall futuristic. S4's `trim` is now a cold brushed steel, sRGB (0.6, 0.64, 0.66) at metallic
 0.85. It is lighter and bluer than the frame (0.25, 0.3, 0.31), so the bands, lips, edges, collars and inlays still
 read. Every copper part of the hall is a `lobby_trim` surface, so the scheme's `trim` is the one switch: the pilasters'
-bands, the window's edge, the doors' and the arch's bevels, the ring's inlays, the pendants' rims and the risers'
-flanges. Their geometry is unchanged. `[look.schemes.S4c]` keeps the copper trim for the before-and-after views and is
+bands, the window's edge, the doors' and the arch's bevels, the ring's inlays, the vault's
+trims and collars and the pendants' rims (the risers' flanges, the doors' frames and bolts are `lobby_metal` since step 3). Their geometry is unchanged. `[look.schemes.S4c]` keeps the copper trim for the before-and-after views and is
 never the hall's scheme again. The accent (the warm light strips) is unchanged; he asked only about the copper.
 The pieces are rebuilt in `lobby/hall/v20` (the steel baked into the GLBs). The before-and-after views were shot by
 `lobby --shoot` with `scheme` S4 and S4c into `<raw>/lobby/nocopper/hall_after` and `hall_before`. The ship's own

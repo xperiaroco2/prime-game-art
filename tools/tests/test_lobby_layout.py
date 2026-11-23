@@ -268,7 +268,7 @@ class LobbyLayoutTest(unittest.TestCase):
         self.assertGreater(min(s4["trim"]), max(s4["frame"]))
         self.assertNotEqual(self.layout["look"]["scheme"], "S4c")
 
-    def test_six_schemes_resolve_with_fixed_hazard_and_lamps(self) -> None:
+    def test_schemes_resolve_with_fixed_hazard_and_lamps(self) -> None:
         look = self.layout["look"]
         self.assertEqual(sorted(look["schemes"]), ["S1", "S2", "S3", "S4", "S4c", "S5", "S6"])
         self.assertEqual(look["scheme"], "S4")   # the engineer's pick (step 2c)
