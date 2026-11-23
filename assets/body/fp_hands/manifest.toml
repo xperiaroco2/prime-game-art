@@ -1,10 +1,11 @@
 # The first-person hands (art#136, xperiaroco2/prime-game#1587): concept A, the engineer's pick of 2026-11-10.
-# Built by tools/blender/fp_hands_run.py --tag g5 --asset assets/body/fp_hands; a rebuild changes the hashes below.
+# Built by tools/blender/fp_hands_run.py --tag mug4 --asset assets/body/fp_hands (g5 with the mug, art#392); a rebuild
+# changes the hashes below.
 id = "fp_hands"
 kind = "body"
 slot = ""
 title = "The first-person hands: the alien's bare forearms and hands, two compact fists, in the camera's space"
-notes = "The detailed four-digit first-person hand m41 (tools/blender/fp_hand_model.py from specs/fp_hand_dims.toml: concept A refined, three fingers and a thumb, a signed distance field built in code; the rig from tools/blender/fp_rig_seed.json, read from the committed t4), cut and posed in the camera's space under a root bone View at the eye, with a Crystal bone and its CrystalSocket node for the energy crystal; the clips are keyed from tools/blender/fp_hands.toml in headless Blender (own work, no motion source): Idle_Loop 3 s and Run_Loop 0.917 s (both hands as fists, low in the corners), Crystal_Idle_Loop 3 s, Crystal_Run_Loop 0.917 s, Punch 0.5 s (the right fist, contact 0.15 s), Crystal_Hit 0.5 s (an overhead smash, contact 0.20 s); Godot names drop _Loop. Two morph targets: fist (the right hand) and fist_L (the left), keyed in every clip. The held hands are seated on the energy crystal (assets/prop/energy_crystal, used to fit and check, not shipped here). The skin's base colour texture is a neutral grey pattern computed in code, its factor white: the game multiplies it by the player's body colour (default sRGB 0.40 0.86 0.80). Approved as they are for the M8 demo; the polish to final quality is art#388. HANDOFF.md for the game side."
+notes = "The detailed four-digit first-person hand m41 (tools/blender/fp_hand_model.py from specs/fp_hand_dims.toml: concept A refined, three fingers and a thumb, a signed distance field built in code; the rig from tools/blender/fp_rig_seed.json, read from the committed t4), cut and posed in the camera's space under a root bone View at the eye, with a Crystal bone and its CrystalSocket node for the energy crystal; the clips are keyed from tools/blender/fp_hands.toml in headless Blender (own work, no motion source): Idle_Loop 3 s and Run_Loop 0.917 s (both hands as fists, low in the corners), Crystal_Idle_Loop 3 s, Crystal_Run_Loop 0.917 s, Punch 0.5 s (the right fist, contact 0.15 s), Crystal_Hit 0.5 s (an overhead smash, contact 0.20 s); since run mug4 (art#392) also Mug_Idle_Loop 3 s and Mug_Run_Loop 0.917 s (the right hand round the M8 beer mug's handle, assets/prop/mug, the left fist as in Idle_Loop and Run_Loop) and the node MugSocket on the RightHand bone; Godot names drop _Loop. Two morph targets: fist (the right hand) and fist_L (the left), keyed in every clip. The held hands are seated on the energy crystal (assets/prop/energy_crystal, used to fit and check, not shipped here). The skin's base colour texture is a neutral grey pattern computed in code, its factor white: the game multiplies it by the player's body colour (default sRGB 0.40 0.86 0.80). Approved as they are for the M8 demo (the six clips of g5; run mug4 keeps them: its golden frames match g4's, 0.0 changed); the two mug clips wait for the engineer's look at art#392's review; the polish to final quality is art#388. HANDOFF.md for the game side."
 tools = ["blender 5.2.2", "prime-game-art fp_hands_build.py, fp_hands_run.py", "glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (checks, shots)"]
 licence = "own-work"
 licence_url = "https://github.com/xperiaroco2/prime-game"
@@ -27,9 +28,9 @@ file = "2026-11-18-fp-hand-model/m41/fp_hand_char.blend"
 sha256 = "bf47d39cd9824d740f455f92f74976d6c772e9b0615e11787a1ba7cca95c5b95"
 
 [[raw]]
-file = "2026-11-11-fp-hands/g5/fp_hands.glb"
-sha256 = "66349bd02cbfd39c42d6dd0dc035e64f2c696ccdc4342e1df2213652525c69dc"
+file = "2026-11-11-fp-hands/mug4/fp_hands.glb"
+sha256 = "1554e7a7827647b6eb7eb51190c0eb39f1da38a63856f905c0882adbac027931"
 
 [[raw]]
-file = "2026-11-11-fp-hands/g5/fp_hands.blend"
-sha256 = "b5eddc4be54ccf1c5789c97ffb1432a38b08d8a1055614faf2509be485e47cbc"
+file = "2026-11-11-fp-hands/mug4/fp_hands.blend"
+sha256 = "4a89065aa270c95d96c6fb0d98b1c3ce76bd3094db66037c8889bb0a4594a540"
