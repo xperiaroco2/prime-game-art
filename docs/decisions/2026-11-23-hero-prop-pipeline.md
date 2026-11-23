@@ -26,6 +26,10 @@ What the research found:
    blockers without seeing each other's notes. But a critic misreads stylised features: it took the foam's lacing
    rings for moire. Scores move in whole points and lag behind visible gains. The builder must look too, and a
    pairwise judgement against the last round is more useful than an absolute score.
+5. **The loop plateaus without new technique.** Eleven rounds took the stein from 16 to 26 of 45, then it held at
+   22-26. Two critics on the same renders differ by up to 3 points. What moved the scores was measurement: the
+   concept's colours read by a script, then fitted. The pass (every item at 4) was not reached with screen-space
+   glass and procedural foam.
 
 ## Decision (proposed)
 Every hero prop (held items, then weapons) goes through one pipeline, inside the existing Gates 0-5
@@ -44,17 +48,21 @@ Every hero prop (held items, then weapons) goes through one pipeline, inside the
    no per-prop code. States are uniforms (a fill level, a charge), never separate models.
 5. **Lookdev stage**: one Godot scene per map's light (lobby, ship) with the review views: 3/4 on its surface, side,
    top, a close-up, first person at the viewmodel lens, each state, and a short clip of any change of state.
-6. **Critic loop**: a fresh Sonnet critic with the rubric (`docs/research/2026-11-23-prop-critic-rubric.md`), the
+6. **Calibration and measurement**: before the loop, a critic scores the approved concept itself, and the rubric is
+   fixed until the concept passes. A script measures the concept's colours and values per material
+   (`godot/mug_lab/_probe.gd`), and the look is fitted to those numbers before any critic sees it.
+7. **Critic loop**: a fresh Sonnet critic with the rubric (`docs/research/2026-11-23-prop-critic-rubric.md`), the
    concept and the renders, never the code. From round 2, pairwise against the last round. Measurable items (sizes,
    triangles, levels) go to scripts. At most 5 rounds; a round that scores lower is reverted.
-7. **The engineer's look** (Gate 5) on a private page, with the clip.
+8. **The engineer's look** (Gate 5) on a private page, with the clip.
 
 ## Consequences
 - No new tool or service. Meshy stays under the existing standing permission for blockouts and textures of opaque
   props; OpenAI images stay for concepts.
 - The material library becomes the style's backbone: a second glass prop starts from the mug's glass, not from zero.
-- Budgets: the mug lab's stein is 18.4k triangles (the glass 13.6k). A held hero prop needs a budget of its own
-  (proposed 10k at LOD0, with Godot's automatic LODs for other players' copies) and a reduction pass.
+- Budgets: a held prop has up to 10k triangles (the director took the recommendation, 2026-11-23). The mug lab's
+  stein went from 18.4k to 9.9k: the glass 7.1k, the beer 0.6k, the foam 2.2k. Godot's automatic import LODs serve
+  other players' copies, but a mesh that a shader shapes (the foam) needs LOD generation off.
 - First person: glass refraction reads the screen behind it, so it works only when the viewmodel draws in the main
   viewport (a FOV-correcting viewmodel shader). The hands today draw in a transparent SubViewport, where the glass
   would show nothing behind it. That is a game-side choice (prime-game), to settle with Code before the mug ships.

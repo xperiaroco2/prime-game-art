@@ -18,6 +18,7 @@ empty, with a 3 s drink clip. The raw output is under `<raw>/research/mug-lab/<t
 | B1 | Meshy 7.1 image to 3D from the concept, textured PBR, as it comes (`mug_lab_ai.py --mode plain`: turned, scaled to 18.2 cm tall and 9 cm across) | 30 | 7,958 | 21 |
 | C1, C2 | Meshy 7.1 shape only (quad remesh), cut at the rim, a wall grown inward by Solidify, the lab's beer and foam inside, the lab's shaders (`--mode hybrid`); C2 with round 4's shaders | 20 | 19,556 | 20, 23 |
 | A2 → A6 | the stein from code (`mug_lab_build.py`, `mug_lab.toml`): 12 pillow panels with arched ends, a heavy foot, a swept D handle, one boolean union; the lab's shaders (`godot/mug_lab/`) | 0 | 18,410 | 21, 22, -, 23 |
+| A7 → A29 (rounds 5-11) | the same, to the 10k budget (inner wall 3.62 cm, a faceted handle, bolder panels), one profile-shaped foam, fitted colours | 0 | 9,930 | 23 … best 26 |
 
 The batch: `batches/2026-11-23-research-mug-image-to-3d.toml`, approved in chat and recorded on art#392. It spent 50
 credits; the balance is now 6,740.
@@ -75,6 +76,41 @@ What it showed:
 4. First person: screen-space refraction needs the viewmodel in the main viewport. The game's hands draw in a
    transparent SubViewport today (`assets/body/fp_hands/HANDOFF.md`), where the glass would see nothing behind it.
 5. GPU: the full first-person frame, 1280x720, costs 5.0 ms on the Radeon 860M (the whole stage, not the mug alone).
+
+## Rounds 5-11: towards the rubric's pass (the engineer's "take it to a pass", 2026-11-23)
+Pipeline A went from 23 to a best of 26 of 45 (round 11, `a29`: 9,930 triangles). The two critics of rounds 8-11 gave:
+- round 8: 23 and 26;
+- round 9: 22 and 22;
+- round 10: 25 and 23;
+- round 11: 26 and 23.
+
+No round passed (every item at 4 or more). The loop stopped there, past the rubric's 5-round rule.
+
+What moved the scores, and what did not:
+- **Measurement beat eyeballing.** A Godot probe (`godot/mug_lab/_probe.gd`) reads HSV profiles across the beer and
+  the head in the concept and in a render:
+  - concept beer: s 0.9-1.0, v 0.31-0.96; ours: s 0.45, v about 0.8 flat;
+  - concept head: s 0.25-0.35, shading from v 1.0 to v 0.7; ours: s 0.05.
+
+  Fitting the shaders to those numbers was the first change the critics called better on most items (round 10, six
+  items better pairwise).
+- **Calibrate the rubric on the concept.** Scored as a render, the concept got 4-5 on every item but style (2,
+  "photoreal, not cartoon"). Item 8 is now anchored to the approved concept.
+- **Critic noise is about ±3 points.** Two critics on the same renders differ by up to 3, and some praise what the next
+  round's critic blames (the head's overhang, its cell texture). Use pairwise verdicts and two critics; require the
+  pass twice.
+- **Godot traps:**
+  - an imported mesh's automatic LODs collapsed the shader-shaped foam's canonical rings into a cone (LOD off for
+    such meshes);
+  - Vulkan's NDC y and SCREEN_UV y point the same way;
+  - points returned through int-parameter shader functions came out wrong in 4.7.2 (use plain locals);
+  - AgX washes a bright amber out (keep the beer darker);
+  - glass on a dark stage reads as grey plastic until a reflection probe and a lit background give it something to
+    show.
+- **The remaining gap** is the same in every critique: the glass reads plastic (the handle, the empty glass), the
+  head's dome sits on a band, and the half-state foam reads as a faceted disc. Screen-space refraction and procedural
+  foam seem to top out here. The proposed next step is baked glass: Cycles renders the glass's light and refraction
+  into textures, and only the beer, the level and the foam stay live in Godot.
 
 ## Next, for the mug (if the engineer takes pipeline A)
 - A thick wall as in C: the inner wall deeper and the glass edge visible.
