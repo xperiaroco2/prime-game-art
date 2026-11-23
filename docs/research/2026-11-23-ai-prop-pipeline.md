@@ -64,8 +64,20 @@ What it showed:
   - the beer lacks depth.
 
 ## Findings that change how we work
-1. The demo look came from the materials and the lighting, not the mesh: the same sizes went from 16 to 23 points
-   mostly through shaders.
+1. **The jump from 16 came from the shape and the materials together** (corrected after the engineer's objection,
+   2026-11-23; the first version said "materials, not the mesh", which was wrong). The 2x2 split on one stage used two
+   Opus critics each and items 1-6, 8 and 9 of 40. Renders are under `<raw>/research/mug-lab/split_base`,
+   `split_shape`, `split_mat` and `g2`.
+
+   | | Plain materials | Our shaders |
+   |---|---|---|
+   | First mug's shape | 16.5 | 18.5 |
+   | Research mug's shape | 16.5 | 23.5 |
+
+   - The detail of the code-built shape (pillow panels with arched ends, a heavy faceted foot, a swept D handle)
+     scored nothing under flat alpha glass: the critics did not see the panels.
+   - The shaders on the plain cylinder scored 2 more; on the detailed shape, 7 more. Shape and material work as a
+     pair.
 2. AI generators give a strong silhouette fast (Meshy 7.1: 2-3 minutes, 20-30 credits). They paint transparency
    onto an opaque shell, and give no parts for states. For glass and liquids, use them as a reference or a blockout
    at most.
@@ -149,6 +161,59 @@ What moved the scores, and what did not:
   M8 ships the art lane's mug (`assets/prop/mug`). The engineer found the research mug "more or less fine".
 - **The next technique, if he wants more:** two-layer glass with a separate back-wall pass, and the liquid drawn to its
   own buffer. That is days of work.
+
+## The baked glass, tested (the engineer's "the glass first", 2026-11-23)
+After the material-slot fix the bake reaches the shader; the package check reports `baked: true` before each round.
+Two Opus critics a round, pairwise against round 14 (unbaked, 25 and 27):
+- **g1** (the baked map: crisp ridges, thickness absorption, the studio light) scored 26 and 27. One critic judged
+  the glass better; the other saw no change.
+- **g2** (ridges lit only where the studio's light falls; deeper absorption; foam thinning with the level, fitting
+  the wall, pulled in over the handle) scored 27 and 26, about the same.
+
+**The bake does not move the ceiling** (about +0.5 on average, within the critics' spread). The critics now name
+what is left:
+- the heavy foot reads as an opaque puck;
+- the empty glass reads as chrome;
+- the beer reads orange rather than a golden lager;
+- the head is a smooth dome on a band, and it pops at the first sip.
+
+These need real refraction and absorption in depth (a second glass pass for the back wall, the liquid drawn to its
+own buffer), not more baked maps.
+
+## The opaque prop: a crew work light (trial 2, "then the trial", 2026-11-23)
+The second question: does the mug's answer hold for an opaque hard-surface held prop, where generators are said to be
+strongest? The prop is a neutral tool, a crew work light, 20-22 cm long. One Meshy text-to-3D item (preview 20 +
+refine 10 = 30 credits of the second 50; `batches/2026-11-23-research-opaque-prop.toml`) gave the blockout and
+Meshy's own textured model. The same stage and views as the mug (no fill states; rubric item 7 not scored), two Opus
+critics a round, items 1-6, 8 and 9 (of 40):
+
+| Version | How | Triangles | Critics | Mean |
+|---|---|---|---|---|
+| A′1 | from code (`tools/blender/prop_lab_light.py`: lathe, boxes, a loop), the style guide's material library baked in Cycles to base, metal-rough and emission (1024 px) | 4,760 | 19, 19 | 19 |
+| A′2 | A′1 after the critics' fixes: steel bands and bezel, a dark polymer grip, a rocker with a cyan pip, the lens as the emitter, a lug for the loop | 5,744 | 23, 23 | **23** |
+| B′ | Meshy's refine as it comes (`prop_lab_remat.py --keep 1`: only scaled and set on the floor) | 6,148 | 14, 17 | 15.5 |
+| C′2 | Meshy's shape, every face mapped by its colour to a library class (`prop_lab_remat.py`), library constants | 6,148 | 17, 13 | 15 |
+| C′3 | C′2 with smooth shading split at 35° and the teal barrel as paint | 6,148 | 13, 17 | 15 |
+
+Both critics judged A′2 better than A′1 on five items and the same on three.
+
+What it shows:
+- **The code-built shape with the library leads by 8 points**, as on the mug. Meshy's mesh is a triangle soup:
+  faceted shading on every curve that smooth normals do not hide (C′3 scored no better than C′2), a crack on the
+  handle, spindly struts and a thin strap. Its own colours (a bronze housing, mint and pale blue) break the palette.
+  Mapping its faces to the library fixes the colours only where the texture's colour is the part's role; the critics
+  still read bronze.
+- **The generator's real use is the blockout.** Meshy's preview gave a reasonable work-light silhouette in about a
+  minute. Building it from code took that layout (head, body, grip, loop) in about an hour, with clean bevels, real
+  sizes and a UV set that bakes.
+- **A generator's mesh does not bake well.** Its unwrap is thousands of islands; a fresh smart projection of the
+  triangle soup gave a bake with seams on every facet, so C′ uses plain library constants.
+- **The library's bake was too quiet to see.** A′2's wear and AO are baked, but both critics saw "flat paint, no
+  wear". The edge mask needs to be stronger at hand distance, and the lens needs structure (a reflector, an emitter, a
+  cover): both critics' first fix.
+- **A′2 is not a pass.** Every item is at 3 and polish at 2. It shows the direction and the margin, not a finished
+  prop: the next rounds would follow the critics' list (lens structure, stronger edge wear, the switch recessed into a
+  panel, the house panel motif on the bezel, a knurl on the grip).
 
 ## Next, for the mug (if the engineer takes pipeline A)
 - A thick wall as in C: the inner wall deeper and the glass edge visible.
