@@ -253,14 +253,24 @@ class LobbyLayoutTest(unittest.TestCase):
         metal, pil = mats["lobby_metal"]["rgb"], mats["lobby_pilaster"]["rgb"]
         self.assertLess(max(metal), max(pil))   # the frames' metal darker than the pilasters' shaft, same hue
         self.assertLess(max(metal) - min(metal), 0.06)
-        cu = self.layout["look"]["schemes"]["S4"]["trim"]
+        cu = self.layout["look"]["schemes"]["S4c"]["trim"]   # the copper as it was (S4 until 2026-11-23)
         self.assertLess(max(cu) - min(cu), 0.35)   # desaturated (2c: 0.74 - 0.28 = 0.46)
         self.assertGreater(mats["lobby_vault"]["rgb"][0], 0.42)   # 2c: 0.392
         self.assertGreater(mats["lobby_floor_worn"]["roughness"], mats["lobby_floor"]["roughness"])
 
-    def test_six_schemes_resolve_with_fixed_hazard_and_lamps(self) -> None:
+    def test_no_copper_in_the_hall(self) -> None:
+        """The engineer, 2026-11-23: no copper (it reads as retro). S4's trim is a cold steel: grey with blue over red,
+        lighter than the frame so the bands still read."""
+        s4 = self.layout["look"]["schemes"]["S4"]
+        r, g, b = s4["trim"]
+        self.assertGreaterEqual(b, r)   # copper is red over blue
+        self.assertLess(max(s4["trim"]) - min(s4["trim"]), 0.1)
+        self.assertGreater(min(s4["trim"]), max(s4["frame"]))
+        self.assertNotEqual(self.layout["look"]["scheme"], "S4c")
+
+    def test_schemes_resolve_with_fixed_hazard_and_lamps(self) -> None:
         look = self.layout["look"]
-        self.assertEqual(sorted(look["schemes"]), ["S1", "S2", "S3", "S4", "S5", "S6"])
+        self.assertEqual(sorted(look["schemes"]), ["S1", "S2", "S3", "S4", "S4c", "S5", "S6"])
         self.assertEqual(look["scheme"], "S4")   # the engineer's pick (step 2c)
         for sid in look["schemes"]:
             mats = lobby_layout.look_materials(self.layout, sid)
