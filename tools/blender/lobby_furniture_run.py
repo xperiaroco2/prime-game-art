@@ -253,10 +253,11 @@ def glb_summary(path: Path) -> dict:
 
 
 def tscn_transform(origin_cm: list, yaw_deg: float) -> str:
-    """The placement as a Godot .tscn Transform3D (the basis' columns x, y, z, then the origin in m)."""
+    """The placement as a Godot .tscn Transform3D: the basis row by row (Godot writes a Basis by its rows; a yaw of +90
+    degrees maps +Z to +X, as to_hall does and as the greybox's Glass marker reads), then the origin in m."""
     a = math.radians(yaw_deg)
     c, s = round(math.cos(a), 6) + 0.0, round(math.sin(a), 6) + 0.0
-    n = [c, 0.0, -s, 0.0, 1.0, 0.0, s, 0.0, c] + [round(v / 100.0, 4) for v in origin_cm]
+    n = [c, 0.0, s, 0.0, 1.0, 0.0, -s, 0.0, c] + [round(v / 100.0, 4) for v in origin_cm]
     return "Transform3D(" + ", ".join(f"{v + 0.0:g}" for v in n) + ")"
 
 
@@ -411,9 +412,13 @@ def handoff(piece: str, tag: str, glb: Path, package: dict, report: dict, approv
     if piece == "mirror":
         out.append("- The players' places in front: " + ", ".join(f"({f3(s)})" for s in report["placement"]["spots_m"])
                    + " (the greybox's `MirrorPlace1..3`).")
+        out.append("- The greybox's `Glass` marker (group `mirror_glass`, metadata `glass_size_m` (2, 2.5)) is what the "
+                   "reflection reads: keep it with its group and metadata, at the GLB's `MirrorGlass` face (x -19.77 in "
+                   "the hall instead of -19.79), or give `MirrorGlass` the group and the metadata instead.")
     if piece == "match_console":
         out.append("- `match_console.tscn` already stands at this transform in `lobby.tscn`: put the GLB in place of "
-                   "its `Mesh`, keep `Shape`, and move `Screen` to the GLB's `Screen` (z 0.162 instead of 0.16).")
+                   "its `Mesh`, keep `Shape`, and move `Screen` to the GLB's `Screen` (z 0.162 instead of 0.16), keeping its "
+                   "group `match_console_screen`.")
     if piece == "bar":
         out.append("- The `Tap` marker (group `spawn_tap`) stays where it is: the GLB's `TapSpot` lands on it.")
     out += ["", "No label, no text, no copper. The look is approved: do not restyle it in the game.", ""]

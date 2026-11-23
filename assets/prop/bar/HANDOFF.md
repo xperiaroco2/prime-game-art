@@ -24,7 +24,7 @@ Units metres, +Y up, the player side +Z. The GLB's root nodes:
 
 It replaces the greybox levels/lobby/lobby.tscn `Bar` (StaticBody3D at (-17, 0, -13), its box 1 x 1.1 x 6 m centred at (0.5, 0.55, 3) inside it: the floor's middle at (-16.5, 0, -10)) and the marker `Tap` at (-15, 0, -10).
 
-- Place the GLB's root at (-16.5, 0, -10) in the hall, turned 90 degrees about +Y: `Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -16.5, 0, -10)`.
+- Place the GLB's root at (-16.5, 0, -10) in the hall, turned 90 degrees about +Y: `Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -16.5, 0, -10)`.
 - Its markers then land at (the hall's frame, m): `TapSpot` (-15, 0, -10); `TapSpout` (-16.075, 1.355, -10).
 - Collision: the greybox's box (1 x 1.1 x 6 m) still fits the counter; the tap reaches 1.6 m.
 - The `Tap` marker (group `spawn_tap`) stays where it is: the GLB's `TapSpot` lands on it.

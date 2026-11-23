@@ -91,7 +91,7 @@
    8.0
   ],
   "yaw_deg": 90.0,
-  "tscn": "Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -19.86, 0, 8)",
+  "tscn": "Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -19.86, 0, 8)",
   "markers_hall_m": {
    "MirrorFace": [
     -19.77,

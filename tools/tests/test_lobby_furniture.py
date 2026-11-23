@@ -186,6 +186,8 @@ class PackageTest(unittest.TestCase):
             self.assertIsNotNone(rep["godot"], piece)   # Godot's import in the shots placed them where we compute
             self.assertLessEqual(rep["godot"]["max_error_m"], 0.002, piece)
         self.assertEqual(R.tscn_transform([-700.0, 0.0, 720.0], 180.0), "Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -7, 0, 7.2)")
+        # the basis by rows: a yaw of +90 maps +Z to +X (the greybox's Glass marker reads this basis in lobby.tscn)
+        self.assertEqual(R.tscn_transform([100.0, 0.0, 200.0], 90.0), "Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 1, 0, 2)")
         self.assertEqual(self.load("mirror")[0]["style"], "frame")
 
     def test_the_manifests(self):

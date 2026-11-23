@@ -27,6 +27,6 @@ It replaces the greybox levels/lobby/match_console.tscn (StaticBody3D `MatchCons
 - Place the GLB's root at (-7, 0, 7.2) in the hall, turned 180 degrees about +Y: `Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -7, 0, 7.2)`.
 - Its markers then land at (the hall's frame, m): `Screen` (-7, 1.15, 7.038).
 - Collision: the greybox's box (1.2 x 1.6 x 0.3 m) covers the monolith's body; the round base plate (1.56 m across, a few cm high) stays walkable.
-- `match_console.tscn` already stands at this transform in `lobby.tscn`: put the GLB in place of its `Mesh`, keep `Shape`, and move `Screen` to the GLB's `Screen` (z 0.162 instead of 0.16).
+- `match_console.tscn` already stands at this transform in `lobby.tscn`: put the GLB in place of its `Mesh`, keep `Shape`, and move `Screen` to the GLB's `Screen` (z 0.162 instead of 0.16), keeping its group `match_console_screen`.
 
 No label, no text, no copper. The look is approved: do not restyle it in the game.

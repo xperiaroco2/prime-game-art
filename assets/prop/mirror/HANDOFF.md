@@ -24,9 +24,10 @@ Units metres, +Y up, the player side +Z. The GLB's root nodes:
 
 It replaces the greybox levels/lobby/lobby.tscn `Mirror` (StaticBody3D at (-20, 0, 7), its box 0.2 x 2.5 x 2 m centred at (0.1, 1.25, 1): the glass on the west wall at x -20..-19.8, z 7..9) and the markers `MirrorPlace1..3` at (-19.2, 0, 7.2), (-19.2, 0, 8), (-19.2, 0, 8.8).
 
-- Place the GLB's root at (-19.86, 0, 8) in the hall, turned 90 degrees about +Y: `Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -19.86, 0, 8)`.
+- Place the GLB's root at (-19.86, 0, 8) in the hall, turned 90 degrees about +Y: `Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -19.86, 0, 8)`.
 - Its markers then land at (the hall's frame, m): `MirrorFace` (-19.77, 1.25, 8).
 - Collision: the greybox's box reaches x -19.8 and z 7..9, 2.5 m up; the mirror reaches x -19.72 (0.14 m out from its origin on the wall's panels) and z 6.9..9.1, 2.67 m up: a box 0.28 x 2.67 x 2.21 m centred at (-19.86, 1.335, 8) holds it from the wall to the frame's front.
 - The players' places in front: (-19.2, 0, 7.2), (-19.2, 0, 8), (-19.2, 0, 8.8) (the greybox's `MirrorPlace1..3`).
+- The greybox's `Glass` marker (group `mirror_glass`, metadata `glass_size_m` (2, 2.5)) is what the reflection reads: keep it with its group and metadata, at the GLB's `MirrorGlass` face (x -19.77 in the hall instead of -19.79), or give `MirrorGlass` the group and the metadata instead.
 
 No label, no text, no copper. The look is approved: do not restyle it in the game.
