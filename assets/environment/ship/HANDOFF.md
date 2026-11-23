@@ -12,6 +12,10 @@ colours and is unchanged; every other file is v10's, `ship.tscn` differing only 
 hashes are in `manifest.toml` and the package's `package.json`. The GLBs are not committed here: the package lives in
 the raw folder until approved.
 
+## Cold steel in the lens rooms and the workshop (v12, 2026-11-23)
+
+v12 (`tools/run.sh ship --out <raw>/ship/v5/steel/pieces --export <raw>/ship/v5/export/v12`, art#263, the engineer's yes of 2026-11-23: no copper or bronze): the lens rooms' and the workshop's metal is cold steel. `levels/ship/ship.tscn` carries it in the pieces' surface overrides on `console_metal.gdshader` (`lens_bronze` sRGB (0.547, 0.575, 0.593), `lens_bronze2` and `ws_bronze` (0.496, 0.522, 0.542), `lens_edge` (0.854, 0.876, 0.896), `ws_bronze2` (0.22, 0.235, 0.25), metallic 0.85 to 0.9), and the 23 GLBs with those materials (`lens_*`, `lounge_*`, `ws_*`) were rebuilt with the same colours as their plain fallback; the material names are kept. Every other file is v11's. **For the game**: nothing to set by hand, the scene and GLBs carry it; the socket, board and charger set their own colours in the game's looks (their packages' `HANDOFF.md`, "For the game").
+
 ## Files (the game's tree)
 
 | Path | What |

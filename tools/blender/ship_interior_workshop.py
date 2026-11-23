@@ -62,14 +62,16 @@ L.MATERIALS.update({
     "ws_inner": {"base": (0.035, 0.037, 0.04, 1.0), "metallic": 0.15, "roughness": 0.72},   # matte: a satin one mirrored the green
     # step 2: the cabinetry's dark bronze (the concept's olive-bronze fronts and tops; step 1's lens bronze read orange
     # plastic) and its second, darker tone; ship.gd swaps both for the stations' bronze shader (LENS_BRONZE)
-    "ws_bronze": {"base": (*(x ** 2.2 for x in (0.26, 0.22, 0.14)), 1.0), "metallic": 0.55, "roughness": 0.4},
+    # cold steel since 2026-11-23 (art#263: no copper or bronze; the names kept): the darker steel (was the olive
+    # bronze 0.26/0.22/0.14, metallic 0.55) and the second tone a dark steel-graphite (was 0.08/0.15/0.11, metallic 0)
+    "ws_bronze": {"base": (*(x ** 2.2 for x in (0.496, 0.522, 0.542)), 1.0), "metallic": 0.85, "roughness": 0.4},
     # step 4: the second tone (the fronts' frames, the stiles, the trays' walls) an olive graphite and the fronts'
     # raised panels their own dark olive bronze (`ws_olive`: under the warm floor lights step 3's neutral bronze read
     # warm brown; the concept's lower fronts are a dark olive green-bronze). Green enough to stay olive under the
     # floor lights' orange and matte, so they do not mirror the glowing floor (tries at 0.17/0.20/0.11 metallic 0.45
     # and 0.14/0.20/0.12 metallic 0.3 read red-brown: the lit floor's reflection; matte 0.12/0.20/0.13 a lighter brown,
     # so the bench fronts' green omnis are 1.8, step 3's 1.2)
-    "ws_bronze2": {"base": (*(x ** 2.2 for x in (0.08, 0.15, 0.11)), 1.0), "metallic": 0.0, "roughness": 0.75},
+    "ws_bronze2": {"base": (*(x ** 2.2 for x in (0.22, 0.235, 0.25)), 1.0), "metallic": 0.85, "roughness": 0.75},
     "ws_olive": {"base": (*(x ** 2.2 for x in (0.11, 0.21, 0.14)), 1.0), "metallic": 0.0, "roughness": 0.75},
     # step 3: the kick plinth's matte graphite (the fronts' feet stay dark under the warm floor lights) and the
     # drawers' dark foam inserts

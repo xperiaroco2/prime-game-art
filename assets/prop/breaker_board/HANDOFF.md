@@ -7,6 +7,20 @@ each a crystal core glowing cyan behind an enamel shell on a bottom hinge, a lam
 two cable loops under the frame into the wall (lowest at 0.178 m). Built from code: `tools/blender/board_run.py`
 (the sizes in `tools/blender/board_dims.toml`, from the drawing in cm, prime-game-design 6b0e83e).
 
+## Cold steel, no bronze (2026-11-23)
+
+The engineer's yes of 2026-11-23 (art#263): no copper or bronze on the ship, cold steel. The surfaces keep their names (the game's look finds them by name); only colours and metallic changed: the steel is the console's and the crystal's (sRGB (0.547, 0.575, 0.593), the worn edges (0.854, 0.876, 0.896), metallic 0.85; the GLB's plain fallback linear (0.26, 0.29, 0.31)). The inner panel a darker steel of the same family (sRGB (0.496, 0.522, 0.542), its edge (0.76, 0.785, 0.81); `board_panel` linear (0.21, 0.235, 0.255)). Built by `board_run.py --tag steel`.
+
+**For the game.** The game's look sets these colours itself, so this package alone does not change them: in `client/world/ship_board_look.gd` set
+
+- `BRONZE := Color(0.5, 0.38, 0.24)` -> `BRONZE := Color(0.547, 0.575, 0.593)`
+- `BRONZE_EDGE := Color(1.0, 0.9, 0.7)` -> `BRONZE_EDGE := Color(0.854, 0.876, 0.896)`
+- `PANEL := Color(0.3, 0.22, 0.14)` -> `PANEL := Color(0.496, 0.522, 0.542)`
+- `PANEL_EDGE := Color(0.78, 0.64, 0.46)` -> `PANEL_EDGE := Color(0.76, 0.785, 0.81)`
+- the finish is `ShipSocketLook.BRONZE_FINISH`: its `"metallic"` 0.85 (`ship_socket_look.gd`)
+
+(the art's copy is `export/board.gd`).
+
 ## Files
 
 | File | What |

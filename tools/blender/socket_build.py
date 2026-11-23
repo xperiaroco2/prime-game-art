@@ -388,7 +388,8 @@ def anchor() -> bpy.types.Object:
 # --- materials -----------------------------------------------------------------------------------------------------
 MATS: dict = {}
 SPEC = {
-    "socket_bronze": dict(base=(0.50, 0.30, 0.15), metallic=1.0, rough=0.3),
+    # cold steel since 2026-11-23 (art#263: no copper or bronze; the name kept for the game's look), was 0.50/0.30/0.15
+    "socket_bronze": dict(base=(0.26, 0.29, 0.31), metallic=1.0, rough=0.3),
     "socket_graphite": dict(base=(0.07, 0.072, 0.08), metallic=0.85, rough=0.38),
     "socket_cyan": dict(base=(0.02, 0.05, 0.06), metallic=0.0, rough=0.2, emit=(0.0, 0.62, 1.0), strength=6.0),
     "socket_amber": dict(base=(0.06, 0.04, 0.01), metallic=0.0, rough=0.3, emit=(1.0, 0.55, 0.08), strength=4.0),

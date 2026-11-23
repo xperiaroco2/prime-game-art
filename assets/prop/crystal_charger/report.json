@@ -1,6 +1,6 @@
 {
   "asset": "crystal_charger",
-  "built_by": "tools/blender/charger_run.py --out <raw>/ship/v5/charger-antennas/r2b/final2 --asset assets/prop/crystal_charger",
+  "built_by": "tools/blender/charger_run.py --tag steel --asset assets/prop/crystal_charger",
   "mesh": {
     "triangles": 39896,
     "by_object": {
@@ -164,10 +164,10 @@
   },
   "godot_cost": {
     "draw_calls_charger": 10,
-    "gpu_ms_charger": 0.121,
-    "gpu_ms_with": 0.504,
-    "gpu_ms_without": 0.383,
+    "gpu_ms_charger": -0.433,
+    "gpu_ms_with": 2.421,
+    "gpu_ms_without": 2.854,
     "view": "1280x720, eye 1.6 m, 1.6 m away, charging"
   },
-  "review": "<raw>/ship/v5/charger-antennas/r2b/final2/sheets/"
+  "review": "<raw>/ship/v4/charger/steel/sheets/"
 }

@@ -57,12 +57,13 @@ L.MATERIALS.update({
     "lens_trace": {"base": (0.02, 0.12, 0.2, 1.0), "metallic": 0.0, "roughness": 0.4, "emission": (0.1, 0.7, 1.0),
                    "strength": 2.0},
 })
-# the stations' shared bronze (godot/console/console.gd's `bronze` on console_metal.gdshader): ship.gd swaps these three
-# for that shader by name (LENS_BRONZE), the GLB keeps the same colours for any other viewer (linear here); the faces a
-# rich bronze, the second tone a little darker, the edges a glossy bevel (the values the lens C shots were judged with)
-for _n, (_c, _m, _r) in {"lens_bronze": ((0.64, 0.42, 0.22), 0.70, 0.30),
-                         "lens_bronze2": ((0.58, 0.38, 0.20), 0.70, 0.32),
-                         "lens_edge": ((0.74, 0.52, 0.30), 0.85, 0.18)}.items():
+# the stations' shared metal (console_metal.gdshader): ship.gd swaps these three for that shader by name (LENS_BRONZE),
+# the GLB keeps the same colours for any other viewer (sRGB here, linear below); the faces cold steel, the second tone
+# a darker steel, the edges a glossy bright steel bevel. Cold steel since 2026-11-23 (art#263: no copper or bronze; the
+# names kept for the game's surfaces); was the bronze 0.64/0.42/0.22, 0.58/0.38/0.20, the edge 0.74/0.52/0.30
+for _n, (_c, _m, _r) in {"lens_bronze": ((0.547, 0.575, 0.593), 0.85, 0.30),
+                         "lens_bronze2": ((0.496, 0.522, 0.542), 0.85, 0.32),
+                         "lens_edge": ((0.854, 0.876, 0.896), 0.90, 0.18)}.items():
     L.MATERIALS.setdefault(_n, {"base": (*(x ** 2.2 for x in _c), 1.0), "metallic": _m, "roughness": _r})
 BRONZE, BRONZE2, EDGE = "lens_bronze", "lens_bronze2", "lens_edge"
 
