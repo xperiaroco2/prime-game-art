@@ -1,0 +1,161 @@
+{
+ "asset": "bar",
+ "built_by": "tools/blender/lobby_furniture_build.py --piece bar (lobby_furniture_run.py --tag v6); packed unchanged from <raw>/lobby/furniture/v6/bar/bar.glb by lobby_furniture_run.py --tag v6 --asset assets/prop",
+ "mesh": {
+  "triangles": 6608,
+  "triangles_by_mesh": {
+   "bar": 6608
+  },
+  "triangles_by_material": {
+   "bar_stone": 1080,
+   "bar_shell": 524,
+   "bar_steel": 3772,
+   "bar_glow": 344,
+   "bar_shell2": 816,
+   "bar_beer": 12,
+   "bar_dark": 60
+  },
+  "bounds_cm": {
+   "min": [
+    -300.0,
+    0.0,
+    -50.0
+   ],
+   "max": [
+    300.0,
+    160.0,
+    50.0
+   ]
+  },
+  "materials": [
+   "bar_stone",
+   "bar_shell",
+   "bar_steel",
+   "bar_glow",
+   "bar_shell2",
+   "bar_beer",
+   "bar_dark"
+  ],
+  "textures_embedded": 3,
+  "origin": "on the floor under the piece's middle",
+  "player_side": "+Z"
+ },
+ "style": null,
+ "gltf": {
+  "roots": [
+   "TapSpot",
+   "TapSpout",
+   "bar"
+  ],
+  "nodes": {
+   "bar": {
+    "kind": "mesh",
+    "triangles": 6608,
+    "at_m": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "TapSpot": {
+    "kind": "marker",
+    "at_m": [
+     0,
+     0,
+     1.5
+    ],
+    "rotation_xyzw": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "TapSpout": {
+    "kind": "marker",
+    "at_m": [
+     0,
+     1.355,
+     0.425
+    ],
+    "rotation_xyzw": [
+     0.0,
+     0.0,
+     0.0,
+     1.0
+    ]
+   }
+  }
+ },
+ "markers_m": {
+  "TapSpot": [
+   0,
+   0,
+   1.5
+  ],
+  "TapSpout": [
+   0,
+   1.355,
+   0.425
+  ]
+ },
+ "placement": {
+  "origin_m": [
+   -16.5,
+   0.0,
+   -10.0
+  ],
+  "yaw_deg": 90.0,
+  "tscn": "Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -16.5, 0, -10)",
+  "markers_hall_m": {
+   "TapSpot": [
+    -15.0,
+    0.0,
+    -10.0
+   ],
+   "TapSpout": [
+    -16.075,
+    1.355,
+    -10.0
+   ]
+  }
+ },
+ "clearances_m": {
+  "footprint_x": [
+   -17.0,
+   -16.0
+  ],
+  "footprint_z": [
+   -13.0,
+   -7.0
+  ],
+  "west_wall": 3.0,
+  "east_wall": 36.0,
+  "south_wall": 17.0,
+  "pilasters": 2.3,
+  "doors": 7.762
+ },
+ "gltf_validator": {
+  "numErrors": 0,
+  "numWarnings": 0,
+  "numInfos": 6,
+  "numHints": 0
+ },
+ "godot": {
+  "from": "godot/lobby_furniture/shots.gd in an off-screen window (lobby_furniture_run.py --tag v6): the GLB imported and placed in the hall by its spec's [placement]",
+  "markers_hall_m": {
+   "TapSpot": [
+    -15.0,
+    0.0,
+    -10.0
+   ],
+   "TapSpout": [
+    -16.075,
+    1.355,
+    -10.0
+   ]
+  },
+  "max_error_m": 0.0
+ },
+ "review": "<raw>/lobby/furniture/v6/shots/bar_sheet.png"
+}

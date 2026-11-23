@@ -1,0 +1,36 @@
+# The lobby's bar (art #389).
+# Packed by tools/blender/lobby_furniture_run.py --tag v6 --asset assets/prop from the build below, copied
+# unchanged; a rebuild changes the hashes below.
+id = "bar"
+kind = "prop"
+slot = ""
+title = "The lobby's bar"
+notes = "The lobby's bar for prime-game's lobby hall (art#389): export/bar.glb, 6,608 triangles in the meshes bar, the markers TapSpot, TapSpout, origin on the floor under the piece's middle, the player side +Z; it replaces the greybox levels/lobby/lobby.tscn `Bar` (HANDOFF.md). Built from code in headless Blender (tools/blender/lobby_furniture_build.py --piece bar, build v6) from its drawing tools/blender/bar_dims.toml, after our own OpenAI concept image <raw>/2026-11-22-lobby-bar-mirror-console-concepts/bar2_galley/image-0.png (no batch file in this repo; the raw folder 2026-11-22-lobby-bar-mirror-console-concepts/ holds the generations and their log.csv, kept out of git), used only as a reference: the shapes are modelled by hand-written code and the textures made by code in Blender, and no image or mesh of the concept is in the files, hence own-work and ai_generated false. Without copper (the engineer, 2026-11-23): cold steel and cyan light lines. Approved by the engineer on 2026-11-23 (relayed by the director), in the hall with the teal strips R."
+tools = ["blender 5.2.2", "prime-game-art lobby_furniture_build.py, lobby_furniture_run.py", "glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (shots)"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game"
+public_repo_ok = true
+ai_generated = false
+approved_by = ["xperiaroco2"]
+approved_at = 2026-11-23
+approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/406"
+
+[source]
+service = "own"
+plan = "own-work"
+model_version = ""
+task_ids = []
+generated_at = 2026-11-23
+url = "https://github.com/xperiaroco2/prime-game-art/issues/389"
+
+[[raw]]
+file = "lobby/furniture/v6/bar/bar.glb"
+sha256 = "fad27ccad47c6a30ac8c98d3569d575a9dc42828a03a83ed44ecf80175e73d25"
+
+[[raw]]
+file = "lobby/furniture/v6/bar/bar.json"
+sha256 = "a5f4351a5ae77c4505b6934c3c3039256e8f19becaaebc69c76bd6928808a551"
+
+[[raw]]
+file = "2026-11-22-lobby-bar-mirror-console-concepts/bar2_galley/image-0.png"
+sha256 = "acd18468229b5464146c5cc0f294fa862f5012b6e5b07baa90c36b64264dc18c"

@@ -1,0 +1,36 @@
+# The lobby's mirror (art #390).
+# Packed by tools/blender/lobby_furniture_run.py --tag v6 --asset assets/prop from the build below, copied
+# unchanged; a rebuild changes the hashes below.
+id = "mirror"
+kind = "prop"
+slot = ""
+title = "The lobby's mirror"
+notes = "The lobby's mirror for prime-game's lobby hall (art#390): export/mirror.glb, 1,088 triangles in the meshes mirror, MirrorGlass, the markers MirrorFace, origin on the floor at the glass's middle, on the wall's face, the player side +Z; it replaces the greybox levels/lobby/lobby.tscn `Mirror` (HANDOFF.md). The style frame (the engineer's pick C of 2026-11-23): a wide rounded steel frame with a cyan line and a light bar over the glass, no fins. Built from code in headless Blender (tools/blender/lobby_furniture_build.py --piece mirror, build v6) from its drawing tools/blender/mirror_dims.toml, after our own OpenAI concept image <raw>/2026-11-22-lobby-bar-mirror-console-concepts/mir3_fins/image-0.png (no batch file in this repo; the raw folder 2026-11-22-lobby-bar-mirror-console-concepts/ holds the generations and their log.csv, kept out of git), used only as a reference: the shapes are modelled by hand-written code and the textures made by code in Blender, and no image or mesh of the concept is in the files, hence own-work and ai_generated false. Without copper (the engineer, 2026-11-23): cold steel and cyan light lines. Approved by the engineer on 2026-11-23 (relayed by the director), in the hall with the teal strips R."
+tools = ["blender 5.2.2", "prime-game-art lobby_furniture_build.py, lobby_furniture_run.py", "glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (shots)"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game"
+public_repo_ok = true
+ai_generated = false
+approved_by = ["xperiaroco2"]
+approved_at = 2026-11-23
+approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/406"
+
+[source]
+service = "own"
+plan = "own-work"
+model_version = ""
+task_ids = []
+generated_at = 2026-11-23
+url = "https://github.com/xperiaroco2/prime-game-art/issues/390"
+
+[[raw]]
+file = "lobby/furniture/v6/mirror/mirror.glb"
+sha256 = "c03caf1a484a2093a85786519709c94f2e84eeeb9fe0856dc95d550ecab4c2d9"
+
+[[raw]]
+file = "lobby/furniture/v6/mirror/mirror.json"
+sha256 = "9ec4b7bbabc0e3031b4bf5989770a1c6236ccb5511c2401d81743c61c2a6ba39"
+
+[[raw]]
+file = "2026-11-22-lobby-bar-mirror-console-concepts/mir3_fins/image-0.png"
+sha256 = "69ca53adf0a3770d0a44bf64baca73fdf82490ee87d2c66cf122a8e3f732bbb6"
