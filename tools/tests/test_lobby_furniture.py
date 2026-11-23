@@ -57,6 +57,37 @@ class SpecsTest(unittest.TestCase):
                 self.assertFalse(coppery(look), f"{piece} {key} {look}")
 
 
+class MugTest(unittest.TestCase):
+    """The mug against its contract with the game (the shared note art-mug-392/contract.md)."""
+
+    def test_the_contract_sizes(self):
+        s = R.dims("mug")
+        rings = s["body"]["rings"]
+        self.assertEqual(rings[0][0], 0.0)                     # the origin under the base
+        self.assertEqual(rings[-1][0], 15.0)                   # 15 cm tall
+        self.assertLessEqual(max(r for _y, r, _f in rings), 4.6)   # 9 cm across (4.5 + the rim's 0.05 flare)
+        xs = [x for x, _y in s["handle"]["path"]]
+        self.assertLessEqual(max(xs) + s["handle"]["width"] / 2, 8.1)   # the handle reaches x 8 cm
+        self.assertGreater(min(xs), 0.0)                       # on +x
+        ys = [y for _x, y in s["handle"]["path"]]
+        self.assertLessEqual(min(ys), 4.0)                     # the opening spans y 3.5 .. 12.5
+        self.assertGreaterEqual(max(ys), 12.5)
+
+    def test_the_grip_is_on_the_handle_bar(self):
+        s = R.dims("mug")
+        x, y, z = s["grip"]["at"]
+        bar = [p for p in s["handle"]["path"] if 4.5 < p[1] < 11.5]
+        self.assertTrue(bar)
+        self.assertLess(min(abs(x - px) for px, _py in bar), 0.2)
+        self.assertTrue(3.5 < y < 12.5)
+        self.assertEqual(z, 0.0)
+
+    def test_the_mug_stands_on_the_bar(self):
+        on = R.dims("mug")["placement"]["on_bar"]
+        self.assertEqual(on[1], R.dims("bar")["size"]["height"])
+        self.assertLess(abs(on[0]), R.dims("bar")["size"]["length"] / 2)
+
+
 class ClearanceTest(unittest.TestCase):
     def test_a_piece_on_a_pilaster_clashes(self):
         b = {"min": [-147.0, 0.0, 0.0], "max": [147.0, 262.0, 14.0]}
@@ -82,6 +113,12 @@ class BuildTest(unittest.TestCase):
             self.assertGreater(c["pilasters"], 0.0, piece)
             rep = json.loads((BUILD / piece / f"{piece}.json").read_text(encoding="utf-8"))
             self.assertLessEqual(rep["triangles"], 8000, piece)
+        mug = BUILD / "mug" / "mug.json"
+        if mug.is_file():
+            rep = json.loads(mug.read_text(encoding="utf-8"))
+            self.assertEqual(rep["meshes"], ["Mug", "Beer"])
+            self.assertIn("Grip", rep["markers"])
+            self.assertLessEqual(rep["triangles"], 2000)
             self.assertFalse([m for m in rep["triangles_by_material"] if "copper" in m], piece)
         markers = {p: json.loads((BUILD / p / f"{p}.json").read_text(encoding="utf-8"))["markers"] for p in cl}
         self.assertIn("TapSpot", markers.get("bar", {"TapSpot": 1}))

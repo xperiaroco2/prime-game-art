@@ -4,11 +4,18 @@ extends "res://lobby/hall.gd"
 ## Started only by tools/blender/lobby_furniture_run.py through `_godot.window()` (CLAUDE.md, #214), never by hand.
 ## The request's "furniture": {"views": [[name, title, eye, target, fov]] in the hall's frame, "sheets": [[file,
 ## concept png, [[view, ...], ...] rows]]}: one <view>.png per view, each sheet's rows of views (the concept first when
-## the row names "concept"), shots.json with the markers' places.
+## the row names "concept"), shots.json with the markers' places; "hide": [[piece id, placement index, node]] hides a
+## node of one placement (the empty mug's Beer).
 
 func _shoot() -> void:
 	var fu: Dictionary = _req["furniture"]
 	_setup_scene()
+	for h: Array in fu.get("hide", []):   # [piece id, which placement, node name]: e.g. the empty mug's Beer
+		var tops: Array = _placed.get(h[0], [])
+		if int(h[1]) < tops.size():
+			var n: Node = (tops[int(h[1])] as Node).find_child(h[2], true, false)
+			if n is Node3D:
+				(n as Node3D).visible = false
 	var shots: Dictionary = {}
 	var images: Dictionary = {}
 	for v: Array in fu["views"]:

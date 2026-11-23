@@ -29,7 +29,9 @@ RAW = common.raw_dir()
 BASE = RAW / "lobby" / "furniture"
 CONCEPTS = RAW / "2026-11-22-lobby-bar-mirror-console-concepts"
 PIECES = {"bar": ("bar_dims.toml", "bar2_galley"), "mirror": ("mirror_dims.toml", "mir3_fins"),
-          "match_console": ("match_console_dims.toml", "con2_monolith")}
+          "match_console": ("match_console_dims.toml", "con2_monolith"), "mug": ("mug_dims.toml", "mug3_stein")}
+CONCEPT_DIRS = {"mug": RAW / "2026-11-23-lobby-mug-concepts"}   # the others: CONCEPTS
+ON_BAR = {"mug"}   # placed on the bar's top (their spec's [placement] on_bar, in the bar's frame), no floor clearances
 SCRIPT = "res://lobby_furniture/shots.gd"
 PLINTH = 0.2   # a pilaster's plinth reaches 0.1 m beyond its shaft either side and out (measured on walls.glb, v20)
 
@@ -38,14 +40,21 @@ def dims(piece: str) -> dict:
     return tomllib.loads((Path(__file__).with_name(PIECES[piece][0])).read_text(encoding="utf-8"))
 
 
+def placement(piece: str) -> tuple[list, float]:
+    """The piece's origin (cm, the hall's frame) and yaw (degrees): its spec's, or on the bar's top."""
+    pl = dims(piece)["placement"]
+    if piece in ON_BAR:
+        return [c * 100.0 for c in to_hall("bar", pl["on_bar"])], pl["yaw_deg"]
+    return pl["origin"], pl["yaw_deg"]
+
+
 def to_hall(piece: str, p) -> list[float]:
     """A point (cm, the piece's frame) in the hall's frame (m)."""
-    pl = dims(piece)["placement"]
-    a = math.radians(pl["yaw_deg"])
+    o, yaw = placement(piece)
+    a = math.radians(yaw)
     x, y, z = p
     hx = x * math.cos(a) + z * math.sin(a)
     hz = -x * math.sin(a) + z * math.cos(a)
-    o = pl["origin"]
     return [round((o[0] + hx) / 100.0, 4), round((o[1] + y) / 100.0, 4), round((o[2] + hz) / 100.0, 4)]
 
 
@@ -108,6 +117,14 @@ def views(piece: str, b: dict) -> list:
                 ["mirror_fins", "the left fins close up", T((-90, 120, 150)), T((-135, 110, 6)), 40.0],
                 ["mirror_tips", "the fins' steel tips", T((90, 220, 120)), T((130, 235, 6)), 35.0],
                 ["mirror_hall", "on the west wall, between the pilaster and the corner", T((250, 380, 1100)), T((0, 120, 0)), 55.0]]
+    if piece == "mug":   # close views (cm, the mug's frame: the holder's side +z, the handle +x on its right); the
+        # empty mug 25 cm to its left
+        return [["mug_q34", "the mug, 3/4 (the concept's side: the handle on the right)", T((-22, 28, 40)), T((1.5, 8.5, 0)), 30.0],
+                ["mug_front", "from the holder's side", T((0, 12, 55)), T((1.5, 8.5, 0)), 25.0],
+                ["mug_handle", "the handle's side", T((60, 14, 4)), T((2.5, 8.5, 0)), 25.0],
+                ["mug_top", "the head from above", T((4, 55, 20)), T((0, 15, 0)), 25.0],
+                ["mug_pair", "full and empty (the Beer node hidden)", T((-14, 32, 62)), T((-12, 8, 0)), 35.0],
+                ["mug_bar", "on the bar by the tap, from the player's eye", T((-60, 55, 130)), T((-30, 5, 0)), 55.0]]
     s = dims("match_console")["screen"]
     return [["con_q34", "the console, 3/4 front", T((150, 165, 260)), T((0, 90, 0)), 45.0],
             ["con_front", "the console from the front", T((0, 120, 330)), T((0, 85, 0)), 45.0],
@@ -125,16 +142,19 @@ def request(layout: dict, out: Path, built: dict) -> tuple[dict, dict]:
     for piece, b in built.items():
         staged[f"furn_{piece}"] = out / piece / f"{piece}.glb"
         req["pieces"][f"furn_{piece}"] = f"res://import/furn_{piece}.glb"
-        pl = dims(piece)["placement"]
-        req["place"].append([f"furn_{piece}", [c / 100.0 for c in pl["origin"]], pl["yaw_deg"]])
+        o, yaw = placement(piece)
+        req["place"].append([f"furn_{piece}", [c / 100.0 for c in o], yaw])
+        if piece == "mug":   # an empty one beside it, its Beer hidden (shots.gd "hide")
+            req["place"].append([f"furn_{piece}", to_hall("mug", (-25.0, 0.0, 0.0)), yaw])
+            req.setdefault("hide", []).append([f"furn_{piece}", 1, "Beer"])
         v = views(piece, b)
         vs += v
         n = [x[0] for x in v]
-        sheets.append([f"{piece}_sheet.png", (CONCEPTS / PIECES[piece][1] / "image-0.png").as_posix(),
+        sheets.append([f"{piece}_sheet.png", (CONCEPT_DIRS.get(piece, CONCEPTS) / PIECES[piece][1] / "image-0.png").as_posix(),
                        [["concept", n[0]], [n[1], n[2]], [n[3], n[4]], [n[5]]]])
     req.update({"mode": "shoot", "watchdog_s": 540, "background": layout["review"]["background"],
                 "top": layout["review"]["top"], "look": lobby_cmd.look_request(layout, layout["look"]["scheme"]),
-                "furniture": {"views": vs, "sheets": sheets}})
+                "furniture": {"views": vs, "sheets": sheets, "hide": req.pop("hide", [])}})
     if "earth" in layout:
         req["earth"] = lobby_cmd.earth_request(layout, layout["earth"]["variant"])["earth"]
     if "light" in layout:
@@ -164,6 +184,8 @@ def main() -> int:
         ok = ok and passed
         b = json.loads((folder / f"{piece}.json").read_text(encoding="utf-8"))["bounds_cm"]
         built[piece] = b
+        if piece in ON_BAR:
+            continue
         cl = clearances(piece, b, layout)
         report[piece] = cl
         print(f"clearances {piece} (m): {cl}", flush=True)

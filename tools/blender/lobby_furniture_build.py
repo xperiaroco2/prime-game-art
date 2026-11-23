@@ -9,7 +9,8 @@ match_console_dims.toml; centimetres), without copper (the engineer, 2026-11-23)
 Every point is written in Godot's axes (y up; each piece's frame: the origin on the floor under its middle, its
 player side +z) and turned into Blender's (x, -z, y) at the end, so the GLB (+Y up) comes out in Godot's frame.
 Writes <out>/<piece>.glb (the piece as one mesh named as the piece, a separate mesh for a surface the game draws on:
-MirrorGlass, ConsoleScreen; the game's markers as empties: bar TapSpot and TapSpout, match_console Screen) and
+MirrorGlass, ConsoleScreen; the game's markers as empties: bar TapSpot and TapSpout, match_console Screen; the mug
+(art #392, mug_dims.toml): the meshes Mug and Beer and the Grip marker, by the contract with the game) and
 <out>/<piece>.json (triangles by material, the bounds in cm, the markers).
 """
 
@@ -26,7 +27,8 @@ from mathutils import Matrix, Vector
 HERE = Path(__file__).parent
 CM = 0.01
 G2B = Matrix(((1, 0, 0, 0), (0, 0, -1, 0), (0, 1, 0, 0), (0, 0, 0, 1)))   # Godot (x, y, z) -> Blender (x, -z, y)
-SPECS = {"bar": "bar_dims.toml", "mirror": "mirror_dims.toml", "match_console": "match_console_dims.toml"}
+SPECS = {"bar": "bar_dims.toml", "mirror": "mirror_dims.toml", "match_console": "match_console_dims.toml",
+         "mug": "mug_dims.toml"}
 PIECE: list = []
 LOOK: dict = {}
 _MATS: dict = {}
@@ -44,7 +46,8 @@ def v3(p) -> Vector:
 def material(key: str) -> bpy.types.Material:
     if key in _MATS:
         return _MATS[key]
-    srgb, metal, rough, emit = LOOK[key]
+    srgb, metal, rough, emit, *rest = LOOK[key]
+    alpha = rest[0] if rest else 1.0
     rgb = tuple(c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in srgb)   # sRGB -> linear
     m = bpy.data.materials.new(f"{PIECE[0]}_{key}")
     p = m.node_tree.nodes["Principled BSDF"]
@@ -54,7 +57,13 @@ def material(key: str) -> bpy.types.Material:
     if emit:
         p.inputs["Emission Color"].default_value = (*rgb, 1.0)
         p.inputs["Emission Strength"].default_value = emit
-    m.diffuse_color = (*rgb, 1.0)
+    if alpha < 1.0:   # glass and beer: alpha-blended in the GLB (Godot imports it as transparent)
+        p.inputs["Alpha"].default_value = alpha
+        if hasattr(m, "surface_render_method"):
+            m.surface_render_method = "BLENDED"
+        else:
+            m.blend_method = "BLEND"
+    m.diffuse_color = (*rgb, max(alpha, 0.2))
     _MATS[key] = m
     return m
 
@@ -318,6 +327,64 @@ def match_console(D: dict) -> tuple[list, dict]:
     return [body, facet, steel, glow, base, screen], {"markers": {"Screen": (marker, 0.0)}, "separate": ["ConsoleScreen"]}
 
 
+# --- the mug of beer ------------------------------------------------------------------------------------------------
+def _ring(y: float, r: float, sides: int, fluted: bool, groove: float) -> list:
+    return [(r * (1 - (groove if fluted and i % 2 else 0.0)) * math.cos(2 * math.pi * i / sides), y,
+             -r * (1 - (groove if fluted and i % 2 else 0.0)) * math.sin(2 * math.pi * i / sides)) for i in range(sides)]
+
+
+def _spline(pts: list, n: int) -> list:
+    """n points along a Catmull-Rom curve through pts (its ends held)."""
+    out = []
+    m = len(pts) - 1
+    for i in range(n):
+        t = i / (n - 1) * m
+        k = min(int(t), m - 1)
+        u = t - k
+        p0, p1, p2, p3 = pts[max(k - 1, 0)], pts[k], pts[k + 1], pts[min(k + 2, m)]
+        out.append(tuple(0.5 * ((2 * p1[j]) + (p2[j] - p0[j]) * u + (2 * p0[j] - 5 * p1[j] + 4 * p2[j] - p3[j]) * u * u
+                                + (3 * p1[j] - p0[j] - 3 * p2[j] + p3[j]) * u ** 3) for j in range(2)))
+    return out
+
+
+def mug(D: dict) -> tuple[list, dict]:
+    B, Hd, Be, G = D["body"], D["handle"], D["beer"], D["grip"]
+    n, gr, wall = B["sides"], B["groove"], B["wall"]
+    outer = [_ring(y, r, n, fl, gr) for y, r, fl in B["rings"]]
+    top_y, rim_r = B["rings"][-1][0], B["rings"][-1][1]
+    lip = B["rim_round"]
+    rim = [_ring(top_y + lip * 0.6, rim_r - wall / 2, n, False, 0.0)]
+    inner = []
+    for y, r, _fl in reversed(B["rings"]):   # the inside follows the outside a wall in, down to the thick floor
+        if y > B["floor_y"]:
+            inner.append(_ring(y, r - wall, n, False, 0.0))
+    inner.append(_ring(B["floor_y"], B["rings"][3][1] - wall - 0.3, n, False, 0.0))
+    glass = Part("glass", "glass", bevel=0.0).loft(outer + rim + inner)
+    # the handle: a rounded-rectangle section swept along the path in the xy plane
+    path = _spline([tuple(p) for p in Hd["path"]], Hd["samples"])
+    w, d = Hd["width"] / 2, Hd["depth"] / 2
+    sec = [(w * 0.75, d), (w, d * 0.7), (w, -d * 0.7), (w * 0.75, -d), (-w * 0.75, -d), (-w, -d * 0.7), (-w, d * 0.7),
+           (-w * 0.75, d)]
+    rings = []
+    for i, (x, y) in enumerate(path):
+        a, b = path[max(i - 1, 0)], path[min(i + 1, len(path) - 1)]
+        tx, ty = b[0] - a[0], b[1] - a[1]
+        ln = math.hypot(tx, ty) or 1.0
+        nx, ny = ty / ln, -tx / ln          # the in-plane normal (outward on the loop)
+        rings.append([(x + nx * u, y + ny * u, v) for u, v in sec])
+    handle = Part("handle", "glass", bevel=0.0).loft(rings)
+    # the beer and its head, inside the glass
+    ri = B["rings"][3][1] - wall - Be["inset"]
+    liquid = Part("liquid", "beer", bevel=0.0).loft([_ring(B["floor_y"] + 0.05, ri - 0.2, n, False, 0.0),
+                                                    _ring(Be["top_y"], ri, n, False, 0.0)])
+    head = [_ring(Be["top_y"], ri, n, False, 0.0), _ring(top_y, rim_r - wall - Be["inset"], n, False, 0.0)]
+    for dy, k in Be["foam_profile"]:   # the head's dome over the rim, swelling past it first
+        head.append(_ring(top_y + dy, max(0.05, rim_r * k), n, False, 0.0))
+    foam = Part("foam", "foam", bevel=0.0).loft(head)
+    return [glass, handle, liquid, foam], {"markers": {"Grip": (tuple(G["at"]), 90.0)}, "separate": [],
+                                           "groups": {"liquid": "Beer", "foam": "Beer"}, "main": "Mug"}
+
+
 def join(objs: list, name: str) -> bpy.types.Object:
     with bpy.context.temp_override(active_object=objs[0], selected_editable_objects=objs, object=objs[0]):
         bpy.ops.object.join()
@@ -345,16 +412,19 @@ def main() -> None:
     LOOK.update(D["look"])
     for ob in list(bpy.data.objects):
         bpy.data.objects.remove(ob)
-    parts, extra = {"bar": bar, "mirror": mirror, "match_console": match_console}[piece](D)
+    parts, extra = {"bar": bar, "mirror": mirror, "match_console": match_console, "mug": mug}[piece](D)
     by_mat: dict = {}
-    objs, separate = [], []
+    objs, separate, grouped = [], [], {}
     for p in parts:
         ob = p.obj()
         n = sum(len(f.vertices) - 2 for f in ob.data.polygons)
         by_mat[f"{piece}_{p.mat}"] = by_mat.get(f"{piece}_{p.mat}", 0) + n
-        (separate if p.name in extra["separate"] else objs).append(ob)
-    main_ob = join(objs, piece)
-    meshes = [main_ob, *separate]
+        if p.name in extra.get("groups", {}):   # parts joined into a named mesh of their own (the mug's Beer)
+            grouped.setdefault(extra["groups"][p.name], []).append(ob)
+        else:
+            (separate if p.name in extra["separate"] else objs).append(ob)
+    main_ob = join(objs, extra.get("main", piece))
+    meshes = [main_ob, *separate, *(join(obs, g) for g, obs in grouped.items())]
     mk = [empty(n, at, yaw) for n, (at, yaw) in extra["markers"].items()]
     inv = G2B.inverted()
     pts = [inv @ (o.matrix_world @ v.co) for o in meshes for v in o.data.vertices]
