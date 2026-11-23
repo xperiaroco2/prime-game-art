@@ -41,7 +41,8 @@ tip_width = 0.45        # the fin's section where the tip starts, against its ba
 facet = 0.35            # the fin's front ridge stands this share of its width forward (a faceted crystal section)
 
 [style]                 # the sides' variant (the engineer rejected "spikes", 2026-11-23: "why are there spikes")
-pick = "spikes"         # the build's default until he picks; --style overrides it: spikes, soft, flat, frame
+pick = "frame"          # the engineer's pick C, 2026-11-23 ("C, рамка"): a wide steel frame, a teal line, a light strip on
+                        # top, no fins; --style overrides it: spikes, soft, flat, frame
 
 [style.soft]            # A: the concept's sheaf as leaf blades: flat layered fins with rounded tips, no points
 # each fin: [x from the glow line's outer edge to its inner side, bottom y, top y, width, depth, lean outward]; the
