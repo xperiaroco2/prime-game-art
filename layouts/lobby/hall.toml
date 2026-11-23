@@ -6,8 +6,8 @@
 # `lobby` command builds and shoots it.
 
 version = 3
-raw_dir = "lobby/hall/v21"         # under the raw folder: pieces/, plan/, logs/, shots/ (v21: the strips R, teal; still
-                                   # the ship package v10 until v11, the steel console, merges; v20: the ring at z -13.24, the spawns at
+raw_dir = "lobby/hall/v21"         # under the raw folder: pieces/, plan/, logs/, shots/ (v21: the strips R, teal, and
+                                   # the ship package v11, the steel console (art #263); v20: v10, the ring at z -13.24, the spawns at
                                    # z 2.52, the warm strips; v19 the game's current package's)
 # The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
 # their walls by the `lobby` command from [door] doors)
@@ -95,7 +95,7 @@ stand_in = []                      # step 4c: the ramp is gone (the jaw nose, sh
 # shadowed suns that would light the hall's walls and cast two more ship shadows against the Earth's light). The
 # ship's 105 own lamps and its 7 interior probes stay.
 # The package v10 (art #386, the game's ship) since v8 was lost with D: (art #374).
-package = { dir = "ship/v5/export/v10", nose = ["jaw_lower", "jaw_upper", "jaw_root"], use = true, free = ["Clearing", "Environment", "Lights:DirectionalLight3D"], keep = ["Lights", "Probes", "Pieces", "Nose", "Stations", "Markers"] }
+package = { dir = "ship/v5/export/v11", nose = ["jaw_lower", "jaw_upper", "jaw_root"], use = true, free = ["Clearing", "Environment", "Lights:DirectionalLight3D"], keep = ["Lights", "Probes", "Pieces", "Nose", "Stations", "Markers"] }
 # The forest clearing (layouts/ship/exterior.toml), not in the lobby
 drop = ["ground", "pine_a", "pine_b", "pine_c", "pine_d", "pine_e", "pine_f", "pine_g", "pine_s", "rock_a", "rock_b",
         "rock_c", "rock_pile_a", "rock_pile_b", "ground_lamp", "dirt_patch", "dirt_path", "tuft_a", "tuft_b",
