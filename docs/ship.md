@@ -2136,7 +2136,8 @@ before the ramp, dark regolith beyond.
   equal) with its material `export/clearing_ground.tres` (`pad` on, `centre` the ship's world xz). Tag
   `clearing_ground/v1`.
 - **In the game:** the `.tres` replaces `levels/kit/greybox_floor_garden.tres` on `ground.tscn`'s box only (the
-  estate's `plot.tscn` keeps the greybox); box, transform and collider stay. A moved ship needs a new `centre`; the
+  estate's `plot.tscn` keeps the greybox), its ext_resource's uid with it (Godot resolves the uid before the path);
+  box, transform and collider stay. A moved ship needs a new `centre`; the
   chevrons assume the ramp toward -z.
 - **Proof:** `clearing_ground_looks.py --package` puts the package's `.tres` on a box like `ground.tscn`'s and shoots
   it beside the review's pad: no pixel difference worth the name (mean 0.000-0.006 of 255). Cost about +0.3 ms GPU
