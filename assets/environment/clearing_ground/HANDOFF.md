@@ -21,14 +21,19 @@ Tag: **`clearing_ground/v1`** (this folder on the art repo's `main`).
 
 - **Copy** both files to `res://assets/environment/clearing/`. The `.tres` refers to the shader by that path; Godot
   writes the `.uid` files on import.
-- **Swap:** in `levels/clearing/rooms/ground.tscn`, point the `Material` ext_resource (today
-  `res://levels/kit/greybox_floor_garden.tres`) at `res://assets/environment/clearing/clearing_ground.tres`. The
-  `BoxMesh` 200 x 1 x 200 m, its transform (top at y 0) and the `BoxShape3D` collider stay as they are. Leave
-  `greybox_floor_garden.tres` itself alone: `levels/estate/rooms/plot.tscn` uses it too.
+- **Swap:** in `levels/clearing/rooms/ground.tscn`, replace the `Material` ext_resource (today
+  `uid="uid://d1t1jgv22rrqu" path="res://levels/kit/greybox_floor_garden.tres"`) with one for
+  `res://assets/environment/clearing/clearing_ground.tres`, **uid included**: Godot resolves an ext_resource by its
+  uid before its path, so editing the path alone keeps the greybox. Either reassign the mesh's material in the editor
+  and save, or write `[ext_resource type="Material" path="res://assets/environment/clearing/clearing_ground.tres"
+  id="1_garden"]` with the `.tres`'s own uid once Godot has imported it (or no uid). The `BoxMesh` 200 x 1 x 200 m,
+  its transform (top at y 0) and the `BoxShape3D` collider stay as they are. Leave `greybox_floor_garden.tres` itself
+  alone: `levels/estate/rooms/plot.tscn` uses it too.
 - **Place:** the pad is drawn at the shader's `centre`, world x 116, z 72, where `clearing.tscn` puts `Ship` and
   `Ground`. If the ship moves, set `centre` to its new world xz. The chevrons assume the ship unrotated, its ramp
-  toward -z (its foot 12.6 m in front of the centre, `ramp_foot`). The ten round markers lie at most 15.2 m from the
-  centre, so every spawn stands on the pad (`pad_r` 18 m).
+  toward -z (its foot 12.6 m in front of the centre, `ramp_foot`). In `markers.tscn` the ten RoundPlayer markers lie 11.9 to
+  15.2 m from the centre and Respawn1 and 2 at 16.0 m, all on the pad (`pad_r` 18 m); the four Knife markers, 28.3 m
+  out, stand on the regolith beyond.
 - **Light and fog:** made for `levels/clearing/rooms/sky.tscn` as it is (background (0.42, 0.45, 0.5), fog density
   0.035, no light of its own). The teal ring is emissive (energy 1.6); it adds no light.
 - **No collision change:** the material only draws; the plates have no relief.
@@ -46,7 +51,7 @@ game's frees, the median of 20 frames per view:
 | The ship, 22 m out and 6 m up | 2.48 | 2.87 | +0.39 |
 | The ground at the ramp, looking down | 3.31 | 3.90 | +0.59 |
 
-GPU ms on this machine. The review run the day before measured +0.26 ms at the round start and +1.03 ms at the ramp's
+GPU ms on this machine (`report.json`). The review page's own run the day before (not in `report.json`) measured +0.26 ms at the round start and +1.03 ms at the ramp's
 ground, so count on **about +0.3 ms in a normal view and up to about +1 ms when the ground fills the screen**. The
 numbers are noisy at this size; a frame's own spread is about 0.3 ms.
 

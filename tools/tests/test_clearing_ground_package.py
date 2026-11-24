@@ -47,6 +47,7 @@ class ClearingGroundPackage(unittest.TestCase):
             data = (ASSET / rel).read_bytes()
             self.assertEqual(info["sha256"], hashlib.sha256(data).hexdigest(), rel)
         self.assertIn("package", report["gpu_ms"])
+        self.assertEqual(set(report["package_vs_pad"]), set(report["gpu_ms"]["package"]))   # every view compared
         for view, d in report["package_vs_pad"].items():
             self.assertLess(d["mean_abs"], 1.0, view)   # the box's top draws as the review's plane
 
