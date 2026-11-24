@@ -2121,3 +2121,23 @@ with the ship's run-time lights at zero (the throat stays dark there, as in his 
 night `glow_pod`'s light (`l` 0.15) washes the throat teal as in `<raw>/ship/v5/polish/shots0/out_back.png`.
 `test_ship_hull_detail.test_the_nozzles_have_the_old_look_inside` keeps the insides free of blades and the lip's
 ten gapped segments.
+
+## The M8 clearing's ground: the landing pad (prime-game#1704, 2026-11-24)
+
+The game's M8 round stands the ship package on a 200 x 200 m greybox box in fog 0.035 (prime-game
+`levels/clearing/`: `ground.tscn`, `sky.tscn`, the ship at world (116, 0, 72), its own `Clearing` freed). Four looks
+were shot from the same views (`tools/review/clearing_ground_looks.py`, `godot/clearing/ground_looks.gd`: today, a
+landing pad, alien soil, the ship's own forest) and the engineer picked the **landing pad** ("Так, майданчик",
+prime-game#1704 comment 7126839325): dark cold-steel plates round the ship, a teal ring at 18 m, yellow chevrons
+before the ramp, dark regolith beyond.
+
+- **One shader, no textures:** `godot/clearing/ground.gdshader` (world xz drives it, no UVs); the package
+  `assets/environment/clearing_ground/` ships it byte-identical (`export/clearing_ground.gdshader`, a test keeps them
+  equal) with its material `export/clearing_ground.tres` (`pad` on, `centre` the ship's world xz). Tag
+  `clearing_ground/v1`.
+- **In the game:** the `.tres` replaces `levels/kit/greybox_floor_garden.tres` on `ground.tscn`'s box only (the
+  estate's `plot.tscn` keeps the greybox); box, transform and collider stay. A moved ship needs a new `centre`; the
+  chevrons assume the ramp toward -z.
+- **Proof:** `clearing_ground_looks.py --package` puts the package's `.tres` on a box like `ground.tscn`'s and shoots
+  it beside the review's pad: no pixel difference worth the name (mean 0.000-0.006 of 255). Cost about +0.3 ms GPU
+  in a normal view, up to about +1 ms with the ground filling the screen (`report.json`, `HANDOFF.md`).

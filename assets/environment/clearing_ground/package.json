@@ -1,0 +1,29 @@
+{
+ "format": 1,
+ "name": "clearing_ground",
+ "version": 1,
+ "tag": "clearing_ground/v1",
+ "look": "pad",
+ "files": [
+  {
+   "file": "export/clearing_ground.gdshader",
+   "game_path": "res://assets/environment/clearing/clearing_ground.gdshader"
+  },
+  {
+   "file": "export/clearing_ground.tres",
+   "game_path": "res://assets/environment/clearing/clearing_ground.tres"
+  }
+ ],
+ "replaces": {
+  "scene": "res://levels/clearing/rooms/ground.tscn",
+  "resource": "res://levels/kit/greybox_floor_garden.tres",
+  "on": "Mesh: BoxMesh.material"
+ },
+ "pad": {
+  "centre_xz": [116.0, 72.0],
+  "radius_m": 18.0,
+  "ramp_foot_m": 12.6,
+  "ramp_toward": "-z"
+ },
+ "textures": 0
+}

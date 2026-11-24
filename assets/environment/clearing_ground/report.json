@@ -1,0 +1,100 @@
+{
+  "asset": "clearing_ground",
+  "built_by": "tools/review/clearing_ground_looks.py --package",
+  "look": "pad (look A of art #263's review page, approved by the engineer 2026-11-24)",
+  "files": {
+    "export/clearing_ground.gdshader": {
+      "game_path": "res://assets/environment/clearing/clearing_ground.gdshader",
+      "bytes": 7962,
+      "sha256": "721233bed32427af2771972627c1eff1537e7ec749842811546c8fe8f86cb93e"
+    },
+    "export/clearing_ground.tres": {
+      "game_path": "res://assets/environment/clearing/clearing_ground.tres",
+      "bytes": 291,
+      "sha256": "1c975e303c6aa5539f09ea7ebdb3e00e32b009a83265ae98873c65873fa77947"
+    }
+  },
+  "textures": 0,
+  "scene": "prime-game levels/clearing/rooms/ground.tscn: its BoxMesh 200 x 1 x 200 m with this material",
+  "shots_dir": "clearing/ground/v1",
+  "window": [
+    1280,
+    720
+  ],
+  "fov": 75.0,
+  "gpu_ms": {
+    "package": {
+      "ground_close": 3.9,
+      "round_start": 2.217,
+      "round_start_p02": 2.701,
+      "spawn_wide": 2.522,
+      "three_quarter": 2.869
+    },
+    "pad": {
+      "ground_close": 3.965,
+      "round_start": 2.569,
+      "round_start_p02": 2.756,
+      "spawn_wide": 2.503,
+      "three_quarter": 2.664
+    },
+    "today": {
+      "ground_close": 3.307,
+      "round_start": 2.558,
+      "round_start_p02": 2.412,
+      "spawn_wide": 2.514,
+      "three_quarter": 2.478
+    }
+  },
+  "gpu_ms_package_minus_today": {
+    "ground_close": 0.593,
+    "round_start": -0.341,
+    "round_start_p02": 0.289,
+    "spawn_wide": 0.008,
+    "three_quarter": 0.391
+  },
+  "draw_calls": {
+    "package": {
+      "ground_close": 745,
+      "round_start": 521,
+      "round_start_p02": 464,
+      "spawn_wide": 836,
+      "three_quarter": 902
+    },
+    "pad": {
+      "ground_close": 745,
+      "round_start": 521,
+      "round_start_p02": 464,
+      "spawn_wide": 836,
+      "three_quarter": 902
+    },
+    "today": {
+      "ground_close": 745,
+      "round_start": 521,
+      "round_start_p02": 464,
+      "spawn_wide": 836,
+      "three_quarter": 902
+    }
+  },
+  "package_vs_pad": {
+    "ground_close": {
+      "mean_abs": 1.33825231481481e-05,
+      "share_over_8": 0.0
+    },
+    "round_start": {
+      "mean_abs": 1.08506944444444e-06,
+      "share_over_8": 0.0
+    },
+    "round_start_p02": {
+      "mean_abs": 1.80844907407407e-06,
+      "share_over_8": 0.0
+    },
+    "spawn_wide": {
+      "mean_abs": 0.0,
+      "share_over_8": 0.0
+    },
+    "three_quarter": {
+      "mean_abs": 0.00556242766203704,
+      "share_over_8": 4.8828125e-05
+    }
+  }
+}

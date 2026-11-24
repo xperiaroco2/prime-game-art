@@ -1,4 +1,4 @@
-"""The M8 clearing's ground looks (prime-game#1704): review shots only, no package.
+"""The M8 clearing's ground looks (prime-game#1704) and the proof of the picked one's package.
 
 Stages the art ship package (default v12, `<raw>/ship/v5/export/v12/`) into godot/import/ship_pkg/ the way
 `lobby --export` does, imports headless, then runs godot/clearing/ground_looks.gd in the off-screen window
@@ -8,10 +8,17 @@ to <review>/img/<look>_<view>.png, a 2 x 2 sheet per look to <review>/sheet_<loo
 <out>/shots.json.
 
     $PYTHON_BIN tools/review/clearing_ground_looks.py [--looks today,pad] [--out DIR] [--review DIR]
+
+`--package`: the package's proof (the landing pad, approved 2026-11-24): stages
+assets/environment/clearing_ground/export/ into godot/import/clearing_pkg/ (its res://assets/environment/clearing/
+rewritten there), then shoots today, pad (the review page's look) and package (the package's .tres on ground.tscn's
+200 x 1 x 200 m box, as the game wires it) into <raw>/clearing/ground/v1/, compares package against pad per view and
+writes the asset's report.json (GPU ms per view and look, the differences, the files' hashes).
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import shutil
@@ -36,7 +43,52 @@ LOOKS = {
     "pad": {"ground": "pad", "free": FREE_GAME},
     "soil": {"ground": "soil", "free": FREE_GAME},
     "forest": {"ground": "none", "free": FREE_GAME[:3]},   # the package's own Clearing kept, the greybox box removed
+    "package": {"ground": "material", "material": "res://import/clearing_pkg/clearing_ground.tres", "free": FREE_GAME},
 }
+ASSET = Path(__file__).resolve().parents[2] / "assets" / "environment" / "clearing_ground"
+PKG_FILES = ["clearing_ground.gdshader", "clearing_ground.tres"]
+GAME_DIR = "res://assets/environment/clearing/"   # where the game keeps the two files
+
+
+def stage_ground() -> None:
+    """Copies the package's two files into godot/import/clearing_pkg/, their game paths rewritten there."""
+    dst = _godot.IMPORT_DIR / "clearing_pkg"
+    dst.mkdir(parents=True, exist_ok=True)
+    for name in PKG_FILES:
+        data = (ASSET / "export" / name).read_bytes().replace(GAME_DIR.encode(), b"res://import/clearing_pkg/")
+        if not (dst / name).is_file() or (dst / name).read_bytes() != data:
+            (dst / name).write_bytes(data)
+
+
+def write_report(shots: dict, out: Path) -> Path:
+    looks = {k: v for k, v in shots.items() if k != "compare"}
+    files = {}
+    for name in PKG_FILES:
+        data = (ASSET / "export" / name).read_bytes()
+        files[f"export/{name}"] = {"game_path": GAME_DIR + name, "bytes": len(data),
+                                   "sha256": hashlib.sha256(data).hexdigest()}
+    extra = {}
+    for view in looks.get("package", {}):
+        if "today" in looks:
+            extra[view] = round(looks["package"][view]["gpu_ms"] - looks["today"][view]["gpu_ms"], 3)
+    report = {
+        "asset": "clearing_ground",
+        "built_by": "tools/review/clearing_ground_looks.py --package",
+        "look": "pad (look A of art #263's review page, approved by the engineer 2026-11-24)",
+        "files": files,
+        "textures": 0,
+        "scene": "prime-game levels/clearing/rooms/ground.tscn: its BoxMesh 200 x 1 x 200 m with this material",
+        "shots_dir": out.relative_to(common.raw_dir()).as_posix() if out.is_relative_to(common.raw_dir()) else out.as_posix(),
+        "window": list(SIZE),
+        "fov": FOV,
+        "gpu_ms": {look: {v: round(i["gpu_ms"], 3) for v, i in per.items()} for look, per in looks.items()},
+        "gpu_ms_package_minus_today": extra,
+        "draw_calls": {look: {v: i["draw_calls"] for v, i in per.items()} for look, per in looks.items()},
+        "package_vs_pad": shots.get("compare", {}).get("package_vs_pad", {}),
+    }
+    path = ASSET / "report.json"
+    path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8", newline="\n")
+    return path
 
 
 def views() -> list[dict]:
@@ -69,15 +121,26 @@ def main() -> int:
     ap.add_argument("--out", type=Path, default=common.raw_dir() / "clearing" / "ground-looks")
     ap.add_argument("--review", type=Path, default=common.OUT / "review" / "clearing-ground")
     ap.add_argument("--diag", action="store_true", help="only the framing check: round_start from RoundPlayer02 and 03")
+    ap.add_argument("--package", action="store_true", help="the package's proof (today, pad, package) and its report.json")
     args = ap.parse_args()
+    if args.package:
+        args.looks = "today,pad,package"
+        if args.out == common.raw_dir() / "clearing" / "ground-looks":
+            args.out = common.raw_dir() / "clearing" / "ground" / "v1"
+        if args.review == common.OUT / "review" / "clearing-ground":
+            args.review = common.OUT / "review" / "clearing-ground-pkg"
     args.out, args.review = args.out.resolve(), args.review.resolve()   # Godot runs in its project folder
     names = [n for n in args.looks.split(",") if n]
     scene = lobby.stage_package({"dir": PACKAGE})
+    if "package" in names:
+        stage_ground()
     errors = [line for line in _godot.import_project() if "ERROR" in line]
     for line in errors[:10]:
         common.say(f"  import: {line}")
     req = {"ship": scene, "at": SHIP_AT, "fov": FOV, "size": list(SIZE), "views": DIAG if args.diag else views(),
            "looks": [{"name": n, **LOOKS[n]} for n in names], "sheets": args.review.as_posix()}
+    if "package" in names and "pad" in names:
+        req["compare"] = [["package", "pad"]]
     path = common.OUT / "clearing-ground" / "request.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
@@ -96,11 +159,19 @@ def main() -> int:
     img = args.review / "img"
     img.mkdir(parents=True, exist_ok=True)
     for look, per in shots.items():
+        if look == "compare":
+            for pair, views_ in per.items():
+                for view, d in views_.items():
+                    common.say(f"  {pair}/{view}: mean |diff| {d['mean_abs']:.3f}, {100 * d['share_over_8']:.3f}% over 8")
+            continue
         for view, info in per.items():
             shutil.copyfile(args.out / look / f"{view}.png", img / f"{look}_{view}.png")
             common.say(f"  {look}/{view}: GPU {info['gpu_ms']:.2f} ms, {info['draw_calls']} draw calls, "
                        f"{info['size'][0]}x{info['size'][1]}")
-    common.ok(f"clearing ground looks: {sum(len(v) for v in shots.values())} shots in {args.out.as_posix()}")
+    if args.package:
+        common.say(f"  report: {write_report(shots, args.out).as_posix()}")
+    n = sum(len(v) for k, v in shots.items() if k != "compare")
+    common.ok(f"clearing ground looks: {n} shots in {args.out.as_posix()}")
     return 0
 
 

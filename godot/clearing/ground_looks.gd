@@ -1,12 +1,13 @@
 extends SceneTree
-## The M8 clearing's ground looks (prime-game#1704; review shots only, no package): the game's clearing rebuilt from
+## The M8 clearing's ground looks (prime-game#1704) and the package's proof: the game's clearing rebuilt from
 ## its scenes' numbers (prime-game levels/clearing/: the 200 x 1 x 200 m ground box at the ship, the Sky's fog, the
 ## round markers; levels/estate/rooms/ship.tscn: the art ship package with its Environment, both directional lights
 ## and its Clearing freed), then each look's ground, shot from the same cameras in an off-screen window.
 ## Run by tools/review/clearing_ground_looks.py:  -- <request.json> <out dir>
 ## The request: {"ship": res path, "at": [x,y,z], "fov": deg, "size": [w,h], "looks": [{"name", "ground": "box"|
-## "pad"|"soil"|"none", "free": [node paths]}], "views": [{"name", "eye": [..], "target": [..]} or {"name",
-## "marker": "Transform3D(...)", "eye_h": m}], "sheets": dir}
+## "pad"|"soil"|"material"|"none", "material": res path (ground "material": the package's .tres on ground.tscn's box),
+## "free": [node paths]}], "views": [{"name", "eye": [..], "target": [..]} or {"name", "marker": "Transform3D(...)",
+## "eye_h": m}], "sheets": dir, "compare": [[look, look], ...] (optional: per view the two looks' pixel difference)}
 
 const Offscreen = preload("res://lib/offscreen.gd")
 const SHADER = preload("res://clearing/ground.gdshader")
@@ -41,11 +42,14 @@ func _initialize() -> void:
 func _run() -> void:
 	RenderingServer.viewport_set_measure_render_time(root.get_viewport_rid(), true)
 	var result: Dictionary = {}
+	var kept: Dictionary = {}   # look -> view -> Image, only the looks a comparison needs
+	var compared: Array = _req.get("compare", [])
 	for look: Dictionary in _req["looks"]:
 		var world := Node3D.new()
 		world.name = "Clearing_" + String(look["name"])
 		_environment(world)
-		_ground(world, String(look["ground"]))
+		if not _ground(world, look):
+			return
 		var ship: Node3D = _ship(look)
 		if ship == null:
 			return
@@ -64,11 +68,18 @@ func _run() -> void:
 			_aim(cam, view)
 			var image: Image = await _shot(dir.path_join("%s.png" % view["name"]), shots, String(view["name"]))
 			images.append(image)
+			for pair: Array in compared:
+				if pair.has(look["name"]):
+					if not kept.has(look["name"]):
+						kept[look["name"]] = {}
+					kept[look["name"]][view["name"]] = image
 		result[look["name"]] = shots
 		_save(_sheet(images), String(_req["sheets"]).path_join("sheet_%s.png" % look["name"]))
 		root.remove_child(world)
 		world.free()
 		await process_frame
+	if not compared.is_empty():
+		result["compare"] = _compare(kept, compared)
 	var f := FileAccess.open(_out.path_join("shots.json"), FileAccess.WRITE)
 	f.store_string(JSON.stringify(result, " "))
 	f.close()
@@ -91,16 +102,24 @@ func _environment(world: Node3D) -> void:
 	world.add_child(we)
 
 
-func _ground(world: Node3D, kind: String) -> void:
+func _ground(world: Node3D, look: Dictionary) -> bool:
+	var kind: String = String(look["ground"])
 	var at: Vector3 = _v(_req["at"])
 	var mi := MeshInstance3D.new()
 	mi.name = "Ground"
-	if kind == "box":   # levels/clearing/rooms/ground.tscn with levels/kit/greybox_floor_garden.tres
+	if kind == "box" or kind == "material":   # levels/clearing/rooms/ground.tscn: the box, its top at y 0
 		var box := BoxMesh.new()
 		box.size = Vector3(200, 1, 200)
-		var mat := StandardMaterial3D.new()
-		mat.albedo_color = Color(0.33, 0.52, 0.28, 1)
-		box.material = mat
+		if kind == "box":   # with levels/kit/greybox_floor_garden.tres
+			var mat := StandardMaterial3D.new()
+			mat.albedo_color = Color(0.33, 0.52, 0.28, 1)
+			box.material = mat
+		else:   # with the package's material in its place
+			var pkg: Material = load(String(look["material"])) as Material
+			if pkg == null:
+				_fail("cannot load %s" % look["material"])
+				return false
+			box.material = pkg
 		mi.mesh = box
 		mi.position = at + Vector3(0, -0.5, 0)
 	elif kind == "pad" or kind == "soil":
@@ -114,8 +133,9 @@ func _ground(world: Node3D, kind: String) -> void:
 		mi.mesh = plane
 		mi.position = at
 	else:
-		return
+		return true
 	world.add_child(mi)
+	return true
 
 
 ## The ship package as the game's estate ship piece has it: the listed nodes freed before it enters the tree, so
@@ -163,6 +183,34 @@ func _shot(path: String, shots: Dictionary, name: String) -> Image:
 		"draw_calls": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME),
 		"primitives": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME)}
 	return image
+
+
+## Per compared pair and view: the mean absolute difference of the RGB channels (0-255) and the share of pixels whose
+## largest channel difference is over 8.
+func _compare(kept: Dictionary, pairs: Array) -> Dictionary:
+	var out: Dictionary = {}
+	for pair: Array in pairs:
+		var a: Dictionary = kept.get(pair[0], {})
+		var b: Dictionary = kept.get(pair[1], {})
+		var per: Dictionary = {}
+		for view: String in a:
+			if not b.has(view):
+				continue
+			var da: PackedByteArray = (a[view] as Image).get_data()
+			var db: PackedByteArray = (b[view] as Image).get_data()
+			var total := 0
+			var over := 0
+			for i: int in range(0, da.size(), 3):
+				var m := 0
+				for c: int in 3:
+					var d: int = absi(da[i + c] - db[i + c])
+					total += d
+					m = maxi(m, d)
+				if m > 8:
+					over += 1
+			per[view] = {"mean_abs": float(total) / da.size(), "share_over_8": float(over) / (da.size() / 3)}
+		out["%s_vs_%s" % [pair[0], pair[1]]] = per
+	return out
 
 
 ## A 2 x 2 sheet of the views at half size (1280 px wide for a 1280 x 720 window).

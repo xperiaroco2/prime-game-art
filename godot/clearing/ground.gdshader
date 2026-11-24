@@ -1,7 +1,10 @@
-// The M8 clearing's ground looks (prime-game#1704, review only): one procedural material for the 200 x 200 m plane,
-// no texture reads. `pad` off: dark blue-grey regolith with gravel and sparse teal glints (look B). `pad` on: a
-// round pad of dark cold-steel plates round the ship's centre, hazard chevrons in front of the ramp's foot and a thin
-// teal light ring at its edge, the regolith beyond (look A). World xz drives everything, so the plane needs no UVs.
+// The M8 clearing's ground (prime-game#1704; the landing pad approved by the engineer 2026-11-24, art#263): one
+// procedural material for the clearing's 200 x 200 m ground, no texture reads. `pad` off: dark blue-grey regolith with
+// gravel and sparse teal glints (look B, not picked). `pad` on: a round pad of dark cold-steel plates round the ship's
+// centre, hazard chevrons in front of the ramp's foot and a thin teal light ring at its edge, the regolith beyond
+// (look A, the game's: assets/environment/clearing_ground). World xz drives everything, so the mesh needs no UVs; the
+// pad is placed by `centre` (the ship's origin in the world) and assumes the ship unrotated, its ramp toward -z.
+// Kept byte-identical with assets/environment/clearing_ground/export/clearing_ground.gdshader (a test checks it).
 shader_type spatial;
 render_mode cull_back;
 

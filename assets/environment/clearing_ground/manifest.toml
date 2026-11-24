@@ -1,0 +1,27 @@
+# The M8 clearing's ground (prime-game#1704, art #263): the landing pad the engineer picked on 2026-11-24.
+# Proved by tools/review/clearing_ground_looks.py --package; the [[raw]] shot is the package's round start from RoundPlayer02.
+id = "clearing_ground"
+kind = "environment"
+slot = ""
+title = "The M8 clearing's ground: the landing pad round the ship"
+notes = "One procedural spatial shader (export/clearing_ground.gdshader, byte-identical with godot/clearing/ground.gdshader, the review page's) and its ShaderMaterial (export/clearing_ground.tres: pad on, centre at the ship's world xz 116, 72) for prime-game levels/clearing/rooms/ground.tscn's 200 x 1 x 200 m box in place of levels/kit/greybox_floor_garden.tres: dark cold-steel plates with seams and bolts, a teal light ring at 18 m, yellow hazard chevrons before the ramp's foot, dark regolith beyond. No textures. Written as code in this repo; nothing AI-generated or downloaded. The engineer's yes: https://github.com/xperiaroco2/prime-game/issues/1704#issuecomment-7126839325. HANDOFF.md for the game track."
+tools = ["Godot 4.7.2", "prime-game-art tools/review/clearing_ground_looks.py (godot/clearing/ground_looks.gd)"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game"
+public_repo_ok = true
+ai_generated = false
+approved_by = ["xperiaroco2"]
+approved_at = 2026-11-24
+approval_pr = ""
+
+[source]
+service = "own"
+plan = "own-work"
+model_version = ""
+task_ids = []
+generated_at = 2026-11-24
+url = "https://github.com/xperiaroco2/prime-game/issues/1704"
+
+[[raw]]
+file = "clearing/ground/v1/package/round_start_p02.png"
+sha256 = "baa49ed9e2b0fadf4c51ba65b69084ec54f64e0907f92f699f2b85931fa71d0b"
