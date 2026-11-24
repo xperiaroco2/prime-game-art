@@ -1,0 +1,9 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://assets/environment/clearing/clearing_ground.gdshader" id="1_ground"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_ground")
+shader_parameter/pad = true
+shader_parameter/centre = Vector2(116, 72)
