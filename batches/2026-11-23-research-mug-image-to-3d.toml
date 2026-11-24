@@ -1,0 +1,36 @@
+# The AI-art pipeline research (the beer stein, art#392 follow-up): trials B and C, image to 3D from the approved
+# concept 3. Approved by the engineer in chat on 2026-11-23 (the research brief asked his yes before his paid accounts
+# are used), recorded on art#392.
+# - b_textured: Meshy's own textured, PBR model as it comes (trial B: an AI mesh straight into Godot);
+# - c_shape: the shape only, quad-remeshed, for trial C (the AI shape with the lab's glass, beer and foam shaders).
+
+id = "2026-11-23-research-mug-image-to-3d"
+purpose = "Research trials B and C: Meshy image-to-3D of the approved stein concept, textured as it comes and as a shape for our shaders."
+plan = "Meshy Pro (monthly)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 80
+approved_by = "xperiaroco2"
+approved_at = "2026-11-23"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/392#issuecomment-7101808087"
+
+[defaults.image_to_3d.params]
+ai_model = "meshy-7.1"
+should_remesh = true
+topology = "triangle"
+target_polycount = 8000
+should_texture = true
+enable_pbr = true
+texture_resolution = "2k"
+target_formats = ["glb"]
+
+[[items]]
+id = "b_textured"
+kind = "image_to_3d"
+images = [{ file = "raw:2026-11-23-lobby-mug-concepts/mug3_stein/image-0.png", provenance = "own concept: gpt-image-2.5-sunburst, batch 2026-11-23-lobby-mug-concepts item mug3_stein (the engineer's pick, art#392)", sha256 = "13f8d63fb3ab149c2c18eee48a13b42ef96f9a046118cea9dd4989f47d15dd49" }]
+
+[[items]]
+id = "c_shape"
+kind = "image_to_3d"
+images = [{ file = "raw:2026-11-23-lobby-mug-concepts/mug3_stein/image-0.png", provenance = "own concept: gpt-image-2.5-sunburst, batch 2026-11-23-lobby-mug-concepts item mug3_stein (the engineer's pick, art#392)", sha256 = "13f8d63fb3ab149c2c18eee48a13b42ef96f9a046118cea9dd4989f47d15dd49" }]
+params = { should_texture = false, enable_pbr = false, topology = "quad", target_polycount = 4000 }   # enable_pbr: Meshy refuses it without a texture (HTTP 400, 2026-11-23)

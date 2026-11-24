@@ -1,0 +1,39 @@
+# The AI-art pipeline research's second trial (art#392 follow-up): an opaque hard-surface held prop. The director's
+# relay of the engineer's call "Скло, потім проба" (2026-11-23): up to 50 more Meshy credits within the spirit of his
+# first yes (recorded on art#392); anything beyond needs a new yes. The prop is a neutral tool, a crew work light,
+# chosen because its form (a grip, a barrel-like body, a head) is the closest neutral stand-in for a future weapon.
+# One text-to-3D item: the preview is the blockout for the code-built shape, the refine is Meshy's own textured model as
+# it comes (the comparison). No game, character or brand is named.
+
+id = "2026-11-23-research-opaque-prop"
+purpose = "Research trial 2: a crew work light from text, the preview as a blockout and the refine as Meshy's textured model as it comes."
+plan = "Meshy Pro (monthly)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 50
+approved_by = "xperiaroco2"
+approved_at = "2026-11-23"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/392#issuecomment-7113907419"
+
+[variants.light]
+prompt = "a stylised game prop, a handheld work light for a space-station crew: a chunky cylindrical body with a dark ribbed rubber grip, a wider faceted head with a large round lens, a thumb switch on top and a small loop at the tail; clean bold readable shapes, slightly exaggerated proportions, crisp bevels, teal-grey painted metal with cold brushed steel bands, a cyan glowing ring around the lens; no text, no logos"
+
+[defaults.text_to_3d.preview]
+ai_model = "meshy-7.1"
+model_type = "standard"
+should_remesh = true
+topology = "triangle"
+target_polycount = 6000
+target_formats = ["glb"]
+
+[defaults.text_to_3d.refine]
+ai_model = "meshy-7.1"
+enable_pbr = true
+texture_resolution = "2k"
+remove_lighting = true
+target_formats = ["glb"]
+
+[[items]]
+id = "light"
+variant = "light"
+kind = "text_to_3d"

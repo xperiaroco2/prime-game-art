@@ -4,6 +4,16 @@ From a raw generation or download to an approved asset in the game. Based on sec
 (`docs/research/2026-10-02-wave-1/report.md`), updated with the engineer's answers on xperiaroco2/prime-game#165
 (2026-10-02). Where the report and this page differ, this page wins; where #165 and this page differ, fix this page.
 
+## Since 2026-11-24: hero props
+
+After M8, every hero prop (anything held in first person or inspected up close, later every weapon) goes through the
+accepted hero-prop pipeline inside the gates below (`docs/decisions/2026-11-23-hero-prop-pipeline.md`, the engineer's
+yes of 2026-11-24): the shape from code in headless Blender, its look from the material library of the style guide
+(`docs/research/2026-11-23-prop-style-guide.md`), the concept's colours measured, two fresh Opus critics a round with
+the rubric (`docs/research/2026-11-23-prop-critic-rubric.md`), and a package check as the game loads it before any
+handoff. Meshy is a blockout and a layout reference only, never the game mesh. One hero prop gets one session of its
+own; the art lane packages and integrates it.
+
 ## Since 2026-10-31: the asset gates
 
 Every new character part, garment and hero prop passes six gates in order
