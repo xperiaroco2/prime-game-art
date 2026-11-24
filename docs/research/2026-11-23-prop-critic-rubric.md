@@ -2,6 +2,8 @@
 
 **Status:** in use for hero props, step 8 of the accepted pipeline
 (`docs/decisions/2026-11-23-hero-prop-pipeline.md`, 2026-11-24). It advises the engineer's look and does not gate.
+The stein's renders and critic files it refers to are under `<raw>/research/mug-lab/`; the lab code is on the research
+branch `claude/research-ai-3d-pipeline-0ebca6`.
 
 A fresh agent with no stake in the build judges review renders against this rubric, the approved concept and the
 spec. It never sees the build's code or the builder's notes, only the pictures, the concept, the spec's numbers and

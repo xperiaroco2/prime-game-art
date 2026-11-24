@@ -41,8 +41,8 @@ What the research found:
    blockers without seeing each other's notes. But a critic misreads stylised features: it took the foam's lacing
    rings for moire. Scores move in whole points and lag behind visible gains. The builder must look too, and a
    pairwise judgement against the last round is more useful than an absolute score.
-5. **The loop plateaus without new technique.** Eleven rounds took the stein from 16 to 26 of 45, then it held at
-   22-26. Two critics on the same renders differ by up to 3 points. What moved the scores was measurement: the
+5. **The loop plateaus without new technique.** Eleven rounds took the stein from 16 to 26 of 45, holding at 22-26
+   from round 5; rounds 12-14 with Opus critics scored 25-27, and two rounds of baked glass 26-27. Two critics on the same renders differ by up to 3 points. What moved the scores was measurement: the
    concept's colours read by a script, then fitted. The pass (every item at 4) was not reached with screen-space
    glass and procedural foam.
 

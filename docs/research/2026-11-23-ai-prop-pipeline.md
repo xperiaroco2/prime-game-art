@@ -123,7 +123,7 @@ What moved the scores, and what did not:
     show.
 - **The remaining gap** is the same in every critique: the glass reads plastic (the handle, the empty glass), the
   head's dome sits on a band, and the half-state foam reads as a faceted disc. Screen-space refraction and procedural
-  foam seem to top out here. The proposed next step is baked glass: Cycles renders the glass's light and refraction
+  foam seem to top out here. The next step tried was baked glass (tested below): Cycles renders the glass's light and refraction
   into textures, and only the beer, the level and the foam stay live in Godot.
 
 ## Rounds 12-14: baked glass and an Opus critic (the director's choice, 2026-11-23)
@@ -138,7 +138,7 @@ What moved the scores, and what did not:
     boolean union of the handle left the glass mesh an empty first material slot, every face used it, and the GLB's
     glass had no material, so `mug_look.gd` found no map and `baked` stayed 0. The critics of rounds 12-14 judged the
     shader edits of those rounds without the bake. The build now keeps one slot (`mug_lab_build.py`,
-    `mug_lab_bake.py`), and the bake itself is still untested.
+    `mug_lab_bake.py`), and the bake itself is tested below ("The baked glass, tested").
 - **Two Opus critics a round**, absolute and pairwise against the last round.
   - Opus names defects with pixel positions and rarely flip-flops.
   - Two Opus critics still differ by up to 4 points (27 and 23 on round 13).
@@ -217,7 +217,7 @@ What it shows:
   prop: the next rounds would follow the critics' list (lens structure, stronger edge wear, the switch recessed into a
   panel, the house panel motif on the bezel, a knurl on the grip).
 
-## Next, for the mug (if the engineer takes pipeline A)
+## Open next steps for the mug (after M8)
 - A thick wall as in C: the inner wall deeper and the glass edge visible.
 - Foam with larger bubbles and shadowed crevices.
 - Beer with a darker edge and a brighter core.

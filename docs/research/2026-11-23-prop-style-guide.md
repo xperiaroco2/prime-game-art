@@ -5,13 +5,15 @@
 
 One page of rules every prop, held item and later weapon follows, so agents building one piece at a time make a set
 that belongs together and belongs in the ship and the lobby. It writes down what the engineer has already approved:
-- the lobby's S4 scheme (two-tone teal-grey, cold steel, orange strips, no copper);
+- the lobby's S4 scheme (two-tone teal-grey, cold steel, teal light strips, no copper; `layouts/lobby/hall.toml`);
 - the ship's steel;
 - the concept prompts' wording;
 - his picks so far (the stein, the crystal, the pinball, the console).
 
 The critic's rubric item 8 ("style fit") is judged against this page and the prop's approved concept
 (`docs/research/2026-11-23-prop-critic-rubric.md`).
+
+The lab code this page cites (`godot/mug_lab/`, `tools/blender/mug_lab_*.py`, `prop_lab_*.py`) is on the research branch `claude/research-ai-3d-pipeline-0ebca6` (commit cbaa94c6) until the first hero prop after M8 brings it to `main`.
 
 ## 1. Shape language
 - **Clean, bold, readable.** These are the concept prompts' words, and the engineer approved them:
@@ -43,7 +45,8 @@ The critic's rubric item 8 ("style fit") is judged against this page and the pro
 | Frame | graphite-teal 0.25, 0.30, 0.31 | Frames, housings, handles' cores |
 | Trim | cold steel 0.60, 0.64, 0.66, metallic 0.85 | Bands, rims, bolts, functional metal |
 | Dark | 0.06-0.09 neutral | Rubber, polymer grips, channels |
-| Warm light | orange 1.0, 0.52, 0.26 (emissive 1.5-2) | Ambient and structure light: strips, status at rest |
+| Strips | teal 0.15, 0.85, 0.95 (emissive; the hall's S4 accent) | The hall's light strips; a prop's built-in strip lights match them |
+| Warm light | orange 1.0, 0.52, 0.26 (emissive 1.5-2) | Status at rest; warm ambient accents (the pendants are 1.0, 0.68, 0.42) |
 | Energy | cyan 0.15, 0.85, 1.0 (emissive 1.5-2.5) | Power and interaction: crystals, charge, active tools |
 | Hazard | yellow-black stripes | Danger edges only |
 | Alarm | red 1.0, 0.08, 0.04 | Alarm and stop lamps only |
@@ -51,7 +54,8 @@ The critic's rubric item 8 ("style fit") is judged against this page and the pro
 
 Rules:
 - **No copper or bronze.** The engineer called them retro (2026-11-23); warm metals are gone from the set.
-- **Colour is functional.** Orange means structure and ambience; cyan means energy and interaction; red means alarm.
+- **Colour is functional.** Orange means rest and warm ambience; cyan means energy and interaction; red means alarm.
+  The hall's teal strips are structure light, a little greener than the energy cyan.
   A prop's emissive colour says which it is.
 - **Values stay in range.** Base colours stay between 0.04 and 0.9; no pure black and no pure white. A prop reads
   in the lobby's warm pendants and in the window's cold light alike.
@@ -91,7 +95,7 @@ Rules:
 
 ## 5. Light and the review stage
 - Lookdev happens in the lobby's light: warm pendants (1.0, 0.68, 0.42), the cold window (0.55, 0.7, 1.0) and the
-  orange strips. Tone mapping is AgX, as in the game.
+  teal strips. Tone mapping is AgX, as in the game.
 - Every prop is checked at first-person distance (the 50 degree viewmodel lens) and on its surface at eye height.
 - A bright, high-key stage hides dark-material problems and a black stage exaggerates them. Review in the lobby's
   own mid-key light.
