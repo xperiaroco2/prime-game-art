@@ -1,0 +1,69 @@
+# The prop critic's rubric (2026-11-23)
+
+**Status:** in use for hero props, step 8 of the accepted pipeline
+(`docs/decisions/2026-11-23-hero-prop-pipeline.md`, 2026-11-24). It advises the engineer's look and does not gate.
+The stein's renders and critic files it refers to are under `<raw>/research/mug-lab/`; the lab code is on the research
+branch `claude/research-ai-3d-pipeline-0ebca6`.
+
+A fresh agent with no stake in the build judges review renders against this rubric, the approved concept and the
+spec. It never sees the build's code or the builder's notes, only the pictures, the concept, the spec's numbers and
+this page. Built for the beer stein (art#392) in the AI-art pipeline research; meant for every hero prop.
+
+## What the critic gets
+- The approved concept image (the target look).
+- The renders, each named: the 3/4 view on the bar, straight side, top, a close-up, first person (full, half,
+  empty) and the drink clip's frames.
+- The spec's few numbers that bind (sizes, the handle side, the fill levels).
+- For a round after the first: the previous round's renders beside this round's, for a pairwise judgement.
+
+## Scores
+Each item 0-5. Anchors: **5** release art in a well-reviewed Steam game; **4** good, one small thing a player might
+notice up close; **3** reads correctly but looks cheap or unfinished (a demo); **2** a clear defect or a wrong read;
+**1** broken; **0** missing.
+
+| # | Item | What a 5 looks like | Typical 2-3 |
+|---|---|---|---|
+| 1 | Silhouette and proportion | Matches the concept's shape language and the spec's sizes; reads as the object from every view; parts in proportion | Wrong proportions, a stubby or spindly handle, a missing signature feature |
+| 2 | Primary material read (here: glass) | Instantly thick clear glass: refraction, darker edges, crisp highlights along facets | Looks like plastic, frosted, or a flat grey film |
+| 3 | Secondary material read (here: beer) | Instantly liquid: depth colour (deep at the edges, bright through the middle), life (bubbles), a surface | A solid orange block; flat colour; no surface |
+| 4 | Detail material (here: foam) | Soft, bubbly, volumetric, an irregular natural edge | A smooth white cap; a plastic lid |
+| 5 | Construction and defects | Nothing crooked, floating, intersecting, z-fighting or seamed; no shading artefacts | Visible gaps, a crooked part, faceting where it should be smooth, flicker |
+| 6 | First-person read | Within a second at hand distance it reads as the object, at the right size in the hand | Too big or small; unreadable against the room |
+| 7 | States (here: full, half, empty, drinking) | Each state reads; the change between them is believable (the level goes down, the foam rides on it, the empty glass is still glass) | A state reads wrong; the foam floats or vanishes oddly |
+| 8 | Style fit | Matches the approved concept's own level of stylisation and its materials (the engineer approved that look: it is the style anchor), with clean readable shapes and crisp bevels; sits in the dark teal-grey steel lobby | Simpler or more toy-like than the concept, or clashing colours; never mark a render down for being as realistic as the approved concept |
+| 9 | Release polish | A Steam player would take it for finished release art | Reads as a prototype or a demo |
+
+**Pass:** every item at 4 or more, and no blocker. A blocker is any defect a player would notice in normal play.
+
+## What the critic returns (JSON)
+```json
+{"scores": {"1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0, "8": 0, "9": 0},
+ "blockers": ["..."],
+ "fixes": [{"rank": 1, "image": "q34_full", "where": "the handle's top", "what": "...", "why": "..."}],
+ "unsure": ["..."],
+ "verdict": "pass | fail"}
+```
+- At most 6 fixes, the most valuable first, each concrete (what to change, where in which image).
+- Reasoning before the scores; no praise padding; "unsure" for what the image does not show clearly rather than a
+  guessed defect.
+
+## Pairwise rounds
+From round 2 on the critic also answers, per item: is round N better, worse or the same as round N-1? The images go
+in both orders (two critic calls); a change counts as better only when both orders agree. Measurable items (sizes,
+triangle counts, the fill levels, overlap with the concept's silhouette) go to scripts, not to the critic.
+
+## Calibration
+Before a prop's loop starts, one critic scores the approved concept itself as if it were a render. Items the concept
+cannot reach are a flaw in the rubric, not in the build: fix the rubric first. On the stein (2026-11-23) the concept
+scored 4-5 on every item except style (2: "photoreal, not cartoon"). Generic words like "adult cartoon" made the
+critic mark down the very look the engineer had approved, so item 8 now takes the approved concept as its anchor.
+
+## The critic's model
+Use Opus, two per round. Sonnet critics on the same renders differed by about 3 points and sometimes praised what the
+next critic blamed. Opus names its defects by position and keeps to them, though two Opus critics still differed by up
+to 4 (the stein, rounds 12-14).
+
+## Stop rule
+Stop when the pass holds in two critics in a row, or after 5 rounds, or when the scores plateau for 3 rounds; then the
+engineer's look (Gate 5), with the rubric as advice. A round that
+scores lower than the one before is reverted, not built on.
